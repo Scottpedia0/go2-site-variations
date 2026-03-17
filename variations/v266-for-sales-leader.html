@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The VP Sales View</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f172a;--surface:#1e293b;--card:#1e293b;--border:rgba(148,163,184,0.12);--text:#e2e8f0;--muted:#94a3b8;--accent:#f97316;--accent2:#fb923c;--green:#22c55e;--red:#ef4444;--blue:#3b82f6;--white:#f8fafc}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(15,23,42,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 40px;display:flex;justify-content:space-between;align-items:center}
+.nav-logo{font-size:20px;font-weight:800;color:var(--accent)}
+.nav-logo span{color:var(--muted);font-weight:400;font-size:14px;margin-left:8px}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:13px;margin-left:24px;font-weight:500;transition:color 0.2s}
+.nav-links a:hover{color:var(--accent)}
+
+.hero{min-height:100vh;display:flex;align-items:center;padding:120px 60px;position:relative}
+.hero::after{content:'';position:absolute;top:0;right:0;width:40%;height:100%;background:radial-gradient(circle at 70% 50%,rgba(249,115,22,0.06),transparent 60%)}
+.hero-content{max-width:600px;z-index:1}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.2);border-radius:6px;color:var(--accent);font-size:12px;font-weight:600;margin-bottom:24px}
+.hero h1{font-size:clamp(32px,4.5vw,52px);font-weight:800;line-height:1.15;margin-bottom:20px}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p{font-size:17px;color:var(--muted);line-height:1.8;margin-bottom:36px}
+.btn{padding:12px 28px;font-size:14px;font-weight:600;border:none;cursor:pointer;border-radius:6px;transition:all 0.2s;text-decoration:none;display:inline-block}
+.btn-accent{background:var(--accent);color:white}
+.btn-accent:hover{background:var(--accent2)}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border);margin-left:12px;border-radius:6px}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+
+.sec-label{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:8px}
+.sec-title{font-size:32px;font-weight:800;margin-bottom:12px}
+.sec-desc{color:var(--muted);font-size:15px;max-width:560px;margin-bottom:48px;line-height:1.8}
+
+/* Pipeline Dashboard */
+.pipeline-section{padding:100px 40px;max-width:1400px;margin:0 auto}
+.pipeline-board{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:40px}
+.pipeline-col{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px}
+.pipeline-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.pipeline-stage{font-size:13px;font-weight:700}
+.pipeline-count{font-size:11px;color:var(--muted);background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:4px}
+.pipeline-value{font-size:20px;font-weight:800;color:var(--accent);margin-bottom:4px}
+.pipeline-conv{font-size:11px;color:var(--muted);margin-bottom:16px}
+.pipeline-deals{display:flex;flex-direction:column;gap:8px}
+.deal-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:12px;cursor:pointer;transition:all 0.2s}
+.deal-card:hover{border-color:var(--accent);background:rgba(249,115,22,0.05)}
+.deal-name{font-size:13px;font-weight:600;margin-bottom:2px}
+.deal-amount{font-size:12px;color:var(--accent)}
+.deal-days{font-size:11px;color:var(--muted)}
+
+/* Rep Leaderboard */
+.leader-section{padding:80px 40px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.leader-inner{max-width:1200px;margin:0 auto}
+.leader-table{width:100%;border-collapse:collapse;margin-top:40px}
+.leader-table th{text-align:left;padding:12px 16px;border-bottom:2px solid var(--border);color:var(--muted);font-size:11px;letter-spacing:1px;text-transform:uppercase;font-weight:600}
+.leader-table td{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:14px}
+.leader-table tr:hover td{background:rgba(249,115,22,0.03)}
+.leader-rank{font-size:18px;font-weight:800;color:var(--accent);width:40px}
+.leader-name{display:flex;align-items:center;gap:10px}
+.leader-avatar{width:32px;height:32px;border-radius:50%;background:rgba(249,115,22,0.15);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--accent)}
+.leader-bar{height:6px;background:rgba(255,255,255,0.06);border-radius:3px;min-width:120px}
+.leader-fill{height:100%;background:var(--accent);border-radius:3px;transition:width 1.5s ease}
+.leader-pct{font-weight:700;color:var(--green)}
+
+/* Coaching Impact */
+.coaching-section{padding:100px 40px;max-width:1400px;margin:0 auto}
+.coaching-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:40px}
+.coach-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:28px;transition:all 0.3s}
+.coach-card:hover{transform:translateY(-4px);border-color:var(--accent)}
+.coach-icon{font-size:28px;margin-bottom:12px}
+.coach-title{font-size:16px;font-weight:700;margin-bottom:8px}
+.coach-desc{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:16px}
+.coach-stat{display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid var(--border);font-size:13px}
+.coach-stat span:last-child{font-weight:700;color:var(--accent)}
+
+/* Before/After */
+.ba-section{padding:80px 40px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.ba-inner{max-width:1000px;margin:0 auto}
+.ba-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:40px}
+.ba-col{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:28px}
+.ba-col h3{font-size:16px;font-weight:700;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.ba-col.before h3{color:var(--red)}
+.ba-col.after h3{color:var(--green)}
+.ba-row{display:flex;justify-content:space-between;padding:8px 0;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.03)}
+.ba-row span:last-child{font-weight:700}
+
+/* CRM Integration */
+.crm-section{padding:100px 40px;max-width:1200px;margin:0 auto}
+.crm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:40px}
+.crm-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:24px;text-align:center;transition:all 0.3s;cursor:pointer}
+.crm-card:hover{border-color:var(--accent);transform:translateY(-3px)}
+.crm-icon{font-size:32px;margin-bottom:8px}
+.crm-name{font-size:14px;font-weight:700;margin-bottom:4px}
+.crm-desc{font-size:12px;color:var(--muted)}
+
+/* Metrics Bar */
+.metrics-bar{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:rgba(249,115,22,0.03)}
+.metric-item{padding:40px 24px;text-align:center;border-right:1px solid var(--border)}
+.metric-item:last-child{border-right:none}
+.metric-num{font-size:36px;font-weight:800;color:var(--accent)}
+.metric-label{font-size:12px;color:var(--muted);margin-top:4px;letter-spacing:0.5px}
+
+/* Sales Playbook */
+.playbook-section{padding:100px 40px;max-width:1200px;margin:0 auto}
+.play-list{margin-top:40px}
+.play-item{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden;cursor:pointer;transition:all 0.3s}
+.play-item:hover{border-color:var(--accent)}
+.play-header{display:flex;align-items:center;padding:20px 24px;gap:16px}
+.play-num{width:36px;height:36px;border-radius:50%;background:rgba(249,115,22,0.1);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--accent);font-size:14px;flex-shrink:0}
+.play-info{flex:1}
+.play-title{font-size:15px;font-weight:700}
+.play-sub{font-size:12px;color:var(--muted)}
+.play-impact{text-align:right}
+.play-impact-val{font-size:18px;font-weight:700;color:var(--green)}
+.play-impact-label{font-size:11px;color:var(--muted)}
+.play-detail{padding:0 24px 20px;display:none;border-top:1px solid var(--border);padding-top:16px}
+.play-detail.open{display:block}
+.play-detail p{font-size:13px;color:var(--muted);line-height:1.7}
+
+/* CTA */
+.cta{padding:120px 40px;text-align:center}
+.cta h2{font-size:36px;font-weight:800;margin-bottom:16px}
+.cta h2 em{font-style:normal;color:var(--accent)}
+.cta p{font-size:16px;color:var(--muted);max-width:500px;margin:0 auto 32px;line-height:1.8}
+
+footer{padding:40px;text-align:center;font-size:12px;color:var(--muted);border-top:1px solid var(--border)}
+
+@media(max-width:900px){
+.pipeline-board{grid-template-columns:1fr 1fr}
+.coaching-grid,.crm-grid{grid-template-columns:1fr 1fr}
+.ba-grid{grid-template-columns:1fr}
+.metrics-bar{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">GO2 <span>Sales Intelligence</span></div>
+  <div class="nav-links">
+    <a href="#pipeline">Pipeline</a>
+    <a href="#leaderboard">Leaderboard</a>
+    <a href="#coaching">Coaching</a>
+    <a href="#playbook">Playbook</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">&#127942; Built for Sales Leaders</div>
+    <h1>Make every rep perform like your <em>best rep</em>.</h1>
+    <p>Go2 studies what your top performers do differently, then coaches every rep to replicate it. Pipeline velocity up 40%. Win rate up 23%. Average deal size up 18%.</p>
+    <a class="btn btn-accent" href="#pipeline">See Your Pipeline</a>
+    <a class="btn btn-ghost" href="#coaching">Rep Coaching Demo</a>
+  </div>
+</section>
+
+<div class="metrics-bar">
+  <div class="metric-item"><div class="metric-num">+40%</div><div class="metric-label">Pipeline Velocity</div></div>
+  <div class="metric-item"><div class="metric-num">+23%</div><div class="metric-label">Win Rate</div></div>
+  <div class="metric-item"><div class="metric-num">+18%</div><div class="metric-label">Avg Deal Size</div></div>
+  <div class="metric-item"><div class="metric-num">-34%</div><div class="metric-label">Sales Cycle Length</div></div>
+</div>
+
+<section class="pipeline-section" id="pipeline">
+  <div class="sec-label">Pipeline Intelligence</div>
+  <div class="sec-title">Your pipeline, with AI superpowers.</div>
+  <div class="sec-desc">Every deal gets an AI health score, risk assessment, and recommended next action. No more guessing which deals are real.</div>
+
+  <div class="pipeline-board">
+    <div class="pipeline-col">
+      <div class="pipeline-header"><span class="pipeline-stage">Prospecting</span><span class="pipeline-count">23</span></div>
+      <div class="pipeline-value">$2.3M</div>
+      <div class="pipeline-conv">Conv rate: 45%</div>
+      <div class="pipeline-deals">
+        <div class="deal-card"><div class="deal-name">Acme Corp</div><div class="deal-amount">$340K</div><div class="deal-days">3 days in stage</div></div>
+        <div class="deal-card"><div class="deal-name">TechStart Inc</div><div class="deal-amount">$120K</div><div class="deal-days">1 day in stage</div></div>
+        <div class="deal-card"><div class="deal-name">GlobalCo</div><div class="deal-amount">$580K</div><div class="deal-days">5 days in stage</div></div>
+      </div>
+    </div>
+    <div class="pipeline-col">
+      <div class="pipeline-header"><span class="pipeline-stage">Qualified</span><span class="pipeline-count">18</span></div>
+      <div class="pipeline-value">$4.1M</div>
+      <div class="pipeline-conv">Conv rate: 62%</div>
+      <div class="pipeline-deals">
+        <div class="deal-card"><div class="deal-name">MegaBank</div><div class="deal-amount">$890K</div><div class="deal-days">7 days in stage</div></div>
+        <div class="deal-card"><div class="deal-name">HealthPlus</div><div class="deal-amount">$220K</div><div class="deal-days">12 days in stage</div></div>
+      </div>
+    </div>
+    <div class="pipeline-col">
+      <div class="pipeline-header"><span class="pipeline-stage">Demo/POC</span><span class="pipeline-count">12</span></div>
+      <div class="pipeline-value">$3.8M</div>
+      <div class="pipeline-conv">Conv rate: 71%</div>
+      <div class="pipeline-deals">
+        <div class="deal-card"><div class="deal-name">RetailMax</div><div class="deal-amount">$650K</div><div class="deal-days">4 days in stage</div></div>
+        <div class="deal-card" style="border-color:var(--red)"><div class="deal-name">DataDrive &#9888;</div><div class="deal-amount">$430K</div><div class="deal-days" style="color:var(--red)">21 days - AT RISK</div></div>
+      </div>
+    </div>
+    <div class="pipeline-col">
+      <div class="pipeline-header"><span class="pipeline-stage">Negotiation</span><span class="pipeline-count">8</span></div>
+      <div class="pipeline-value">$2.9M</div>
+      <div class="pipeline-conv">Conv rate: 84%</div>
+      <div class="pipeline-deals">
+        <div class="deal-card"><div class="deal-name">FinServ Group</div><div class="deal-amount">$780K</div><div class="deal-days">6 days in stage</div></div>
+      </div>
+    </div>
+    <div class="pipeline-col">
+      <div class="pipeline-header"><span class="pipeline-stage">Closing</span><span class="pipeline-count">5</span></div>
+      <div class="pipeline-value">$1.8M</div>
+      <div class="pipeline-conv">Conv rate: 92%</div>
+      <div class="pipeline-deals">
+        <div class="deal-card" style="border-color:var(--green)"><div class="deal-name">CloudFirst &#10003;</div><div class="deal-amount">$560K</div><div class="deal-days" style="color:var(--green)">Contract out</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="leader-section" id="leaderboard">
+  <div class="leader-inner">
+    <div class="sec-label">Rep Performance</div>
+    <div class="sec-title">Your team, ranked by what matters.</div>
+    <div class="sec-desc">Not just by quota attainment. By the behaviors that predict future success.</div>
+
+    <table class="leader-table">
+      <thead>
+        <tr><th>#</th><th>Rep</th><th>Quota Attainment</th><th>Progress</th><th>Pipeline</th><th>AI Score</th><th>Coaching Impact</th></tr>
+      </thead>
+      <tbody id="leaderBody">
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="coaching-section" id="coaching">
+  <div class="sec-label">AI Sales Coaching</div>
+  <div class="sec-title">Every rep gets a world-class coach.</div>
+  <div class="sec-desc">Go2 analyzes what your top performers do differently and coaches everyone else to match. It's like cloning your best rep.</div>
+
+  <div class="coaching-grid">
+    <div class="coach-card">
+      <div class="coach-icon">&#128172;</div>
+      <div class="coach-title">Call Analysis</div>
+      <div class="coach-desc">AI analyzes call patterns, talk-to-listen ratios, objection handling, and question quality. Compares to your best performers.</div>
+      <div class="coach-stat"><span>Avg call score improvement</span><span>+34%</span></div>
+      <div class="coach-stat"><span>Objection handling</span><span>+47%</span></div>
+    </div>
+    <div class="coach-card">
+      <div class="coach-icon">&#128221;</div>
+      <div class="coach-title">Deal Strategy</div>
+      <div class="coach-desc">AI-powered next-best-action for every deal. "This deal stalled because you haven't engaged the CFO. Here's a talk track."</div>
+      <div class="coach-stat"><span>Deals rescued from stall</span><span>67/quarter</span></div>
+      <div class="coach-stat"><span>Multi-thread rate</span><span>+52%</span></div>
+    </div>
+    <div class="coach-card">
+      <div class="coach-icon">&#127919;</div>
+      <div class="coach-title">Skill Development</div>
+      <div class="coach-desc">Personalized skill maps for each rep. Tracks discovery, demo quality, negotiation, and closing skills with actionable improvement plans.</div>
+      <div class="coach-stat"><span>Ramp time reduction</span><span>-40%</span></div>
+      <div class="coach-stat"><span>Skills improved per rep</span><span>3.2/quarter</span></div>
+    </div>
+    <div class="coach-card">
+      <div class="coach-icon">&#128200;</div>
+      <div class="coach-title">Forecast Accuracy</div>
+      <div class="coach-desc">AI scoring replaces gut-feel forecasting. Each deal gets a probability based on actual behavior patterns, not rep optimism.</div>
+      <div class="coach-stat"><span>Forecast accuracy</span><span>94% (was 62%)</span></div>
+      <div class="coach-stat"><span>Surprise losses</span><span>-78%</span></div>
+    </div>
+    <div class="coach-card">
+      <div class="coach-icon">&#9201;</div>
+      <div class="coach-title">Time Optimization</div>
+      <div class="coach-desc">Your reps spend only 34% of time selling. Go2 automates admin work, CRM updates, and follow-up emails to reclaim selling time.</div>
+      <div class="coach-stat"><span>Selling time increase</span><span>34% to 58%</span></div>
+      <div class="coach-stat"><span>Admin time saved</span><span>8 hrs/week/rep</span></div>
+    </div>
+    <div class="coach-card">
+      <div class="coach-icon">&#128176;</div>
+      <div class="coach-title">Competitive Intel</div>
+      <div class="coach-desc">Go2 detects competitive mentions and provides real-time battle cards, win/loss analysis, and positioning recommendations.</div>
+      <div class="coach-stat"><span>Competitive win rate</span><span>+31%</span></div>
+      <div class="coach-stat"><span>Intel response time</span><span>Real-time</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="ba-section">
+  <div class="ba-inner">
+    <div class="sec-label">Impact Comparison</div>
+    <div class="sec-title">Before Go2 vs. After Go2</div>
+
+    <div class="ba-grid">
+      <div class="ba-col before">
+        <h3>Before Go2</h3>
+        <div class="ba-row"><span>Quota attainment</span><span>54%</span></div>
+        <div class="ba-row"><span>Win rate</span><span>18%</span></div>
+        <div class="ba-row"><span>Sales cycle</span><span>68 days</span></div>
+        <div class="ba-row"><span>Avg deal size</span><span>$42K</span></div>
+        <div class="ba-row"><span>Ramp time (new rep)</span><span>9 months</span></div>
+        <div class="ba-row"><span>Forecast accuracy</span><span>62%</span></div>
+        <div class="ba-row"><span>Rep selling time</span><span>34%</span></div>
+        <div class="ba-row"><span>Rep turnover</span><span>38%/year</span></div>
+      </div>
+      <div class="ba-col after">
+        <h3>After Go2</h3>
+        <div class="ba-row"><span>Quota attainment</span><span style="color:var(--green)">78%</span></div>
+        <div class="ba-row"><span>Win rate</span><span style="color:var(--green)">41%</span></div>
+        <div class="ba-row"><span>Sales cycle</span><span style="color:var(--green)">45 days</span></div>
+        <div class="ba-row"><span>Avg deal size</span><span style="color:var(--green)">$49.5K</span></div>
+        <div class="ba-row"><span>Ramp time (new rep)</span><span style="color:var(--green)">5.4 months</span></div>
+        <div class="ba-row"><span>Forecast accuracy</span><span style="color:var(--green)">94%</span></div>
+        <div class="ba-row"><span>Rep selling time</span><span style="color:var(--green)">58%</span></div>
+        <div class="ba-row"><span>Rep turnover</span><span style="color:var(--green)">19%/year</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="crm-section">
+  <div class="sec-label">Integrations</div>
+  <div class="sec-title">Works with your CRM. Not against it.</div>
+  <div class="sec-desc">Go2 enriches your existing CRM with behavioral intelligence. Auto-updates fields, logs activities, scores deals.</div>
+
+  <div class="crm-grid">
+    <div class="crm-card"><div class="crm-icon">&#9729;&#65039;</div><div class="crm-name">Salesforce</div><div class="crm-desc">Native integration</div></div>
+    <div class="crm-card"><div class="crm-icon">&#128200;</div><div class="crm-name">HubSpot</div><div class="crm-desc">Full sync</div></div>
+    <div class="crm-card"><div class="crm-icon">&#128202;</div><div class="crm-name">Gong</div><div class="crm-desc">Call enrichment</div></div>
+    <div class="crm-card"><div class="crm-icon">&#128172;</div><div class="crm-name">Outreach</div><div class="crm-desc">Sequence optimization</div></div>
+    <div class="crm-card"><div class="crm-icon">&#128231;</div><div class="crm-name">Salesloft</div><div class="crm-desc">Activity sync</div></div>
+    <div class="crm-card"><div class="crm-icon">&#128269;</div><div class="crm-name">ZoomInfo</div><div class="crm-desc">Prospect enrichment</div></div>
+    <div class="crm-card"><div class="crm-icon">&#128187;</div><div class="crm-name">Clari</div><div class="crm-desc">Forecast overlay</div></div>
+    <div class="crm-card"><div class="crm-icon">&#128295;</div><div class="crm-name">Custom API</div><div class="crm-desc">Any CRM via REST</div></div>
+  </div>
+</section>
+
+<section class="playbook-section" id="playbook">
+  <div class="sec-label">Sales Playbook</div>
+  <div class="sec-title">AI-generated playbooks from your best reps.</div>
+  <div class="sec-desc">Go2 studies your top performers and auto-generates playbooks that work. Click to explore.</div>
+
+  <div class="play-list">
+    <div class="play-item" onclick="togglePlay(this)">
+      <div class="play-header">
+        <div class="play-num">1</div>
+        <div class="play-info"><div class="play-title">Discovery Call Framework</div><div class="play-sub">Based on 340 top-performer calls</div></div>
+        <div class="play-impact"><div class="play-impact-val">+28%</div><div class="play-impact-label">conversion rate</div></div>
+      </div>
+      <div class="play-detail"><p>Your top reps ask 4.2 discovery questions on average (vs 1.8 for bottom performers). They spend 62% of the call listening (vs 38%). They identify 2.3 stakeholders per call. Go2 coaches all reps to this benchmark with real-time call guidance and post-call scoring.</p></div>
+    </div>
+    <div class="play-item" onclick="togglePlay(this)">
+      <div class="play-header">
+        <div class="play-num">2</div>
+        <div class="play-info"><div class="play-title">Multi-threading Strategy</div><div class="play-sub">Based on 890 won deals</div></div>
+        <div class="play-impact"><div class="play-impact-val">3.2x</div><div class="play-impact-label">win rate</div></div>
+      </div>
+      <div class="play-detail"><p>Deals with 3+ stakeholders engaged close at 3.2x the rate of single-thread deals. Your top reps engage the economic buyer by day 14 (vs day 38 for average reps). Go2 tracks stakeholder engagement and prompts reps to multi-thread at the right moment.</p></div>
+    </div>
+    <div class="play-item" onclick="togglePlay(this)">
+      <div class="play-header">
+        <div class="play-num">3</div>
+        <div class="play-info"><div class="play-title">Follow-up Cadence</div><div class="play-sub">Based on 2,100 deal progressions</div></div>
+        <div class="play-impact"><div class="play-impact-val">-12d</div><div class="play-impact-label">cycle time</div></div>
+      </div>
+      <div class="play-detail"><p>Top reps follow up within 2 hours of demos (vs 26 hours average). They send 3 value-add touches before the next meeting. Go2 auto-generates personalized follow-ups and reminds reps to send them at optimal times based on prospect engagement patterns.</p></div>
+    </div>
+    <div class="play-item" onclick="togglePlay(this)">
+      <div class="play-header">
+        <div class="play-num">4</div>
+        <div class="play-info"><div class="play-title">Competitive Positioning</div><div class="play-sub">Based on 560 competitive deals</div></div>
+        <div class="play-impact"><div class="play-impact-val">+31%</div><div class="play-impact-label">competitive win rate</div></div>
+      </div>
+      <div class="play-detail"><p>Go2 detects competitive mentions in real-time and surfaces battle cards. Top reps acknowledge the competitor, then redirect to unique value (3-step framework). Win rate against top 3 competitors improved from 34% to 65% after Go2 coaching.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="sec-label">Close the Deal</div>
+  <h2>Your team is leaving <em>millions</em> on the table.</h2>
+  <p>See what Go2 finds in your first week. Most teams see their first coaching wins in 48 hours.</p>
+  <a class="btn btn-accent" href="#">Start Sales Pilot</a>
+  <a class="btn btn-ghost" href="#">Download Sales Leader Guide</a>
+</section>
+
+<footer>&copy; 2026 Go2. Sales intelligence that closes deals.</footer>
+
+<script>
+// Leaderboard
+const reps=[
+  {name:'Alex Rivera',initials:'AR',quota:142,pipeline:'$1.8M',ai:94},
+  {name:'Jordan Chen',initials:'JC',quota:128,pipeline:'$1.4M',ai:91},
+  {name:'Sam Patel',initials:'SP',quota:115,pipeline:'$1.2M',ai:88},
+  {name:'Morgan Kim',initials:'MK',quota:98,pipeline:'$890K',ai:82},
+  {name:'Taylor Brooks',initials:'TB',quota:87,pipeline:'$720K',ai:79},
+  {name:'Casey Lee',initials:'CL',quota:74,pipeline:'$560K',ai:71},
+  {name:'Drew Wilson',initials:'DW',quota:62,pipeline:'$430K',ai:65},
+  {name:'Jamie Torres',initials:'JT',quota:48,pipeline:'$340K',ai:58},
+];
+const tbody=document.getElementById('leaderBody');
+reps.forEach((r,i)=>{
+  const tr=document.createElement('tr');
+  const impactPct=Math.min(100,Math.round((r.quota-48)/(142-48)*100));
+  tr.innerHTML=`
+    <td class="leader-rank">${i+1}</td>
+    <td><div class="leader-name"><div class="leader-avatar">${r.initials}</div><span>${r.name}</span></div></td>
+    <td class="leader-pct">${r.quota}%</td>
+    <td><div class="leader-bar"><div class="leader-fill" style="width:0%" data-w="${r.quota/1.42}%"></div></div></td>
+    <td>${r.pipeline}</td>
+    <td>${r.ai}/100</td>
+    <td style="color:var(--green)">+${10+i*3}%</td>
+  `;
+  tbody.appendChild(tr);
+});
+
+// Animate bars
+const lObs=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.querySelectorAll('.leader-fill').forEach(f=>{
+        setTimeout(()=>{f.style.width=f.dataset.w},200);
+      });
+    }
+  });
+},{threshold:0.2});
+document.querySelectorAll('.leader-section').forEach(el=>lObs.observe(el));
+
+// Playbook toggle
+function togglePlay(item){
+  const detail=item.querySelector('.play-detail');
+  const isOpen=detail.classList.contains('open');
+  document.querySelectorAll('.play-detail').forEach(d=>d.classList.remove('open'));
+  if(!isOpen)detail.classList.add('open');
+}
+
+// Smooth scroll
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    e.preventDefault();
+    const t=document.querySelector(a.getAttribute('href'));
+    if(t)t.scrollIntoView({behavior:'smooth'});
+  });
+});
+</script>
+</body>
+</html>

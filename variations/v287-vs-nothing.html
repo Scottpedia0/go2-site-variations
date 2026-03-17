@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Cost of Doing Nothing | Go2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--card:#12121a;--border:#1e1e2e;--accent:#6366f1;--accent2:#ec4899;--green:#10b981;--red:#ef4444;--orange:#f59e0b;--text:#e2e8f0;--muted:#64748b}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.6}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+
+/* Hero with burning money counter */
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(239,68,68,0.1),transparent 60%)}
+.hero-content{position:relative;z-index:1}
+.hero h1{font-size:clamp(2.5rem,6vw,4.5rem);font-weight:800;line-height:1.1;margin-bottom:24px}
+.gradient{background:linear-gradient(135deg,var(--red),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:1.15rem;color:var(--muted);max-width:640px;margin:0 auto 32px}
+.burn-counter{background:var(--card);border:1px solid rgba(239,68,68,0.2);border-radius:20px;padding:32px 48px;display:inline-block;margin-bottom:32px}
+.burn-label{font-size:0.85rem;color:var(--muted);margin-bottom:8px}
+.burn-amount{font-size:clamp(2.5rem,6vw,4rem);font-weight:800;color:var(--red);font-variant-numeric:tabular-nums;min-width:300px}
+.burn-sublabel{font-size:0.85rem;color:var(--red);opacity:0.7;margin-top:4px}
+.btn{display:inline-block;padding:14px 40px;border-radius:50px;font-weight:700;font-size:1rem;transition:all 0.3s;border:none;cursor:pointer}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(99,102,241,0.3)}
+.btn-danger{background:linear-gradient(135deg,var(--red),var(--orange));color:#fff;margin-right:12px}
+
+.section{padding:100px 0}
+.section-title{font-size:2.5rem;font-weight:800;text-align:center;margin-bottom:16px}
+.section-sub{text-align:center;color:var(--muted);font-size:1.1rem;margin-bottom:60px;max-width:640px;margin-left:auto;margin-right:auto}
+
+/* Calculator */
+.calc-section{padding:80px 0}
+.calc-container{max-width:900px;margin:0 auto;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:48px}
+.calc-header{text-align:center;margin-bottom:32px}
+.calc-header h3{font-size:1.8rem;font-weight:700;margin-bottom:8px}
+.calc-inputs{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-bottom:32px}
+.calc-group label{display:block;font-size:0.85rem;font-weight:600;margin-bottom:8px}
+.calc-group input{width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,0.03);color:var(--text);font-size:1.1rem;text-align:center}
+.calc-group input:focus{outline:none;border-color:var(--accent)}
+.calc-group .helper{font-size:0.75rem;color:var(--muted);margin-top:4px;text-align:center}
+
+.calc-timeline{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-bottom:32px}
+.calc-period{padding:24px;border-radius:16px;text-align:center;transition:all 0.3s}
+.calc-period:hover{transform:translateY(-4px)}
+.period-1{background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.15)}
+.period-3{background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.15)}
+.period-5{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2)}
+.period-label{font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px}
+.period-value{font-size:2rem;font-weight:800;margin-bottom:4px}
+.period-1 .period-value{color:var(--orange)}
+.period-3 .period-value{color:var(--red)}
+.period-5 .period-value{color:var(--red)}
+.period-detail{font-size:0.8rem;color:var(--muted)}
+
+.calc-go2{padding:24px;border-radius:16px;background:linear-gradient(135deg,rgba(16,185,129,0.05),rgba(99,102,241,0.05));border:1px solid rgba(16,185,129,0.2);text-align:center}
+.calc-go2 .period-label{color:var(--green)}
+.calc-go2 .period-value{color:var(--green);font-size:2.5rem}
+
+/* What You're Losing */
+.losses{padding:80px 0}
+.loss-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1000px;margin:0 auto}
+.loss-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;transition:all 0.3s;position:relative;overflow:hidden}
+.loss-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.loss-card:nth-child(1)::before{background:var(--red)}
+.loss-card:nth-child(2)::before{background:var(--orange)}
+.loss-card:nth-child(3)::before{background:var(--accent2)}
+.loss-card:nth-child(4)::before{background:var(--red)}
+.loss-card:nth-child(5)::before{background:var(--orange)}
+.loss-card:nth-child(6)::before{background:var(--accent2)}
+.loss-card:hover{border-color:var(--red);transform:translateY(-4px)}
+.loss-icon{font-size:2rem;margin-bottom:12px}
+.loss-title{font-weight:700;margin-bottom:8px;color:var(--red)}
+.loss-stat{font-size:1.5rem;font-weight:800;margin-bottom:8px}
+.loss-desc{font-size:0.85rem;color:var(--muted);line-height:1.6}
+
+/* Compounding */
+.compound{padding:80px 0}
+.compound-visual{max-width:800px;margin:0 auto}
+.compound-bar-container{margin-bottom:24px}
+.compound-label{display:flex;justify-content:space-between;margin-bottom:8px}
+.compound-label span{font-size:0.85rem}
+.compound-label .year{font-weight:600}
+.compound-label .amount{font-weight:700;color:var(--red)}
+.compound-bar{height:40px;background:rgba(255,255,255,0.03);border-radius:8px;overflow:hidden;position:relative}
+.compound-fill{height:100%;border-radius:8px;transition:width 1.5s ease;display:flex;align-items:center;padding-left:12px;font-size:0.8rem;font-weight:600;color:rgba(255,255,255,0.8)}
+.compound-fill.y1{background:linear-gradient(90deg,rgba(245,158,11,0.6),var(--orange))}
+.compound-fill.y2{background:linear-gradient(90deg,rgba(239,68,68,0.5),rgba(239,68,68,0.7))}
+.compound-fill.y3{background:linear-gradient(90deg,rgba(239,68,68,0.6),var(--red))}
+.compound-fill.y4{background:linear-gradient(90deg,rgba(239,68,68,0.7),rgba(239,68,68,0.9))}
+.compound-fill.y5{background:linear-gradient(90deg,var(--red),#dc2626)}
+
+/* Urgency */
+.urgency{padding:80px 0;text-align:center}
+.urgency-card{max-width:800px;margin:0 auto;background:linear-gradient(135deg,rgba(239,68,68,0.06),rgba(245,158,11,0.04));border:1px solid rgba(239,68,68,0.15);border-radius:24px;padding:60px 48px}
+.urgency h2{font-size:2rem;font-weight:800;margin-bottom:16px;color:var(--red)}
+.urgency p{color:var(--muted);font-size:1.05rem;margin-bottom:24px;max-width:500px;margin-left:auto;margin-right:auto}
+.urgency-timer{font-size:1.2rem;color:var(--orange);margin-bottom:32px}
+.urgency-timer #pageWaste{font-size:1.8rem;font-weight:800;color:var(--red)}
+
+.cta{padding:100px 0;text-align:center}
+.cta h2{font-size:2.5rem;font-weight:800;margin-bottom:16px}
+.cta p{color:var(--muted);font-size:1.1rem;margin-bottom:40px}
+
+@media(max-width:768px){
+.calc-inputs,.calc-timeline,.loss-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<section class="hero">
+<div class="hero-content">
+<h1>The Cost of<br><span class="gradient">Doing Nothing</span></h1>
+<p>Every hour without Go2, your company bleeds money through inefficiency, repetitive work, lost knowledge, and generic AI. This counter is running right now.</p>
+<div class="burn-counter">
+<div class="burn-label">While you've been on this page, your company has wasted</div>
+<div class="burn-amount" id="burnCounter">$0.00</div>
+<div class="burn-sublabel">based on a 100-person company (adjust below)</div>
+</div>
+<div>
+<button class="btn btn-primary" onclick="document.querySelector('.calc-section').scrollIntoView({behavior:'smooth'})">Calculate Your Waste</button>
+</div>
+</div>
+</section>
+
+<section class="calc-section">
+<div class="container">
+<div class="calc-container">
+<div class="calc-header">
+<h3>Your Waste Calculator</h3>
+<p style="color:var(--muted);font-size:0.9rem">Enter your numbers. See what inaction is costing you.</p>
+</div>
+<div class="calc-inputs">
+<div class="calc-group">
+<label>Number of Employees</label>
+<input type="number" id="calcEmp" value="100" onchange="recalc()">
+<div class="helper">Knowledge workers</div>
+</div>
+<div class="calc-group">
+<label>Average Salary</label>
+<input type="number" id="calcSal" value="65000" onchange="recalc()">
+<div class="helper">Annual, fully loaded</div>
+</div>
+<div class="calc-group">
+<label>% Time Wasted</label>
+<input type="number" id="calcWaste" value="28" min="1" max="80" onchange="recalc()">
+<div class="helper">Industry avg: 28%</div>
+</div>
+</div>
+<div class="calc-timeline">
+<div class="calc-period period-1">
+<div class="period-label">1 Year Waste</div>
+<div class="period-value" id="waste1">$1,820,000</div>
+<div class="period-detail">That's <span id="waste1cars">36</span> cars.</div>
+</div>
+<div class="calc-period period-3">
+<div class="period-label">3 Year Waste</div>
+<div class="period-value" id="waste3">$5,733,000</div>
+<div class="period-detail">With compounding inefficiency</div>
+</div>
+<div class="calc-period period-5">
+<div class="period-label">5 Year Waste</div>
+<div class="period-value" id="waste5">$10,192,000</div>
+<div class="period-detail">Enough to fund a competitor</div>
+</div>
+</div>
+<div class="calc-go2">
+<div class="period-label">Go2 Would Save You</div>
+<div class="period-value" id="go2Save">$7,344,000</div>
+<div class="period-detail" id="go2SaveDetail">over 5 years (after Go2 costs), recovering 72% of waste through AI coaching and automation</div>
+</div>
+</div>
+</div>
+</section>
+
+<section class="losses">
+<div class="container">
+<h2 class="section-title">What You're Losing Every Day</h2>
+<p class="section-sub">Inaction isn't neutral. It's actively destructive. Here's what's happening right now.</p>
+<div class="loss-grid">
+<div class="loss-card"><div class="loss-icon">🔄</div><div class="loss-title">Repetitive Tasks</div><div class="loss-stat">2.5 hrs/day/person</div><div class="loss-desc">Your employees spend 2.5 hours every day on tasks that could be automated. That's 31% of their productive time doing robot work.</div></div>
+<div class="loss-card"><div class="loss-icon">🧠</div><div class="loss-title">Knowledge Loss</div><div class="loss-stat">$50K per departure</div><div class="loss-desc">When an employee leaves, their tribal knowledge goes with them. New hires take 8-12 months to reach full productivity without documentation.</div></div>
+<div class="loss-card"><div class="loss-icon">🤖</div><div class="loss-title">Failed AI Adoption</div><div class="loss-stat">95% failure rate</div><div class="loss-desc">Companies buying ChatGPT licenses without context see 95% failure to deliver expected value. Generic AI = generic results.</div></div>
+<div class="loss-card"><div class="loss-icon">📋</div><div class="loss-title">No Documentation</div><div class="loss-stat">40 hrs/mo recreating</div><div class="loss-desc">Without auto-documentation, teams spend 40+ hours per month recreating processes, answering the same questions, reinventing the wheel.</div></div>
+<div class="loss-card"><div class="loss-icon">📉</div><div class="loss-title">Productivity Plateau</div><div class="loss-stat">0% improvement/year</div><div class="loss-desc">Without AI coaching, productivity doesn't improve. Your competitors who use AI coaching see 15-32% gains. The gap widens every quarter.</div></div>
+<div class="loss-card"><div class="loss-icon">⏰</div><div class="loss-title">Slow Onboarding</div><div class="loss-stat">8-12 months to ramp</div><div class="loss-desc">Without AI-guided onboarding and living SOPs, new hires take 3x longer to become productive. That's 6 months of underperformance per hire.</div></div>
+</div>
+</div>
+</section>
+
+<section class="compound">
+<div class="container">
+<h2 class="section-title">The Waste Compounds</h2>
+<p class="section-sub">Inefficiency doesn't stay flat. It compounds as processes ossify, knowledge leaks, and competitors accelerate.</p>
+<div class="compound-visual">
+<div class="compound-bar-container" data-year="1">
+<div class="compound-label"><span class="year">Year 1</span><span class="amount" id="cy1">$1.8M wasted</span></div>
+<div class="compound-bar"><div class="compound-fill y1" style="width:0" data-width="20%">Repetitive tasks + lost knowledge</div></div>
+</div>
+<div class="compound-bar-container" data-year="2">
+<div class="compound-label"><span class="year">Year 2</span><span class="amount" id="cy2">$2.0M wasted</span></div>
+<div class="compound-bar"><div class="compound-fill y2" style="width:0" data-width="35%">+ stale processes + competitor gap</div></div>
+</div>
+<div class="compound-bar-container" data-year="3">
+<div class="compound-label"><span class="year">Year 3</span><span class="amount" id="cy3">$2.3M wasted</span></div>
+<div class="compound-bar"><div class="compound-fill y3" style="width:0" data-width="50%">+ turnover costs + AI failure</div></div>
+</div>
+<div class="compound-bar-container" data-year="4">
+<div class="compound-label"><span class="year">Year 4</span><span class="amount" id="cy4">$2.6M wasted</span></div>
+<div class="compound-bar"><div class="compound-fill y4" style="width:0" data-width="70%">+ market share loss + talent drain</div></div>
+</div>
+<div class="compound-bar-container" data-year="5">
+<div class="compound-label"><span class="year">Year 5</span><span class="amount" id="cy5">$3.0M wasted</span></div>
+<div class="compound-bar"><div class="compound-fill y5" style="width:0" data-width="100%">+ existential risk from AI-enabled competitors</div></div>
+</div>
+</div>
+</div>
+</section>
+
+<section class="urgency">
+<div class="container">
+<div class="urgency-card">
+<h2>Every Minute Counts</h2>
+<p>Since you started reading this page...</p>
+<div class="urgency-timer">Your company has wasted approximately <span id="pageWaste">$0</span></div>
+<p>That's not a scare tactic. That's math. 28% of employee time x your payroll = real money burning every second.</p>
+<button class="btn btn-primary" style="margin-top:16px">Stop the Bleeding — Start Go2</button>
+</div>
+</div>
+</section>
+
+<section class="cta">
+<div class="container">
+<h2>The Best Time to Start Was Yesterday.<br>The Second Best Is <span class="gradient">Right Now</span>.</h2>
+<p>$15/user/month. 89% satisfaction. 340% ROI. 2M+ workers already saving time, knowledge, and money.</p>
+<button class="btn btn-primary">Start Go2 Today</button>
+<p style="margin-top:16px;font-size:0.85rem;color:var(--muted)">Every day you wait costs you more than Go2 ever will.</p>
+</div>
+</section>
+
+<script>
+let emp=100,sal=65000,wastePct=28;
+let pageStart=Date.now();
+const wastePerSec=()=>emp*sal*wastePct/100/(365*24*3600);
+
+function recalc(){
+emp=parseInt(document.getElementById('calcEmp').value)||100;
+sal=parseInt(document.getElementById('calcSal').value)||65000;
+wastePct=parseInt(document.getElementById('calcWaste').value)||28;
+const annual=emp*sal*wastePct/100;
+const y1=annual;
+const y3=annual*(1+1.1+1.1*1.1);
+const y5=annual*(1+1.1+1.21+1.331+1.4641);
+document.getElementById('waste1').textContent='$'+Math.round(y1).toLocaleString();
+document.getElementById('waste3').textContent='$'+Math.round(y3).toLocaleString();
+document.getElementById('waste5').textContent='$'+Math.round(y5).toLocaleString();
+document.getElementById('waste1cars').textContent=Math.round(y1/50000);
+// Go2 saves ~72% of waste, minus Go2 cost
+const go2Cost5=emp*15*12*5;
+const saved5=y5*0.72-go2Cost5;
+document.getElementById('go2Save').textContent='$'+Math.round(saved5).toLocaleString();
+document.getElementById('go2SaveDetail').textContent=`over 5 years (after $${go2Cost5.toLocaleString()} Go2 cost), recovering 72% of waste through AI coaching and automation`;
+// Update compound bars
+const years=[y1,y1*1.1,y1*1.21,y1*1.331,y1*1.4641];
+['cy1','cy2','cy3','cy4','cy5'].forEach((id,i)=>{
+document.getElementById(id).textContent='$'+(years[i]/1e6).toFixed(1)+'M wasted';
+});
+}
+recalc();
+
+// Burn counter
+function updateBurn(){
+const elapsed=(Date.now()-pageStart)/1000;
+const wasted=wastePerSec()*elapsed;
+document.getElementById('burnCounter').textContent='$'+wasted.toFixed(2);
+document.getElementById('pageWaste').textContent='$'+wasted.toFixed(2);
+requestAnimationFrame(updateBurn);
+}
+updateBurn();
+
+// Animate compound bars
+const compoundObs=new IntersectionObserver((entries)=>{
+entries.forEach(entry=>{
+if(entry.isIntersecting){
+entry.target.querySelectorAll('.compound-fill').forEach(bar=>{
+setTimeout(()=>{bar.style.width=bar.dataset.width},100);
+});
+compoundObs.unobserve(entry.target);
+}
+});
+},{threshold:0.2});
+compoundObs.observe(document.querySelector('.compound-visual'));
+</script>
+</body>
+</html>

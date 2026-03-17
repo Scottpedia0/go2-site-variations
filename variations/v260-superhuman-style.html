@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Unreasonably Fast Work Intelligence</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0d0d0d;
+  --bg-elevated: #141414;
+  --bg-surface: #1a1a1a;
+  --bg-hover: #222222;
+  --border: #2a2a2a;
+  --border-focus: #444444;
+  --text: #f5f5f5;
+  --text-secondary: #999999;
+  --text-muted: #666666;
+  --accent: #ff6b35;
+  --accent-dim: #e55a2b;
+  --accent-glow: rgba(255, 107, 53, 0.12);
+  --gold: #ffd700;
+  --green: #34d399;
+  --blue: #60a5fa;
+  --purple: #a78bfa;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* Nav */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: 52px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(13,13,13,0.9);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: -0.03em;
+}
+
+.nav-logo-mark {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: linear-gradient(135deg, var(--accent), #ff8f65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nav-links a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: 5px;
+  transition: all 0.15s;
+}
+
+.nav-links a:hover { color: var(--text-secondary); }
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.btn-ghost { background: transparent; color: var(--text-muted); }
+.btn-ghost:hover { color: var(--text-secondary); }
+
+.btn-accent { background: var(--accent); color: white; font-weight: 600; }
+.btn-accent:hover { background: var(--accent-dim); }
+
+.btn-outline {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-outline:hover { border-color: var(--border-focus); }
+
+.btn-lg { padding: 12px 24px; font-size: 15px; }
+
+/* Keyboard shortcut badges */
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1;
+}
+
+/* Hero */
+.hero {
+  padding: 180px 24px 100px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -60%);
+  width: 800px;
+  height: 500px;
+  background: radial-gradient(ellipse at center, var(--accent-glow), transparent 70%);
+  pointer-events: none;
+}
+
+.hero-speed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 6px;
+  border-radius: 100px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 36px;
+  animation: fadeInDown 0.6s ease both;
+}
+
+.speed-indicator {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border-radius: 100px;
+  background: var(--accent-glow);
+  color: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+
+.speed-bar {
+  width: 3px;
+  border-radius: 1px;
+  background: var(--accent);
+  animation: speedPulse 1.5s ease-in-out infinite;
+}
+
+.speed-bar:nth-child(1) { height: 6px; animation-delay: 0s; }
+.speed-bar:nth-child(2) { height: 10px; animation-delay: 0.15s; }
+.speed-bar:nth-child(3) { height: 14px; animation-delay: 0.3s; }
+.speed-bar:nth-child(4) { height: 8px; animation-delay: 0.45s; }
+
+@keyframes speedPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.hero h1 {
+  font-size: clamp(52px, 8vw, 84px);
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 1.0;
+  margin-bottom: 24px;
+  animation: fadeInUp 0.8s ease 0.1s both;
+}
+
+.hero h1 .accent { color: var(--accent); }
+
+.hero-sub {
+  font-size: 18px;
+  color: var(--text-secondary);
+  max-width: 520px;
+  margin: 0 auto 40px;
+  font-weight: 400;
+  line-height: 1.6;
+  animation: fadeInUp 0.8s ease 0.2s both;
+}
+
+.hero-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  animation: fadeInUp 0.8s ease 0.3s both;
+}
+
+.hero-shortcut-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  animation: fadeInUp 0.8s ease 0.4s both;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Command Palette */
+.cmd-trigger {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 90;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.cmd-trigger:hover { border-color: var(--border-focus); color: var(--text-secondary); }
+
+.cmd-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(8px);
+  z-index: 200;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 16vh;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.cmd-overlay.active { opacity: 1; pointer-events: all; }
+
+.cmd-palette {
+  width: 580px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  transform: scale(0.95) translateY(-10px);
+  transition: transform 0.2s ease;
+}
+
+.cmd-overlay.active .cmd-palette { transform: scale(1) translateY(0); }
+
+.cmd-search {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  gap: 10px;
+}
+
+.cmd-search svg { color: var(--text-muted); width: 18px; height: 18px; flex-shrink: 0; }
+
+.cmd-search input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+}
+
+.cmd-search input::placeholder { color: var(--text-muted); }
+
+.cmd-results { padding: 6px; max-height: 360px; overflow-y: auto; }
+
+.cmd-group {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  padding: 8px 10px 4px;
+}
+
+.cmd-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.cmd-item:hover, .cmd-item.active {
+  background: var(--accent-glow);
+  color: var(--text);
+}
+
+.cmd-item svg { width: 16px; height: 16px; opacity: 0.5; }
+.cmd-item .cmd-key { margin-left: auto; }
+
+/* Speed Metrics */
+.speed-section {
+  padding: 80px 24px;
+  position: relative;
+}
+
+.speed-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+}
+
+.speed-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  max-width: 960px;
+  margin: 0 auto;
+  background: var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.speed-card {
+  background: var(--bg-elevated);
+  padding: 36px 24px;
+  text-align: center;
+  transition: background 0.2s;
+  cursor: default;
+}
+
+.speed-card:hover { background: var(--bg-surface); }
+
+.speed-value {
+  font-size: 40px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  margin-bottom: 4px;
+  font-family: 'JetBrains Mono', 'Inter', monospace;
+}
+
+.speed-card:nth-child(1) .speed-value { color: var(--accent); }
+.speed-card:nth-child(2) .speed-value { color: var(--gold); }
+.speed-card:nth-child(3) .speed-value { color: var(--green); }
+.speed-card:nth-child(4) .speed-value { color: var(--blue); }
+
+.speed-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Keyboard Shortcuts Showcase */
+.shortcuts-section {
+  padding: 120px 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.shortcuts-header {
+  text-align: center;
+  margin-bottom: 64px;
+}
+
+.shortcuts-header h2 {
+  font-size: 44px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  margin-bottom: 16px;
+}
+
+.shortcuts-header p {
+  font-size: 16px;
+  color: var(--text-secondary);
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.shortcut-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: all 0.2s;
+  cursor: default;
+}
+
+.shortcut-card:hover {
+  border-color: var(--border-focus);
+  background: var(--bg-surface);
+}
+
+.shortcut-keys {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.shortcut-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  box-shadow: 0 2px 0 var(--border);
+}
+
+.shortcut-info h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.shortcut-info p {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Coaching Notification Preview */
+.coaching-section {
+  padding: 120px 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.coaching-header {
+  text-align: center;
+  margin-bottom: 64px;
+}
+
+.coaching-header h2 {
+  font-size: 44px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  margin-bottom: 16px;
+}
+
+.coaching-header p {
+  font-size: 16px;
+  color: var(--text-secondary);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.coaching-demos {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.coaching-notification {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: all 0.3s;
+  opacity: 0;
+  transform: translateX(-20px);
+  animation: slideInNotif 0.5s ease forwards;
+  cursor: pointer;
+}
+
+.coaching-notification:hover {
+  border-color: var(--border-focus);
+  transform: translateX(4px) !important;
+}
+
+.coaching-notification:nth-child(1) { animation-delay: 0.2s; }
+.coaching-notification:nth-child(2) { animation-delay: 0.5s; }
+.coaching-notification:nth-child(3) { animation-delay: 0.8s; }
+
+@keyframes slideInNotif {
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.notif-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 20px;
+}
+
+.notif-icon.speed { background: var(--accent-glow); color: var(--accent); }
+.notif-icon.insight { background: rgba(96, 165, 250, 0.12); color: var(--blue); }
+.notif-icon.automation { background: rgba(52, 211, 153, 0.12); color: var(--green); }
+
+.notif-content { flex: 1; }
+
+.notif-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.notif-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.notif-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.notif-body {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.notif-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+/* Feature Blocks */
+.features-section {
+  padding: 120px 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.feature-block {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: center;
+  padding: 80px 0;
+  border-top: 1px solid var(--border);
+}
+
+.feature-block:first-child { border-top: none; padding-top: 0; }
+
+.feature-block-content h3 {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 16px;
+  line-height: 1.15;
+}
+
+.feature-block-content p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: 24px;
+}
+
+.feature-detail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.feature-detail svg { width: 14px; height: 14px; color: var(--green); flex-shrink: 0; }
+
+.feature-block-visual {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  overflow: hidden;
+}
+
+/* Speed comparison visual */
+.speed-compare {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.speed-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.speed-row-label {
+  width: 100px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.speed-row-bar-wrap {
+  flex: 1;
+  height: 28px;
+  background: var(--bg);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.speed-row-bar {
+  height: 100%;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  padding-left: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  color: white;
+  transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Workflow visualization */
+.workflow-viz {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.workflow-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+  font-size: 13px;
+}
+
+.workflow-step:hover { border-color: var(--border-focus); }
+
+.workflow-step-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--accent-glow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.workflow-step-text { color: var(--text-secondary); flex: 1; }
+.workflow-step-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Social Proof */
+.proof-section {
+  padding: 120px 24px;
+  position: relative;
+}
+
+.proof-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+}
+
+.proof-header {
+  text-align: center;
+  margin-bottom: 64px;
+}
+
+.proof-header h2 {
+  font-size: 44px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  margin-bottom: 12px;
+}
+
+.proof-header p {
+  font-size: 16px;
+  color: var(--text-secondary);
+}
+
+.proof-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.proof-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  transition: all 0.3s;
+}
+
+.proof-card:hover {
+  border-color: var(--border-focus);
+  transform: translateY(-2px);
+}
+
+.proof-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+
+.proof-author {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.proof-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #ff8f65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+}
+
+.proof-name { font-size: 13px; font-weight: 600; }
+.proof-role { font-size: 11px; color: var(--text-muted); }
+
+/* CTA */
+.cta-section {
+  padding: 160px 24px;
+  text-align: center;
+  position: relative;
+}
+
+.cta-section::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 400px;
+  background: radial-gradient(ellipse, var(--accent-glow), transparent);
+  pointer-events: none;
+}
+
+.cta-section h2 {
+  font-size: 56px;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.cta-section p {
+  font-size: 18px;
+  color: var(--text-secondary);
+  margin-bottom: 40px;
+  position: relative;
+}
+
+.cta-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.cta-note {
+  font-size: 12px;
+  color: var(--text-muted);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Footer */
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 48px 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr repeat(3, 1fr);
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.footer-brand p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 12px;
+  line-height: 1.6;
+}
+
+.footer-col h4 {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.footer-col a {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 3px 0;
+  transition: color 0.15s;
+}
+
+.footer-col a:hover { color: var(--text-secondary); }
+
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-up {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fade-up.visible { opacity: 1; transform: translateY(0); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .speed-grid { grid-template-columns: repeat(2, 1fr); }
+  .shortcuts-grid { grid-template-columns: 1fr; }
+  .feature-block { grid-template-columns: 1fr; gap: 32px; }
+  .proof-grid { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+  .hero h1 { font-size: 40px; }
+  .cmd-trigger { display: none; }
+}
+
+/* Pixel-perfect details */
+.detail-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: inline-block;
+}
+
+.divider-accent {
+  width: 40px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+  margin: 0 auto 24px;
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav">
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-mark">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6M6 3v6" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </div>
+    Go2
+  </a>
+  <div class="nav-links">
+    <a href="#">Features</a>
+    <a href="#">Speed</a>
+    <a href="#">Pricing</a>
+    <a href="#">Docs</a>
+  </div>
+  <div class="nav-right">
+    <div class="kbd" style="cursor:pointer" onclick="toggleCmd()">&#8984;K</div>
+    <a href="#" class="btn btn-ghost">Sign in</a>
+    <a href="#" class="btn btn-accent">Get started</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-speed-badge">
+    <div class="speed-indicator">
+      <div class="speed-bar"></div>
+      <div class="speed-bar"></div>
+      <div class="speed-bar"></div>
+      <div class="speed-bar"></div>
+      <span>FAST</span>
+    </div>
+    Designed for speed-obsessed teams
+  </div>
+
+  <h1>Go2 is<br><span class="accent">unreasonably fast</span></h1>
+
+  <p class="hero-sub">Work intelligence at the speed of thought. Real-time coaching, instant agent deployment, split-second insights. Every millisecond matters.</p>
+
+  <div class="hero-actions">
+    <a href="#" class="btn btn-accent btn-lg">Start for free</a>
+    <a href="#" class="btn btn-outline btn-lg">Watch demo</a>
+  </div>
+
+  <div class="hero-shortcut-hint">
+    Press <span class="kbd">&#8984;</span><span class="kbd">K</span> to explore
+  </div>
+</section>
+
+<!-- Speed Metrics -->
+<section class="speed-section fade-up">
+  <div class="speed-grid">
+    <div class="speed-card">
+      <div class="speed-value">23ms</div>
+      <div class="speed-label">Coaching latency</div>
+    </div>
+    <div class="speed-card">
+      <div class="speed-value">60s</div>
+      <div class="speed-label">Agent deployment</div>
+    </div>
+    <div class="speed-card">
+      <div class="speed-value">89%</div>
+      <div class="speed-label">Satisfaction</div>
+    </div>
+    <div class="speed-card">
+      <div class="speed-value">2M+</div>
+      <div class="speed-label">Workers coached</div>
+    </div>
+  </div>
+</section>
+
+<!-- Keyboard Shortcuts -->
+<section class="shortcuts-section fade-up">
+  <div class="shortcuts-header">
+    <div class="divider-accent"></div>
+    <h2>Keyboard-first.<br>Mouse-optional.</h2>
+    <p>Every action in Go2 has a keyboard shortcut. Navigate, deploy, and manage at the speed of typing.</p>
+  </div>
+
+  <div class="shortcuts-grid">
+    <div class="shortcut-card">
+      <div class="shortcut-keys">
+        <div class="shortcut-key">&#8984;</div>
+        <div class="shortcut-key">K</div>
+      </div>
+      <div class="shortcut-info">
+        <h4>Command Palette</h4>
+        <p>Access any action instantly</p>
+      </div>
+    </div>
+    <div class="shortcut-card">
+      <div class="shortcut-keys">
+        <div class="shortcut-key">&#8984;</div>
+        <div class="shortcut-key">D</div>
+      </div>
+      <div class="shortcut-info">
+        <h4>Deploy Agent</h4>
+        <p>One keystroke to production</p>
+      </div>
+    </div>
+    <div class="shortcut-card">
+      <div class="shortcut-keys">
+        <div class="shortcut-key">&#8984;</div>
+        <div class="shortcut-key">I</div>
+      </div>
+      <div class="shortcut-info">
+        <h4>View Insights</h4>
+        <p>Real-time coaching dashboard</p>
+      </div>
+    </div>
+    <div class="shortcut-card">
+      <div class="shortcut-keys">
+        <div class="shortcut-key">&#8984;</div>
+        <div class="shortcut-key">W</div>
+      </div>
+      <div class="shortcut-info">
+        <h4>Workflow Capture</h4>
+        <p>Start/stop recording</p>
+      </div>
+    </div>
+    <div class="shortcut-card">
+      <div class="shortcut-keys">
+        <div class="shortcut-key">&#8984;</div>
+        <div class="shortcut-key">A</div>
+      </div>
+      <div class="shortcut-info">
+        <h4>Analytics</h4>
+        <p>Team performance at a glance</p>
+      </div>
+    </div>
+    <div class="shortcut-card">
+      <div class="shortcut-keys">
+        <div class="shortcut-key">&#8984;</div>
+        <div class="shortcut-key">T</div>
+      </div>
+      <div class="shortcut-info">
+        <h4>Train Agent</h4>
+        <p>Select workflows and train</p>
+      </div>
+    </div>
+    <div class="shortcut-card">
+      <div class="shortcut-keys">
+        <div class="shortcut-key">&#8984;</div>
+        <div class="shortcut-key">&#8679;</div>
+        <div class="shortcut-key">P</div>
+      </div>
+      <div class="shortcut-info">
+        <h4>Playbooks</h4>
+        <p>Browse auto-generated SOPs</p>
+      </div>
+    </div>
+    <div class="shortcut-card">
+      <div class="shortcut-keys">
+        <div class="shortcut-key">&#8984;</div>
+        <div class="shortcut-key">.</div>
+      </div>
+      <div class="shortcut-info">
+        <h4>Quick Actions</h4>
+        <p>Context-aware suggestions</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Coaching Notifications -->
+<section class="coaching-section fade-up">
+  <div class="coaching-header">
+    <div class="divider-accent"></div>
+    <h2>Coaching that arrives<br>at the right moment</h2>
+    <p>Split-second insights delivered exactly when you need them. Not a chatbot. A coach that understands your work patterns.</p>
+  </div>
+
+  <div class="coaching-demos">
+    <div class="coaching-notification">
+      <div class="notif-icon speed">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 4v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/></svg>
+      </div>
+      <div class="notif-content">
+        <div class="notif-header">
+          <span class="notif-title">Focus Alert</span>
+          <span class="notif-time">now</span>
+        </div>
+        <div class="notif-body">You've been in deep focus for 2.5 hours. Your best work happens in these sessions. Consider a 5-min break to maintain peak performance.</div>
+        <div class="notif-action">Snooze for 30 min <span>&rarr;</span></div>
+      </div>
+    </div>
+    <div class="coaching-notification">
+      <div class="notif-icon insight">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2v3M10 15v3M4.93 4.93l2.12 2.12M12.95 12.95l2.12 2.12M2 10h3M15 10h3M4.93 15.07l2.12-2.12M12.95 7.05l2.12-2.12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <div class="notif-content">
+        <div class="notif-header">
+          <span class="notif-title">Pattern Detected</span>
+          <span class="notif-time">2m ago</span>
+        </div>
+        <div class="notif-body">You copy data from Salesforce to spreadsheets 12x/week. Alex (top performer) uses a Go2 agent for this. Deploy the same agent?</div>
+        <div class="notif-action">Deploy agent <span>&rarr;</span></div>
+      </div>
+    </div>
+    <div class="coaching-notification">
+      <div class="notif-icon automation">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="notif-content">
+        <div class="notif-header">
+          <span class="notif-title">Agent Update</span>
+          <span class="notif-time">15m ago</span>
+        </div>
+        <div class="notif-body">Your Invoice Processing agent handled 47 tasks today with 98.2% confidence. 3 edge cases escalated to human review. Saved you 2.3 hours.</div>
+        <div class="notif-action">View details <span>&rarr;</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Feature Blocks -->
+<section class="features-section fade-up">
+  <div class="feature-block">
+    <div class="feature-block-content">
+      <h3>5x faster than building from scratch</h3>
+      <p>Go2 agents are trained on your team's real workflows. They work because they learned from reality, not synthetic benchmarks. Deploy in 60 seconds flat.</p>
+      <div class="feature-detail">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M4 8l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Real workflow data, not synthetic
+      </div>
+      <div class="feature-detail">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M4 8l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        97% average confidence score
+      </div>
+      <div class="feature-detail">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M4 8l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Human-in-the-loop escalation
+      </div>
+    </div>
+    <div class="feature-block-visual">
+      <div class="speed-compare">
+        <div class="speed-row">
+          <div class="speed-row-label">Traditional</div>
+          <div class="speed-row-bar-wrap">
+            <div class="speed-row-bar" style="width:92%;background:var(--border);color:var(--text-muted)">3-6 months</div>
+          </div>
+        </div>
+        <div class="speed-row">
+          <div class="speed-row-label">Go2</div>
+          <div class="speed-row-bar-wrap">
+            <div class="speed-row-bar" style="width:18%;background:linear-gradient(90deg,var(--accent),#ff8f65)">60 sec</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="feature-block">
+    <div class="feature-block-visual">
+      <div class="workflow-viz">
+        <div class="workflow-step">
+          <div class="workflow-step-num">1</div>
+          <div class="workflow-step-text">Install Cowork.ai desktop agent</div>
+          <div class="workflow-step-time">30s</div>
+        </div>
+        <div class="workflow-step">
+          <div class="workflow-step-num">2</div>
+          <div class="workflow-step-text">Capture team workflows automatically</div>
+          <div class="workflow-step-time">auto</div>
+        </div>
+        <div class="workflow-step">
+          <div class="workflow-step-num">3</div>
+          <div class="workflow-step-text">AI coaches in real-time</div>
+          <div class="workflow-step-time">23ms</div>
+        </div>
+        <div class="workflow-step">
+          <div class="workflow-step-num">4</div>
+          <div class="workflow-step-text">Processes self-document</div>
+          <div class="workflow-step-time">auto</div>
+        </div>
+        <div class="workflow-step">
+          <div class="workflow-step-num">5</div>
+          <div class="workflow-step-text">Deploy agents on real data</div>
+          <div class="workflow-step-time">60s</div>
+        </div>
+      </div>
+    </div>
+    <div class="feature-block-content">
+      <h3>Every pixel intentional. Every interaction instant.</h3>
+      <p>We obsess over the details so you don't have to. From capture to deployment, every step is designed to feel immediate. Because your team's time is the most expensive thing you have.</p>
+      <div class="feature-detail">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M4 8l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Zero-friction workflow capture
+      </div>
+      <div class="feature-detail">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M4 8l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Auto-generated documentation
+      </div>
+      <div class="feature-detail">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M4 8l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Automation discovery built-in
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Social Proof -->
+<section class="proof-section fade-up">
+  <div class="proof-header">
+    <div class="divider-accent"></div>
+    <h2>Built for teams that<br>move at light speed</h2>
+    <p>Trusted by the fastest teams in the world.</p>
+  </div>
+
+  <div class="proof-grid">
+    <div class="proof-card">
+      <div class="proof-text">"Go2 is the fastest tool I've ever used. Keyboard shortcuts for everything, instant coaching, 60-second agent deployments. Our team can't go back."</div>
+      <div class="proof-author">
+        <div class="proof-avatar">SK</div>
+        <div>
+          <div class="proof-name">Sarah Kim</div>
+          <div class="proof-role">VP Engineering, TechCorp</div>
+        </div>
+      </div>
+    </div>
+    <div class="proof-card">
+      <div class="proof-text">"95% of AI fails. We were in that bucket until Go2. Now we have 14 production agents, all trained on real work data. The speed is insane."</div>
+      <div class="proof-author">
+        <div class="proof-avatar">MR</div>
+        <div>
+          <div class="proof-name">Marcus Rodriguez</div>
+          <div class="proof-role">CTO, ScaleUp Inc</div>
+        </div>
+      </div>
+    </div>
+    <div class="proof-card">
+      <div class="proof-text">"The command palette alone changed how our team works. Everything is a keystroke away. Coaching arrives before you even know you need it."</div>
+      <div class="proof-author">
+        <div class="proof-avatar">AL</div>
+        <div>
+          <div class="proof-name">Anna Lee</div>
+          <div class="proof-role">COO, Gradient Labs</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section fade-up">
+  <h2>Move faster.<br><span class="accent">Start now.</span></h2>
+  <p>Free to start. No credit card. Deploy your first agent in 60 seconds.</p>
+  <div class="cta-actions">
+    <a href="#" class="btn btn-accent btn-lg">Get started free</a>
+    <a href="#" class="btn btn-outline btn-lg">Talk to sales</a>
+  </div>
+  <div class="cta-note">
+    Press <span class="kbd">&#8984;</span><span class="kbd">K</span> to explore &middot; No credit card required
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <a href="#" class="nav-logo">
+        <div class="nav-logo-mark" style="width:20px;height:20px">
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M3 6h6M6 3v6" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        Go2
+      </a>
+      <p>Unreasonably fast work intelligence. Capture, coach, deploy. Every millisecond matters.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <a href="#">Features</a>
+      <a href="#">Speed</a>
+      <a href="#">Pricing</a>
+      <a href="#">Enterprise</a>
+    </div>
+    <div class="footer-col">
+      <h4>Resources</h4>
+      <a href="#">Documentation</a>
+      <a href="#">API</a>
+      <a href="#">Changelog</a>
+      <a href="#">Status</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="#">About</a>
+      <a href="#">Blog</a>
+      <a href="#">Careers</a>
+      <a href="#">Contact</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>&copy; 2026 Go2. All rights reserved.</span>
+    <span>Every pixel intentional.</span>
+  </div>
+</footer>
+
+<!-- Command Palette Trigger -->
+<div class="cmd-trigger" onclick="toggleCmd()">
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.2"/><path d="M11 11l3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+  Quick Actions
+  <span class="kbd">&#8984;K</span>
+</div>
+
+<!-- Command Palette -->
+<div class="cmd-overlay" id="cmdOverlay" onclick="closeCmd(event)">
+  <div class="cmd-palette">
+    <div class="cmd-search">
+      <svg viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.2"/><path d="M11 11l3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      <input type="text" placeholder="Type a command or search..." id="cmdInput" autofocus>
+    </div>
+    <div class="cmd-results">
+      <div class="cmd-group">Actions</div>
+      <div class="cmd-item active">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Deploy New Agent
+        <span class="cmd-key"><span class="kbd">&#8984;D</span></span>
+      </div>
+      <div class="cmd-item">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h2l2-4 2 8 2-4h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        View Analytics
+        <span class="cmd-key"><span class="kbd">&#8984;A</span></span>
+      </div>
+      <div class="cmd-item">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M8 2v2M8 12v2M2 8h2M12 8h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Start Capture
+        <span class="cmd-key"><span class="kbd">&#8984;W</span></span>
+      </div>
+      <div class="cmd-item">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M4 12V4a1 1 0 011-1h6a1 1 0 011 1v8" stroke="currentColor" stroke-width="1.2"/><path d="M2 12h12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        View Coaching Insights
+        <span class="cmd-key"><span class="kbd">&#8984;I</span></span>
+      </div>
+      <div class="cmd-group">Navigation</div>
+      <div class="cmd-item">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.2"/></svg>
+        Dashboard
+      </div>
+      <div class="cmd-item">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M14 2H6a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2z" stroke="currentColor" stroke-width="1.2"/></svg>
+        Documentation
+        <span class="cmd-key"><span class="kbd">&#8984;?</span></span>
+      </div>
+      <div class="cmd-item">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M14 2H6a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2z" stroke="currentColor" stroke-width="1.2"/></svg>
+        Playbooks
+        <span class="cmd-key"><span class="kbd">&#8984;&#8679;P</span></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Command Palette
+function toggleCmd() {
+  const overlay = document.getElementById('cmdOverlay');
+  overlay.classList.toggle('active');
+  if (overlay.classList.contains('active')) {
+    setTimeout(() => document.getElementById('cmdInput').focus(), 100);
+  }
+}
+
+function closeCmd(e) {
+  if (e.target === e.currentTarget) {
+    document.getElementById('cmdOverlay').classList.remove('active');
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault();
+    toggleCmd();
+  }
+  if (e.key === 'Escape') {
+    document.getElementById('cmdOverlay').classList.remove('active');
+  }
+});
+
+// Command palette keyboard nav
+document.getElementById('cmdInput').addEventListener('keydown', (e) => {
+  const items = document.querySelectorAll('.cmd-item');
+  const active = document.querySelector('.cmd-item.active');
+  const idx = Array.from(items).indexOf(active);
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    items[idx]?.classList.remove('active');
+    items[(idx + 1) % items.length]?.classList.add('active');
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    items[idx]?.classList.remove('active');
+    items[(idx - 1 + items.length) % items.length]?.classList.add('active');
+  }
+});
+
+// Scroll animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('visible');
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// Animate speed bars when visible
+const barObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.querySelectorAll('.speed-row-bar').forEach(bar => {
+        const width = bar.style.width;
+        bar.style.width = '0%';
+        setTimeout(() => { bar.style.width = width; }, 100);
+      });
+      barObserver.disconnect();
+    }
+  });
+}, { threshold: 0.5 });
+
+const speedCompare = document.querySelector('.speed-compare');
+if (speedCompare) barObserver.observe(speedCompare);
+
+// Animate speed counters
+function animateValue(el, start, end, duration, suffix = '') {
+  const range = end - start;
+  const startTime = performance.now();
+  function update(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 4);
+    const current = start + range * eased;
+
+    if (suffix === 'ms') el.textContent = Math.round(current) + 'ms';
+    else if (suffix === 's') el.textContent = Math.round(current) + 's';
+    else if (suffix === '%') el.textContent = Math.round(current) + '%';
+    else if (suffix === 'M+') el.textContent = current.toFixed(current >= end ? 0 : 1) + 'M+';
+
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+const speedObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const values = entry.target.querySelectorAll('.speed-value');
+      animateValue(values[0], 0, 23, 1500, 'ms');
+      animateValue(values[1], 0, 60, 1500, 's');
+      animateValue(values[2], 0, 89, 1500, '%');
+      animateValue(values[3], 0, 2, 1500, 'M+');
+      speedObserver.disconnect();
+    }
+  });
+}, { threshold: 0.5 });
+
+const speedSection = document.querySelector('.speed-section');
+if (speedSection) speedObserver.observe(speedSection);
+</script>
+
+</body>
+</html>

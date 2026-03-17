@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 for Retail Operations | go2.io</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a2e;--border:#2a2a3e;--primary:#ec4899;--primary-glow:#ec489933;--accent:#f97316;--text:#e2e8f0;--text-dim:#94a3b8;--success:#22c55e;--warning:#eab308;--danger:#ef4444}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.6}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 0;background:var(--bg)cc;backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+nav .container{display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:22px;font-weight:800;color:var(--text);text-decoration:none}.logo span{color:var(--primary)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:none;transition:all .2s}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{filter:brightness(1.1);transform:translateY(-1px);box-shadow:0 8px 30px var(--primary-glow)}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{border-color:var(--primary)}
+.hero{min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 50%,var(--primary-glow),transparent 50%),radial-gradient(circle at 70% 50%,#f9731622,transparent 50%);animation:g 8s ease-in-out infinite alternate}
+@keyframes g{0%{transform:translate(0,0)}100%{transform:translate(-5%,3%)}}
+.hero-content{position:relative;z-index:1;max-width:700px}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:100px;font-size:13px;color:var(--primary);margin-bottom:24px}
+.badge::before{content:'';width:8px;height:8px;background:var(--primary);border-radius:50%;animation:p 2s infinite}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.4}}
+.hero h1{font-size:clamp(36px,5vw,60px);font-weight:800;line-height:1.1;margin-bottom:20px;background:linear-gradient(135deg,#fff,var(--primary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:18px;color:var(--text-dim);margin-bottom:32px;max-width:560px}
+.hero-stats{display:flex;gap:32px;margin-top:40px;flex-wrap:wrap}
+.hero-stat .num{font-size:32px;font-weight:800;color:var(--primary)}.hero-stat .label{font-size:13px;color:var(--text-dim)}
+section{padding:100px 0}.section-label{font-size:13px;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px}
+.section-title{font-size:clamp(28px,3.5vw,42px);font-weight:800;margin-bottom:16px}
+.section-desc{font-size:16px;color:var(--text-dim);max-width:600px;margin-bottom:48px}
+
+/* Store Ops Dashboard */
+.store-dash{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px}
+.store-tabs{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.store-tabs button{padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;transition:all .2s}
+.store-tabs button.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.store-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
+.sm{background:var(--surface2);border-radius:12px;padding:16px;text-align:center}
+.sm .smv{font-size:24px;font-weight:800}.sm .sml{font-size:11px;color:var(--text-dim)}.sm .smc{font-size:11px;margin-top:4px}
+
+/* Staff Scheduling */
+.sched-demo{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px}
+.sched-grid{display:grid;grid-template-columns:100px repeat(7,1fr);gap:2px;margin:20px 0}
+.sched-header{font-size:11px;color:var(--text-dim);text-align:center;padding:8px;font-weight:600}
+.sched-name{font-size:12px;padding:8px;display:flex;align-items:center}
+.sched-cell{height:36px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;cursor:pointer;transition:all .2s}
+.sched-cell:hover{transform:scale(1.05)}
+.sched-cell.shift-am{background:#ec489922;border:1px solid #ec489944;color:var(--primary)}
+.sched-cell.shift-pm{background:#f9731622;border:1px solid #f9731644;color:var(--accent)}
+.sched-cell.shift-full{background:#8b5cf622;border:1px solid #8b5cf644;color:#8b5cf6}
+.sched-cell.off{background:var(--surface2);border:1px solid var(--border);color:var(--text-dim)}
+.sched-insight{margin-top:16px;padding:16px;background:var(--surface2);border-radius:12px;border-left:3px solid var(--primary)}
+.sched-insight strong{color:var(--primary)}
+
+/* Inventory */
+.inv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+.inv-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px}
+.inv-card h4{font-size:15px;margin-bottom:12px}
+.inv-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.inv-row:last-child{border:none}
+
+/* Loss Prevention */
+.lp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+.lp-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;transition:all .3s}
+.lp-card:hover{border-color:var(--primary)}
+.lp-card .lp-icon{font-size:28px;margin-bottom:12px}
+.lp-card h4{font-size:15px;margin-bottom:8px}
+.lp-card p{font-size:13px;color:var(--text-dim)}
+.lp-card .lp-stat{margin-top:12px;padding:8px 12px;background:var(--surface2);border-radius:8px;font-size:13px}
+
+/* Coaching */
+.coaching-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:24px}
+.coaching-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px}
+.coaching-card .scenario{font-size:13px;color:var(--accent);margin-bottom:8px;font-weight:600}
+.coaching-card .situation{font-size:14px;margin-bottom:16px;color:var(--text-dim)}
+.coaching-card .ai-response{background:var(--surface2);border-left:3px solid var(--primary);padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;line-height:1.6}
+.coaching-card .ai-response strong{color:var(--primary)}
+
+/* Training Docs */
+.training-list{display:grid;gap:16px}
+.training-item{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:center}
+.training-item .ti{width:48px;height:48px;border-radius:12px;background:var(--primary-glow);display:flex;align-items:center;justify-content:center;font-size:22px}
+.training-item h4{font-size:15px;margin-bottom:4px}.training-item p{font-size:13px;color:var(--text-dim)}
+.training-item .ts{text-align:right;font-size:12px;color:var(--success);font-weight:700}
+
+/* ROI */
+.roi-calc{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px;display:grid;grid-template-columns:1fr 1fr;gap:40px}
+@media(max-width:768px){.roi-calc{grid-template-columns:1fr}}
+.roi-inputs label{display:block;font-size:13px;color:var(--text-dim);margin-bottom:6px;margin-top:16px}.roi-inputs label:first-child{margin-top:0}
+.roi-inputs input[type=range]{width:100%;accent-color:var(--primary)}.roi-inputs .val{font-size:20px;font-weight:700;color:var(--primary)}
+.roi-results{background:var(--surface2);border-radius:16px;padding:28px}
+.roi-results h3{font-size:18px;margin-bottom:24px}
+.roi-row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}.roi-row:last-child{border:none}
+.roi-row .rl{color:var(--text-dim);font-size:14px}.roi-row .rv{font-weight:700;font-size:16px}
+.roi-total{margin-top:16px;padding:16px;background:var(--primary-glow);border-radius:12px;text-align:center}
+.roi-total .amount{font-size:36px;font-weight:800;color:var(--primary)}.roi-total .period{font-size:13px;color:var(--text-dim)}
+footer{padding:60px 0;border-top:1px solid var(--border);text-align:center}footer p{color:var(--text-dim);font-size:14px}footer a{color:var(--primary);text-decoration:none}
+</style>
+</head>
+<body>
+<nav><div class="container"><a href="#" class="logo">Go<span>2</span></a><button class="btn btn-primary" style="padding:10px 20px;font-size:13px">Start Free Trial</button></div></nav>
+
+<section class="hero">
+<div class="container"><div class="hero-content">
+<div class="badge">Built for Retail</div>
+<h1>Your store managers spend 4 hours on scheduling and reports. Get it to 30 minutes.</h1>
+<p>Go2 watches how your stores actually operate -- staff scheduling, inventory workflows, customer interactions -- then coaches your team and automates the admin burden.</p>
+<div style="display:flex;gap:12px;flex-wrap:wrap">
+<button class="btn btn-primary" onclick="document.getElementById('dashboard').scrollIntoView({behavior:'smooth'})">See Store Dashboard</button>
+<button class="btn btn-secondary" onclick="document.getElementById('scheduling').scrollIntoView({behavior:'smooth'})">Scheduling Optimizer</button>
+</div>
+<div class="hero-stats">
+<div class="hero-stat"><div class="num">23%</div><div class="label">Sales per labor hour increase</div></div>
+<div class="hero-stat"><div class="num">$16K</div><div class="label">Monthly savings per store</div></div>
+<div class="hero-stat"><div class="num">41%</div><div class="label">Less shrinkage</div></div>
+</div>
+</div></div>
+</section>
+
+<section id="dashboard">
+<div class="container">
+<div class="section-label">Store Operations</div>
+<div class="section-title">Real-time store insights, not end-of-day surprises</div>
+<div class="store-dash">
+<div class="store-tabs">
+<button class="active" onclick="showStore('downtown',this)">Downtown Flagship</button>
+<button onclick="showStore('mall',this)">Westfield Mall</button>
+<button onclick="showStore('suburb',this)">Lakewood Plaza</button>
+</div>
+<div id="storeContent">
+<div class="store-metrics">
+<div class="sm"><div class="smv" style="color:var(--success)">$8,420</div><div class="sml">Today's Sales</div><div class="smc" style="color:var(--success)">+12% vs target</div></div>
+<div class="sm"><div class="smv" style="color:var(--primary)">142</div><div class="sml">Transactions</div><div class="smc" style="color:var(--success)">+8% vs avg</div></div>
+<div class="sm"><div class="smv">$59.30</div><div class="sml">Avg Transaction</div><div class="smc" style="color:var(--success)">+$4.20 vs avg</div></div>
+<div class="sm"><div class="smv" style="color:var(--warning)">2.1</div><div class="sml">Units per Transaction</div><div class="smc" style="color:var(--danger)">-0.3 vs target</div></div>
+<div class="sm"><div class="smv" style="color:var(--success)">78%</div><div class="sml">Conversion Rate</div><div class="smc" style="color:var(--success)">+5% vs last week</div></div>
+<div class="sm"><div class="smv" style="color:var(--primary)">4.2</div><div class="sml">Staff on Floor</div><div class="smc">Optimal for traffic</div></div>
+</div>
+<div style="padding:16px;background:var(--surface2);border-radius:12px;border-left:3px solid var(--primary)">
+<strong style="color:var(--primary)">Go2 Insight:</strong> <span style="color:var(--text-dim)">Units per transaction is below target. Top performer Sarah is averaging 3.1 UPT today by suggesting accessories at checkout. Coach other staff on her approach. Also: foot traffic peaks in 45 min -- ensure all fitting rooms are cleared.</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<section id="scheduling" style="background:var(--surface)">
+<div class="container">
+<div class="section-label">Staff Scheduling</div>
+<div class="section-title">AI-optimized schedules that match traffic patterns</div>
+<div class="sched-demo">
+<div class="sched-grid">
+<div class="sched-header"></div><div class="sched-header">Mon</div><div class="sched-header">Tue</div><div class="sched-header">Wed</div><div class="sched-header">Thu</div><div class="sched-header">Fri</div><div class="sched-header">Sat</div><div class="sched-header">Sun</div>
+<div class="sched-name">Sarah K.</div><div class="sched-cell shift-am">9-2</div><div class="sched-cell shift-pm">2-9</div><div class="sched-cell off">OFF</div><div class="sched-cell shift-am">9-2</div><div class="sched-cell shift-full">9-6</div><div class="sched-cell shift-full">10-7</div><div class="sched-cell off">OFF</div>
+<div class="sched-name">Mike T.</div><div class="sched-cell shift-pm">2-9</div><div class="sched-cell shift-am">9-2</div><div class="sched-cell shift-full">9-6</div><div class="sched-cell off">OFF</div><div class="sched-cell shift-pm">2-9</div><div class="sched-cell shift-full">10-7</div><div class="sched-cell shift-am">11-4</div>
+<div class="sched-name">Lisa R.</div><div class="sched-cell shift-full">9-6</div><div class="sched-cell off">OFF</div><div class="sched-cell shift-pm">2-9</div><div class="sched-cell shift-full">9-6</div><div class="sched-cell shift-am">9-2</div><div class="sched-cell off">OFF</div><div class="sched-cell shift-full">10-7</div>
+<div class="sched-name">James W.</div><div class="sched-cell off">OFF</div><div class="sched-cell shift-full">9-6</div><div class="sched-cell shift-am">9-2</div><div class="sched-cell shift-pm">2-9</div><div class="sched-cell shift-full">9-6</div><div class="sched-cell shift-am">10-3</div><div class="sched-cell shift-pm">2-7</div>
+<div class="sched-name">Amy L.</div><div class="sched-cell shift-am">9-2</div><div class="sched-cell shift-pm">2-9</div><div class="sched-cell shift-full">9-6</div><div class="sched-cell shift-am">9-2</div><div class="sched-cell off">OFF</div><div class="sched-cell shift-full">10-7</div><div class="sched-cell off">OFF</div>
+</div>
+<div class="sched-insight"><strong>Go2 Scheduling AI:</strong> <span style="color:var(--text-dim)">Schedule optimized for: (1) Saturday peak traffic (4 staff 10am-3pm), (2) Sarah's top performer status on high-traffic shifts, (3) Compliance with 8-hr gap requirements, (4) Each associate gets 2 days off. Labor cost: $4,280/week -- 12% under budget while covering 98% of traffic peaks.</span></div>
+</div>
+</div>
+</section>
+
+<section>
+<div class="container">
+<div class="section-label">Loss Prevention</div>
+<div class="section-title">Shrinkage patterns identified automatically</div>
+<div class="lp-grid">
+<div class="lp-card"><div class="lp-icon">&#128269;</div><h4>Void Pattern Detection</h4><p>Unusual void patterns flagged by register, time of day, and associate. Identifies both errors and potential fraud.</p><div class="lp-stat" style="color:var(--success)">Void-related shrinkage down 52%</div></div>
+<div class="lp-card"><div class="lp-icon">&#128179;</div><h4>Discount Abuse Monitoring</h4><p>Tracks discount application patterns. Flags excessive employee discounts, coupon stacking, and unauthorized markdowns.</p><div class="lp-stat" style="color:var(--success)">Unauthorized discounts down 67%</div></div>
+<div class="lp-card"><div class="lp-icon">&#128230;</div><h4>Receiving Verification</h4><p>Matches POs to received quantities. Flags discrepancies immediately rather than at next inventory count.</p><div class="lp-stat" style="color:var(--success)">Receiving shrinkage down 34%</div></div>
+<div class="lp-card"><div class="lp-icon">&#128202;</div><h4>Inventory Variance Alerts</h4><p>Real-time stock level monitoring. Unexpected decreases flagged with correlated transaction data.</p><div class="lp-stat" style="color:var(--success)">Identified $4,200/month in discrepancies</div></div>
+</div>
+</div>
+</section>
+
+<section style="background:var(--surface)">
+<div class="container">
+<div class="section-label">Real-Time Coaching</div>
+<div class="section-title">Coaching that drives sales performance</div>
+<div class="coaching-grid">
+<div class="coaching-card">
+<div class="scenario">Sales Floor -- Conversion Opportunity</div>
+<div class="situation">Customer has been in the fitting room area for 12 minutes, tried 3 items, hasn't been assisted.</div>
+<div class="ai-response"><strong>Go2 Coach:</strong> Fitting room customer (12 min, 3 items) hasn't been checked on. High-conversion moment. Amy is nearest and available. Suggested approach: "How are those fitting? The blue one also comes in a slim cut that's been really popular." This customer's items suggest they'd respond to style suggestions.</div>
+</div>
+<div class="coaching-card">
+<div class="scenario">Upselling -- Checkout Coaching</div>
+<div class="situation">Customer purchasing a $89 jacket. Associate about to process without suggesting add-ons.</div>
+<div class="ai-response"><strong>Go2 Coach:</strong> This jacket pairs with the scarf display at register (58% attach rate this month, $24 item). Also: customer qualifies for the loyalty program sign-up ($10 off today). Two touches that could add $34 to this transaction and capture a repeat customer.</div>
+</div>
+<div class="coaching-card">
+<div class="scenario">Customer Service -- Complaint Recovery</div>
+<div class="situation">Customer returning an item with visible frustration, expressing they'll "never shop here again."</div>
+<div class="ai-response"><strong>Go2 Coach:</strong> This customer has $1,200 in purchases over the past year (top 15% loyalty tier). Full empathy + immediate resolution. Offer: process the return immediately, add a $20 courtesy credit to their account, and personally walk them to similar alternatives if interested. Recovery rate for this approach: 73%.</div>
+</div>
+<div class="coaching-card">
+<div class="scenario">Operations -- Peak Prep</div>
+<div class="situation">Saturday afternoon rush about to hit. Only 3 staff on floor.</div>
+<div class="ai-response"><strong>Go2 Coach:</strong> Traffic pattern shows peak starting in 20 min (historical: 340% above current foot traffic). Call in the stockroom associate (James) to floor immediately. Pre-stage fitting rooms (clear all). Move high-margin items to front table. Last Saturday's peak generated $2,800/hr with 5 on floor.</div>
+</div>
+</div>
+</div>
+</section>
+
+<section>
+<div class="container">
+<div class="section-label">Training Documentation</div>
+<div class="section-title">Training SOPs generated from your best performers</div>
+<div class="training-list">
+<div class="training-item"><div class="ti">&#128101;</div><div><h4>Customer Greeting & Engagement</h4><p>Auto-documented from top performer interactions. Includes timing, approach language, and conversion techniques.</p></div><div class="ts">Auto-Generated</div></div>
+<div class="training-item"><div class="ti">&#128179;</div><div><h4>POS Operations & Exceptions</h4><p>Step-by-step for returns, exchanges, price adjustments, and loyalty enrollment. Updated in real-time.</p></div><div class="ts">Always Current</div></div>
+<div class="training-item"><div class="ti">&#128230;</div><div><h4>Receiving & Stocking Procedures</h4><p>Documented from actual workflows including PO matching, damage reporting, and planogram compliance.</p></div><div class="ts">Auto-Generated</div></div>
+<div class="training-item"><div class="ti">&#128274;</div><div><h4>Opening & Closing Checklists</h4><p>Dynamic checklists that adapt to day of week, staffing level, and special circumstances.</p></div><div class="ts">Dynamic</div></div>
+</div>
+</div>
+</section>
+
+<section id="roi" style="background:var(--surface)">
+<div class="container">
+<div class="section-label">ROI Calculator</div>
+<div class="section-title">Calculate your store's potential</div>
+<div class="roi-calc">
+<div class="roi-inputs">
+<label>Number of stores <span class="val" id="v1">5</span></label>
+<input type="range" id="s1" min="1" max="100" value="5" oninput="calcROI()">
+<label>Avg monthly revenue/store <span class="val" id="v2">$180K</span></label>
+<input type="range" id="s2" min="30000" max="1000000" step="10000" value="180000" oninput="calcROI()">
+<label>Staff per store <span class="val" id="v3">8</span></label>
+<input type="range" id="s3" min="3" max="40" value="8" oninput="calcROI()">
+<label>Current shrinkage rate <span class="val" id="v4">2.8%</span></label>
+<input type="range" id="s4" min="1" max="8" step="0.1" value="2.8" oninput="calcROI()">
+</div>
+<div class="roi-results">
+<h3>Monthly Impact</h3>
+<div class="roi-row"><span class="rl">Scheduling optimization</span><span class="rv" id="r1">--</span></div>
+<div class="roi-row"><span class="rl">Sales coaching uplift</span><span class="rv" id="r2">--</span></div>
+<div class="roi-row"><span class="rl">Shrinkage reduction</span><span class="rv" id="r3">--</span></div>
+<div class="roi-row"><span class="rl">Manager time savings</span><span class="rv" id="r4">--</span></div>
+<div class="roi-total"><div class="amount" id="roiTotal">--</div><div class="period">estimated monthly impact</div></div>
+</div>
+</div>
+</div>
+</section>
+
+<footer><div class="container"><p><a href="#">Go2</a> -- AI-powered retail operations. <a href="#">Start free trial</a></p></div></footer>
+
+<script>
+const stores={
+downtown:{sales:'$8,420',trans:'142',avg:'$59.30',upt:'2.1',conv:'78%',staff:'4.2',insight:'Units per transaction is below target. Top performer Sarah is averaging 3.1 UPT today by suggesting accessories at checkout. Coach other staff on her approach. Also: foot traffic peaks in 45 min -- ensure all fitting rooms are cleared.'},
+mall:{sales:'$6,180',trans:'98',avg:'$63.10',upt:'2.4',conv:'62%',staff:'3.0',insight:'Conversion rate is 62% -- below the 72% target. Mall foot traffic is high but associates are spending too long per customer. Suggest: faster qualifying questions, direct product recommendations. Also: 1 fitting room has been occupied 25 min (likely abandoned items).'},
+suburb:{sales:'$4,920',trans:'78',avg:'$63.10',upt:'2.6',conv:'81%',staff:'2.8',insight:'Strong conversion and UPT today. Low traffic but high quality interactions. Consider reducing afternoon staffing by 1 person (traffic drops 60% after 3pm on Tuesdays). Reallocate hours to Saturday when this location sees 4x traffic.'}
+};
+function showStore(id,btn){
+document.querySelectorAll('.store-tabs button').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+const s=stores[id];
+document.getElementById('storeContent').innerHTML=`<div class="store-metrics">
+<div class="sm"><div class="smv" style="color:var(--success)">${s.sales}</div><div class="sml">Today's Sales</div></div>
+<div class="sm"><div class="smv" style="color:var(--primary)">${s.trans}</div><div class="sml">Transactions</div></div>
+<div class="sm"><div class="smv">${s.avg}</div><div class="sml">Avg Transaction</div></div>
+<div class="sm"><div class="smv">${s.upt}</div><div class="sml">Units/Transaction</div></div>
+<div class="sm"><div class="smv">${s.conv}</div><div class="sml">Conversion Rate</div></div>
+<div class="sm"><div class="smv" style="color:var(--primary)">${s.staff}</div><div class="sml">Staff on Floor</div></div>
+</div><div style="padding:16px;background:var(--surface2);border-radius:12px;border-left:3px solid var(--primary)"><strong style="color:var(--primary)">Go2 Insight:</strong> <span style="color:var(--text-dim)">${s.insight}</span></div>`;
+}
+function calcROI(){
+const stores=+document.getElementById('s1').value;
+const rev=+document.getElementById('s2').value;
+const staff=+document.getElementById('s3').value;
+const shrink=+document.getElementById('s4').value;
+document.getElementById('v1').textContent=stores;
+document.getElementById('v2').textContent='$'+(rev/1000).toFixed(0)+'K';
+document.getElementById('v3').textContent=staff;
+document.getElementById('v4').textContent=shrink.toFixed(1)+'%';
+const schedSave=Math.round(stores*staff*18*0.12*4.33);
+const salesUp=Math.round(stores*rev*0.04);
+const shrinkSave=Math.round(stores*rev*(shrink/100)*0.41);
+const mgrSave=Math.round(stores*3.5*22*35);
+document.getElementById('r1').textContent='$'+schedSave.toLocaleString();
+document.getElementById('r2').textContent='$'+salesUp.toLocaleString();
+document.getElementById('r3').textContent='$'+shrinkSave.toLocaleString();
+document.getElementById('r4').textContent='$'+mgrSave.toLocaleString();
+document.getElementById('roiTotal').textContent='$'+(schedSave+salesUp+shrinkSave+mgrSave).toLocaleString();
+}
+calcROI();
+</script>
+</body>
+</html>
