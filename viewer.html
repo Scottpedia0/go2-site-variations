@@ -165,7 +165,7 @@
 <div class="top-bar">
   <button class="nav-btn" onclick="navigate(-1)" title="Previous (Left Arrow)">&#8592;</button>
   <button class="nav-btn" onclick="navigate(1)" title="Next (Right Arrow)">&#8594;</button>
-  <input class="jump-input" id="jumpInput" type="text" placeholder="#" title="Type a number and press Enter to jump">
+  <input class="jump-input" id="jumpInput" type="text" placeholder="# or v481 or search" title="Type a number, variation ID (v481), or name to search">
   <span class="counter" id="counter">1 of 49</span>
   <span class="var-name" id="varName"></span>
   <span class="var-desc" id="varDesc"></span>
@@ -577,16 +577,22 @@ const VARIATIONS = [
 
 const FILTERS = [
   {key:"all",label:"All"},
+  {key:"super",label:"\u2b50 Best"},
+  {key:"breakthrough",label:"\ud83d\ude80 Breakthrough"},
+  {key:"tool",label:"\ud83d\udee0 Interactive Tools"},
+  {key:"agent",label:"\ud83e\udd16 AI Experiences"},
+  {key:"industry",label:"\ud83c\udfed Industry"},
+  {key:"conversion",label:"\ud83c\udfaf Conversion"},
+  {key:"dataviz",label:"\ud83d\udcca Data Viz"},
+  {key:"design",label:"\ud83c\udfa8 Design"},
+  {key:"deepdive",label:"\ud83d\udd2c Deep Dives"},
+  {key:"unconventional",label:"\ud83e\udd2f Unconventional"},
   {key:"single",label:"Single Page"},
   {key:"multi",label:"Multi-Page"},
-  {key:"agent",label:"Agent-Focused"},
-  {key:"unconventional",label:"Unconventional"},
-  {key:"external",label:"External Models"},
-  {key:"super",label:"\u2b50 Supers"},
   {key:"starred",label:"\u2605 Starred"},
 ];
 
-const TAG_LABELS = {single:"Single",multi:"Multi-Page",premium:"Premium",agent:"Agent","no-tracking":"No Tracking",unconventional:"Unconventional"};
+const TAG_LABELS = {single:"Single",multi:"Multi-Page",premium:"Premium",agent:"AI Experience","no-tracking":"No Tracking",unconventional:"Unconventional",tool:"Interactive Tool",industry:"Industry",conversion:"Conversion",dataviz:"Data Viz",design:"Design",deepdive:"Deep Dive",breakthrough:"Breakthrough",super:"Best"};
 
 let currentIndex = 0;
 let activeFilter = "all";
@@ -717,10 +723,30 @@ document.querySelector(".main").addEventListener("touchend", e => {
   }
 }, {passive:true});
 
-// Jump-to-number input
+// Jump-to-number input (supports position # or variation ID like "v481")
 document.getElementById("jumpInput").addEventListener("keydown", e => {
   if (e.key === "Enter") {
-    const num = parseInt(e.target.value);
+    const val = e.target.value.trim().toLowerCase();
+    // Try matching variation ID first (e.g. "v481", "501")
+    let idx = VARIATIONS.findIndex(v => v.id === val || v.id === "v" + val);
+    if (idx >= 0) {
+      activeFilter = "all"; renderFilters();
+      loadVariation(idx);
+      e.target.value = "";
+      e.target.blur();
+      return;
+    }
+    // Also search by name substring
+    idx = VARIATIONS.findIndex(v => v.name.toLowerCase().includes(val));
+    if (idx >= 0) {
+      activeFilter = "all"; renderFilters();
+      loadVariation(idx);
+      e.target.value = "";
+      e.target.blur();
+      return;
+    }
+    // Fall back to position number
+    const num = parseInt(val);
     if (num >= 1 && num <= VARIATIONS.length) {
       loadVariation(num - 1);
       e.target.value = "";
