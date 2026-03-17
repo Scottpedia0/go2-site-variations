@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — An AI Copilot for Every Job</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg-raised: #161b22;
+    --bg-card: #1c2128;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --green: #3fb950;
+    --green-dim: rgba(63,185,80,0.15);
+    --orange: #d29922;
+    --orange-dim: rgba(210,153,34,0.12);
+    --purple: #bc8cff;
+    --purple-dim: rgba(188,140,255,0.12);
+    --blue: #58a6ff;
+    --blue-dim: rgba(88,166,255,0.12);
+    --red: #f85149;
+    --accent: #3fb950;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  .mono {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 100;
+    background: rgba(13,17,23,0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+  }
+
+  .nav-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+  }
+
+  .logo {
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--green);
+    text-decoration: none;
+    letter-spacing: -0.5px;
+  }
+
+  .logo span { color: var(--text-muted); font-weight: 400; }
+
+  .nav-links { display: flex; gap: 32px; align-items: center; }
+  .nav-links a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); }
+
+  .btn-demo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    background: var(--green);
+    color: var(--bg);
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .btn-demo:hover { background: #4ac45f; transform: translateY(-1px); }
+
+  .btn-outline {
+    padding: 10px 24px;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .btn-outline:hover { border-color: var(--text-muted); }
+
+  /* HERO */
+  .hero {
+    padding: 160px 24px 100px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    height: 600px;
+    background: radial-gradient(ellipse, rgba(63,185,80,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    background: var(--green-dim);
+    border: 1px solid rgba(63,185,80,0.3);
+    border-radius: 100px;
+    font-size: 13px;
+    color: var(--green);
+    margin-bottom: 32px;
+  }
+
+  .hero h1 {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+    font-size: clamp(32px, 5vw, 56px);
+    line-height: 1.15;
+    font-weight: 700;
+    max-width: 900px;
+    margin: 0 auto 24px;
+    letter-spacing: -1px;
+  }
+
+  .hero h1 .highlight {
+    color: var(--green);
+  }
+
+  .hero h1 .strike {
+    color: var(--text-muted);
+    text-decoration: line-through;
+    text-decoration-color: var(--red);
+  }
+
+  .hero-sub {
+    font-size: 20px;
+    color: var(--text-muted);
+    max-width: 640px;
+    margin: 0 auto 40px;
+    line-height: 1.65;
+  }
+
+  .hero-ctas {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 64px;
+  }
+
+  .hero-proof {
+    display: flex;
+    gap: 48px;
+    justify-content: center;
+    flex-wrap: wrap;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  .hero-proof strong {
+    color: var(--text);
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-size: 15px;
+  }
+
+  /* CODE BLOCK HERO */
+  .hero-terminal {
+    max-width: 700px;
+    margin: 48px auto 0;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    text-align: left;
+  }
+
+  .terminal-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .terminal-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+  .terminal-dot.r { background: #f85149; }
+  .terminal-dot.y { background: #d29922; }
+  .terminal-dot.g { background: #3fb950; }
+
+  .terminal-title {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    margin-left: 8px;
+  }
+
+  .terminal-body {
+    padding: 20px;
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-size: 14px;
+    line-height: 1.8;
+  }
+
+  .terminal-body .line {
+    display: block;
+    opacity: 0;
+    animation: typeLine 0.3s ease forwards;
+  }
+
+  .terminal-body .comment { color: var(--text-muted); }
+  .terminal-body .keyword { color: var(--purple); }
+  .terminal-body .string { color: var(--green); }
+  .terminal-body .number { color: var(--orange); }
+  .terminal-body .func { color: var(--blue); }
+
+  .line:nth-child(1) { animation-delay: 0.3s; }
+  .line:nth-child(2) { animation-delay: 0.6s; }
+  .line:nth-child(3) { animation-delay: 0.9s; }
+  .line:nth-child(4) { animation-delay: 1.2s; }
+  .line:nth-child(5) { animation-delay: 1.5s; }
+  .line:nth-child(6) { animation-delay: 1.8s; }
+  .line:nth-child(7) { animation-delay: 2.1s; }
+
+  @keyframes typeLine {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* SECTION COMMON */
+  section { padding: 100px 24px; }
+
+  .section-label {
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-size: 13px;
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+    font-size: clamp(28px, 4vw, 42px);
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 20px;
+    letter-spacing: -0.5px;
+  }
+
+  .section-desc {
+    font-size: 18px;
+    color: var(--text-muted);
+    max-width: 640px;
+    line-height: 1.65;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* CONTRAST SECTION */
+  .contrast {
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .contrast-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    margin-top: 48px;
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .contrast-col h3 {
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-size: 18px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .contrast-col.old h3 { color: var(--text-muted); }
+  .contrast-col.new h3 { color: var(--green); }
+
+  .contrast-item {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .contrast-col.old .contrast-item { color: var(--text-muted); }
+  .contrast-col.new .contrast-item { color: var(--text); }
+
+  .contrast-col.old .contrast-item::before {
+    content: '- ';
+    color: var(--red);
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-weight: 700;
+  }
+
+  .contrast-col.new .contrast-item::before {
+    content: '+ ';
+    color: var(--green);
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-weight: 700;
+  }
+
+  /* COPILOT MOMENTS */
+  .moments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 20px;
+    margin-top: 48px;
+  }
+
+  .moment-card {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 28px;
+    transition: border-color 0.2s;
+  }
+
+  .moment-card:hover { border-color: var(--green); }
+
+  .moment-role {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+  }
+
+  .moment-role.support { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(88,166,255,0.3); }
+  .moment-role.sales { background: var(--orange-dim); color: var(--orange); border: 1px solid rgba(210,153,34,0.3); }
+  .moment-role.ops { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(188,140,255,0.3); }
+  .moment-role.admin { background: var(--green-dim); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+
+  .moment-notification {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--green);
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .moment-notification .copilot-label {
+    color: var(--green);
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .moment-outcome {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+
+  .moment-outcome strong {
+    color: var(--text);
+  }
+
+  /* HOW IT WORKS */
+  .how-it-works {
+    background: var(--bg-raised);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px;
+    margin-top: 48px;
+  }
+
+  .step {
+    position: relative;
+  }
+
+  .step-number {
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--green);
+    opacity: 0.25;
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+
+  .step h3 {
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+
+  .step p {
+    font-size: 15px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .step-tag {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 4px 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* MANAGER VIEW */
+  .manager-section { border-bottom: 1px solid var(--border); }
+
+  .manager-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    margin-top: 48px;
+    align-items: start;
+  }
+
+  .manager-content .section-desc { margin-bottom: 32px; }
+
+  .manager-features {
+    list-style: none;
+  }
+
+  .manager-features li {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 15px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .manager-features .check {
+    color: var(--green);
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .dashboard-preview {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .dash-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .dash-body {
+    padding: 24px;
+  }
+
+  .dash-stat-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .dash-stat {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .dash-stat .val {
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--green);
+    display: block;
+  }
+
+  .dash-stat .label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+    display: block;
+  }
+
+  .dash-team-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+
+  .dash-team-row:last-child { border: none; }
+
+  .dash-team-name {
+    font-weight: 600;
+    min-width: 100px;
+  }
+
+  .dash-team-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--bg);
+    border-radius: 3px;
+    margin: 0 16px;
+    overflow: hidden;
+  }
+
+  .dash-team-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--green);
+    transition: width 0.8s ease;
+  }
+
+  .dash-team-pct {
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-size: 13px;
+    color: var(--green);
+    min-width: 40px;
+    text-align: right;
+  }
+
+  /* CHATGPT COMPARISON */
+  .comparison {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .comparison-table {
+    margin-top: 48px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .comp-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .comp-row:last-child { border: none; }
+
+  .comp-row.header {
+    background: var(--bg-card);
+  }
+
+  .comp-cell {
+    padding: 16px 20px;
+    font-size: 14px;
+    border-right: 1px solid var(--border);
+  }
+
+  .comp-cell:last-child { border-right: none; }
+
+  .comp-row.header .comp-cell {
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .comp-row.header .comp-cell:last-child { color: var(--green); }
+
+  .comp-cell .yes { color: var(--green); }
+  .comp-cell .no { color: var(--text-muted); }
+
+  /* PROOF */
+  .proof-section {
+    background: var(--bg-raised);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .proof-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    margin-top: 48px;
+  }
+
+  .proof-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 28px;
+    text-align: center;
+  }
+
+  .proof-card .num {
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--green);
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .proof-card .desc {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* TESTIMONIALS */
+  .testimonials {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .test-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+    margin-top: 48px;
+  }
+
+  .test-card {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 28px;
+  }
+
+  .test-quote {
+    font-size: 15px;
+    line-height: 1.65;
+    margin-bottom: 20px;
+    color: var(--text);
+    font-style: italic;
+  }
+
+  .test-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .test-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--green);
+  }
+
+  .test-name {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .test-role {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  /* CTA */
+  .cta-section {
+    text-align: center;
+    padding: 120px 24px;
+    position: relative;
+  }
+
+  .cta-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 400px;
+    background: radial-gradient(ellipse, rgba(63,185,80,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .cta-section .section-title {
+    max-width: 700px;
+    margin: 0 auto 16px;
+  }
+
+  .cta-section .section-desc {
+    margin: 0 auto 40px;
+    text-align: center;
+  }
+
+  .cta-buttons {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 48px 24px;
+  }
+
+  .footer-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .footer-left {
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 24px;
+  }
+
+  .footer-links a {
+    font-size: 14px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .footer-links a:hover { color: var(--text); }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .contrast-grid,
+    .manager-grid { grid-template-columns: 1fr; gap: 40px; }
+
+    .steps { grid-template-columns: 1fr; gap: 48px; }
+
+    .proof-grid { grid-template-columns: repeat(2, 1fr); }
+
+    .comp-cell { padding: 12px; font-size: 13px; }
+
+    .dash-stat-row { grid-template-columns: 1fr; }
+
+    .nav-links { display: none; }
+  }
+
+  @media (max-width: 600px) {
+    .hero { padding: 120px 16px 80px; }
+    section { padding: 80px 16px; }
+    .proof-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .moments-grid { grid-template-columns: 1fr; }
+    .comp-row { grid-template-columns: 1fr; }
+    .comp-cell { border-right: none; border-bottom: 1px solid var(--border); }
+    .hero-proof { gap: 24px; }
+  }
+
+  /* SCROLL ANIMATIONS */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .fade-up.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="logo">go2<span>.io</span></a>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#copilot">Copilot moments</a>
+      <a href="#managers">For managers</a>
+      <a href="#proof">Results</a>
+      <a href="#cta" class="btn-demo">Get a Demo</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-badge">
+      <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3" fill="#3fb950"/><circle cx="8" cy="8" r="6" stroke="#3fb950" stroke-width="1" opacity="0.4"/></svg>
+      Now with Claude, GPT-4o &amp; Gemini
+    </div>
+    <h1>GitHub gave developers<br>a copilot. <span class="highlight">Go2 gives<br>one to everyone else.</span></h1>
+    <p class="hero-sub">An AI copilot for every role in your company &mdash; customer support, sales, ops, admin. Not a generic chatbot. A copilot trained on how your team actually works.</p>
+    <div class="hero-ctas">
+      <a href="#cta" class="btn-demo">Get a Demo &rarr;</a>
+      <a href="#copilot" class="btn-outline">See copilot moments</a>
+    </div>
+
+    <div class="hero-terminal">
+      <div class="terminal-bar">
+        <div class="terminal-dot r"></div>
+        <div class="terminal-dot y"></div>
+        <div class="terminal-dot g"></div>
+        <span class="terminal-title">go2-copilot.js</span>
+      </div>
+      <div class="terminal-body">
+        <span class="line"><span class="comment">// Go2 watches how Sarah actually works</span></span>
+        <span class="line"><span class="keyword">const</span> copilot = <span class="func">go2.train</span>({</span>
+        <span class="line">&nbsp;&nbsp;employee: <span class="string">"sarah@yourcompany.com"</span>,</span>
+        <span class="line">&nbsp;&nbsp;role: <span class="string">"Customer Support Lead"</span>,</span>
+        <span class="line">&nbsp;&nbsp;context: <span class="string">"keystrokes, screens, workflows"</span>,</span>
+        <span class="line">&nbsp;&nbsp;trainedOn: <span class="string">"~1M workers + your company data"</span></span>
+        <span class="line">});</span>
+      </div>
+    </div>
+
+    <div class="hero-proof" style="margin-top: 48px;">
+      <div><strong>7+ years</strong> of workforce data</div>
+      <div><strong>~1M</strong> workers analyzed</div>
+      <div><strong>3 frontier</strong> AI models</div>
+      <div><strong>15 min</strong> to deploy</div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTRAST: CHATGPT VS GO2 -->
+<section class="contrast" id="contrast">
+  <div class="container fade-up">
+    <div class="section-label">// the_difference</div>
+    <div class="section-title">ChatGPT answers questions.<br>Go2 watches your work.</div>
+    <p class="section-desc">Generic chatbots only know what you type. Go2 sees your actual screen, your actual keystrokes, your actual workflow &mdash; then coaches you in context.</p>
+
+    <div class="contrast-grid">
+      <div class="contrast-col old">
+        <h3><span style="color:var(--red);">&times;</span> Generic AI chatbot</h3>
+        <div class="contrast-item">Waits for you to ask a question</div>
+        <div class="contrast-item">Only knows what you paste into a prompt</div>
+        <div class="contrast-item">Same suggestions for every user</div>
+        <div class="contrast-item">No awareness of your actual tools</div>
+        <div class="contrast-item">Can't see repetitive patterns in your work</div>
+      </div>
+      <div class="contrast-col new">
+        <h3><span style="color:var(--green);">&#10003;</span> Go2 Copilot</h3>
+        <div class="contrast-item">Proactively surfaces coaching in real time</div>
+        <div class="contrast-item">Sees your screen, keystrokes, and workflows</div>
+        <div class="contrast-item">Personalized to each employee's role</div>
+        <div class="contrast-item">Knows which apps you use and how you use them</div>
+        <div class="contrast-item">Detects patterns: "You've done this 47 times manually"</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COPILOT MOMENTS -->
+<section id="copilot">
+  <div class="container fade-up">
+    <div class="section-label">// copilot_moments</div>
+    <div class="section-title">A copilot for every role.<br>Not just coding.</div>
+    <p class="section-desc">Real moments where Go2 coaches employees &mdash; proactively, in context, based on what it sees them doing right now.</p>
+
+    <div class="moments-grid">
+      <!-- Support -->
+      <div class="moment-card">
+        <div class="moment-role support">Customer Support</div>
+        <div class="moment-notification">
+          <span class="copilot-label">Go2 Copilot</span>
+          This ticket matches 23 resolved cases from last month. The fix: update billing region in Settings &gt; Accounts. Avg resolution: 4 min. Draft reply ready.
+        </div>
+        <div class="moment-outcome"><strong>Result:</strong> Resolution time dropped from 12 min to 3 min. Agent didn't need to escalate.</div>
+      </div>
+
+      <!-- Sales -->
+      <div class="moment-card">
+        <div class="moment-role sales">Sales Operations</div>
+        <div class="moment-notification">
+          <span class="copilot-label">Go2 Copilot</span>
+          You've manually copied data from Salesforce to the spreadsheet 47 times this month. I can build a Zapier automation that does this in 0 clicks. Want to see it?
+        </div>
+        <div class="moment-outcome"><strong>Result:</strong> 6 hours/month saved. Rep focuses on actual selling instead of data entry.</div>
+      </div>
+
+      <!-- Ops -->
+      <div class="moment-card">
+        <div class="moment-role ops">Logistics / Ops</div>
+        <div class="moment-notification">
+          <span class="copilot-label">Go2 Copilot</span>
+          Your top performer processes shipping labels 2.3x faster using keyboard shortcuts (Ctrl+Shift+P &rarr; batch print). Here's a 90-second tutorial for the rest of the team.
+        </div>
+        <div class="moment-outcome"><strong>Result:</strong> Team-wide label processing speed improved 40% in one week.</div>
+      </div>
+
+      <!-- Admin -->
+      <div class="moment-card">
+        <div class="moment-role admin">Office Admin</div>
+        <div class="moment-notification">
+          <span class="copilot-label">Go2 Copilot</span>
+          You spend ~3 hours every Friday manually compiling the weekly report from 4 different tools. I can auto-generate this from your existing data sources. Review draft?
+        </div>
+        <div class="moment-outcome"><strong>Result:</strong> Friday report now takes 15 minutes instead of 3 hours. Admin reclaims half a day weekly.</div>
+      </div>
+
+      <!-- Support 2 -->
+      <div class="moment-card">
+        <div class="moment-role support">Customer Support</div>
+        <div class="moment-notification">
+          <span class="copilot-label">Go2 Copilot</span>
+          Heads up: your tone in this draft is more formal than your usual style, and this customer prefers casual. Here's an adjusted version.
+        </div>
+        <div class="moment-outcome"><strong>Result:</strong> CSAT score for this agent went from 4.1 to 4.6 over two months.</div>
+      </div>
+
+      <!-- Sales 2 -->
+      <div class="moment-card">
+        <div class="moment-role sales">Sales Rep</div>
+        <div class="moment-notification">
+          <span class="copilot-label">Go2 Copilot</span>
+          Your top closer spends 22 min on pre-call research using LinkedIn + CRM notes. You spend 6 min. Here's what they look at that you skip.
+        </div>
+        <div class="moment-outcome"><strong>Result:</strong> Close rate improved 18% by adopting the top performer's research pattern.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-it-works" id="how">
+  <div class="container fade-up">
+    <div class="section-label">// getting_started</div>
+    <div class="section-title">Deploy in 15 minutes.<br>Copilot learns in days.</div>
+    <p class="section-desc">A lightweight desktop agent. No integrations to configure. No workflows to map manually. Go2 observes and adapts.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-number">01</div>
+        <h3>Install the agent</h3>
+        <p>A lightweight desktop app that captures keystrokes, audio, screens, and app usage. Runs silently in the background. Under 2% CPU.</p>
+        <span class="step-tag">Windows &amp; Mac</span>
+      </div>
+      <div class="step">
+        <div class="step-number">02</div>
+        <h3>Copilot starts learning</h3>
+        <p>Within days, Go2 maps each employee's workflows, tools, and patterns. Trained on data from ~1M workers, fine-tuned to your team.</p>
+        <span class="step-tag">Claude &bull; GPT-4o &bull; Gemini</span>
+      </div>
+      <div class="step">
+        <div class="step-number">03</div>
+        <h3>Coaching goes live</h3>
+        <p>Each employee gets proactive suggestions &mdash; not a chatbot. Managers see aggregated insights, adoption rates, and automation opportunities.</p>
+        <span class="step-tag">Real-time &bull; Contextual</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MANAGER VIEW -->
+<section class="manager-section" id="managers">
+  <div class="container fade-up">
+    <div class="section-label">// manager_dashboard</div>
+    <div class="section-title">Your team's copilot<br>adoption, at a glance.</div>
+
+    <div class="manager-grid">
+      <div class="manager-content">
+        <p class="section-desc">See which copilot suggestions your team adopts, which workflows get automated, and where the biggest time savings are. Aggregated insights &mdash; not surveillance.</p>
+        <ul class="manager-features">
+          <li><span class="check">&#10003;</span> See team-wide copilot adoption rates by role</li>
+          <li><span class="check">&#10003;</span> Track hours saved per employee per week</li>
+          <li><span class="check">&#10003;</span> Identify top automation opportunities across departments</li>
+          <li><span class="check">&#10003;</span> Spread top-performer workflows to the whole team</li>
+          <li><span class="check">&#10003;</span> Privacy-first: aggregated data only, no keystroke logs</li>
+        </ul>
+      </div>
+
+      <div class="dashboard-preview">
+        <div class="dash-bar">
+          <svg width="14" height="14" fill="none" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1" stroke="#8b949e" stroke-width="1.5"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="#8b949e" stroke-width="1.5"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="#8b949e" stroke-width="1.5"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="#8b949e" stroke-width="1.5"/></svg>
+          go2 &mdash; team dashboard
+        </div>
+        <div class="dash-body">
+          <div class="dash-stat-row">
+            <div class="dash-stat">
+              <span class="val">84%</span>
+              <span class="label">Suggestions adopted</span>
+            </div>
+            <div class="dash-stat">
+              <span class="val">127h</span>
+              <span class="label">Saved this month</span>
+            </div>
+            <div class="dash-stat">
+              <span class="val">23</span>
+              <span class="label">Automations created</span>
+            </div>
+          </div>
+
+          <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;font-family:'SF Mono',Consolas,monospace;">Copilot adoption by team</div>
+
+          <div class="dash-team-row">
+            <span class="dash-team-name">Support</span>
+            <div class="dash-team-bar"><div class="dash-team-fill" style="width:92%"></div></div>
+            <span class="dash-team-pct">92%</span>
+          </div>
+          <div class="dash-team-row">
+            <span class="dash-team-name">Sales</span>
+            <div class="dash-team-bar"><div class="dash-team-fill" style="width:78%"></div></div>
+            <span class="dash-team-pct">78%</span>
+          </div>
+          <div class="dash-team-row">
+            <span class="dash-team-name">Operations</span>
+            <div class="dash-team-bar"><div class="dash-team-fill" style="width:85%"></div></div>
+            <span class="dash-team-pct">85%</span>
+          </div>
+          <div class="dash-team-row">
+            <span class="dash-team-name">Admin</span>
+            <div class="dash-team-bar"><div class="dash-team-fill" style="width:71%"></div></div>
+            <span class="dash-team-pct">71%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON TABLE -->
+<section class="comparison">
+  <div class="container fade-up">
+    <div class="section-label">// go2_vs_generic_ai</div>
+    <div class="section-title">Why a copilot beats a chatbot.</div>
+    <p class="section-desc">ChatGPT is powerful. But it can't see your screen, doesn't know your tools, and waits for you to ask. Go2 is always watching, always coaching.</p>
+
+    <div class="comparison-table">
+      <div class="comp-row header">
+        <div class="comp-cell">Capability</div>
+        <div class="comp-cell">Generic AI (ChatGPT etc.)</div>
+        <div class="comp-cell">Go2 Copilot</div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell">Sees your actual screen &amp; workflow</div>
+        <div class="comp-cell"><span class="no">No</span></div>
+        <div class="comp-cell"><span class="yes">Yes &mdash; real-time</span></div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell">Proactive suggestions (no prompt needed)</div>
+        <div class="comp-cell"><span class="no">No &mdash; waits for input</span></div>
+        <div class="comp-cell"><span class="yes">Yes &mdash; context-triggered</span></div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell">Personalized to each employee</div>
+        <div class="comp-cell"><span class="no">Same for everyone</span></div>
+        <div class="comp-cell"><span class="yes">Trained on individual patterns</span></div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell">Detects automation opportunities</div>
+        <div class="comp-cell"><span class="no">Only if you describe them</span></div>
+        <div class="comp-cell"><span class="yes">Automatically from behavior</span></div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell">Spreads top-performer workflows</div>
+        <div class="comp-cell"><span class="no">No</span></div>
+        <div class="comp-cell"><span class="yes">Yes &mdash; learns &amp; distributes</span></div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell">Manager-level team insights</div>
+        <div class="comp-cell"><span class="no">No</span></div>
+        <div class="comp-cell"><span class="yes">Aggregated dashboard</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROOF NUMBERS -->
+<section class="proof-section" id="proof">
+  <div class="container fade-up">
+    <div class="section-label">// by_the_numbers</div>
+    <div class="section-title">Built on 7 years of data.</div>
+    <p class="section-desc">Go2 isn't starting from scratch. Every copilot suggestion is backed by patterns from nearly a million workers across thousands of companies.</p>
+
+    <div class="proof-grid">
+      <div class="proof-card">
+        <span class="num">~1M</span>
+        <span class="desc">Workers' patterns analyzed across industries</span>
+      </div>
+      <div class="proof-card">
+        <span class="num">7+</span>
+        <span class="desc">Years of continuous workforce intelligence data</span>
+      </div>
+      <div class="proof-card">
+        <span class="num">32%</span>
+        <span class="desc">Average time saved on repetitive workflows</span>
+      </div>
+      <div class="proof-card">
+        <span class="num">15 min</span>
+        <span class="desc">From install to first copilot suggestion</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials">
+  <div class="container fade-up">
+    <div class="section-label">// early_adopters</div>
+    <div class="section-title">What teams are saying.</div>
+
+    <div class="test-grid">
+      <div class="test-card">
+        <p class="test-quote">"We gave everyone ChatGPT licenses. Usage dropped to zero after a month. Go2 is different &mdash; it meets people where they work. Our support team's resolution time dropped 40% and they didn't have to learn anything new."</p>
+        <div class="test-author">
+          <div class="test-avatar">MR</div>
+          <div>
+            <div class="test-name">M. Rodriguez</div>
+            <div class="test-role">COO, 32-person logistics company</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="test-card">
+        <p class="test-quote">"The 'spread top performer patterns' feature alone justified it. Our best sales rep's research workflow got replicated across the team. Close rates went up 18% in six weeks."</p>
+        <div class="test-author">
+          <div class="test-avatar">JK</div>
+          <div>
+            <div class="test-name">J. Kim</div>
+            <div class="test-role">VP Sales, 45-person SaaS startup</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="test-card">
+        <p class="test-quote">"I was worried about the 'surveillance' angle. But Go2 shows me aggregated team insights, not individual keystrokes. My team actually loves it &mdash; they say it feels like having a mentor, not a manager watching over them."</p>
+        <div class="test-author">
+          <div class="test-avatar">AP</div>
+          <div>
+            <div class="test-name">A. Patel</div>
+            <div class="test-role">Founder, 22-person e-commerce brand</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section" id="cta">
+  <div class="container fade-up">
+    <div class="section-label">// get_started</div>
+    <div class="section-title">Give every employee<br>an AI copilot.</div>
+    <p class="section-desc">Not a chatbot they'll forget about. A copilot that watches how they work and helps them work better &mdash; trained on data from nearly a million workers.</p>
+    <div class="cta-buttons">
+      <a href="#" class="btn-demo" style="font-size:16px; padding: 14px 32px;">Get a Demo &rarr;</a>
+      <a href="#" class="btn-outline" style="font-size:16px; padding: 14px 32px;">Talk to the team</a>
+    </div>
+    <p style="margin-top:24px;font-size:13px;color:var(--text-muted);">15-minute setup &bull; No credit card &bull; Works with your existing tools</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-left">
+      <span class="mono" style="color:var(--green);font-weight:700;">go2</span><span class="mono" style="color:var(--text-muted);">.io</span>
+      &nbsp;&nbsp;&middot;&nbsp;&nbsp; An AI copilot for every employee.
+    </div>
+    <div class="footer-links">
+      <a href="#">Privacy</a>
+      <a href="#">Security</a>
+      <a href="#">Terms</a>
+      <a href="#">Contact</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Scroll-triggered fade-up animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// Smooth scroll
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', (e) => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+</script>
+
+</body>
+</html>

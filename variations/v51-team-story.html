@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — A Day in the Life of Your Team</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --warm: #FF6B35;
+  --warm-light: #FFF3ED;
+  --warm-glow: #FFECD2;
+  --green: #2ECC71;
+  --green-light: #E8F8F0;
+  --gray-cold: #6B7280;
+  --gray-bg: #F3F4F6;
+  --gray-muted: #9CA3AF;
+  --dark: #1F2937;
+  --white: #FFFFFF;
+  --without-accent: #94A3B8;
+  --with-accent: #FF6B35;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color: var(--dark);
+  line-height: 1.6;
+  background: var(--white);
+  overflow-x: hidden;
+}
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+  position: relative;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: var(--white);
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  background: linear-gradient(to bottom, transparent, var(--white));
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 100px;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 2rem;
+  backdrop-filter: blur(10px);
+}
+
+.hero-badge .dot {
+  width: 8px;
+  height: 8px;
+  background: var(--warm);
+  border-radius: 50%;
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.3); }
+}
+
+.hero h1 {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 800;
+  line-height: 1.1;
+  max-width: 800px;
+  margin-bottom: 1.5rem;
+}
+
+.hero h1 span {
+  background: linear-gradient(135deg, var(--warm), #FF8F6B);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero p {
+  font-size: 1.25rem;
+  opacity: 0.8;
+  max-width: 600px;
+  margin-bottom: 2.5rem;
+  line-height: 1.7;
+}
+
+.hero-stats {
+  display: flex;
+  gap: 3rem;
+  margin-top: 1rem;
+}
+
+.hero-stat {
+  text-align: center;
+}
+
+.hero-stat .num {
+  font-size: 2.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--warm), #FF8F6B);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-stat .label {
+  font-size: 0.85rem;
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.scroll-hint {
+  position: absolute;
+  bottom: 140px;
+  animation: bob 2s ease-in-out infinite;
+  z-index: 2;
+}
+
+.scroll-hint svg {
+  width: 32px;
+  height: 32px;
+  opacity: 0.5;
+}
+
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(10px); }
+}
+
+/* ── INTRO SECTION ── */
+.intro {
+  padding: 6rem 2rem 4rem;
+  text-align: center;
+  max-width: 750px;
+  margin: 0 auto;
+}
+
+.intro h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.intro p {
+  font-size: 1.1rem;
+  color: var(--gray-cold);
+  line-height: 1.8;
+}
+
+/* ── TIMELINE ── */
+.timeline-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 2rem 6rem;
+  position: relative;
+}
+
+/* Central line */
+.timeline-container::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(to bottom, var(--gray-bg), var(--gray-muted) 20%, var(--gray-muted) 80%, var(--gray-bg));
+  transform: translateX(-50%);
+}
+
+/* ── TIME BLOCK ── */
+.time-block {
+  position: relative;
+  margin-bottom: 5rem;
+}
+
+.time-marker {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--dark);
+  color: var(--white);
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 0.4rem 1.2rem;
+  border-radius: 100px;
+  z-index: 2;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+}
+
+.time-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  padding-top: 3.5rem;
+}
+
+/* ── CARDS ── */
+.card {
+  border-radius: 16px;
+  padding: 2rem;
+  position: relative;
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.card.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.card.without {
+  background: var(--gray-bg);
+  border: 1px solid #E5E7EB;
+}
+
+.card.with {
+  background: var(--warm-light);
+  border: 1px solid #FFDDC9;
+  box-shadow: 0 8px 30px rgba(255, 107, 53, 0.08);
+}
+
+.card-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 1rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 6px;
+}
+
+.card.without .card-label {
+  background: #E5E7EB;
+  color: var(--gray-cold);
+}
+
+.card.with .card-label {
+  background: #FFD4BD;
+  color: #C44D1A;
+}
+
+.card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.card.without .card-icon {
+  background: #E5E7EB;
+}
+
+.card.with .card-icon {
+  background: #FFD4BD;
+}
+
+.card h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+}
+
+.card.without h3 {
+  color: var(--gray-cold);
+}
+
+.card.with h3 {
+  color: var(--dark);
+}
+
+.card p {
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.card.without p {
+  color: var(--gray-muted);
+}
+
+.card.with p {
+  color: #5A4A42;
+}
+
+.card-metric {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.card.without .card-metric {
+  background: #E5E7EB;
+  color: var(--gray-cold);
+}
+
+.card.with .card-metric {
+  background: #E8F8F0;
+  color: #1A7A45;
+}
+
+.card-metric svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* ── CONNECTOR DOTS ── */
+.time-block::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 3.5rem;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+}
+
+.time-block.block-without::after {
+  background: var(--without-accent);
+  box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.2);
+}
+
+.time-block.block-with::after {
+  background: var(--with-accent);
+  box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.2);
+}
+
+/* ── PHASE DIVIDER ── */
+.phase-divider {
+  text-align: center;
+  padding: 5rem 2rem;
+  position: relative;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.phase-divider::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--warm), transparent);
+}
+
+.phase-divider h2 {
+  display: inline-block;
+  background: var(--white);
+  padding: 0 2rem;
+  font-size: 2rem;
+  font-weight: 800;
+  position: relative;
+}
+
+.phase-divider h2 span {
+  background: linear-gradient(135deg, var(--warm), #FF8F6B);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.phase-divider p {
+  margin-top: 1rem;
+  color: var(--gray-cold);
+  font-size: 1.05rem;
+  position: relative;
+}
+
+/* ── RESULTS SECTION ── */
+.results {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: var(--white);
+  padding: 6rem 2rem;
+}
+
+.results-inner {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.results h2 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.results h2 span {
+  background: linear-gradient(135deg, var(--warm), #FF8F6B);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.results > .results-inner > p {
+  text-align: center;
+  opacity: 0.7;
+  max-width: 600px;
+  margin: 0 auto 3rem;
+  font-size: 1.1rem;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.result-card {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.result-card.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.result-card .big-num {
+  font-size: 3rem;
+  font-weight: 800;
+  margin-bottom: 0.25rem;
+}
+
+.result-card .big-num.warm {
+  background: linear-gradient(135deg, var(--warm), #FF8F6B);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.result-card .big-num.green {
+  background: linear-gradient(135deg, var(--green), #5DEDA8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.result-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.result-card p {
+  font-size: 0.85rem;
+  opacity: 0.6;
+  line-height: 1.6;
+}
+
+/* ── SIDE BY SIDE COMPARISON ── */
+.comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  max-width: 900px;
+  margin: 3rem auto 0;
+}
+
+.comp-col {
+  padding: 2rem;
+  border-radius: 16px;
+}
+
+.comp-col.without-col {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.comp-col.with-col {
+  background: rgba(255, 107, 53, 0.1);
+  border: 1px solid rgba(255, 107, 53, 0.25);
+}
+
+.comp-col h3 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.comp-col.without-col h3 { opacity: 0.5; }
+.comp-col.with-col h3 { color: var(--warm); }
+
+.comp-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.comp-item svg { flex-shrink: 0; margin-top: 2px; }
+
+.comp-col.without-col .comp-item { opacity: 0.5; }
+
+/* ── CTA SECTION ── */
+.cta-section {
+  background: var(--warm-glow);
+  padding: 6rem 2rem;
+  text-align: center;
+}
+
+.cta-section h2 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  max-width: 650px;
+  margin: 0 auto 1rem;
+  line-height: 1.2;
+}
+
+.cta-section p {
+  font-size: 1.1rem;
+  color: var(--gray-cold);
+  margin-bottom: 2.5rem;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--warm);
+  color: var(--white);
+  padding: 1rem 2.5rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
+}
+
+.cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(255, 107, 53, 0.4);
+  background: #E55A28;
+}
+
+.cta-btn svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.3s ease;
+}
+
+.cta-btn:hover svg {
+  transform: translateX(4px);
+}
+
+/* ── FOOTER ── */
+footer {
+  text-align: center;
+  padding: 2.5rem 2rem;
+  font-size: 0.85rem;
+  color: var(--gray-muted);
+}
+
+footer a {
+  color: var(--warm);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* ── NOTIFICATION TOAST (for "with" cards) ── */
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: var(--white);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-top: 1.25rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  border-left: 3px solid var(--warm);
+}
+
+.toast-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--warm-light);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.toast-body {
+  flex: 1;
+}
+
+.toast-body .toast-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--warm);
+  margin-bottom: 0.15rem;
+}
+
+.toast-body .toast-msg {
+  font-size: 0.85rem;
+  color: var(--dark);
+  line-height: 1.5;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .timeline-container::before { left: 24px; }
+
+  .time-marker {
+    left: 24px;
+    transform: translateX(0);
+    font-size: 0.85rem;
+  }
+
+  .time-cards {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding-left: 3.5rem;
+  }
+
+  .time-block::after {
+    left: 24px;
+    transform: translate(-50%, -50%);
+  }
+
+  .hero-stats { flex-direction: column; gap: 1.5rem; }
+
+  .results-grid { grid-template-columns: 1fr; }
+
+  .comparison { grid-template-columns: 1fr; }
+
+  .hero h1 { font-size: 2.2rem; }
+
+  .results h2 { font-size: 2rem; }
+
+  .cta-section h2 { font-size: 1.8rem; }
+
+  .phase-divider h2 { font-size: 1.6rem; }
+}
+
+/* ── ANIMATED COUNTER ── */
+.counter { display: inline-block; }
+
+/* ── PROGRESS LINE ANIMATION ── */
+.timeline-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(to right, var(--warm), #FF8F6B);
+  z-index: 1000;
+  width: 0%;
+  transition: width 0.1s ease-out;
+}
+</style>
+</head>
+<body>
+
+<div class="timeline-progress" id="progress"></div>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-badge"><span class="dot"></span> A story about your team</div>
+  <h1>Same team. Same hours.<br><span>Completely different day.</span></h1>
+  <p>Follow a 20-person team through an ordinary Tuesday. One version without Go2. One version with it. The difference is uncomfortable.</p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="num counter" data-target="14">0</div>
+      <div class="label">Hours wasted daily</div>
+    </div>
+    <div class="hero-stat">
+      <div class="num counter" data-target="30">0</div>
+      <div class="label">% productivity gained</div>
+    </div>
+    <div class="hero-stat">
+      <div class="num counter" data-target="0">0</div>
+      <div class="label">People fired</div>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    <svg fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+  </div>
+</section>
+
+<!-- ── INTRO ── -->
+<section class="intro">
+  <h2>Meet the team at Ridgeline Co.</h2>
+  <p>Twenty people. Fully remote. Customer support, operations, sales. They work hard. They care about what they do. But every day, invisible friction eats hours they'll never get back. This is what Tuesday looks like.</p>
+</section>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- PART ONE: WITHOUT GO2                   -->
+<!-- ═══════════════════════════════════════ -->
+
+<div class="phase-divider">
+  <h2>Tuesday <span>without</span> Go2</h2>
+  <p>An ordinary day. Nothing obviously broken. Just... slow.</p>
+</div>
+
+<div class="timeline-container">
+
+  <!-- 9:00 AM -->
+  <div class="time-block block-without">
+    <div class="time-marker">9:00 AM</div>
+    <div class="time-cards">
+      <div class="card without">
+        <div class="card-label">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="#9CA3AF" stroke-width="2"/></svg>
+          Without Go2
+        </div>
+        <div class="card-icon">&#128196;</div>
+        <h3>Sarah manually formats the Monday report. Again.</h3>
+        <p>Every week, same spreadsheet, same formatting. Copy column A, reformat dates, fix the header row, export to PDF. She's done it 47 times this year. It takes 20 minutes each time.</p>
+        <div class="card-metric">
+          <svg viewBox="0 0 20 20" fill="#9CA3AF"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/></svg>
+          20 minutes lost &mdash; every single Monday
+        </div>
+      </div>
+      <div class="card without" style="visibility:hidden"></div>
+    </div>
+  </div>
+
+  <!-- 9:30 AM -->
+  <div class="time-block block-without">
+    <div class="time-marker">9:30 AM</div>
+    <div class="time-cards">
+      <div class="card without" style="visibility:hidden"></div>
+      <div class="card without">
+        <div class="card-label">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="#9CA3AF" stroke-width="2"/></svg>
+          Without Go2
+        </div>
+        <div class="card-icon">&#128269;</div>
+        <h3>Mike can't find the returns process doc.</h3>
+        <p>He knows it exists. Somewhere. He searches Notion, then Google Drive, then gives up and DMs three colleagues on Slack. Two don't respond. One sends a link to an outdated version. 35 minutes gone.</p>
+        <div class="card-metric">
+          <svg viewBox="0 0 20 20" fill="#9CA3AF"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/></svg>
+          35 minutes &mdash; plus 3 people interrupted
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10:15 AM -->
+  <div class="time-block block-without">
+    <div class="time-marker">10:15 AM</div>
+    <div class="time-cards">
+      <div class="card without">
+        <div class="card-label">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="#9CA3AF" stroke-width="2"/></svg>
+          Without Go2
+        </div>
+        <div class="card-icon">&#128260;</div>
+        <h3>The entire support team uses a 6-click workaround.</h3>
+        <p>There's a 1-click shortcut in the CRM. Nobody knows about it. Eight support reps click through 6 screens to close every ticket &mdash; about 40 times per day each. That's 320 unnecessary click sequences. Every. Day.</p>
+        <div class="card-metric">
+          <svg viewBox="0 0 20 20" fill="#9CA3AF"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/></svg>
+          ~4 hours wasted daily across the team
+        </div>
+      </div>
+      <div class="card without" style="visibility:hidden"></div>
+    </div>
+  </div>
+
+  <!-- 11:00 AM -->
+  <div class="time-block block-without">
+    <div class="time-marker">11:00 AM</div>
+    <div class="time-cards">
+      <div class="card without" style="visibility:hidden"></div>
+      <div class="card without">
+        <div class="card-label">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="#9CA3AF" stroke-width="2"/></svg>
+          Without Go2
+        </div>
+        <div class="card-icon">&#128566;</div>
+        <h3>The manager has no idea any of this is happening.</h3>
+        <p>Lisa checks the team dashboard. Tickets are getting resolved. Reports are being filed. Everyone looks busy. The metrics say things are "fine." She has no way of knowing that hours are bleeding out through a thousand tiny cuts.</p>
+        <div class="card-metric">
+          <svg viewBox="0 0 20 20" fill="#9CA3AF"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/></svg>
+          Zero visibility into workflow waste
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2:00 PM -->
+  <div class="time-block block-without">
+    <div class="time-marker">2:00 PM</div>
+    <div class="time-cards">
+      <div class="card without">
+        <div class="card-label">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="#9CA3AF" stroke-width="2"/></svg>
+          Without Go2
+        </div>
+        <div class="card-icon">&#128172;</div>
+        <h3>Three people independently rewrite the same email template.</h3>
+        <p>A new customer objection is popping up. Jake, Anna, and Tom each craft their own response from scratch. They don't know the others are doing it. Three people. Same problem. Triple the work.</p>
+        <div class="card-metric">
+          <svg viewBox="0 0 20 20" fill="#9CA3AF"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/></svg>
+          2 hours of duplicated work
+        </div>
+      </div>
+      <div class="card without" style="visibility:hidden"></div>
+    </div>
+  </div>
+
+  <!-- 5:00 PM -->
+  <div class="time-block block-without">
+    <div class="time-marker">5:00 PM &mdash; End of Day</div>
+    <div class="time-cards">
+      <div class="card without" style="visibility:hidden"></div>
+      <div class="card without" style="border: 2px solid #D1D5DB;">
+        <div class="card-label">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="#9CA3AF" stroke-width="2"/></svg>
+          Without Go2 &mdash; Final Tally
+        </div>
+        <div class="card-icon">&#128200;</div>
+        <h3>14 hours of waste. Completely invisible.</h3>
+        <p>Everyone worked a full day. Everyone was busy. But across 20 people, 14 hours dissolved into repetitive tasks, hunting for information, duplicated effort, and workarounds nobody questioned. Nobody noticed because this is just... how it is.</p>
+        <div class="card-metric">
+          <svg viewBox="0 0 20 20" fill="#9CA3AF"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/></svg>
+          14 hours gone &mdash; $3,500+ in wages, every single day
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- PART TWO: WITH GO2                      -->
+<!-- ═══════════════════════════════════════ -->
+
+<div class="phase-divider">
+  <h2>Now replay it <span>with Go2</span></h2>
+  <p>Same team. Same Tuesday. Different outcome.</p>
+</div>
+
+<div class="timeline-container">
+
+  <!-- 9:00 AM -->
+  <div class="time-block block-with">
+    <div class="time-marker" style="background: var(--warm);">9:00 AM</div>
+    <div class="time-cards">
+      <div class="card with">
+        <div class="card-label">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="#FF6B35"/></svg>
+          With Go2
+        </div>
+        <div class="card-icon">&#9889;</div>
+        <h3>Go2 coaches Sarah before she even opens the spreadsheet.</h3>
+        <p>Go2's AI noticed she formats this same report every Monday. It learned her exact steps and built a macro. One notification. Two clicks. Done.</p>
+        <div class="toast">
+          <div class="toast-icon">&#129302;</div>
+          <div class="toast-body">
+            <div class="toast-title">Go2 Coach</div>
+            <div class="toast-msg">"You format this report every Monday. I made a macro that does it in 2 clicks. Want to try it?"</div>
+          </div>
+        </div>
+        <div class="card-metric">
+          <svg viewBox="0 0 20 20" fill="#1A7A45"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+          18 minutes saved &mdash; every week, automatically
+        </div>
+      </div>
+      <div class="card with" style="visibility:hidden"></div>
+    </div>
+  </div>
+
+  <!-- 9:30 AM -->
+  <div class="time-block block-with">
+    <div class="time-marker" style="background: var(--warm);">9:30 AM</div>
+    <div class="time-cards">
+      <div class="card with" style="visibility:hidden"></div>
+      <div class="card with">
+        <div class="card-label">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="#FF6B35"/></svg>
+          With Go2
+        </div>
+        <div class="card-icon">&#128161;</div>
+        <h3>Go2 surfaces the returns doc before Mike asks.</h3>
+        <p>Go2 learned that people in Mike's role look for the returns process doc on Mondays. It proactively pinned it in his workflow before his shift started. He didn't even have to search.</p>
+        <div class="toast">
+          <div class="toast-icon">&#128203;</div>
+          <div class="toast-body">
+            <div class="toast-title">Go2 Coach</div>
+            <div class="toast-msg">"Based on your role, you'll likely need this today: Returns Process v4.2 (updated last week)"</div>
+          </div>
+        </div>
+        <div class="card-metric">
+          <svg viewBox="0 0 20 20" fill="#1A7A45"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+          35 minutes saved &mdash; zero interruptions to the team
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10:15 AM -->
+  <div class="time-block block-with">
+    <div class="time-marker" style="background: var(--warm);">10:15 AM</div>
+    <div class="time-cards">
+      <div class="card with">
+        <div class="card-label">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="#FF6B35"/></svg>
+          With Go2
+        </div>
+        <div class="card-icon">&#128640;</div>
+        <h3>Go2 detects the 6-click problem and pushes the fix to everyone.</h3>
+        <p>Go2's AI noticed 8 reps using the same 6-click path to close tickets. It found the 1-click shortcut, verified it produces the same result, and pushed a tip to every rep on the team simultaneously.</p>
+        <div class="toast">
+          <div class="toast-icon">&#127775;</div>
+          <div class="toast-body">
+            <div class="toast-title">Go2 Coach &mdash; Tip for the team</div>
+            <div class="toast-msg">"You can close tickets in 1 click: Ctrl+Shift+D from the ticket view. This saves ~30 seconds per ticket."</div>
+          </div>
+        </div>
+        <div class="card-metric">
+          <svg viewBox="0 0 20 20" fill="#1A7A45"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+          4 hours saved daily &mdash; across the whole team
+        </div>
+      </div>
+      <div class="card with" style="visibility:hidden"></div>
+    </div>
+  </div>
+
+  <!-- 11:00 AM -->
+  <div class="time-block block-with">
+    <div class="time-marker" style="background: var(--warm);">11:00 AM</div>
+    <div class="time-cards">
+      <div class="card with" style="visibility:hidden"></div>
+      <div class="card with">
+        <div class="card-label">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="#FF6B35"/></svg>
+          With Go2
+        </div>
+        <div class="card-icon">&#128202;</div>
+        <h3>Lisa's dashboard shows: 6.2 hours recovered before lunch.</h3>
+        <p>No surveillance. No keystroke logs on her screen. Just a clean summary: where time was saved, which coaching tips were accepted, and which workflows have automation potential. The team is winning and she can see it.</p>
+        <div class="card-metric">
+          <svg viewBox="0 0 20 20" fill="#1A7A45"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+          6.2 hours recovered &mdash; visible on the dashboard
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2:00 PM -->
+  <div class="time-block block-with">
+    <div class="time-marker" style="background: var(--warm);">2:00 PM</div>
+    <div class="time-cards">
+      <div class="card with">
+        <div class="card-label">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="#FF6B35"/></svg>
+          With Go2
+        </div>
+        <div class="card-icon">&#129309;</div>
+        <h3>Go2 catches the duplicate work before it starts.</h3>
+        <p>When Jake starts drafting a response to the new objection, Go2 notices Anna already wrote one 20 minutes ago. It surfaces Anna's draft to Jake and Tom instantly &mdash; and suggests they collaborate on a shared template.</p>
+        <div class="toast">
+          <div class="toast-icon">&#128101;</div>
+          <div class="toast-body">
+            <div class="toast-title">Go2 Coach</div>
+            <div class="toast-msg">"Anna already drafted a response to this objection. Want to use hers as a starting point? I can also create a shared template for the team."</div>
+          </div>
+        </div>
+        <div class="card-metric">
+          <svg viewBox="0 0 20 20" fill="#1A7A45"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+          2 hours saved &mdash; plus a reusable template created
+        </div>
+      </div>
+      <div class="card with" style="visibility:hidden"></div>
+    </div>
+  </div>
+
+  <!-- 5:00 PM -->
+  <div class="time-block block-with">
+    <div class="time-marker" style="background: var(--warm);">5:00 PM &mdash; End of Day</div>
+    <div class="time-cards">
+      <div class="card with" style="visibility:hidden"></div>
+      <div class="card with" style="border: 2px solid var(--warm);">
+        <div class="card-label">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="#FF6B35"/></svg>
+          With Go2 &mdash; Final Tally
+        </div>
+        <div class="card-icon">&#127942;</div>
+        <h3>Same hours. Same people. 30% more done.</h3>
+        <p>Nobody worked overtime. Nobody was monitored or micromanaged. The AI just quietly removed friction &mdash; surfacing knowledge, eliminating repetition, and coaching everyone individually. The team didn't work harder. They worked without the invisible drag.</p>
+        <div class="card-metric">
+          <svg viewBox="0 0 20 20" fill="#1A7A45"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+          14 hours recovered &mdash; every single day
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── RESULTS ── -->
+<section class="results">
+  <div class="results-inner">
+    <h2>The numbers after <span>one month</span></h2>
+    <p>Ridgeline Co. didn't hire anyone. Didn't fire anyone. Didn't restructure. They just installed Go2.</p>
+
+    <div class="results-grid">
+      <div class="result-card">
+        <div class="big-num warm">280+</div>
+        <h3>Hours recovered per month</h3>
+        <p>From repetitive tasks, workarounds, and duplicated effort the team didn't even know they had.</p>
+      </div>
+      <div class="result-card">
+        <div class="big-num green">30%</div>
+        <h3>More output, same headcount</h3>
+        <p>Not by pushing harder. By removing the invisible friction that was slowing everyone down.</p>
+      </div>
+      <div class="result-card">
+        <div class="big-num warm">47</div>
+        <h3>Automations created by AI</h3>
+        <p>Go2 identified repetitive patterns and built macros, templates, and shortcuts automatically.</p>
+      </div>
+      <div class="result-card">
+        <div class="big-num green">92%</div>
+        <h3>Team coaching adoption rate</h3>
+        <p>Employees accepted Go2's suggestions because they're helpful &mdash; not because they're mandatory.</p>
+      </div>
+    </div>
+
+    <div class="comparison">
+      <div class="comp-col without-col">
+        <h3>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#6B7280" stroke-width="2"/></svg>
+          Without Go2
+        </h3>
+        <div class="comp-item">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="#6B7280"><path d="M4.646 4.646a.5.5 0 01.708 0L8 7.293l2.646-2.647a.5.5 0 01.708.708L8.707 8l2.647 2.646a.5.5 0 01-.708.708L8 8.707l-2.646 2.647a.5.5 0 01-.708-.708L7.293 8 4.646 5.354a.5.5 0 010-.708z"/></svg>
+          Knowledge trapped in people's heads
+        </div>
+        <div class="comp-item">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="#6B7280"><path d="M4.646 4.646a.5.5 0 01.708 0L8 7.293l2.646-2.647a.5.5 0 01.708.708L8.707 8l2.647 2.646a.5.5 0 01-.708.708L8 8.707l-2.646 2.647a.5.5 0 01-.708-.708L7.293 8 4.646 5.354a.5.5 0 010-.708z"/></svg>
+          Workarounds become permanent
+        </div>
+        <div class="comp-item">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="#6B7280"><path d="M4.646 4.646a.5.5 0 01.708 0L8 7.293l2.646-2.647a.5.5 0 01.708.708L8.707 8l2.647 2.646a.5.5 0 01-.708.708L8 8.707l-2.646 2.647a.5.5 0 01-.708-.708L7.293 8 4.646 5.354a.5.5 0 010-.708z"/></svg>
+          Managers see output, not process
+        </div>
+        <div class="comp-item">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="#6B7280"><path d="M4.646 4.646a.5.5 0 01.708 0L8 7.293l2.646-2.647a.5.5 0 01.708.708L8.707 8l2.647 2.646a.5.5 0 01-.708.708L8 8.707l-2.646 2.647a.5.5 0 01-.708-.708L7.293 8 4.646 5.354a.5.5 0 010-.708z"/></svg>
+          New hires take months to ramp up
+        </div>
+        <div class="comp-item">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="#6B7280"><path d="M4.646 4.646a.5.5 0 01.708 0L8 7.293l2.646-2.647a.5.5 0 01.708.708L8.707 8l2.647 2.646a.5.5 0 01-.708.708L8 8.707l-2.646 2.647a.5.5 0 01-.708-.708L7.293 8 4.646 5.354a.5.5 0 010-.708z"/></svg>
+          Waste is invisible and permanent
+        </div>
+      </div>
+      <div class="comp-col with-col">
+        <h3>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" fill="#FF6B35"/></svg>
+          With Go2
+        </h3>
+        <div class="comp-item">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="#FF6B35"><path d="M13.854 3.646a.5.5 0 010 .708l-7 7a.5.5 0 01-.708 0l-3.5-3.5a.5.5 0 11.708-.708L6.5 10.293l6.646-6.647a.5.5 0 01.708 0z"/></svg>
+          AI captures and distributes knowledge
+        </div>
+        <div class="comp-item">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="#FF6B35"><path d="M13.854 3.646a.5.5 0 010 .708l-7 7a.5.5 0 01-.708 0l-3.5-3.5a.5.5 0 11.708-.708L6.5 10.293l6.646-6.647a.5.5 0 01.708 0z"/></svg>
+          Shortcuts are found and shared automatically
+        </div>
+        <div class="comp-item">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="#FF6B35"><path d="M13.854 3.646a.5.5 0 010 .708l-7 7a.5.5 0 01-.708 0l-3.5-3.5a.5.5 0 11.708-.708L6.5 10.293l6.646-6.647a.5.5 0 01.708 0z"/></svg>
+          Managers see insights, not surveillance
+        </div>
+        <div class="comp-item">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="#FF6B35"><path d="M13.854 3.646a.5.5 0 010 .708l-7 7a.5.5 0 01-.708 0l-3.5-3.5a.5.5 0 11.708-.708L6.5 10.293l6.646-6.647a.5.5 0 01.708 0z"/></svg>
+          New hires get coached from day one
+        </div>
+        <div class="comp-item">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="#FF6B35"><path d="M13.854 3.646a.5.5 0 010 .708l-7 7a.5.5 0 01-.708 0l-3.5-3.5a.5.5 0 11.708-.708L6.5 10.293l6.646-6.647a.5.5 0 01.708 0z"/></svg>
+          Waste is visible and eliminated
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ── -->
+<section class="cta-section">
+  <h2>Your team has a Tuesday like this every week.</h2>
+  <p>The waste is already happening. Go2 just makes it visible &mdash; and then makes it disappear.</p>
+  <a href="#" class="cta-btn">
+    See it in action
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+  </a>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <a href="https://go2.io">go2.io</a> &mdash; AI that coaches your team, not monitors them.
+</footer>
+
+<script>
+// ── Scroll reveal for cards and result cards ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+document.querySelectorAll('.card:not([style*="hidden"]), .result-card').forEach(el => {
+  observer.observe(el);
+});
+
+// ── Stagger animation for alternating cards ──
+document.querySelectorAll('.time-cards').forEach(cards => {
+  const visible = cards.querySelectorAll('.card:not([style*="hidden"])');
+  visible.forEach((card, i) => {
+    card.style.transitionDelay = `${i * 0.15}s`;
+  });
+});
+
+// ── Progress bar ──
+window.addEventListener('scroll', () => {
+  const scrollTop = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const progress = (scrollTop / docHeight) * 100;
+  document.getElementById('progress').style.width = progress + '%';
+});
+
+// ── Counter animation ──
+const counterObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const el = entry.target;
+      const target = parseInt(el.dataset.target);
+      const duration = 1500;
+      const startTime = performance.now();
+
+      function update(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.round(eased * target);
+        el.textContent = current + (el.closest('.hero-stat')?.querySelector('.label')?.textContent.includes('%') ? '%' : '');
+        if (progress < 1) requestAnimationFrame(update);
+      }
+      requestAnimationFrame(update);
+      counterObserver.unobserve(el);
+    }
+  });
+}, { threshold: 0.5 });
+
+document.querySelectorAll('.counter').forEach(el => counterObserver.observe(el));
+</script>
+</body>
+</html>
