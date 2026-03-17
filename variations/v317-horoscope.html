@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Your Company Horoscope</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:radial-gradient(ellipse at top,#1a0a2e,#0a0a0a);color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:2rem;overflow-x:hidden}
+.stars{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0}
+.star{position:absolute;background:#fff;border-radius:50%;animation:twinkle var(--d) infinite alternate}
+@keyframes twinkle{0%{opacity:0.2}100%{opacity:1}}
+.content{position:relative;z-index:1;max-width:700px;width:100%}
+h1{font-size:clamp(2rem,5vw,3rem);font-weight:800;text-align:center;margin-bottom:0.5rem}
+h1 span{background:linear-gradient(135deg,#c084fc,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{text-align:center;color:#888;margin-bottom:2.5rem;font-size:1rem}
+.signs{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-bottom:2rem}
+@media(max-width:500px){.signs{grid-template-columns:1fr}}
+.sign{padding:1.5rem;background:rgba(255,255,255,0.03);border:1px solid #2a1a4a;border-radius:12px;cursor:pointer;text-align:center;transition:all 0.3s}
+.sign:hover{border-color:#c084fc;transform:translateY(-2px);background:rgba(192,132,252,0.05)}
+.sign.selected{border-color:#c084fc;background:rgba(192,132,252,0.1)}
+.sign-icon{font-size:2.5rem;margin-bottom:0.5rem}
+.sign-name{font-weight:700;font-size:1.1rem;margin-bottom:0.3rem}
+.sign-desc{font-size:0.8rem;color:#888}
+.horoscope{max-width:700px;width:100%;opacity:0;transform:translateY(20px);transition:all 0.8s;margin-top:1rem}
+.horoscope.show{opacity:1;transform:translateY(0)}
+.horoscope-card{background:rgba(255,255,255,0.03);border:1px solid #2a1a4a;border-radius:16px;padding:2rem;position:relative;overflow:hidden}
+.horoscope-card::before{content:'';position:absolute;top:-50%;right:-50%;width:100%;height:100%;background:radial-gradient(circle,rgba(192,132,252,0.05),transparent);pointer-events:none}
+.horo-header{display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem}
+.horo-icon{font-size:3rem}
+.horo-title h2{font-size:1.5rem;font-weight:800}
+.horo-title .period{font-size:0.8rem;color:#c084fc}
+.horo-section{margin-bottom:1.5rem}
+.horo-section h3{font-size:0.8rem;text-transform:uppercase;letter-spacing:0.15em;color:#c084fc;margin-bottom:0.5rem}
+.horo-section p{color:#ccc;line-height:1.7;font-size:0.95rem}
+.compatibility{display:flex;gap:1rem;flex-wrap:wrap}
+.compat-item{padding:0.5rem 1rem;background:rgba(255,255,255,0.05);border-radius:20px;font-size:0.8rem;display:flex;align-items:center;gap:0.3rem}
+.meter{height:6px;background:#1a1a2e;border-radius:3px;margin-top:0.5rem;overflow:hidden}
+.meter-fill{height:100%;border-radius:3px;transition:width 1s ease}
+.go2-insight{padding:1.5rem;background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.2);border-radius:12px;margin-top:1.5rem}
+.go2-insight h3{color:#4ade80;font-size:0.9rem;margin-bottom:0.5rem}
+.go2-insight p{color:#aaa;font-size:0.85rem;line-height:1.6}
+.cta{display:block;text-align:center;margin-top:1.5rem;padding:1rem;background:#c084fc;color:#000;font-weight:700;border-radius:50px;text-decoration:none;transition:transform 0.3s;font-size:1rem}
+.cta:hover{transform:scale(1.03)}
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div class="content">
+<h1>Your Company <span>Horoscope</span></h1>
+<p class="sub">What do the stars say about your AI transformation?</p>
+
+<div class="signs">
+<div class="sign" onclick="showHoroscope(0)">
+<div class="sign-icon">&#9733;</div>
+<div class="sign-name">Startup</div>
+<div class="sign-desc">Under 50 people, moving fast, figuring it out</div>
+</div>
+<div class="sign" onclick="showHoroscope(1)">
+<div class="sign-icon">&#9650;</div>
+<div class="sign-name">Scale-up</div>
+<div class="sign-desc">50-500, growing pains, processes breaking</div>
+</div>
+<div class="sign" onclick="showHoroscope(2)">
+<div class="sign-icon">&#9670;</div>
+<div class="sign-name">Enterprise</div>
+<div class="sign-desc">500+, complex org, multiple AI initiatives</div>
+</div>
+<div class="sign" onclick="showHoroscope(3)">
+<div class="sign-icon">&#9632;</div>
+<div class="sign-name">Legacy Corp</div>
+<div class="sign-desc">Established, resistant to change, sitting on gold</div>
+</div>
+</div>
+
+<div class="horoscope" id="horoscope"></div>
+</div>
+
+<script>
+// Stars background
+const stars=document.getElementById('stars');
+for(let i=0;i<80;i++){
+const s=document.createElement('div');
+s.className='star';
+s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;width:${1+Math.random()*2}px;height:${1+Math.random()*2}px;--d:${1+Math.random()*3}s;animation-delay:${Math.random()*2}s`;
+stars.appendChild(s);
+}
+
+const data=[
+{
+name:"Startup",icon:"&#9733;",period:"Season of Discovery",
+forecast:"Mercury is in retrograde for your data pipelines, but Venus aligns with product-market fit. The stars warn: your tribal knowledge lives in 3 people's heads. When they leave for a bigger startup next quarter (and they will), everything goes with them.",
+love:"High compatibility with scrappy AI tools. ChatGPT is your best friend, but it doesn't know your onboarding flow from your offboarding flow. The passion is there; the context is missing.",
+career:"A mysterious force called 'documentation debt' looms. You'll hire 20 people this quarter. None of them will know how anything works.",
+lucky:"Lucky automation: that Google Sheet your ops person updates 4 times daily.",
+go2:"At your size, Go2 captures workflows before they become tribal knowledge. Every process gets documented as it happens. When you 3x headcount, new hires ramp in days, not months.",
+meters:{chaos:85,potential:92,risk:70},
+compat:["ChatGPT","Notion","Slack"]
+},
+{
+name:"Scale-up",icon:"&#9650;",period:"Season of Growing Pains",
+forecast:"Saturn squares your organizational chart, creating tension between 'how we used to do things' and 'how we need to do things.' Your processes are breaking at the seams. What worked at 30 people is actively harmful at 200.",
+love:"Your relationship with AI is complicated. You bought Copilot for engineering (happy), ChatGPT Enterprise (confusing), and that workflow tool nobody uses (wasteful). You need a couples counselor for your tech stack.",
+career:"Context switching reaches critical mass this quarter. Your sales team will average 47 app switches per day. The stars see... a productivity coaching tool in your future.",
+lucky:"Lucky number: $18,400. That's your monthly waste from undocumented processes.",
+go2:"This is Go2's sweet spot. You're big enough to have real workflow patterns, small enough to fix them fast. Go2 captures the chaos, coaches your team (89% satisfaction), and feeds context to your existing AI tools.",
+meters:{chaos:75,potential:95,risk:60},
+compat:["Claude","HubSpot","Jira"]
+},
+{
+name:"Enterprise",icon:"&#9670;",period:"Season of Expensive Experiments",
+forecast:"Jupiter expands your AI budget to $2.4M annually. Neptune obscures your ROI metrics. The cosmic irony: you have more data than any company in history, yet your AI tools have never observed a single actual workflow.",
+love:"You're in a complicated polyamorous relationship with 47 SaaS tools. None of them talk to each other. Go2 is the relationship therapist who actually listens.",
+career:"A great alignment approaches: the board will ask 'what's our AI ROI?' this quarter. The stars suggest having an answer that isn't 'we're still evaluating.' 95% of AI implementations fail. Yours doesn't have to.",
+lucky:"Lucky insight: 3 departments are doing the same process 3 different ways. One of them is 4x faster.",
+go2:"Go2 across 2M+ workers means we've seen your patterns before. Enterprise deployment, department-level coaching, AI agent training on real workflows. The missing data layer your $2.4M AI stack needs.",
+meters:{chaos:60,potential:88,risk:80},
+compat:["Claude Enterprise","Salesforce","ServiceNow"]
+},
+{
+name:"Legacy Corp",icon:"&#9632;",period:"Season of Hidden Treasure",
+forecast:"Pluto enters your digital transformation house, demanding total metamorphosis. Good news: you're sitting on decades of institutional knowledge. Bad news: it's all in people's heads, legacy systems, and that shared drive nobody can find.",
+love:"Your relationship with technology is... traditional. You tried RPA in 2019 (mixed results). You're curious about AI but terrified of disruption. The stars say: the disruption is coming whether you're ready or not.",
+career:"Your competitors' AI agents will learn to do in minutes what takes your team hours. Not because their AI is better. Because they fed it work context. The clock is ticking.",
+lucky:"Lucky discovery: your most tenured employee does a process in 4 minutes that takes everyone else 23. Go2 would capture that immediately.",
+go2:"Go2 is your bridge between institutional knowledge and AI. Capture decades of tribal knowledge before it retires. Auto-document every process. Train AI agents on your workflows. The transformation starts with understanding how work actually happens.",
+meters:{chaos:45,potential:80,risk:90},
+compat:["SAP","Oracle","Legacy APIs"]
+}
+];
+
+function showHoroscope(i){
+document.querySelectorAll('.sign').forEach((s,j)=>s.classList.toggle('selected',j===i));
+const d=data[i];
+const el=document.getElementById('horoscope');
+el.innerHTML=`
+<div class="horoscope-card">
+<div class="horo-header">
+<div class="horo-icon">${d.icon}</div>
+<div class="horo-title"><h2>${d.name}</h2><div class="period">${d.period}</div></div>
+</div>
+<div class="horo-section"><h3>General Forecast</h3><p>${d.forecast}</p></div>
+<div class="horo-section"><h3>Love &amp; Compatibility (Tech Stack)</h3><p>${d.love}</p>
+<div class="compatibility">${d.compat.map(c=>`<div class="compat-item">${c}</div>`).join('')}</div></div>
+<div class="horo-section"><h3>Career &amp; Finance</h3><p>${d.career}</p></div>
+<div class="horo-section"><h3>Lucky Insight</h3><p>${d.lucky}</p></div>
+<div class="horo-section">
+<h3>Energy Meters</h3>
+<div style="margin-bottom:0.5rem"><span style="font-size:0.8rem;color:#888">Organizational Chaos</span><div class="meter"><div class="meter-fill" style="width:0;background:#ef4444" data-w="${d.meters.chaos}%"></div></div></div>
+<div style="margin-bottom:0.5rem"><span style="font-size:0.8rem;color:#888">AI Potential</span><div class="meter"><div class="meter-fill" style="width:0;background:#4ade80" data-w="${d.meters.potential}%"></div></div></div>
+<div><span style="font-size:0.8rem;color:#888">Inaction Risk</span><div class="meter"><div class="meter-fill" style="width:0;background:#f59e0b" data-w="${d.meters.risk}%"></div></div></div>
+</div>
+<div class="go2-insight"><h3>Go2 Reading</h3><p>${d.go2}</p></div>
+<a href="#" class="cta">Align your stars with Go2 &rarr;</a>
+</div>`;
+el.classList.add('show');
+setTimeout(()=>{
+el.querySelectorAll('.meter-fill').forEach(m=>{m.style.width=m.dataset.w;});
+},100);
+}
+</script>
+</body>
+</html>

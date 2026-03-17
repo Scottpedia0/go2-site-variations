@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Knowledge Loss Calculator | Go2 - Protect Institutional Knowledge</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#6C5CE7;--secondary:#00CEC9;--accent:#FD79A8;--dark:#1a1a2e;--card:#ffffff;--text:#2d3436;--text-light:#636e72;--bg:#f8f9fe;--success:#00b894;--danger:#e17055;--warning:#fdcb6e;--gradient:linear-gradient(135deg,#6C5CE7,#00CEC9)}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
+.hero{background:linear-gradient(135deg,#2d3436,#636e72);padding:50px 20px 40px;text-align:center;color:#fff;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 50%,rgba(108,92,231,0.2),transparent 50%),radial-gradient(circle at 70% 50%,rgba(0,206,201,0.2),transparent 50%)}
+.hero h1{font-size:2.5rem;font-weight:900;margin-bottom:10px;position:relative}
+.hero p{font-size:1.1rem;opacity:0.85;max-width:600px;margin:0 auto;position:relative}
+.container{max-width:1000px;margin:0 auto;padding:40px 20px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:30px}
+@media(max-width:768px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border-radius:20px;padding:36px;box-shadow:0 8px 30px rgba(0,0,0,0.06)}
+.card h2{font-size:1.4rem;font-weight:800;margin-bottom:20px}
+.form-group{margin-bottom:22px}
+.form-group label{display:block;font-weight:600;margin-bottom:8px;font-size:0.93rem}
+.form-group .hint{font-size:0.82rem;color:var(--text-light);margin-bottom:6px}
+input[type=range]{width:100%;-webkit-appearance:none;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--success),var(--warning),var(--danger));outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.2);cursor:pointer;border:3px solid var(--primary)}
+.range-val{text-align:center;font-size:1.8rem;font-weight:800;color:var(--primary);margin:4px 0}
+.range-labels{display:flex;justify-content:space-between;font-size:0.82rem;color:var(--text-light)}
+select{width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:12px;font-size:1rem;font-family:'Inter',sans-serif}
+.results{background:var(--dark);border-radius:20px;padding:36px;color:#fff;position:relative;overflow:hidden}
+.results h2{font-size:1.4rem;font-weight:800;margin-bottom:20px}
+.result-block{background:rgba(255,255,255,0.06);border-radius:14px;padding:20px;margin-bottom:14px}
+.result-block .label{font-size:0.82rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.result-block .value{font-size:2rem;font-weight:800}
+.result-block .value.red{color:var(--danger)}
+.result-block .value.green{color:var(--secondary)}
+.result-block .value.purple{background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.result-block .sub{font-size:0.82rem;color:rgba(255,255,255,0.4);margin-top:4px}
+.knowledge-funnel{margin-top:24px;text-align:center}
+.funnel-stage{margin:0 auto;padding:14px;border-radius:8px;color:#fff;font-weight:600;font-size:0.9rem;transition:all 0.5s;position:relative}
+.funnel-stage .amount{font-size:1.3rem;font-weight:800;display:block;margin-top:4px}
+.funnel-arrow{text-align:center;color:rgba(255,255,255,0.3);font-size:1.2rem;margin:4px 0}
+.timeline{margin-top:30px}
+.timeline h2{font-size:1.4rem;font-weight:800;margin-bottom:20px;text-align:center}
+.tl-item{display:flex;gap:16px;margin-bottom:20px;align-items:flex-start}
+.tl-dot{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.tl-content h4{font-weight:700;margin-bottom:4px;font-size:0.95rem}
+.tl-content p{font-size:0.85rem;color:var(--text-light);line-height:1.5}
+.tl-content .cost{font-weight:700;color:var(--danger)}
+.impact-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+@media(max-width:600px){.impact-grid{grid-template-columns:1fr}}
+.impact-card{text-align:center;padding:18px;border-radius:14px;background:rgba(255,255,255,0.06)}
+.impact-card .num{font-size:1.8rem;font-weight:800;color:var(--accent)}
+.impact-card .lab{font-size:0.75rem;color:rgba(255,255,255,0.5);margin-top:4px}
+.go2-section{margin-top:30px;padding:36px;background:linear-gradient(135deg,rgba(0,206,201,0.06),rgba(0,184,148,0.06));border-radius:20px;border:2px solid var(--secondary)}
+.go2-section h2{font-size:1.4rem;font-weight:800;margin-bottom:20px;color:var(--secondary);text-align:center}
+.go2-features{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.go2-features{grid-template-columns:1fr}}
+.go2-feat{padding:20px;background:var(--card);border-radius:14px;box-shadow:0 4px 15px rgba(0,0,0,0.04)}
+.go2-feat h4{font-weight:700;margin-bottom:6px;color:var(--primary);display:flex;align-items:center;gap:8px}
+.go2-feat p{font-size:0.88rem;color:var(--text-light);line-height:1.5}
+.cta{text-align:center;margin-top:40px;padding:40px;background:var(--card);border-radius:20px}
+.cta h2{font-size:1.8rem;font-weight:800;margin-bottom:8px}
+.cta p{color:var(--text-light);margin-bottom:20px}
+.btn{display:inline-block;padding:16px 40px;background:var(--gradient);color:#fff;border:none;border-radius:12px;font-size:1.1rem;font-weight:700;cursor:pointer;text-decoration:none;transition:all 0.3s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(108,92,231,0.35)}
+</style>
+</head>
+<body>
+<div class="hero">
+<h1>Knowledge Loss Calculator</h1>
+<p>Every departing employee takes institutional knowledge with them. Calculate what that really costs your organization.</p>
+</div>
+<div class="container">
+<div class="grid">
+<div class="card">
+<h2>Your Organization</h2>
+<div class="form-group">
+<label>Team Size</label>
+<input type="range" id="teamSize" min="10" max="500" value="80" oninput="calc()">
+<div class="range-val" id="teamSizeVal">80</div>
+<div class="range-labels"><span>10</span><span>250</span><span>500</span></div>
+</div>
+<div class="form-group">
+<label>Annual Turnover Rate</label>
+<div class="hint">Industry avg: 15-25%</div>
+<input type="range" id="turnover" min="5" max="50" value="20" oninput="calc()">
+<div class="range-val" id="turnoverVal">20%</div>
+<div class="range-labels"><span>5%</span><span>27%</span><span>50%</span></div>
+</div>
+<div class="form-group">
+<label>Average Employee Tenure</label>
+<input type="range" id="tenure" min="6" max="120" value="30" step="6" oninput="calc()">
+<div class="range-val" id="tenureVal">2.5 years</div>
+<div class="range-labels"><span>6 mo</span><span>5 yr</span><span>10 yr</span></div>
+</div>
+<div class="form-group">
+<label>Average Annual Salary</label>
+<input type="range" id="salary" min="40000" max="250000" value="90000" step="5000" oninput="calc()">
+<div class="range-val" id="salaryVal">$90,000</div>
+<div class="range-labels"><span>$40K</span><span>$145K</span><span>$250K</span></div>
+</div>
+<div class="form-group">
+<label>Knowledge Documentation Level</label>
+<select id="docLevel" onchange="calc()">
+<option value="0.1">Minimal - mostly tribal knowledge</option>
+<option value="0.25" selected>Basic - some docs but gaps</option>
+<option value="0.5">Moderate - structured knowledge base</option>
+<option value="0.75">Strong - comprehensive documentation</option>
+</select>
+</div>
+<div class="form-group">
+<label>Role Complexity</label>
+<select id="complexity" onchange="calc()">
+<option value="1.5">High - specialized/technical roles</option>
+<option value="1.2" selected>Medium - professional roles</option>
+<option value="0.8">Low - standardized processes</option>
+</select>
+</div>
+</div>
+<div class="results" id="results">
+<h2>Knowledge Loss Impact</h2>
+<div class="result-block">
+<div class="label">Annual Knowledge Loss Cost</div>
+<div class="value red" id="totalLoss">$0</div>
+<div class="sub">Hidden cost most companies don't measure</div>
+</div>
+<div class="result-block">
+<div class="label">Employees Departing Per Year</div>
+<div class="value purple" id="departures">0</div>
+</div>
+<div class="result-block">
+<div class="label">Knowledge Recovery Time per Departure</div>
+<div class="value purple" id="recoveryTime">0 months</div>
+</div>
+<div class="result-block">
+<div class="label">Go2 Can Retain</div>
+<div class="value green" id="retained">$0</div>
+<div class="sub">Through auto-documentation & AI knowledge capture</div>
+</div>
+<div class="impact-grid">
+<div class="impact-card"><div class="num" id="prodLost">0</div><div class="lab">Productivity Days Lost</div></div>
+<div class="impact-card"><div class="num" id="rampWeeks">0</div><div class="lab">Weeks to Ramp New Hire</div></div>
+<div class="impact-card"><div class="num" id="riskScore">0</div><div class="lab">Knowledge Risk Score</div></div>
+</div>
+<div class="knowledge-funnel" id="funnel"></div>
+</div>
+</div>
+<div class="card timeline">
+<h2>The Knowledge Loss Timeline</h2>
+<div id="timeline"></div>
+</div>
+<div class="go2-section">
+<h2>How Go2 Prevents Knowledge Loss</h2>
+<div class="go2-features">
+<div class="go2-feat"><h4>🤖 Auto-Documentation</h4><p>Go2 continuously captures decisions, processes, and context as your team works. No extra effort required.</p></div>
+<div class="go2-feat"><h4>🧠 AI Knowledge Graph</h4><p>Builds a living map of who knows what, how processes connect, and where tribal knowledge lives.</p></div>
+<div class="go2-feat"><h4>📚 Instant Onboarding</h4><p>New hires get AI-powered access to captured knowledge, reducing ramp time by 60%.</p></div>
+<div class="go2-feat"><h4>🔄 Departure Readiness</h4><p>When someone gives notice, Go2 identifies knowledge gaps and prioritizes transfer sessions.</p></div>
+</div>
+</div>
+<div class="cta">
+<h2>Stop losing knowledge with every departure</h2>
+<p>Go2 captures and preserves institutional knowledge automatically.</p>
+<a href="https://go2.io" class="btn">Protect Your Knowledge</a>
+</div>
+</div>
+<script>
+function fmt(n){if(n>=1000000)return'$'+(n/1000000).toFixed(1)+'M';return'$'+n.toLocaleString()}
+function calc(){
+  const size=parseInt(document.getElementById('teamSize').value);
+  const turnover=parseInt(document.getElementById('turnover').value);
+  const tenure=parseInt(document.getElementById('tenure').value);
+  const salary=parseInt(document.getElementById('salary').value);
+  const docLevel=parseFloat(document.getElementById('docLevel').value);
+  const complexity=parseFloat(document.getElementById('complexity').value);
+  document.getElementById('teamSizeVal').textContent=size;
+  document.getElementById('turnoverVal').textContent=turnover+'%';
+  document.getElementById('tenureVal').textContent=tenure>=12?(tenure/12).toFixed(tenure%12?1:0)+' years':(tenure)+' months';
+  document.getElementById('salaryVal').textContent='$'+salary.toLocaleString();
+  const departures=Math.round(size*(turnover/100));
+  const knowledgePerEmployee=salary*0.5*complexity*(1-docLevel)*(Math.min(tenure,60)/12);
+  const totalLoss=Math.round(departures*knowledgePerEmployee);
+  const recoveryMonths=Math.round(3+tenure/12*0.5*complexity*(1-docLevel));
+  const rampWeeks=Math.round(recoveryMonths*4.3);
+  const prodDays=Math.round(departures*recoveryMonths*22*0.4);
+  const riskScore=Math.min(100,Math.round((turnover/100*100)*(1-docLevel)*complexity*1.2));
+  const retained=Math.round(totalLoss*0.65);
+  document.getElementById('totalLoss').textContent=fmt(totalLoss);
+  document.getElementById('departures').textContent=departures+' people';
+  document.getElementById('recoveryTime').textContent=recoveryMonths+' months';
+  document.getElementById('retained').textContent=fmt(retained);
+  document.getElementById('prodLost').textContent=prodDays;
+  document.getElementById('rampWeeks').textContent=rampWeeks;
+  document.getElementById('riskScore').textContent=riskScore+'/100';
+  // Funnel
+  const funnel=document.getElementById('funnel');
+  const stages=[
+    {label:'Total Institutional Knowledge',pct:100,color:'var(--primary)',amount:fmt(Math.round(size*salary*0.5))},
+    {label:'Knowledge at Risk (from turnover)',pct:Math.round(turnover*(1-docLevel)*100/100*complexity*80),color:'var(--warning)',amount:fmt(Math.round(totalLoss*1.5))},
+    {label:'Knowledge Actually Lost',pct:Math.round(turnover*(1-docLevel)*60/100),color:'var(--danger)',amount:fmt(totalLoss)},
+    {label:'With Go2: Knowledge Retained',pct:Math.round(turnover*(1-docLevel)*60/100*0.35),color:'var(--success)',amount:fmt(totalLoss-retained)}
+  ];
+  funnel.innerHTML='<h3 style="color:rgba(255,255,255,0.7);font-size:0.9rem;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">Knowledge Retention Funnel</h3>';
+  stages.forEach((s,i)=>{
+    const w=Math.max(40,100-i*15);
+    funnel.innerHTML+=`<div class="funnel-stage" style="width:${w}%;background:${s.color}"><span>${s.label}</span><span class="amount">${s.amount}</span></div>${i<3?'<div class="funnel-arrow">▼</div>':''}`;
+  });
+  // Timeline
+  const tl=document.getElementById('timeline');
+  const tlData=[
+    {icon:'📋',color:'#f0f0f0',title:'Notice Given (Day 0)',desc:`Employee announces departure. <span class="cost">${fmt(Math.round(knowledgePerEmployee*0.1))}</span> in undocumented processes at risk.`},
+    {icon:'🔄',color:'rgba(253,203,110,0.15)',title:'Knowledge Transfer Attempts (Week 1-2)',desc:`Rushed handoff meetings capture only 20-30% of critical knowledge. Key context, relationships, and "why we do it this way" is lost.`},
+    {icon:'👋',color:'rgba(225,112,85,0.15)',title:'Last Day (Week 2-4)',desc:`Employee leaves with <span class="cost">${fmt(Math.round(knowledgePerEmployee*0.7))}</span> worth of institutional knowledge. Undocumented decisions, tribal knowledge, relationship context — gone.`},
+    {icon:'😰',color:'rgba(225,112,85,0.15)',title:'The Knowledge Vacuum (Month 1-3)',desc:`Team scrambles. Questions go unanswered. Decisions get re-made. Mistakes from lost context cost <span class="cost">${fmt(Math.round(knowledgePerEmployee*0.3))}</span> in rework.`},
+    {icon:'🆕',color:'rgba(108,92,231,0.1)',title:'New Hire Ramp (Month 1-${recoveryMonths})',desc:`New employee takes ${recoveryMonths} months to reach full productivity. ${rampWeeks} weeks of reduced output = <span class="cost">${fmt(Math.round(salary*recoveryMonths/12*0.5))}</span> in lost productivity.`},
+    {icon:'✅',color:'rgba(0,184,148,0.1)',title:'With Go2: Continuous Capture',desc:`Go2 auto-documents knowledge as it's created. When someone leaves, 65% more knowledge is retained. New hire ramp cut by 60%.`}
+  ];
+  tl.innerHTML='';
+  tlData.forEach(t=>{
+    tl.innerHTML+=`<div class="tl-item"><div class="tl-dot" style="background:${t.color}">${t.icon}</div><div class="tl-content"><h4>${t.title}</h4><p>${t.desc}</p></div></div>`;
+  });
+}
+calc();
+</script>
+</body>
+</html>

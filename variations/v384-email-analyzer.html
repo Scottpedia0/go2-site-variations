@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 Email Intelligence | Analyze Any Work Email</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0B0B15;--surface:#13132A;--surface2:#1C1C38;--primary:#6C5CE7;--accent:#00D2FF;--text:#E4E4F0;--dim:#7777AA;--success:#00E676;--warning:#FFB800;--danger:#FF5252;--gradient:linear-gradient(135deg,#6C5CE7,#00D2FF)}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.header{padding:24px 40px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:22px;font-weight:700;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.badge{font-size:11px;background:rgba(108,92,231,0.15);color:var(--primary);padding:6px 12px;border-radius:8px;font-weight:500}
+.main{max-width:1100px;margin:0 auto;padding:40px 20px}
+.hero{text-align:center;margin-bottom:40px}
+.hero h1{font-size:36px;font-weight:700;margin-bottom:12px}
+.hero h1 span{background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:var(--dim);font-size:16px;max-width:500px;margin:0 auto}
+.workspace{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:900px){.workspace{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid rgba(255,255,255,0.06);border-radius:16px;overflow:hidden}
+.panel-header{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between}
+.panel-title{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.panel-body{padding:20px}
+textarea{width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;line-height:1.7;padding:16px;resize:vertical;min-height:300px;outline:none;transition:border-color 0.2s}
+textarea:focus{border-color:var(--primary)}
+textarea::placeholder{color:var(--dim)}
+.btn-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.analyze-btn{background:var(--gradient);color:white;border:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:transform 0.2s}
+.analyze-btn:hover{transform:scale(1.03)}
+.analyze-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.sample-btn{background:var(--surface2);color:var(--dim);border:1px solid rgba(255,255,255,0.08);padding:12px 20px;border-radius:10px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s}
+.sample-btn:hover{border-color:var(--primary);color:var(--text)}
+.results{display:none}
+.results.visible{display:block;animation:fadeIn 0.6s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.score-ring{width:120px;height:120px;margin:0 auto 20px;position:relative}
+.score-ring svg{transform:rotate(-90deg)}
+.score-ring .bg{fill:none;stroke:var(--surface2);stroke-width:8}
+.score-ring .fill{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1.5s ease}
+.score-value{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.score-value .num{font-size:28px;font-weight:700}
+.score-value .lbl{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
+.analysis-section{margin:20px 0;padding:16px;background:rgba(0,0,0,0.2);border-radius:12px}
+.analysis-section h3{font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.tone-bar{display:flex;gap:6px;margin:8px 0;height:8px;border-radius:4px;overflow:hidden}
+.tone-segment{height:100%;border-radius:4px;transition:width 1s ease}
+.tone-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px}
+.tone-legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--dim)}
+.tone-legend-item .dot{width:8px;height:8px;border-radius:50%}
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.metric-card{background:var(--surface2);border-radius:10px;padding:14px;text-align:center}
+.metric-card .val{font-size:22px;font-weight:700}
+.metric-card .lbl{font-size:11px;color:var(--dim);margin-top:4px}
+.highlight-word{display:inline;padding:2px 4px;border-radius:4px;font-size:13px;cursor:help}
+.highlight-word.action{background:rgba(0,230,118,0.15);color:var(--success)}
+.highlight-word.filler{background:rgba(255,184,0,0.15);color:var(--warning)}
+.highlight-word.vague{background:rgba(255,82,82,0.15);color:var(--danger)}
+.highlight-word.positive{background:rgba(0,210,255,0.15);color:var(--accent)}
+.suggestions{list-style:none}
+.suggestions li{padding:10px 14px;border-left:3px solid var(--primary);margin-bottom:8px;background:rgba(108,92,231,0.06);border-radius:0 8px 8px 0;font-size:13px;line-height:1.6;color:var(--dim)}
+.suggestions li strong{color:var(--text)}
+.go2-banner{background:linear-gradient(135deg,rgba(108,92,231,0.15),rgba(0,210,255,0.08));border:1px solid rgba(108,92,231,0.2);border-radius:12px;padding:20px;margin-top:20px;text-align:center}
+.go2-banner h4{color:var(--accent);font-size:14px;margin-bottom:8px}
+.go2-banner p{font-size:13px;color:var(--dim);line-height:1.6}
+.processing{display:none;padding:40px;text-align:center}
+.processing.visible{display:block}
+.processing-steps{text-align:left;max-width:300px;margin:20px auto}
+.processing-step{display:flex;align-items:center;gap:12px;padding:10px 0;font-size:13px;color:var(--dim);opacity:0.3;transition:all 0.4s}
+.processing-step.active{opacity:1;color:var(--text)}
+.processing-step.done{opacity:0.7;color:var(--success)}
+.processing-step .icon{width:24px;height:24px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.processing-step.active .icon{background:var(--primary);animation:pulse 1s infinite}
+.processing-step.done .icon{background:rgba(0,230,118,0.2)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(108,92,231,0.4)}50%{box-shadow:0 0 0 8px rgba(108,92,231,0)}}
+.nlp-viz{margin:16px 0;padding:16px;background:var(--surface2);border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:2;word-wrap:break-word}
+</style>
+</head>
+<body>
+<header class="header">
+<div class="logo">Go2 Email Intelligence</div>
+<div class="badge">AI-Powered Analysis</div>
+</header>
+<main class="main">
+<div class="hero">
+<h1>Paste an email. <span>See the truth.</span></h1>
+<p>Go2's AI analyzes tone, actionability, time cost, and communication efficiency of any work email.</p>
+</div>
+<div class="workspace">
+<div class="panel">
+<div class="panel-header"><div class="panel-title">📧 Email Input</div></div>
+<div class="panel-body">
+<textarea id="emailInput" placeholder="Paste any work email here...&#10;&#10;Subject: Q3 Planning Update&#10;&#10;Hi team,&#10;&#10;Just wanted to circle back on the Q3 planning discussion..."></textarea>
+<div class="btn-row">
+<button class="analyze-btn" id="analyzeBtn" onclick="analyze()">Analyze Email</button>
+<button class="sample-btn" onclick="loadSample(0)">Sample: Meeting Request</button>
+<button class="sample-btn" onclick="loadSample(1)">Sample: Status Update</button>
+</div>
+</div>
+</div>
+<div class="panel">
+<div class="panel-header"><div class="panel-title">🔍 AI Analysis</div></div>
+<div class="panel-body">
+<div class="processing" id="processing">
+<div class="processing-steps">
+<div class="processing-step" id="step0"><div class="icon">1</div>Parsing email structure...</div>
+<div class="processing-step" id="step1"><div class="icon">2</div>Analyzing sentiment & tone...</div>
+<div class="processing-step" id="step2"><div class="icon">3</div>Extracting action items...</div>
+<div class="processing-step" id="step3"><div class="icon">4</div>Calculating time cost...</div>
+<div class="processing-step" id="step4"><div class="icon">5</div>Generating Go2 recommendations...</div>
+</div>
+</div>
+<div class="results" id="results"></div>
+<div id="empty" style="text-align:center;padding:60px 20px;color:var(--dim)">
+<div style="font-size:48px;margin-bottom:16px">📧</div>
+<p>Paste an email and click Analyze to see Go2's AI intelligence in action.</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<script>
+const samples=[
+`Subject: Re: Re: Re: Quick sync on the Q3 roadmap alignment\n\nHi everyone,\n\nHope you're all doing well! Just wanted to circle back on our earlier conversation about the Q3 roadmap. I think we should probably maybe schedule some time to align on priorities, if that works for everyone.\n\nI was thinking we could potentially set up a meeting next week — maybe Tuesday or Wednesday? Let me know what works. Also, I wanted to flag that the analytics dashboard project might need some additional resources, but I'm not 100% sure yet. Will keep you posted.\n\nAlso, per our last discussion, I believe someone was supposed to follow up on the customer feedback report? Not sure who took that action item. Can someone confirm?\n\nLet me know your thoughts!\n\nBest,\nMike\n\nP.S. — Sorry for the long email chain. Maybe we should just hop on a call? 😅`,
+`Subject: Weekly Status Update — Product Team\n\nTeam,\n\nHere's where things stand:\n\n- Auth v2 migration: 80% complete. On track for Friday deploy. No blockers.\n- Mobile redesign: In QA. Found 3 P2 bugs, fixing today. ETA unchanged.\n- API rate limiting: Started Monday. Jake needs access to prod metrics — @Sarah can you grant?\n- Customer portal: Pushed to next sprint. Dependencies on auth v2.\n\nBlockers:\n1. CI pipeline is slow (45min builds). DevOps ticket filed.\n2. Design team bandwidth — we need final assets for the settings page by Wednesday or we slip.\n\nKey decision needed: Do we ship auth v2 to 10% rollout or full release? Need input by Thursday.\n\nNext sync: Thursday 2pm.\n\n—Alex`
+];
+function loadSample(i){document.getElementById('emailInput').value=samples[i]}
+function analyze(){
+const text=document.getElementById('emailInput').value.trim();
+if(!text)return;
+document.getElementById('empty').style.display='none';
+document.getElementById('results').classList.remove('visible');
+const proc=document.getElementById('processing');proc.classList.add('visible');
+const steps=[0,1,2,3,4];
+steps.forEach((s,i)=>{
+setTimeout(()=>{
+document.getElementById('step'+s).classList.add('active');
+if(i>0)document.getElementById('step'+steps[i-1]).classList.remove('active'),document.getElementById('step'+steps[i-1]).classList.add('done');
+},i*600);
+});
+setTimeout(()=>{
+document.getElementById('step4').classList.remove('active');
+document.getElementById('step4').classList.add('done');
+setTimeout(()=>{
+proc.classList.remove('visible');
+steps.forEach(s=>{const el=document.getElementById('step'+s);el.classList.remove('active','done')});
+showResults(text);
+},400);
+},3200);
+}
+function showResults(text){
+const words=text.split(/\s+/);const wordCount=words.length;
+const sentences=text.split(/[.!?]+/).filter(s=>s.trim());
+const avgSentLen=Math.round(wordCount/Math.max(sentences.length,1));
+const fillerWords=['just','maybe','probably','potentially','perhaps','might','kind of','sort of','I think','I believe','basically','actually','honestly','literally'];
+const vagueWords=['some','things','stuff','something','somehow','soon','later','eventually','asap','TBD','various'];
+const actionWords=['need','must','should','required','deadline','by friday','action','assign','complete','deliver','ship','deploy','fix','resolve','grant','confirm'];
+let fillerCount=0,vagueCount=0,actionCount=0;
+const lowerText=text.toLowerCase();
+fillerWords.forEach(w=>{const r=new RegExp('\\b'+w+'\\b','gi');const m=text.match(r);if(m)fillerCount+=m.length});
+vagueWords.forEach(w=>{const r=new RegExp('\\b'+w+'\\b','gi');const m=text.match(r);if(m)vagueCount+=m.length});
+actionWords.forEach(w=>{const r=new RegExp('\\b'+w+'\\b','gi');const m=text.match(r);if(m)actionCount+=m.length});
+const hasSubject=lowerText.includes('subject:');
+const reCount=(text.match(/Re:/gi)||[]).length;
+const questionCount=(text.match(/\?/g)||[]).length;
+const readTimeMin=Math.max(1,Math.round(wordCount/200*10)/10);
+const clarityScore=Math.max(20,Math.min(95,80-fillerCount*5-vagueCount*4+actionCount*3-reCount*8));
+const actionabilityScore=Math.max(15,Math.min(95,30+actionCount*12-vagueCount*5-fillerCount*3));
+const efficiencyScore=Math.max(20,Math.min(95,85-Math.max(0,wordCount-100)*0.15-fillerCount*4));
+const overallScore=Math.round((clarityScore+actionabilityScore+efficiencyScore)/3);
+const tonePositive=Math.min(40,(text.match(/great|good|well|happy|excited|love|excellent|awesome/gi)||[]).length*10+15);
+const toneNeutral=Math.min(50,30+fillerCount*3);
+const toneUrgent=Math.min(40,(text.match(/urgent|asap|need|must|deadline|critical|blocker/gi)||[]).length*10);
+const toneFormal=100-tonePositive-toneNeutral-toneUrgent>0?100-tonePositive-toneNeutral-toneUrgent:10;
+const scoreColor=overallScore>=70?'var(--success)':overallScore>=45?'var(--warning)':'var(--danger)';
+const circumference=2*Math.PI*52;
+const offset=circumference-(overallScore/100)*circumference;
+let nlpHtml='';
+const emailWords=text.replace(/\n/g,' ').split(/\s+/);
+emailWords.forEach(w=>{
+const clean=w.toLowerCase().replace(/[^a-z]/g,'');
+if(actionWords.some(a=>clean.includes(a.replace(/\s/g,''))))nlpHtml+=`<span class="highlight-word action" title="Action word">${w}</span> `;
+else if(fillerWords.some(f=>clean===f.replace(/\s/g,'')))nlpHtml+=`<span class="highlight-word filler" title="Filler word">${w}</span> `;
+else if(vagueWords.some(v=>clean===v))nlpHtml+=`<span class="highlight-word vague" title="Vague language">${w}</span> `;
+else nlpHtml+=w+' ';
+});
+const suggestions=[];
+if(fillerCount>3)suggestions.push(`<strong>Reduce filler language.</strong> Found ${fillerCount} filler words. Each one dilutes your message. Go2 auto-suggests concise alternatives in real-time.`);
+if(vagueCount>2)suggestions.push(`<strong>Be more specific.</strong> ${vagueCount} vague references detected. Replace "soon" with dates, "someone" with names. Go2 flags these before you hit send.`);
+if(reCount>2)suggestions.push(`<strong>Break the reply chain.</strong> ${reCount} reply levels deep. This conversation needs a fresh thread or a 5-minute call. Go2 detects runaway threads automatically.`);
+if(questionCount>2)suggestions.push(`<strong>Consolidate questions.</strong> ${questionCount} questions in one email creates response paralysis. Go2 suggests numbered action items instead.`);
+if(wordCount>200)suggestions.push(`<strong>Too long.</strong> At ${wordCount} words, most recipients will skim. Go2 can compress this to ${Math.round(wordCount*0.4)} words while preserving all action items.`);
+if(actionCount<2)suggestions.push(`<strong>Missing clear next steps.</strong> Only ${actionCount} action-oriented phrases. Every email should end with explicit "who does what by when." Go2 adds these automatically.`);
+if(suggestions.length===0)suggestions.push(`<strong>Well-structured email.</strong> Clear action items, concise language. Go2 would classify this as "high efficiency" communication.`);
+const resultsHtml=`
+<div class="score-ring">
+<svg width="120" height="120" viewBox="0 0 120 120">
+<circle class="bg" cx="60" cy="60" r="52"/>
+<circle class="fill" cx="60" cy="60" r="52" stroke="${scoreColor}" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"/>
+</svg>
+<div class="score-value"><div class="num" style="color:${scoreColor}">${overallScore}</div><div class="lbl">Email Score</div></div>
+</div>
+<div class="metric-grid">
+<div class="metric-card"><div class="val" style="color:${clarityScore>=60?'var(--success)':'var(--warning)'}">${clarityScore}</div><div class="lbl">Clarity</div></div>
+<div class="metric-card"><div class="val" style="color:${actionabilityScore>=60?'var(--success)':'var(--warning)'}">${actionabilityScore}</div><div class="lbl">Actionability</div></div>
+<div class="metric-card"><div class="val" style="color:${efficiencyScore>=60?'var(--success)':'var(--warning)'}">${efficiencyScore}</div><div class="lbl">Efficiency</div></div>
+<div class="metric-card"><div class="val">${readTimeMin}m</div><div class="lbl">Read Time</div></div>
+</div>
+<div class="analysis-section">
+<h3>📊 Tone Breakdown</h3>
+<div class="tone-bar">
+<div class="tone-segment" style="width:${tonePositive}%;background:var(--success)"></div>
+<div class="tone-segment" style="width:${toneNeutral}%;background:var(--warning)"></div>
+<div class="tone-segment" style="width:${toneUrgent}%;background:var(--danger)"></div>
+<div class="tone-segment" style="width:${toneFormal}%;background:var(--accent)"></div>
+</div>
+<div class="tone-legend">
+<div class="tone-legend-item"><div class="dot" style="background:var(--success)"></div>Positive ${tonePositive}%</div>
+<div class="tone-legend-item"><div class="dot" style="background:var(--warning)"></div>Hedging ${toneNeutral}%</div>
+<div class="tone-legend-item"><div class="dot" style="background:var(--danger)"></div>Urgent ${toneUrgent}%</div>
+<div class="tone-legend-item"><div class="dot" style="background:var(--accent)"></div>Formal ${toneFormal}%</div>
+</div>
+</div>
+<div class="analysis-section">
+<h3>🔤 NLP Visualization</h3>
+<div class="nlp-viz">${nlpHtml}</div>
+<div class="tone-legend" style="margin-top:12px">
+<div class="tone-legend-item"><div class="dot" style="background:var(--success)"></div>Action words</div>
+<div class="tone-legend-item"><div class="dot" style="background:var(--warning)"></div>Filler words</div>
+<div class="tone-legend-item"><div class="dot" style="background:var(--danger)"></div>Vague language</div>
+</div>
+</div>
+<div class="analysis-section">
+<h3>💡 Go2 Recommendations</h3>
+<ul class="suggestions">${suggestions.map(s=>`<li>${s}</li>`).join('')}</ul>
+</div>
+<div class="go2-banner">
+<h4>With Go2, every email gets this analysis in real-time</h4>
+<p>Before you hit send, Go2's AI Writing Assistant checks clarity, tone, and actionability. Average improvement: 45% better response rates. <a href="https://go2.io" style="color:var(--accent)">Start free trial</a></p>
+</div>`;
+const results=document.getElementById('results');
+results.innerHTML=resultsHtml;
+results.classList.add('visible');
+}
+</script>
+</body>
+</html>

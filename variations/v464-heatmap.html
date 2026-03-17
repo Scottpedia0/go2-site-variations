@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team Productivity Heatmap — Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#08080d;color:#e0e0e0;min-height:100vh}
+nav{padding:20px 40px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.05)}
+.logo{font-size:1.4rem;font-weight:800;background:linear-gradient(135deg,#fff,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header{text-align:center;padding:50px 20px 10px;max-width:700px;margin:0 auto}
+.header h1{font-size:clamp(1.8rem,3.5vw,2.5rem);font-weight:800;margin-bottom:12px}
+.header p{color:#888;font-size:0.95rem}
+.controls{display:flex;justify-content:center;gap:12px;padding:20px;flex-wrap:wrap}
+.ctrl-btn{padding:8px 20px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#888;font-size:0.8rem;cursor:pointer;transition:all 0.3s;font-family:'Inter',sans-serif}
+.ctrl-btn.active{background:rgba(99,102,241,0.15);border-color:rgba(99,102,241,0.4);color:#c7d2fe}
+.heatmap-container{max-width:1100px;margin:0 auto;padding:10px 20px;overflow-x:auto}
+.heatmap-grid{display:grid;gap:3px;min-width:800px}
+.hm-header{font-size:0.65rem;color:#666;text-align:center;padding:4px 2px;font-weight:600}
+.hm-row-label{font-size:0.7rem;color:#aaa;display:flex;align-items:center;padding-right:8px;justify-content:flex-end;white-space:nowrap}
+.hm-cell{border-radius:4px;aspect-ratio:1;cursor:pointer;transition:all 0.2s;position:relative;min-height:20px}
+.hm-cell:hover{transform:scale(1.3);z-index:10;box-shadow:0 0 20px rgba(0,0,0,0.5)}
+.tooltip{position:fixed;padding:14px 20px;background:rgba(15,15,25,0.95);border:1px solid rgba(255,255,255,0.1);border-radius:12px;font-size:0.8rem;color:#ccc;pointer-events:none;z-index:200;opacity:0;transition:opacity 0.15s;backdrop-filter:blur(10px);min-width:200px}
+.tooltip strong{color:#fff;font-size:0.95rem;display:block;margin-bottom:6px}
+.tooltip .tt-row{display:flex;justify-content:space-between;margin:3px 0}
+.tooltip .tt-label{color:#888}
+.tooltip .tt-val{font-family:'JetBrains Mono',monospace;font-weight:700}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;max-width:1000px;margin:30px auto;padding:0 20px}
+.stat-card{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:20px;text-align:center}
+.stat-card .val{font-size:1.8rem;font-weight:800;font-family:'JetBrains Mono',monospace}
+.stat-card .label{font-size:0.8rem;color:#888;margin-top:4px}
+.scale-bar{display:flex;align-items:center;justify-content:center;gap:8px;padding:20px;font-size:0.7rem;color:#666}
+.scale-gradient{width:200px;height:12px;border-radius:6px;background:linear-gradient(90deg,#1e1b4b,#312e81,#4338ca,#6366f1,#818cf8,#10b981,#34d399)}
+.month-nav{display:flex;justify-content:center;align-items:center;gap:20px;padding:10px}
+.month-nav button{background:none;border:1px solid rgba(255,255,255,0.1);color:#888;padding:8px 16px;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.3s}
+.month-nav button:hover{border-color:rgba(99,102,241,0.4);color:#c7d2fe}
+.month-label{font-size:1rem;font-weight:600;color:#ccc;min-width:150px;text-align:center}
+.detail-panel{max-width:800px;margin:20px auto 60px;padding:0 20px;display:none}
+.detail-panel.show{display:block}
+.detail-content{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px}
+.detail-content h3{font-size:1rem;margin-bottom:12px}
+.detail-bar{margin:8px 0;display:flex;align-items:center;gap:12px}
+.detail-bar-label{font-size:0.8rem;color:#888;width:120px}
+.detail-bar-track{flex:1;height:20px;background:rgba(255,255,255,0.03);border-radius:4px;overflow:hidden}
+.detail-bar-fill{height:100%;border-radius:4px;transition:width 0.5s}
+.detail-bar-val{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:#ccc;width:40px;text-align:right}
+.cta-section{text-align:center;padding:40px 20px 80px}
+.cta-btn{display:inline-block;padding:16px 48px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;font-size:1.05rem;font-weight:600;cursor:pointer;text-decoration:none;transition:all 0.3s}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 20px 40px rgba(99,102,241,0.3)}
+</style>
+</head>
+<body>
+<nav><div class="logo">Go2</div></nav>
+<div class="header">
+<h1>Team Productivity Heatmap</h1>
+<p>See where your team's energy peaks and dips. Every cell represents one person-day. Click any cell for a detailed breakdown.</p>
+</div>
+
+<div class="controls">
+<button class="ctrl-btn active" data-team="engineering">Engineering</button>
+<button class="ctrl-btn" data-team="design">Design</button>
+<button class="ctrl-btn" data-team="marketing">Marketing</button>
+<button class="ctrl-btn" data-team="sales">Sales</button>
+</div>
+
+<div class="month-nav">
+<button id="prevMonth">&larr;</button>
+<div class="month-label" id="monthLabel">March 2026</div>
+<button id="nextMonth">&rarr;</button>
+</div>
+
+<div class="scale-bar">
+<span>Low</span>
+<div class="scale-gradient"></div>
+<span>High</span>
+</div>
+
+<div class="heatmap-container">
+<div class="heatmap-grid" id="heatmap"></div>
+</div>
+
+<div class="stats-row">
+<div class="stat-card"><div class="val" style="color:#10b981" id="avgScore">--</div><div class="label">Avg Productivity Score</div></div>
+<div class="stat-card"><div class="val" style="color:#6366f1" id="peakDay">--</div><div class="label">Peak Day</div></div>
+<div class="stat-card"><div class="val" style="color:#f43f5e" id="lowDay">--</div><div class="label">Lowest Day</div></div>
+<div class="stat-card"><div class="val" style="color:#fb923c" id="trend">--</div><div class="label">Week-over-Week</div></div>
+</div>
+
+<div class="detail-panel" id="detailPanel">
+<div class="detail-content" id="detailContent"></div>
+</div>
+
+<div class="cta-section">
+<p style="color:#888;margin-bottom:20px">This is a preview of Go2's analytics. Real data. Real insights.</p>
+<a href="#" class="cta-btn">Get Your Team's Heatmap</a>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const teamMembers={
+engineering:['Alice Chen','Bob Park','Carol Wu','Dan Kim','Eve Patel','Frank Li','Grace Tan','Hiro Ito'],
+design:['Maya Ross','Noah Bell','Olivia Cruz','Pete Hong','Quinn Davis'],
+marketing:['Riley Moore','Sam Green','Tara White','Uma Shah','Vince Low','Wendy Fox'],
+sales:['Xena Diaz','Yuki Abe','Zane Cole','Amy Torres','Blake Reed','Cass Young','Drew Nash']
+};
+
+const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+let currentTeam='engineering';
+let currentMonth=2; // March
+let currentYear=2026;
+
+const tooltip=document.getElementById('tooltip');
+const heatmap=document.getElementById('heatmap');
+
+function seededRandom(seed){let s=seed;return()=>{s=(s*16807)%2147483647;return(s-1)/2147483646;}}
+
+function getColor(val){
+if(val<20)return'#1e1b4b';
+if(val<35)return'#312e81';
+if(val<50)return'#4338ca';
+if(val<65)return'#6366f1';
+if(val<75)return'#818cf8';
+if(val<85)return'#10b981';
+return'#34d399';
+}
+
+function getDaysInMonth(m,y){return new Date(y,m+1,0).getDate();}
+function getDayOfWeek(d,m,y){return new Date(y,m,d).getDay();}
+const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function generateData(team,month,year){
+const members=teamMembers[team];
+const days=getDaysInMonth(month,year);
+const rng=seededRandom(month*1000+year*100+team.length*10);
+const data=[];
+members.forEach((name,mi)=>{
+const row=[];
+for(let d=1;d<=days;d++){
+const dow=getDayOfWeek(d,month,year);
+if(dow===0||dow===6){row.push({val:0,weekend:true});continue;}
+// Base + team variation + day-of-week effect + individual pattern
+let base=50+rng()*30;
+if(dow===1)base-=8; // Monday slow start
+if(dow===2||dow===3)base+=10; // Tue/Wed peak
+if(dow===5)base-=5; // Friday wind-down
+base+=mi*2-members.length; // individual variation
+base+=Math.sin(d/7*Math.PI)*8; // weekly cycle
+base=Math.max(10,Math.min(98,base));
+row.push({
+val:Math.round(base),
+deepWork:Math.round(base*0.4+rng()*15),
+meetings:Math.round(20+rng()*25),
+focus:Math.round(base*0.6+rng()*10),
+interruptions:Math.round(3+rng()*12),
+weekend:false
+});
+}
+data.push({name,row});
+});
+return{data,days};
+}
+
+function renderHeatmap(){
+const{data,days}=generateData(currentTeam,currentMonth,currentYear);
+const cols=days+1; // +1 for row labels
+heatmap.style.gridTemplateColumns=`100px repeat(${days}, 1fr)`;
+heatmap.innerHTML='';
+
+// Header row
+const corner=document.createElement('div');
+heatmap.appendChild(corner);
+for(let d=1;d<=days;d++){
+const hdr=document.createElement('div');
+hdr.className='hm-header';
+const dow=getDayOfWeek(d,currentMonth,currentYear);
+hdr.textContent=d;
+hdr.style.color=dow===0||dow===6?'#333':'#666';
+heatmap.appendChild(hdr);
+}
+
+let allVals=[];
+data.forEach(({name,row})=>{
+const label=document.createElement('div');
+label.className='hm-row-label';
+label.textContent=name;
+heatmap.appendChild(label);
+
+row.forEach((cell,i)=>{
+const el=document.createElement('div');
+el.className='hm-cell';
+if(cell.weekend){
+el.style.background='rgba(255,255,255,0.01)';
+}else{
+el.style.background=getColor(cell.val);
+allVals.push(cell.val);
+el.addEventListener('mouseenter',e=>{
+const dayNum=i+1;
+const dow=dayNames[getDayOfWeek(dayNum,currentMonth,currentYear)];
+tooltip.innerHTML=`<strong>${name}</strong><div style="margin-bottom:8px;color:#888">${dow}, ${months[currentMonth]} ${dayNum}</div><div class="tt-row"><span class="tt-label">Productivity</span><span class="tt-val" style="color:${getColor(cell.val)}">${cell.val}%</span></div><div class="tt-row"><span class="tt-label">Deep Work</span><span class="tt-val">${cell.deepWork}%</span></div><div class="tt-row"><span class="tt-label">In Meetings</span><span class="tt-val">${cell.meetings}%</span></div><div class="tt-row"><span class="tt-label">Focus Score</span><span class="tt-val">${cell.focus}%</span></div><div class="tt-row"><span class="tt-label">Interruptions</span><span class="tt-val">${cell.interruptions}</span></div>`;
+tooltip.style.opacity='1';
+});
+el.addEventListener('mousemove',e=>{
+tooltip.style.left=Math.min(e.clientX+15,window.innerWidth-260)+'px';
+tooltip.style.top=(e.clientY-10)+'px';
+});
+el.addEventListener('mouseleave',()=>{tooltip.style.opacity='0';});
+el.addEventListener('click',()=>showDetail(name,cell,i+1));
+}
+heatmap.appendChild(el);
+});
+});
+
+// Update stats
+const avg=(allVals.reduce((a,b)=>a+b,0)/allVals.length).toFixed(1);
+document.getElementById('avgScore').textContent=avg+'%';
+
+const dayAvgs={};
+data.forEach(({row})=>{
+row.forEach((cell,i)=>{
+if(!cell.weekend){
+const dow=dayNames[getDayOfWeek(i+1,currentMonth,currentYear)];
+if(!dayAvgs[dow])dayAvgs[dow]={sum:0,count:0};
+dayAvgs[dow].sum+=cell.val;dayAvgs[dow].count++;
+}
+});
+});
+let peak='',low='',peakVal=0,lowVal=100;
+Object.entries(dayAvgs).forEach(([d,{sum,count}])=>{
+const a=sum/count;
+if(a>peakVal){peakVal=a;peak=d;}
+if(a<lowVal){lowVal=a;low=d;}
+});
+document.getElementById('peakDay').textContent=peak;
+document.getElementById('lowDay').textContent=low;
+document.getElementById('trend').textContent='+'+((Math.random()*5+1).toFixed(1))+'%';
+
+document.getElementById('monthLabel').textContent=months[currentMonth]+' '+currentYear;
+}
+
+function showDetail(name,cell,day){
+const panel=document.getElementById('detailPanel');
+const content=document.getElementById('detailContent');
+const dow=dayNames[getDayOfWeek(day,currentMonth,currentYear)];
+content.innerHTML=`<h3>${name} — ${dow}, ${months[currentMonth]} ${day}</h3>
+<div class="detail-bar"><div class="detail-bar-label">Productivity</div><div class="detail-bar-track"><div class="detail-bar-fill" style="width:${cell.val}%;background:${getColor(cell.val)}"></div></div><div class="detail-bar-val">${cell.val}%</div></div>
+<div class="detail-bar"><div class="detail-bar-label">Deep Work</div><div class="detail-bar-track"><div class="detail-bar-fill" style="width:${cell.deepWork}%;background:#6366f1"></div></div><div class="detail-bar-val">${cell.deepWork}%</div></div>
+<div class="detail-bar"><div class="detail-bar-label">Meetings</div><div class="detail-bar-track"><div class="detail-bar-fill" style="width:${cell.meetings}%;background:#f43f5e"></div></div><div class="detail-bar-val">${cell.meetings}%</div></div>
+<div class="detail-bar"><div class="detail-bar-label">Focus Score</div><div class="detail-bar-track"><div class="detail-bar-fill" style="width:${cell.focus}%;background:#10b981"></div></div><div class="detail-bar-val">${cell.focus}%</div></div>
+<p style="color:#888;font-size:0.8rem;margin-top:16px">${cell.interruptions} interruptions detected. Go2 AI coaching suggested: block 2-hour focus windows on ${dow} mornings.</p>`;
+panel.classList.add('show');
+}
+
+document.querySelectorAll('.ctrl-btn').forEach(btn=>{
+btn.addEventListener('click',()=>{
+document.querySelectorAll('.ctrl-btn').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+currentTeam=btn.dataset.team;
+renderHeatmap();
+});
+});
+
+document.getElementById('prevMonth').addEventListener('click',()=>{
+currentMonth--;if(currentMonth<0){currentMonth=11;currentYear--;}
+renderHeatmap();
+});
+document.getElementById('nextMonth').addEventListener('click',()=>{
+currentMonth++;if(currentMonth>11){currentMonth=0;currentYear++;}
+renderHeatmap();
+});
+
+renderHeatmap();
+</script>
+</body>
+</html>

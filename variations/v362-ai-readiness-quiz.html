@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Readiness Quiz | Go2 - Is Your Team AI-Ready?</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#6C5CE7;--secondary:#00CEC9;--accent:#FD79A8;--dark:#1a1a2e;--card:#ffffff;--text:#2d3436;--text-light:#636e72;--bg:#f8f9fe;--gradient:linear-gradient(135deg,#6C5CE7,#00CEC9)}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.hero{background:var(--gradient);padding:50px 20px 35px;text-align:center;color:#fff;position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:40px;background:var(--bg);border-radius:50% 50% 0 0}
+.hero h1{font-size:2.5rem;font-weight:900;margin-bottom:10px}
+.hero p{font-size:1.1rem;opacity:0.9;max-width:550px;margin:0 auto}
+.container{max-width:720px;margin:0 auto;padding:30px 20px 60px}
+.progress-container{margin-bottom:30px}
+.progress-bar-bg{height:10px;background:rgba(108,92,231,0.12);border-radius:5px;overflow:hidden}
+.progress-bar-fill{height:100%;background:var(--gradient);border-radius:5px;transition:width 0.5s ease}
+.progress-text{display:flex;justify-content:space-between;margin-top:8px;font-size:0.85rem;color:var(--text-light)}
+.question-card{background:var(--card);border-radius:20px;padding:40px;box-shadow:0 10px 40px rgba(108,92,231,0.08);opacity:0;transform:translateY(20px);transition:all 0.5s ease}
+.question-card.active{opacity:1;transform:translateY(0)}
+.question-card.exit{opacity:0;transform:translateY(-20px)}
+.q-number{font-size:0.85rem;text-transform:uppercase;letter-spacing:2px;color:var(--primary);font-weight:700;margin-bottom:12px}
+.q-text{font-size:1.4rem;font-weight:700;margin-bottom:8px;line-height:1.4}
+.q-subtext{font-size:0.95rem;color:var(--text-light);margin-bottom:28px}
+.options{display:flex;flex-direction:column;gap:12px}
+.option{padding:18px 22px;border:2px solid #e8e8f0;border-radius:14px;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;gap:14px;font-size:1rem}
+.option:hover{border-color:var(--primary);background:rgba(108,92,231,0.03);transform:translateX(4px)}
+.option.selected{border-color:var(--primary);background:rgba(108,92,231,0.08)}
+.option .icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.option .label{font-weight:500}
+.option .desc{font-size:0.82rem;color:var(--text-light);margin-top:2px}
+.nav-buttons{display:flex;justify-content:space-between;margin-top:24px}
+.btn{padding:14px 32px;border-radius:12px;font-size:1rem;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all 0.3s}
+.btn-primary{background:var(--gradient);color:#fff}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(108,92,231,0.3)}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-secondary{background:transparent;color:var(--text-light);border:2px solid #e0e0e0}
+.btn-secondary:hover{border-color:var(--primary);color:var(--primary)}
+.results-container{display:none}
+.results-container.show{display:block}
+.score-circle{width:200px;height:200px;margin:0 auto 30px;position:relative}
+.score-circle svg{transform:rotate(-90deg)}
+.score-circle .score-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.score-circle .score-num{font-size:3.5rem;font-weight:900;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.score-circle .score-label{font-size:0.85rem;color:var(--text-light)}
+.level-badge{display:inline-block;padding:8px 20px;border-radius:30px;font-weight:700;font-size:1rem;margin-bottom:24px}
+.results-card{background:var(--card);border-radius:20px;padding:36px;box-shadow:0 10px 40px rgba(108,92,231,0.08);margin-bottom:24px;text-align:center}
+.results-card h2{font-size:1.8rem;font-weight:800;margin-bottom:8px}
+.results-card .subtitle{color:var(--text-light);margin-bottom:24px;font-size:1.05rem}
+.dimension{background:var(--card);border-radius:16px;padding:24px;box-shadow:0 4px 20px rgba(0,0,0,0.04);margin-bottom:16px;text-align:left}
+.dimension h3{font-size:1rem;font-weight:700;margin-bottom:6px;display:flex;justify-content:space-between}
+.dimension .dim-bar-bg{height:8px;background:#eee;border-radius:4px;overflow:hidden;margin-bottom:8px}
+.dimension .dim-bar-fill{height:100%;border-radius:4px;transition:width 1s ease}
+.dimension p{font-size:0.88rem;color:var(--text-light);line-height:1.5}
+.recs{background:var(--dark);border-radius:20px;padding:36px;color:#fff;margin-top:24px}
+.recs h3{font-size:1.3rem;font-weight:700;margin-bottom:20px}
+.rec-item{display:flex;gap:14px;margin-bottom:18px;align-items:flex-start}
+.rec-item .rec-icon{width:36px;height:36px;border-radius:10px;background:rgba(108,92,231,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem}
+.rec-item .rec-text{font-size:0.95rem;line-height:1.5}
+.rec-item .rec-text strong{color:var(--secondary)}
+.cta-box{text-align:center;margin-top:32px;padding:36px;background:var(--card);border-radius:20px;box-shadow:0 10px 40px rgba(108,92,231,0.08)}
+.cta-box h3{font-size:1.5rem;font-weight:800;margin-bottom:8px}
+.cta-box p{color:var(--text-light);margin-bottom:20px}
+.share-btns{display:flex;gap:10px;justify-content:center;margin-top:16px}
+.share-btn{padding:10px 20px;border-radius:10px;border:1px solid #e0e0e0;background:#fff;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.9rem;transition:all 0.3s}
+.share-btn:hover{border-color:var(--primary);color:var(--primary)}
+</style>
+</head>
+<body>
+<div class="hero">
+<h1>Is Your Team AI-Ready?</h1>
+<p>Take this 2-minute assessment to discover your team's AI readiness level and get a personalized action plan.</p>
+</div>
+<div class="container">
+<div id="quizSection">
+<div class="progress-container">
+<div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill" style="width:10%"></div></div>
+<div class="progress-text"><span id="progressLabel">Question 1 of 10</span><span id="progressPct">10%</span></div>
+</div>
+<div class="question-card active" id="questionCard">
+<div class="q-number" id="qNumber">Question 1</div>
+<div class="q-text" id="qText"></div>
+<div class="q-subtext" id="qSubtext"></div>
+<div class="options" id="optionsContainer"></div>
+<div class="nav-buttons">
+<button class="btn btn-secondary" id="prevBtn" onclick="prevQuestion()" style="visibility:hidden">Back</button>
+<button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()" disabled>Next</button>
+</div>
+</div>
+</div>
+<div class="results-container" id="resultsSection">
+<div class="results-card">
+<div class="score-circle">
+<svg width="200" height="200" viewBox="0 0 200 200">
+<circle cx="100" cy="100" r="88" fill="none" stroke="#eee" stroke-width="12"/>
+<circle cx="100" cy="100" r="88" fill="none" stroke="url(#grad)" stroke-width="12" stroke-linecap="round" stroke-dasharray="553" stroke-dashoffset="553" id="scoreArc"/>
+<defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#6C5CE7"/><stop offset="100%" stop-color="#00CEC9"/></linearGradient></defs>
+</svg>
+<div class="score-text"><div class="score-num" id="scoreNum">0</div><div class="score-label">out of 100</div></div>
+</div>
+<div class="level-badge" id="levelBadge">Loading...</div>
+<h2 id="resultsTitle">Your AI Readiness Score</h2>
+<p class="subtitle" id="resultsSubtitle"></p>
+</div>
+<div id="dimensionsList"></div>
+<div class="recs">
+<h3>Your Personalized Action Plan</h3>
+<div id="recsList"></div>
+</div>
+<div class="cta-box">
+<h3>Ready to Accelerate Your AI Journey?</h3>
+<p>Go2 helps teams at every AI maturity level adopt AI effectively with personalized coaching.</p>
+<a href="https://go2.io" class="btn btn-primary">Get Started with Go2</a>
+<div class="share-btns">
+<button class="share-btn" onclick="window.print()">Print Results</button>
+<button class="share-btn" onclick="retakeQuiz()">Retake Quiz</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+const questions=[
+{text:"How does your team currently use AI tools?",sub:"Think about day-to-day workflows.",dimension:"adoption",options:[
+{label:"We don't use any AI tools",icon:"🚫",score:1},
+{label:"A few individuals use ChatGPT occasionally",icon:"💬",score:2},
+{label:"Several team members use AI tools regularly",icon:"⚡",score:3},
+{label:"AI is integrated into our core workflows",icon:"🚀",score:4}]},
+{text:"Does your organization have an AI strategy or policy?",sub:"Formal guidelines around AI usage.",dimension:"strategy",options:[
+{label:"No strategy or policy exists",icon:"📋",score:1},
+{label:"Informal guidelines only",icon:"📝",score:2},
+{label:"We have a documented AI policy",icon:"📄",score:3},
+{label:"Comprehensive strategy with executive sponsorship",icon:"🎯",score:4}]},
+{text:"How would you describe your team's data practices?",sub:"Data quality, accessibility, and governance.",dimension:"data",options:[
+{label:"Data is siloed and inconsistent",icon:"🗄️",score:1},
+{label:"Some centralization but gaps remain",icon:"📊",score:2},
+{label:"Well-organized with clear ownership",icon:"✅",score:3},
+{label:"Advanced data infrastructure with governance",icon:"🏗️",score:4}]},
+{text:"What's your team's appetite for learning new tools?",sub:"Change management readiness.",dimension:"culture",options:[
+{label:"Resistant to change — 'if it ain't broke'",icon:"🛑",score:1},
+{label:"Open but cautious — need convincing",icon:"🤔",score:2},
+{label:"Enthusiastic — early adopters on the team",icon:"🙋",score:3},
+{label:"Culture of experimentation and continuous learning",icon:"🧪",score:4}]},
+{text:"How does leadership view AI adoption?",sub:"Executive support matters.",dimension:"strategy",options:[
+{label:"Leadership is skeptical or unaware",icon:"😐",score:1},
+{label:"Interested but not actively investing",icon:"👀",score:2},
+{label:"Supportive with budget allocated",icon:"💰",score:3},
+{label:"AI is a top strategic priority",icon:"⭐",score:4}]},
+{text:"Do you measure productivity and workflow efficiency?",sub:"What gets measured gets improved.",dimension:"measurement",options:[
+{label:"No formal measurement",icon:"📏",score:1},
+{label:"Basic metrics (hours logged, tasks completed)",icon:"📈",score:2},
+{label:"Regular productivity reviews with data",icon:"📊",score:3},
+{label:"Real-time dashboards with actionable insights",icon:"🖥️",score:4}]},
+{text:"How do team members share knowledge?",sub:"Institutional knowledge capture.",dimension:"knowledge",options:[
+{label:"Tribal knowledge — it's all in people's heads",icon:"🧠",score:1},
+{label:"Some documentation but inconsistent",icon:"📁",score:2},
+{label:"Structured knowledge base actively maintained",icon:"📚",score:3},
+{label:"AI-assisted knowledge capture and retrieval",icon:"🤖",score:4}]},
+{text:"What happens when an employee leaves?",sub:"Knowledge retention and onboarding.",dimension:"knowledge",options:[
+{label:"Significant knowledge loss every time",icon:"😰",score:1},
+{label:"Some handoff docs but always gaps",icon:"📋",score:2},
+{label:"Structured offboarding captures most knowledge",icon:"✍️",score:3},
+{label:"Automated documentation means minimal loss",icon:"🔄",score:4}]},
+{text:"How does your team handle repetitive tasks?",sub:"Automation maturity.",dimension:"automation",options:[
+{label:"Manually — we just power through",icon:"💪",score:1},
+{label:"Some spreadsheet macros and templates",icon:"📊",score:2},
+{label:"Workflow automation tools (Zapier, etc.)",icon:"⚙️",score:3},
+{label:"AI-powered automation across workflows",icon:"🤖",score:4}]},
+{text:"How often does your team experiment with new approaches?",sub:"Innovation velocity.",dimension:"culture",options:[
+{label:"Rarely — we follow established processes",icon:"📐",score:1},
+{label:"Occasionally when problems arise",icon:"🔧",score:2},
+{label:"Regular innovation sprints or hackathons",icon:"💡",score:3},
+{label:"Continuous experimentation is part of our DNA",icon:"🧬",score:4}]}
+];
+let current=0,answers=new Array(10).fill(null);
+function renderQuestion(){
+  const q=questions[current];
+  const card=document.getElementById('questionCard');
+  card.classList.remove('active');
+  card.classList.add('exit');
+  setTimeout(()=>{
+    document.getElementById('qNumber').textContent='Question '+(current+1);
+    document.getElementById('qText').textContent=q.text;
+    document.getElementById('qSubtext').textContent=q.sub;
+    const cont=document.getElementById('optionsContainer');
+    cont.innerHTML='';
+    q.options.forEach((o,i)=>{
+      const div=document.createElement('div');
+      div.className='option'+(answers[current]===i?' selected':'');
+      div.innerHTML=`<div class="icon" style="background:rgba(108,92,231,0.1)">${o.icon}</div><div><div class="label">${o.label}</div></div>`;
+      div.onclick=()=>selectOption(i);
+      cont.appendChild(div);
+    });
+    document.getElementById('prevBtn').style.visibility=current===0?'hidden':'visible';
+    document.getElementById('nextBtn').textContent=current===9?'See Results':'Next';
+    document.getElementById('nextBtn').disabled=answers[current]===null;
+    document.getElementById('progressFill').style.width=((current+1)*10)+'%';
+    document.getElementById('progressLabel').textContent='Question '+(current+1)+' of 10';
+    document.getElementById('progressPct').textContent=((current+1)*10)+'%';
+    card.classList.remove('exit');
+    card.classList.add('active');
+  },200);
+}
+function selectOption(i){
+  answers[current]=i;
+  document.querySelectorAll('.option').forEach((o,j)=>o.classList.toggle('selected',j===i));
+  document.getElementById('nextBtn').disabled=false;
+}
+function nextQuestion(){
+  if(current===9){showResults();return}
+  current++;renderQuestion();
+}
+function prevQuestion(){
+  if(current>0){current--;renderQuestion();}
+}
+function showResults(){
+  document.getElementById('quizSection').style.display='none';
+  const rs=document.getElementById('resultsSection');
+  rs.classList.add('show');
+  const dims={adoption:{total:0,count:0,label:'AI Tool Adoption'},strategy:{total:0,count:0,label:'Strategy & Leadership'},data:{total:0,count:0,label:'Data Readiness'},culture:{total:0,count:0,label:'Culture & Change'},measurement:{total:0,count:0,label:'Measurement Maturity'},knowledge:{total:0,count:0,label:'Knowledge Management'},automation:{total:0,count:0,label:'Automation Level'}};
+  let totalScore=0;
+  questions.forEach((q,i)=>{
+    const s=q.options[answers[i]].score;
+    totalScore+=s;
+    dims[q.dimension].total+=s;
+    dims[q.dimension].count++;
+  });
+  const pct=Math.round((totalScore/40)*100);
+  let level,color,title,subtitle;
+  if(pct<=25){level='AI Curious';color='#e17055';title='You\'re Just Getting Started';subtitle='There\'s massive untapped potential. The good news? Teams at your stage see the biggest ROI from AI adoption coaching.';}
+  else if(pct<=50){level='AI Aware';color='#fdcb6e';title='You\'re Building Awareness';subtitle='Your team recognizes AI\'s potential but needs structure. Go2 can help bridge the gap between interest and implementation.';}
+  else if(pct<=75){level='AI Adopting';color='#6C5CE7';title='You\'re on the Right Track';subtitle='Solid foundation! Now it\'s about scaling what works and filling remaining gaps with systematic AI coaching.';}
+  else{level='AI Native';color='#00b894';title='You\'re Leading the Pack';subtitle='Impressive! Go2 can help you maintain your edge and push into advanced AI-powered workflows.';}
+  document.getElementById('levelBadge').textContent=level;
+  document.getElementById('levelBadge').style.background=color+'22';
+  document.getElementById('levelBadge').style.color=color;
+  document.getElementById('resultsTitle').textContent=title;
+  document.getElementById('resultsSubtitle').textContent=subtitle;
+  const arc=document.getElementById('scoreArc');
+  const offset=553-(553*(pct/100));
+  setTimeout(()=>{arc.style.transition='stroke-dashoffset 1.5s ease';arc.style.strokeDashoffset=offset;},100);
+  const numEl=document.getElementById('scoreNum');
+  let c=0;const int=setInterval(()=>{c+=1;numEl.textContent=c;if(c>=pct)clearInterval(int);},20);
+  const dimList=document.getElementById('dimensionsList');
+  dimList.innerHTML='';
+  const colors=['#6C5CE7','#00CEC9','#FD79A8','#00b894','#fdcb6e','#e17055','#0984e3'];
+  let ci=0;
+  for(const[k,v]of Object.entries(dims)){
+    if(v.count===0)continue;
+    const dimPct=Math.round((v.total/(v.count*4))*100);
+    const col=colors[ci%colors.length];ci++;
+    const rec=dimPct<=25?'Critical gap — immediate action needed':dimPct<=50?'Room for improvement — quick wins available':dimPct<=75?'Good progress — optimize and scale':'Excellent — maintain and innovate';
+    const d=document.createElement('div');d.className='dimension';
+    d.innerHTML=`<h3>${v.label}<span style="color:${col}">${dimPct}%</span></h3><div class="dim-bar-bg"><div class="dim-bar-fill" style="width:0%;background:${col}" data-w="${dimPct}"></div></div><p>${rec}</p>`;
+    dimList.appendChild(d);
+  }
+  setTimeout(()=>{document.querySelectorAll('.dim-bar-fill').forEach(b=>{b.style.width=b.dataset.w+'%';});},300);
+  const recsData=[
+    {icon:'🎯',text:`<strong>Start with AI Champions:</strong> Identify 2-3 enthusiastic team members to pilot Go2. Their success stories will drive organic adoption.`},
+    {icon:'📊',text:`<strong>Measure Your Baseline:</strong> Before implementing AI tools, document current productivity metrics. Go2's analytics make this automatic.`},
+    {icon:'🧠',text:`<strong>Capture Knowledge Now:</strong> Every day without knowledge capture is institutional memory at risk. Go2's auto-documentation starts preserving knowledge from day one.`},
+    pct<=50?{icon:'📋',text:`<strong>Create an AI Policy:</strong> Even a simple one-page guideline removes uncertainty and empowers your team to experiment safely.`}:
+    {icon:'🚀',text:`<strong>Scale What Works:</strong> You've got momentum. Go2's workflow intelligence can identify your most impactful AI use cases and replicate them across teams.`},
+    {icon:'💡',text:`<strong>Book a Go2 Demo:</strong> See how teams at your maturity level are using AI coaching to ${pct<=50?'jumpstart':'accelerate'} their productivity transformation.`}
+  ];
+  const recsList=document.getElementById('recsList');
+  recsList.innerHTML='';
+  recsData.forEach(r=>{
+    const d=document.createElement('div');d.className='rec-item';
+    d.innerHTML=`<div class="rec-icon">${r.icon}</div><div class="rec-text">${r.text}</div>`;
+    recsList.appendChild(d);
+  });
+}
+function retakeQuiz(){
+  current=0;answers=new Array(10).fill(null);
+  document.getElementById('resultsSection').classList.remove('show');
+  document.getElementById('quizSection').style.display='block';
+  renderQuestion();
+}
+renderQuestion();
+</script>
+</body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Day in the Life with Go2 | Interactive Story</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0A0A14;--surface:#12121F;--surface2:#1C1C30;--primary:#6C5CE7;--accent:#00D2FF;--text:#E4E4F0;--dim:#7777AA;--success:#00E676;--warning:#FFB800;--danger:#FF5252}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+.story-container{max-width:720px;margin:0 auto;padding:40px 20px;min-height:100vh;display:flex;flex-direction:column;justify-content:center}
+.time-display{font-size:64px;font-weight:800;background:linear-gradient(135deg,var(--primary),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;animation:timeIn 0.6s ease}
+@keyframes timeIn{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:translateX(0)}}
+.chapter-label{font-size:11px;text-transform:uppercase;letter-spacing:3px;color:var(--dim);margin-bottom:30px}
+.narrative{font-family:'Crimson Pro',serif;font-size:22px;line-height:1.8;color:var(--text);margin-bottom:30px;animation:fadeUp 0.8s ease}
+.narrative em{color:var(--accent);font-style:italic}
+.narrative strong{color:white;font-weight:600}
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.scene-visual{background:var(--surface);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:30px;margin:20px 0;animation:fadeUp 0.8s ease 0.2s backwards}
+.notification{display:flex;align-items:flex-start;gap:14px;padding:14px 18px;background:rgba(108,92,231,0.1);border:1px solid rgba(108,92,231,0.2);border-radius:12px;margin:10px 0;animation:slideIn 0.5s ease}
+@keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+.notification .icon{font-size:20px;flex-shrink:0;margin-top:2px}
+.notification .content{flex:1}
+.notification .title{font-size:13px;font-weight:600;margin-bottom:4px}
+.notification .desc{font-size:12px;color:var(--dim);line-height:1.5}
+.notification.go2{background:linear-gradient(135deg,rgba(108,92,231,0.15),rgba(0,210,255,0.08));border-color:rgba(0,210,255,0.2)}
+.notification.go2 .title{color:var(--accent)}
+.stats-bar{display:flex;gap:16px;margin:20px 0;flex-wrap:wrap}
+.stat{background:rgba(0,0,0,0.3);border-radius:10px;padding:14px 18px;flex:1;min-width:100px;text-align:center}
+.stat .val{font-size:24px;font-weight:700;color:var(--accent)}
+.stat .lbl{font-size:11px;color:var(--dim);margin-top:4px}
+.choices{display:flex;flex-direction:column;gap:12px;margin-top:30px;animation:fadeUp 1s ease 0.4s backwards}
+.choice-btn{background:var(--surface);border:1px solid rgba(255,255,255,0.08);color:var(--text);padding:18px 24px;border-radius:14px;font-size:15px;cursor:pointer;text-align:left;transition:all 0.3s;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden}
+.choice-btn:hover{border-color:var(--primary);background:rgba(108,92,231,0.1);transform:translateX(8px)}
+.choice-btn .emoji{font-size:22px;flex-shrink:0}
+.choice-btn .text{flex:1}
+.choice-btn .text .main{font-weight:500;margin-bottom:4px}
+.choice-btn .text .sub{font-size:12px;color:var(--dim)}
+.progress-track{position:fixed;top:0;left:0;right:0;height:3px;background:rgba(255,255,255,0.05);z-index:100}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));transition:width 0.6s cubic-bezier(0.16,1,0.3,1)}
+.ending-card{background:linear-gradient(135deg,var(--surface),var(--surface2));border:2px solid;border-radius:20px;padding:40px;text-align:center;margin:20px 0;animation:fadeUp 0.8s ease}
+.ending-card h2{font-size:28px;margin-bottom:12px}
+.ending-card p{font-family:'Crimson Pro',serif;font-size:18px;color:var(--dim);line-height:1.7;max-width:500px;margin:0 auto}
+.ending-card.good{border-color:rgba(0,230,118,0.3)}
+.ending-card.good h2{color:var(--success)}
+.ending-card.great{border-color:rgba(0,210,255,0.3)}
+.ending-card.great h2{color:var(--accent)}
+.ending-card.bad{border-color:rgba(255,82,82,0.3)}
+.ending-card.bad h2{color:var(--danger)}
+.cta-section{text-align:center;margin-top:40px;animation:fadeUp 1s ease 0.6s backwards}
+.cta-btn{display:inline-block;background:linear-gradient(135deg,var(--primary),var(--accent));color:white;padding:16px 40px;border-radius:12px;font-size:16px;font-weight:600;text-decoration:none;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:transform 0.2s}
+.cta-btn:hover{transform:scale(1.05)}
+.restart-btn{background:none;border:1px solid rgba(255,255,255,0.1);color:var(--dim);padding:12px 24px;border-radius:10px;font-size:13px;cursor:pointer;margin-top:16px;font-family:'Inter',sans-serif;transition:all 0.2s}
+.restart-btn:hover{border-color:var(--primary);color:var(--text)}
+.fade-out{animation:fadeOut 0.4s ease forwards}
+@keyframes fadeOut{to{opacity:0;transform:translateY(-20px)}}
+.go2-badge{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,rgba(108,92,231,0.2),rgba(0,210,255,0.1));padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;color:var(--accent)}
+.timeline{display:flex;justify-content:space-between;margin:20px 0;position:relative}
+.timeline::before{content:'';position:absolute;top:50%;left:0;right:0;height:2px;background:rgba(255,255,255,0.06);transform:translateY(-50%)}
+.timeline .dot{width:12px;height:12px;border-radius:50%;background:var(--surface2);border:2px solid rgba(255,255,255,0.1);position:relative;z-index:1;transition:all 0.3s}
+.timeline .dot.active{background:var(--primary);border-color:var(--primary);box-shadow:0 0 12px rgba(108,92,231,0.4)}
+.timeline .dot.done{background:var(--success);border-color:var(--success)}
+</style>
+</head>
+<body>
+<div class="progress-track"><div class="progress-fill" id="progress" style="width:0%"></div></div>
+<div class="story-container" id="story"></div>
+<script>
+const story=document.getElementById('story'),progressBar=document.getElementById('progress');
+let score=0,currentScene=0,totalScenes=12;
+const scenes={
+intro:{
+time:'6:45 AM',chapter:'Chapter 1: The Morning',
+narrative:`The alarm goes off. <em>Sarah Chen</em>, VP of Product at a 200-person SaaS company, reaches for her phone. Yesterday was brutal — three hours of meetings that could've been emails, a product launch delayed by miscommunication, and a team lead threatening to quit.\n\nBut today is different. Today is her first day with <strong>Go2</strong>.`,
+visual:null,
+choices:[
+{emoji:'📱',main:'Check Go2\'s morning briefing',sub:'See what the AI prepared overnight',action:()=>goTo('morningBriefing')},
+{emoji:'📧',main:'Check email first (old habits)',sub:'Wade through the inbox like always',action:()=>goTo('morningEmail')}
+]
+},
+morningBriefing:{
+time:'6:52 AM',chapter:'Chapter 1: The Morning',
+narrative:`Sarah opens the Go2 app. A clean dashboard greets her — no noise, just signal.`,
+visual:()=>`
+<div class="notification go2"><div class="icon">🤖</div><div class="content"><div class="title">Go2 Morning Briefing</div><div class="desc">Good morning, Sarah. Here's what matters today:</div></div></div>
+<div class="notification"><div class="icon">🔴</div><div class="content"><div class="title">Critical: API team blocked</div><div class="desc">Jake's PR has been waiting for review for 18 hours. This blocks the v2.1 release. Suggested action: Reassign to Maria (she's available and has context).</div></div></div>
+<div class="notification"><div class="icon">🟡</div><div class="content"><div class="title">Meeting Optimization</div><div class="desc">Your 10am "Sprint Review" has 14 attendees. Go2 suggests: 6 don't need to attend (they can get the async summary). This saves 8 person-hours.</div></div></div>
+<div class="notification"><div class="icon">🟢</div><div class="content"><div class="title">Morale Alert</div><div class="desc">Team sentiment is up 12% this week. Top driver: clear sprint goals you set Monday. Keep it up.</div></div></div>`,
+choices:[
+{emoji:'✅',main:'Act on Go2\'s suggestions',sub:'Reassign the PR, trim the meeting',action:()=>{score+=2;goTo('morningAction')}},
+{emoji:'🤔',main:'Interesting, but I\'ll handle it my way',sub:'Manually review everything yourself',action:()=>{score+=1;goTo('morningManual')}}
+]
+},
+morningEmail:{
+time:'7:15 AM',chapter:'Chapter 1: The Morning',
+narrative:`23 minutes later, Sarah has read 34 emails. She found the blocked PR buried in thread #17. The meeting with 14 people? She didn't catch that — it's already on the calendar. She feels the familiar weight of <em>information overload</em> settling in.\n\nThen she remembers — she has Go2 now. She opens it.`,
+visual:()=>`
+<div class="stats-bar">
+<div class="stat"><div class="val">23</div><div class="lbl">Minutes spent</div></div>
+<div class="stat"><div class="val">34</div><div class="lbl">Emails read</div></div>
+<div class="stat"><div class="val">2</div><div class="lbl">Actions found</div></div>
+<div class="stat"><div class="val">31min</div><div class="lbl">Go2 would have saved</div></div>
+</div>
+<div class="notification go2"><div class="icon">💡</div><div class="content"><div class="title">Go2 Insight</div><div class="desc">I found those same 2 action items in 14 seconds. Tomorrow, start here first?</div></div></div>`,
+choices:[
+{emoji:'👍',main:'Good point. Let\'s use Go2 properly.',sub:'Follow AI recommendations going forward',action:()=>{score+=1;goTo('morningAction')}},
+{emoji:'😤',main:'I need to verify things myself',sub:'Keep the manual review process',action:()=>goTo('standup')}
+]
+},
+morningAction:{
+time:'7:30 AM',chapter:'Chapter 2: The Standup',
+narrative:`In 8 minutes, Sarah has: reassigned Jake's PR to Maria (who accepted instantly), trimmed the Sprint Review to 6 essential attendees, and sent async summaries to the other 8.\n\nShe sips her coffee. <em>That usually takes until 9am.</em>\n\nTime for the daily standup.`,
+visual:()=>`
+<div class="notification go2"><div class="icon">⏰</div><div class="content"><div class="title">Time Saved So Far</div><div class="desc">You've recovered 1.5 hours of team productivity before 8am. You're in the top 5% of Go2 users for morning efficiency.</div></div></div>`,
+choices:[
+{emoji:'🤖',main:'Run standup through Go2',sub:'AI-assisted standup with smart summaries',action:()=>{score+=2;goTo('standupGo2')}},
+{emoji:'📹',main:'Run standup the traditional way',sub:'15-minute video call with the team',action:()=>{score+=1;goTo('standupTraditional')}}
+]
+},
+morningManual:{
+time:'8:15 AM',chapter:'Chapter 2: Getting Started',
+narrative:`Sarah spent 45 minutes triaging manually. She reassigned the PR but missed that the meeting could be trimmed. 14 people will sit through a meeting that 6 of them don't need.\n\nGo2 quietly logs this as a learning opportunity. No judgment — just data.`,
+visual:null,
+choices:[
+{emoji:'🔄',main:'Let Go2 help with the standup at least',sub:'Start using AI assistance',action:()=>{score+=1;goTo('standupGo2')}},
+{emoji:'📹',main:'Keep doing things the usual way',sub:'Run standup as always',action:()=>goTo('standupTraditional')}
+]
+},
+standup:{
+time:'9:00 AM',chapter:'Chapter 2: The Standup',
+narrative:`Standup time. Sarah fires up the video call. Let's see how this goes.`,
+visual:null,
+choices:[
+{emoji:'🤖',main:'Actually, let me try Go2 for this',sub:'AI-assisted standup',action:()=>{score+=1;goTo('standupGo2')}},
+{emoji:'📹',main:'Regular standup call',sub:'Business as usual',action:()=>goTo('standupTraditional')}
+]
+},
+standupGo2:{
+time:'9:00 AM',chapter:'Chapter 2: The Standup',
+narrative:`Sarah opens Go2's Smart Standup. Each team member submitted their update async — Go2 analyzed them all in real-time.`,
+visual:()=>`
+<div class="notification go2"><div class="icon">📊</div><div class="content"><div class="title">Standup Intelligence</div><div class="desc">8 updates received. 2 blockers detected. 1 dependency conflict found. Average update time: 2 minutes.</div></div></div>
+<div class="notification"><div class="icon">⚠️</div><div class="content"><div class="title">Dependency Conflict Detected</div><div class="desc">Frontend team is building against API v2.0, but backend just pushed a breaking change to v2.1. Go2 suggests a 10-minute sync between Jake and Priya.</div></div></div>
+<div class="notification"><div class="icon">🏆</div><div class="content"><div class="title">Team Velocity</div><div class="desc">Sprint is 68% complete (day 3 of 5). On track for full completion — first time in 4 sprints.</div></div></div>`,
+choices:[
+{emoji:'🎯',main:'Address the dependency conflict now',sub:'Quick 10-min sync, then move on',action:()=>{score+=2;goTo('lunchSuccess')}},
+{emoji:'📝',main:'Note it for later',sub:'Add to the afternoon agenda',action:()=>{score+=1;goTo('lunchNeutral')}}
+]
+},
+standupTraditional:{
+time:'9:00 AM',chapter:'Chapter 2: The Standup',
+narrative:`The standup runs 28 minutes instead of 15. Two people monologue about tangential issues. The dependency conflict between frontend and backend? Nobody catches it — Jake and Priya don't realize they're building against different API versions.\n\nGo2 sends Sarah a quiet notification afterward.`,
+visual:()=>`
+<div class="notification go2"><div class="icon">🔍</div><div class="content"><div class="title">Post-Standup Analysis</div><div class="desc">28 minutes spent. 13 minutes were off-topic. Critical issue missed: API version conflict between Jake and Priya. Shall I flag this to them?</div></div></div>`,
+choices:[
+{emoji:'🚨',main:'Yes, flag it immediately!',sub:'Let Go2 alert the team',action:()=>{score+=1;goTo('lunchNeutral')}},
+{emoji:'🤷',main:'It\'ll come up eventually',sub:'Let the team figure it out',action:()=>goTo('lunchBad')}
+]
+},
+lunchSuccess:{
+time:'12:30 PM',chapter:'Chapter 3: The Afternoon',
+narrative:`By lunch, Sarah has accomplished more than she usually does by end of day. The dependency conflict was resolved in a quick sync. The sprint is on track. She eats lunch <em>away from her desk</em> for the first time in weeks.\n\nGo2 sends an afternoon briefing at 1pm.`,
+visual:()=>`
+<div class="stats-bar">
+<div class="stat"><div class="val">3.2h</div><div class="lbl">Time Saved</div></div>
+<div class="stat"><div class="val">0</div><div class="lbl">Blockers</div></div>
+<div class="stat"><div class="val">68%</div><div class="lbl">Sprint Progress</div></div>
+<div class="stat"><div class="val">92</div><div class="lbl">Team Morale Score</div></div>
+</div>`,
+choices:[
+{emoji:'🚀',main:'Full Go2 mode for the afternoon',sub:'Let AI optimize your entire PM block',action:()=>{score+=2;goTo('endingGreat')}},
+{emoji:'⚡',main:'Mix of Go2 and manual work',sub:'Use AI selectively',action:()=>{score+=1;goTo('endingGood')}}
+]
+},
+lunchNeutral:{
+time:'12:30 PM',chapter:'Chapter 3: The Afternoon',
+narrative:`A mixed morning. Some wins, some habits that slowed things down. The dependency conflict was caught — but later than it could have been. Sarah grabs a quick lunch at her desk, scrolling through the backlog.`,
+visual:()=>`
+<div class="stats-bar">
+<div class="stat"><div class="val">1.5h</div><div class="lbl">Time Saved</div></div>
+<div class="stat"><div class="val">1</div><div class="lbl">Lingering Blocker</div></div>
+<div class="stat"><div class="val">55%</div><div class="lbl">Sprint Progress</div></div>
+</div>`,
+choices:[
+{emoji:'🔄',main:'Lean into Go2 this afternoon',sub:'Trust the AI more',action:()=>{score+=2;goTo('endingGood')}},
+{emoji:'💪',main:'Power through manually',sub:'Old-school project management',action:()=>{score+=1;goTo('endingOkay')}}
+]
+},
+lunchBad:{
+time:'2:45 PM',chapter:'Chapter 3: The Crisis',
+narrative:`At 2:45 PM, the dependency conflict explodes. Frontend deployed to staging — and everything broke. Jake and Priya spend 3 hours debugging what Go2 had flagged at 9am. The sprint is now at risk. Sarah's boss asks for an explanation.\n\nGo2's dashboard shows the timeline — the warning was there all along.`,
+visual:()=>`
+<div class="notification" style="background:rgba(255,82,82,0.1);border-color:rgba(255,82,82,0.3)"><div class="icon">💥</div><div class="content"><div class="title" style="color:var(--danger)">Incident: Staging Deploy Failed</div><div class="desc">API version mismatch. 3 hours of team time lost. This was flagged at 9:02 AM.</div></div></div>
+<div class="stats-bar">
+<div class="stat"><div class="val">3h</div><div class="lbl">Time Lost</div></div>
+<div class="stat"><div class="val">$4,200</div><div class="lbl">Cost of Delay</div></div>
+<div class="stat"><div class="val">38%</div><div class="lbl">Sprint at Risk</div></div>
+</div>`,
+choices:[
+{emoji:'📖',main:'Lesson learned. Go all-in on Go2.',sub:'Never ignore AI insights again',action:()=>{score+=1;goTo('endingRedemption')}},
+{emoji:'😞',main:'This was going to happen anyway',sub:'It\'s not about the tool',action:()=>goTo('endingBad')}
+]
+},
+endingGreat:{
+time:'6:00 PM',chapter:'Epilogue',
+narrative:`Sarah closes her laptop at 6pm. On time. The sprint is 82% complete — on track for full delivery, a first in months. Her team sent 34% fewer messages today because Go2 eliminated redundant communication. Jake's PR shipped. The product launch is back on schedule.\n\nHer phone buzzes. It's a message from her team lead — the one who was thinking of quitting.`,
+visual:()=>`
+<div class="notification" style="background:rgba(0,230,118,0.08);border-color:rgba(0,230,118,0.2)"><div class="icon">💬</div><div class="content"><div class="title" style="color:var(--success)">Message from Alex (Team Lead)</div><div class="desc">"Hey Sarah — today felt different. Like we were actually focused on the work instead of the noise around it. Whatever changed, keep it going."</div></div></div>`,
+ending:'great',endTitle:'The Best Day in Months',endText:'Sarah discovered what 2,400+ companies already know: AI productivity coaching doesn\'t replace your team\'s intelligence — it amplifies it. Day one saved 3.2 hours, prevented a critical incident, and shifted team morale. Imagine day 30.'
+},
+endingGood:{
+time:'6:30 PM',chapter:'Epilogue',
+narrative:`A good day. Not perfect — Sarah still defaulted to old habits sometimes — but measurably better. She left at 6:30 instead of 7:45. The sprint is on track. Go2 is already learning her patterns for tomorrow.`,
+visual:()=>`
+<div class="notification go2"><div class="icon">📈</div><div class="content"><div class="title">Day 1 Summary</div><div class="desc">Time saved: 1.8 hours. Meetings optimized: 2. Blockers caught early: 1. Tomorrow's projection: even better — I'm learning your workflow.</div></div></div>`,
+ending:'good',endTitle:'A Better Day',endText:'Not every transformation happens in a single day. But Sarah felt the difference — less friction, clearer priorities, earlier warnings. Go2 gets smarter every day it works with your team. By week two, it feels indispensable.'
+},
+endingOkay:{
+time:'7:45 PM',chapter:'Epilogue',
+narrative:`A typical day. Sarah powered through, handled things her way. Some fires, some wins. She leaves at 7:45, exhausted. Go2 sits on her dock, waiting to be used more tomorrow.`,
+visual:null,
+ending:'good',endTitle:'Same Day, Same Patterns',endText:'The tool was there. The insights were there. Change is hard — but the cost of not changing is harder. $4.4 trillion in lost productivity globally isn\'t a statistic. It\'s millions of people like Sarah working late for no reason. Tomorrow is another chance.'
+},
+endingRedemption:{
+time:'7:00 PM',chapter:'Epilogue',
+narrative:`The afternoon was rough, but Sarah made a decision: trust the AI. She spent the last two hours resolving the crisis WITH Go2, and the system learned from the incident. Tomorrow, similar conflicts will be caught and escalated automatically.\n\nShe lost time today. But she gained something more valuable: <em>conviction.</em>`,
+visual:null,
+ending:'good',endTitle:'The Turning Point',endText:'Most Go2 success stories start with a painful day one. The companies that thrive are the ones that learn from it. Sarah\'s team went on to ship their next three sprints on time — a company record.'
+},
+endingBad:{
+time:'9:15 PM',chapter:'Epilogue',
+narrative:`Sarah leaves at 9:15pm. The sprint is delayed. She has a difficult conversation with her boss tomorrow. The team lead sends their two-week notice at 11pm.\n\nOn her phone, Go2's morning briefing is already queued for tomorrow. The data is all there — the blocked PR, the meeting bloat, the communication gaps. The system tried to help.\n\nSome problems aren't technology problems. They're decision problems.`,
+visual:null,
+ending:'bad',endTitle:'A Familiar Ending',endText:'95% of AI projects fail — not because the AI doesn\'t work, but because organizations don\'t embrace the change. The tools exist. The insights are available. The only variable is whether leadership acts on them. Sarah gets another chance tomorrow.'
+}
+};
+function goTo(sceneId){
+currentScene++;
+const pct=Math.min((currentScene/totalScenes)*100,100);
+progressBar.style.width=pct+'%';
+story.classList.add('fade-out');
+setTimeout(()=>{
+story.classList.remove('fade-out');
+renderScene(scenes[sceneId]);
+window.scrollTo({top:0,behavior:'smooth'});
+},400);
+}
+function renderScene(s){
+let html='';
+if(s.time)html+=`<div class="time-display">${s.time}</div>`;
+if(s.chapter)html+=`<div class="chapter-label">${s.chapter}</div>`;
+if(s.narrative)html+=`<div class="narrative">${s.narrative.replace(/\n/g,'<br>')}</div>`;
+if(s.visual)html+=`<div class="scene-visual">${s.visual()}</div>`;
+if(s.ending){
+const cls=s.ending;
+html+=`<div class="ending-card ${cls}"><h2>${s.endTitle}</h2><p>${s.endText}</p></div>`;
+html+=`<div class="cta-section">
+<button class="cta-btn" onclick="window.open('https://go2.io','_blank')">Start Your Go2 Story</button><br>
+<button class="restart-btn" onclick="restart()">Play Again (Different Choices)</button>
+<p style="margin-top:16px;font-size:12px;color:var(--dim)">Your score: ${score} — ${score>=6?'You\'re a natural AI adopter!':score>=3?'Good instincts — Go2 can amplify them.':'The first step is the hardest.'}</p>
+</div>`;
+}
+if(s.choices){
+html+=`<div class="choices">`;
+s.choices.forEach(c=>{
+html+=`<button class="choice-btn" onclick="(${c.action.toString()})()">
+<div class="emoji">${c.emoji}</div>
+<div class="text"><div class="main">${c.main}</div><div class="sub">${c.sub}</div></div>
+</button>`;
+});
+html+=`</div>`;
+}
+story.innerHTML=html;
+}
+function restart(){score=0;currentScene=0;progressBar.style.width='0%';renderScene(scenes.intro)}
+renderScene(scenes.intro);
+</script>
+</body>
+</html>

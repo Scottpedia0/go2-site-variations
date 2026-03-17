@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team Day Simulator | Go2 - See AI Optimization in Action</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#6C5CE7;--secondary:#00CEC9;--accent:#FD79A8;--dark:#1a1a2e;--card:#ffffff;--text:#2d3436;--text-light:#636e72;--bg:#f8f9fe;--success:#00b894;--danger:#e17055;--warning:#fdcb6e;--gradient:linear-gradient(135deg,#6C5CE7,#00CEC9)}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
+.hero{background:var(--gradient);padding:40px 20px 30px;text-align:center;color:#fff}
+.hero h1{font-size:2.2rem;font-weight:900;margin-bottom:8px}
+.hero p{font-size:1rem;opacity:0.9;max-width:600px;margin:0 auto}
+.container{max-width:1200px;margin:0 auto;padding:30px 20px}
+.sim-grid{display:grid;grid-template-columns:280px 1fr 280px;gap:24px}
+@media(max-width:900px){.sim-grid{grid-template-columns:1fr}}
+.panel{background:var(--card);border-radius:16px;padding:24px;box-shadow:0 4px 20px rgba(0,0,0,0.05)}
+.panel h3{font-size:1rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.task-pool{min-height:300px}
+.task{padding:12px 16px;border-radius:12px;margin-bottom:10px;cursor:grab;transition:all 0.3s;border:2px solid transparent;font-size:0.9rem;position:relative}
+.task:active{cursor:grabbing;transform:scale(1.02)}
+.task.email{background:#EBF5FB;border-color:#85C1E9}
+.task.meeting{background:#FDEDEC;border-color:#F1948A}
+.task.deepwork{background:#E8F8F5;border-color:#76D7C4}
+.task.admin{background:#FEF9E7;border-color:#F9E79F}
+.task.collab{background:#F4ECF7;border-color:#C39BD3}
+.task .task-name{font-weight:600;margin-bottom:4px}
+.task .task-meta{font-size:0.78rem;color:var(--text-light);display:flex;gap:12px}
+.task .task-drag{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#ccc;font-size:1.2rem}
+.schedule{min-height:400px}
+.time-slots{position:relative}
+.time-slot{display:flex;align-items:stretch;min-height:50px;border-bottom:1px solid #f0f0f0;position:relative}
+.time-label{width:60px;font-size:0.78rem;color:var(--text-light);padding:8px 0;flex-shrink:0;font-weight:500}
+.slot-area{flex:1;min-height:50px;border-radius:8px;margin:2px 0;padding:4px;transition:background 0.2s}
+.slot-area.drag-over{background:rgba(108,92,231,0.1);border:2px dashed var(--primary)}
+.slot-area .task{margin-bottom:4px;cursor:default}
+.counters{position:sticky;top:20px}
+.counter{text-align:center;padding:16px;border-radius:12px;margin-bottom:12px}
+.counter.productive{background:linear-gradient(135deg,rgba(0,206,201,0.1),rgba(0,184,148,0.1))}
+.counter.wasted{background:linear-gradient(135deg,rgba(225,112,85,0.1),rgba(253,121,168,0.1))}
+.counter.meetings{background:linear-gradient(135deg,rgba(108,92,231,0.1),rgba(99,110,114,0.1))}
+.counter .num{font-size:2rem;font-weight:900;margin-bottom:2px}
+.counter .lbl{font-size:0.78rem;color:var(--text-light);text-transform:uppercase;letter-spacing:1px}
+.counter.productive .num{color:var(--success)}
+.counter.wasted .num{color:var(--danger)}
+.counter.meetings .num{color:var(--primary)}
+.toggle-section{display:flex;gap:8px;margin-bottom:20px;justify-content:center;flex-wrap:wrap}
+.toggle-btn{padding:10px 24px;border-radius:10px;border:2px solid #e0e0e0;background:#fff;cursor:pointer;font-family:'Inter',sans-serif;font-weight:600;font-size:0.9rem;transition:all 0.3s}
+.toggle-btn.active{border-color:var(--primary);background:rgba(108,92,231,0.08);color:var(--primary)}
+.toggle-btn:hover{border-color:var(--primary)}
+.comparison{display:none;margin-top:24px}
+.comparison.show{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:700px){.comparison.show{grid-template-columns:1fr}}
+.comp-card{border-radius:16px;padding:28px;text-align:center}
+.comp-card.before{background:linear-gradient(135deg,#fdeded,#fff5f5);border:2px solid #f1948a}
+.comp-card.after{background:linear-gradient(135deg,#e8f8f5,#f0fff4);border:2px solid #76d7c4}
+.comp-card h3{font-size:1.1rem;font-weight:700;margin-bottom:16px}
+.comp-stat{margin-bottom:14px}
+.comp-stat .val{font-size:1.8rem;font-weight:800}
+.comp-stat .lab{font-size:0.82rem;color:var(--text-light)}
+.comp-card.before .val{color:var(--danger)}
+.comp-card.after .val{color:var(--success)}
+.go2-badge{display:inline-flex;align-items:center;gap:6px;background:var(--gradient);color:#fff;padding:6px 14px;border-radius:20px;font-size:0.8rem;font-weight:700;margin-bottom:12px}
+.optimization-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(26,26,46,0.8);z-index:100;justify-content:center;align-items:center}
+.optimization-overlay.show{display:flex}
+.opt-card{background:#fff;border-radius:20px;padding:40px;max-width:500px;width:90%;text-align:center;animation:popIn 0.5s ease}
+@keyframes popIn{from{transform:scale(0.8);opacity:0}to{transform:scale(1);opacity:1}}
+.opt-card h2{font-size:1.5rem;font-weight:800;margin-bottom:12px}
+.opt-card p{color:var(--text-light);margin-bottom:20px}
+.opt-items{text-align:left;margin-bottom:24px}
+.opt-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0;font-size:0.92rem}
+.opt-item:last-child{border:none}
+.btn{padding:14px 32px;border-radius:12px;font-size:1rem;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all 0.3s;background:var(--gradient);color:#fff}
+.btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(108,92,231,0.3)}
+.cta{text-align:center;margin-top:40px;padding:40px;background:var(--card);border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,0.05)}
+.cta h2{font-size:1.8rem;font-weight:800;margin-bottom:8px}
+.cta p{color:var(--text-light);margin-bottom:20px}
+</style>
+</head>
+<body>
+<div class="hero">
+<h1>Team Day Simulator</h1>
+<p>Drag tasks into your schedule to simulate a typical day. Then see how Go2 optimizes it.</p>
+</div>
+<div class="container">
+<div class="toggle-section">
+<button class="toggle-btn active" onclick="showView('build')">Build Your Day</button>
+<button class="toggle-btn" onclick="showView('compare')">Before vs After</button>
+<button class="toggle-btn" onclick="optimizeDay()">Optimize with Go2</button>
+</div>
+<div id="buildView">
+<div class="sim-grid">
+<div class="panel task-pool">
+<h3>📋 Task Pool</h3>
+<p style="font-size:0.82rem;color:var(--text-light);margin-bottom:14px">Drag tasks to schedule slots</p>
+<div id="taskPool"></div>
+</div>
+<div class="panel schedule">
+<h3>📅 Your Day</h3>
+<div class="time-slots" id="timeSlots"></div>
+</div>
+<div class="panel counters">
+<h3>📊 Day Stats</h3>
+<div class="counter productive"><div class="num" id="prodHours">0h</div><div class="lbl">Productive Hours</div></div>
+<div class="counter wasted"><div class="num" id="wastedHours">0h</div><div class="lbl">Wasted Hours</div></div>
+<div class="counter meetings"><div class="num" id="meetingHours">0h</div><div class="lbl">In Meetings</div></div>
+<div style="margin-top:16px;padding:16px;background:#f8f9fe;border-radius:12px">
+<div style="font-size:0.82rem;color:var(--text-light);margin-bottom:6px">Productivity Score</div>
+<div style="font-size:2.5rem;font-weight:900;color:var(--primary)" id="prodScore">0%</div>
+<div style="height:8px;background:#e0e0e0;border-radius:4px;margin-top:8px;overflow:hidden"><div id="prodBar" style="height:100%;background:var(--gradient);border-radius:4px;transition:width 0.5s;width:0%"></div></div>
+</div>
+<div style="margin-top:16px;padding:16px;background:linear-gradient(135deg,rgba(225,112,85,0.08),rgba(253,121,168,0.08));border-radius:12px">
+<div style="font-size:0.82rem;color:var(--danger);font-weight:600;margin-bottom:4px">Daily Cost of Waste</div>
+<div style="font-size:1.5rem;font-weight:800;color:var(--danger)" id="wasteCost">$0</div>
+<div style="font-size:0.78rem;color:var(--text-light);margin-top:2px">Based on $85K avg salary</div>
+</div>
+</div>
+</div>
+</div>
+<div class="comparison" id="compareView">
+<div class="comp-card before">
+<h3>Without Go2</h3>
+<div class="comp-stat"><div class="val" id="beforeProd">3.2h</div><div class="lab">Deep Work</div></div>
+<div class="comp-stat"><div class="val" id="beforeMeetings">2.5h</div><div class="lab">Meetings</div></div>
+<div class="comp-stat"><div class="val" id="beforeWaste">2.3h</div><div class="lab">Context Switching & Waste</div></div>
+<div class="comp-stat"><div class="val" id="beforeScore">40%</div><div class="lab">Productivity Score</div></div>
+</div>
+<div class="comp-card after">
+<div class="go2-badge">Optimized by Go2</div>
+<h3>With Go2 AI Coaching</h3>
+<div class="comp-stat"><div class="val" id="afterProd">5.5h</div><div class="lab">Deep Work</div></div>
+<div class="comp-stat"><div class="val" id="afterMeetings">1.5h</div><div class="lab">Meetings (optimized)</div></div>
+<div class="comp-stat"><div class="val" id="afterWaste">1.0h</div><div class="lab">Minimal Transitions</div></div>
+<div class="comp-stat"><div class="val" id="afterScore">76%</div><div class="lab">Productivity Score</div></div>
+</div>
+</div>
+<div class="cta">
+<h2>Stop Losing Hours Every Day</h2>
+<p>The average knowledge worker wastes 2.5 hours daily on context switching and inefficient workflows. Go2 fixes that.</p>
+<a href="https://go2.io" class="btn">Try Go2 Free</a>
+</div>
+</div>
+<div class="optimization-overlay" id="optOverlay">
+<div class="opt-card">
+<h2>Go2 Optimization Complete</h2>
+<p>Here's what Go2's AI coaching would change about your day:</p>
+<div class="opt-items" id="optItems"></div>
+<button class="btn" onclick="closeOverlay()">See Comparison</button>
+</div>
+</div>
+<script>
+const tasks=[
+{id:'t1',name:'Email Triage',type:'email',duration:1,productive:0.3,cat:'admin',desc:'Sorting & responding to emails'},
+{id:'t2',name:'Team Standup',type:'meeting',duration:0.5,productive:0.5,cat:'meeting',desc:'15-30 min daily sync'},
+{id:'t3',name:'Deep Focus Work',type:'deepwork',duration:2,productive:1.0,cat:'productive',desc:'Core project work'},
+{id:'t4',name:'Client Call',type:'meeting',duration:1,productive:0.6,cat:'meeting',desc:'External stakeholder meeting'},
+{id:'t5',name:'Slack/Chat',type:'email',duration:1,productive:0.2,cat:'admin',desc:'Responding to messages'},
+{id:'t6',name:'Status Report',type:'admin',duration:0.5,productive:0.3,cat:'admin',desc:'Updating project status'},
+{id:'t7',name:'Code Review',type:'deepwork',duration:1,productive:0.9,cat:'productive',desc:'Reviewing team PRs'},
+{id:'t8',name:'Strategy Meeting',type:'meeting',duration:1.5,productive:0.4,cat:'meeting',desc:'Planning session'},
+{id:'t9',name:'Context Switching',type:'admin',duration:0.5,productive:0,cat:'waste',desc:'Getting back into flow'},
+{id:'t10',name:'Documentation',type:'collab',duration:1,productive:0.7,cat:'productive',desc:'Writing/updating docs'},
+{id:'t11',name:'1-on-1',type:'meeting',duration:0.5,productive:0.7,cat:'meeting',desc:'Manager/report sync'},
+{id:'t12',name:'Tool Hunting',type:'admin',duration:0.5,productive:0.1,cat:'waste',desc:'Searching for info across tools'}
+];
+const timeSlotData=['8:00 AM','8:30 AM','9:00 AM','9:30 AM','10:00 AM','10:30 AM','11:00 AM','11:30 AM','12:00 PM','12:30 PM','1:00 PM','1:30 PM','2:00 PM','2:30 PM','3:00 PM','3:30 PM','4:00 PM','4:30 PM','5:00 PM'];
+let schedule={};
+let draggedTask=null;
+function init(){
+  const pool=document.getElementById('taskPool');
+  tasks.forEach(t=>{
+    const el=createTaskEl(t);
+    pool.appendChild(el);
+  });
+  const slots=document.getElementById('timeSlots');
+  timeSlotData.forEach((time,i)=>{
+    const row=document.createElement('div');row.className='time-slot';
+    row.innerHTML=`<div class="time-label">${time}</div><div class="slot-area" data-slot="${i}"></div>`;
+    slots.appendChild(row);
+    const area=row.querySelector('.slot-area');
+    area.addEventListener('dragover',e=>{e.preventDefault();area.classList.add('drag-over');});
+    area.addEventListener('dragleave',()=>area.classList.remove('drag-over'));
+    area.addEventListener('drop',e=>{
+      e.preventDefault();area.classList.remove('drag-over');
+      if(draggedTask){
+        const taskEl=createTaskEl(draggedTask,true);
+        area.appendChild(taskEl);
+        schedule[i]=schedule[i]||[];
+        schedule[i].push(draggedTask);
+        updateStats();
+      }
+    });
+  });
+}
+function createTaskEl(t,inSchedule){
+  const el=document.createElement('div');
+  el.className='task '+t.type;
+  el.draggable=!inSchedule;
+  el.innerHTML=`<div class="task-name">${t.name}</div><div class="task-meta"><span>${t.duration}h</span><span>${t.desc}</span></div>${!inSchedule?'<div class="task-drag">⠿</div>':''}`;
+  if(!inSchedule){
+    el.addEventListener('dragstart',()=>{draggedTask=t;el.style.opacity='0.5';});
+    el.addEventListener('dragend',()=>{el.style.opacity='1';draggedTask=null;});
+  }else{
+    el.style.cursor='default';
+    const removeBtn=document.createElement('span');
+    removeBtn.textContent='✕';
+    removeBtn.style.cssText='position:absolute;right:8px;top:8px;cursor:pointer;color:#999;font-size:0.8rem';
+    removeBtn.onclick=()=>{
+      const slot=el.parentElement.dataset.slot;
+      schedule[slot]=schedule[slot].filter(x=>x.id!==t.id);
+      el.remove();updateStats();
+    };
+    el.style.position='relative';
+    el.appendChild(removeBtn);
+  }
+  return el;
+}
+function updateStats(){
+  let prod=0,waste=0,meeting=0,total=0;
+  for(const[slot,tks]of Object.entries(schedule)){
+    tks.forEach(t=>{
+      total+=t.duration;
+      if(t.cat==='productive')prod+=t.duration;
+      else if(t.cat==='meeting')meeting+=t.duration;
+      else if(t.cat==='waste')waste+=t.duration;
+      else waste+=t.duration*(1-t.productive);prod+=t.duration*t.productive;
+    });
+  }
+  document.getElementById('prodHours').textContent=prod.toFixed(1)+'h';
+  document.getElementById('wastedHours').textContent=waste.toFixed(1)+'h';
+  document.getElementById('meetingHours').textContent=meeting.toFixed(1)+'h';
+  const score=total>0?Math.round((prod/total)*100):0;
+  document.getElementById('prodScore').textContent=score+'%';
+  document.getElementById('prodBar').style.width=score+'%';
+  const hourlyRate=85000/2080;
+  document.getElementById('wasteCost').textContent='$'+Math.round(waste*hourlyRate);
+}
+function showView(v){
+  document.querySelectorAll('.toggle-btn').forEach((b,i)=>b.classList.toggle('active',i===(v==='build'?0:1)));
+  document.getElementById('buildView').style.display=v==='build'?'block':'none';
+  document.getElementById('compareView').style.display=v==='compare'?'grid':'none';
+  if(v==='compare')document.getElementById('compareView').classList.add('show');
+}
+function optimizeDay(){
+  const overlay=document.getElementById('optOverlay');
+  overlay.classList.add('show');
+  const items=document.getElementById('optItems');
+  items.innerHTML=`
+    <div class="opt-item"><span>🔄</span><span>Batched email into 2 focused windows (saves 40 min)</span></div>
+    <div class="opt-item"><span>📅</span><span>Consolidated 3 meetings into 1 async update (saves 1.5h)</span></div>
+    <div class="opt-item"><span>🧠</span><span>Protected 3-hour deep work block (2x productivity)</span></div>
+    <div class="opt-item"><span>📝</span><span>Auto-generated status reports from activity (saves 30 min)</span></div>
+    <div class="opt-item"><span>🔍</span><span>Unified search eliminates tool hunting (saves 30 min)</span></div>
+  `;
+}
+function closeOverlay(){
+  document.getElementById('optOverlay').classList.remove('show');
+  showView('compare');
+}
+init();
+</script>
+</body>
+</html>

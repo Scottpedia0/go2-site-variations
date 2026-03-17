@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Remote Work Without Surveillance | Go2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0f;color:#e0e0e0;overflow-x:hidden}
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem}
+.hero h1{font-size:clamp(2rem,5vw,3.8rem);font-weight:800;background:linear-gradient(135deg,#22c55e,#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:1rem}
+.hero p{font-size:1.3rem;color:#94a3b8;max-width:650px;margin-bottom:2rem}
+.spectrum{max-width:800px;margin:2rem auto;padding:0 2rem}
+.spectrum-bar{height:60px;border-radius:12px;background:linear-gradient(90deg,#ef4444 0%,#f59e0b 35%,#22c55e 65%,#60a5fa 100%);position:relative;margin:1rem 0}
+.spectrum-labels{display:flex;justify-content:space-between;font-size:.8rem;color:#94a3b8}
+.spectrum-marker{position:absolute;top:-10px;width:4px;height:80px;background:white;border-radius:2px;transition:left .8s ease}
+.spectrum-marker::after{content:attr(data-label);position:absolute;bottom:-25px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:.8rem;color:white;font-weight:600}
+.toggle-view{display:flex;justify-content:center;gap:1rem;margin:3rem 0 2rem}
+.view-btn{padding:.8rem 2rem;border-radius:10px;border:2px solid #333;background:transparent;color:#94a3b8;cursor:pointer;font-size:1rem;transition:all .3s}
+.view-btn.active{border-color:#22c55e;background:rgba(34,197,94,.12);color:#22c55e}
+.view-btn.surveillance{border-color:#ef4444;background:rgba(239,68,68,.12);color:#ef4444}
+.demo-section{max-width:1000px;margin:0 auto;padding:2rem}
+.demo-panel{display:none;animation:fadeIn .5s}
+.demo-panel.active{display:block}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.surv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem}
+.surv-card{padding:1rem;border-radius:12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);text-align:center}
+.surv-card .screenshot{width:100%;height:120px;background:#1a1a2e;border-radius:8px;margin-bottom:.8rem;display:flex;align-items:center;justify-content:center;font-size:2rem;position:relative;overflow:hidden}
+.surv-card .screenshot::after{content:'SCREENSHOT';position:absolute;font-size:.7rem;color:rgba(239,68,68,.5);letter-spacing:2px}
+.surv-card .name{font-size:.9rem;color:#ef4444;font-weight:600}
+.surv-card .status{font-size:.75rem;color:#94a3b8;margin-top:.3rem}
+.surv-card .activity{font-size:.75rem;color:#f87171;margin-top:.3rem}
+.agg-dashboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem}
+.agg-card{padding:1.5rem;border-radius:16px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2)}
+.agg-card h3{color:#22c55e;font-size:1rem;margin-bottom:1rem}
+.agg-bar{display:flex;align-items:center;gap:.8rem;margin:.5rem 0}
+.agg-label{width:100px;font-size:.8rem;color:#94a3b8;text-align:right}
+.agg-track{flex:1;height:20px;background:#1e293b;border-radius:4px;overflow:hidden}
+.agg-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding:0 8px;font-size:.7rem;font-weight:600;color:white}
+.privacy-features{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;max-width:1000px;margin:4rem auto;padding:0 2rem}
+.privacy-feat{padding:1.5rem;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+.privacy-feat h3{color:#e0e0e0;font-size:1rem;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem}
+.privacy-feat p{color:#94a3b8;font-size:.85rem;line-height:1.5}
+.privacy-feat .shield{color:#22c55e;font-size:1.2rem}
+.comparison-table{max-width:900px;margin:4rem auto;padding:0 2rem;overflow-x:auto}
+.comparison-table h2{text-align:center;font-size:2rem;font-weight:700;margin-bottom:2rem}
+.comp-table{width:100%;border-collapse:collapse}
+.comp-table th{padding:.8rem 1rem;text-align:left;font-size:.85rem;border-bottom:2px solid rgba(255,255,255,.1)}
+.comp-table th:first-child{color:#94a3b8}
+.comp-table th:nth-child(2){color:#ef4444}
+.comp-table th:nth-child(3){color:#22c55e}
+.comp-table td{padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.05);font-size:.9rem;color:#94a3b8}
+.comp-table td:nth-child(2){color:#f87171}
+.comp-table td:nth-child(3){color:#86efac}
+.employee-section{max-width:800px;margin:4rem auto;padding:2rem}
+.employee-section h2{text-align:center;font-size:2rem;font-weight:700;margin-bottom:2rem}
+.testimonial{padding:1.5rem;margin:1rem 0;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);position:relative}
+.testimonial::before{content:'"';position:absolute;top:-.2rem;left:1rem;font-size:3rem;color:rgba(34,197,94,.3);font-family:Georgia,serif}
+.testimonial p{color:#94a3b8;font-size:.95rem;line-height:1.6;padding-left:1rem}
+.testimonial .author{color:#22c55e;font-size:.85rem;margin-top:.8rem;padding-left:1rem;font-weight:600}
+.metrics-section{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;max-width:900px;margin:4rem auto;padding:0 2rem}
+.metric{text-align:center;padding:1.5rem;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+.metric .val{font-size:2.2rem;font-weight:800;color:#22c55e}
+.metric .label{color:#94a3b8;font-size:.85rem;margin-top:.3rem}
+.cta-section{text-align:center;padding:6rem 2rem}
+.cta-section h2{font-size:2.5rem;font-weight:800;margin-bottom:1rem}
+.cta-section p{color:#94a3b8;font-size:1.2rem;margin-bottom:2rem}
+.cta-btn{display:inline-block;padding:1rem 3rem;background:linear-gradient(135deg,#22c55e,#60a5fa);color:white;font-size:1.2rem;font-weight:700;border-radius:12px;text-decoration:none;transition:all .3s}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 10px 40px rgba(34,197,94,.3)}
+@media(max-width:768px){.metrics-section{grid-template-columns:repeat(2,1fr)}.surv-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="hero">
+<h1>Remote Work Without Surveillance</h1>
+<p>Managers need visibility. Employees need trust. Most tools sacrifice one for the other. Go2 gives you both.</p>
+<div class="spectrum">
+<div class="spectrum-bar">
+<div class="spectrum-marker" id="marker" style="left:85%" data-label="Go2"></div>
+</div>
+<div class="spectrum-labels">
+<span>Screenshots<br>Keyloggers</span>
+<span>Activity<br>Tracking</span>
+<span>Aggregated<br>Insights</span>
+<span>Coaching<br>Only</span>
+</div>
+</div>
+</div>
+
+<div class="toggle-view">
+<button class="view-btn surveillance" onclick="showView('surv')">What Surveillance Looks Like</button>
+<button class="view-btn active" onclick="showView('go2')">What Go2 Looks Like</button>
+</div>
+
+<div class="demo-section">
+<div class="demo-panel" id="survPanel">
+<h2 style="text-align:center;color:#ef4444;margin-bottom:1rem">Surveillance Mode: Individual Tracking</h2>
+<p style="text-align:center;color:#94a3b8;margin-bottom:2rem">This is what Time Doctor, Hubstaff, and Teramind show managers. Screenshots every 10 minutes. Keystroke counts. App-by-app tracking per person.</p>
+<div class="surv-grid">
+<div class="surv-card"><div class="screenshot">&#128104;</div><div class="name">Alex M.</div><div class="status">Active now</div><div class="activity">72% productive | Slack open</div></div>
+<div class="surv-card"><div class="screenshot">&#128105;</div><div class="name">Jamie K.</div><div class="status">Idle 8 min</div><div class="activity">45% productive | YouTube detected</div></div>
+<div class="surv-card"><div class="screenshot">&#128104;</div><div class="name">Chris P.</div><div class="status">Active now</div><div class="activity">91% productive | VS Code</div></div>
+<div class="surv-card"><div class="screenshot">&#128105;</div><div class="name">Dana R.</div><div class="status">Active now</div><div class="activity">68% productive | Figma + Slack</div></div>
+<div class="surv-card"><div class="screenshot">&#128104;</div><div class="name">Sam T.</div><div class="status">Offline</div><div class="activity">Last seen 23 min ago</div></div>
+<div class="surv-card"><div class="screenshot">&#128105;</div><div class="name">Morgan L.</div><div class="status">Active now</div><div class="activity">83% productive | Jira + Docs</div></div>
+</div>
+<div style="text-align:center;margin-top:2rem;padding:1.5rem;background:rgba(239,68,68,.08);border-radius:12px;border:1px solid rgba(239,68,68,.2)">
+<p style="color:#ef4444;font-weight:600;font-size:1.1rem">This destroys trust.</p>
+<p style="color:#94a3b8;font-size:.9rem;margin-top:.5rem">Employees game the metrics, hide bathroom breaks, and mouse-jiggle their way to "productivity." You get compliance theater, not real insight.</p>
+</div>
+</div>
+
+<div class="demo-panel active" id="go2Panel">
+<h2 style="text-align:center;color:#22c55e;margin-bottom:1rem">Go2 Mode: Aggregated Team Insights</h2>
+<p style="text-align:center;color:#94a3b8;margin-bottom:2rem">No screenshots. No individual tracking. Just patterns and coaching at the team level.</p>
+<div class="agg-dashboard">
+<div class="agg-card">
+<h3>Team Focus Distribution</h3>
+<div class="agg-bar"><span class="agg-label">Deep work</span><div class="agg-track"><div class="agg-fill" style="width:35%;background:#22c55e">35%</div></div></div>
+<div class="agg-bar"><span class="agg-label">Collaboration</span><div class="agg-track"><div class="agg-fill" style="width:28%;background:#60a5fa">28%</div></div></div>
+<div class="agg-bar"><span class="agg-label">Meetings</span><div class="agg-track"><div class="agg-fill" style="width:25%;background:#f59e0b">25%</div></div></div>
+<div class="agg-bar"><span class="agg-label">Admin</span><div class="agg-track"><div class="agg-fill" style="width:12%;background:#94a3b8">12%</div></div></div>
+</div>
+<div class="agg-card">
+<h3>Coaching Opportunities</h3>
+<div style="padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.85rem;color:#94a3b8">Team meeting load is 25% — above the 20% healthy threshold</div>
+<div style="padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.85rem;color:#94a3b8">3 team members have no focus blocks over 2 hours this week</div>
+<div style="padding:.5rem 0;font-size:.85rem;color:#94a3b8">Context switching is 40% higher on Mondays — consider meeting-free Mondays</div>
+</div>
+<div class="agg-card">
+<h3>Trend: Deep Work Over Time</h3>
+<div style="display:flex;align-items:end;height:100px;gap:8px;margin-top:1rem">
+<div style="flex:1;background:rgba(239,68,68,.3);height:40%;border-radius:4px 4px 0 0" title="Week 1"></div>
+<div style="flex:1;background:rgba(245,158,11,.3);height:50%;border-radius:4px 4px 0 0" title="Week 2"></div>
+<div style="flex:1;background:rgba(245,158,11,.3);height:55%;border-radius:4px 4px 0 0" title="Week 3"></div>
+<div style="flex:1;background:rgba(34,197,94,.3);height:65%;border-radius:4px 4px 0 0" title="Week 4"></div>
+<div style="flex:1;background:rgba(34,197,94,.3);height:70%;border-radius:4px 4px 0 0" title="Week 5"></div>
+<div style="flex:1;background:rgba(34,197,94,.4);height:78%;border-radius:4px 4px 0 0" title="Week 6"></div>
+</div>
+<div style="font-size:.8rem;color:#22c55e;margin-top:.5rem;text-align:center">Deep work up 38% since Go2 coaching started</div>
+</div>
+<div class="agg-card">
+<h3>Process Health</h3>
+<div class="agg-bar"><span class="agg-label">Deploy</span><div class="agg-track"><div class="agg-fill" style="width:92%;background:#22c55e">92%</div></div></div>
+<div class="agg-bar"><span class="agg-label">Code review</span><div class="agg-track"><div class="agg-fill" style="width:78%;background:#60a5fa">78%</div></div></div>
+<div class="agg-bar"><span class="agg-label">Sprint plan</span><div class="agg-track"><div class="agg-fill" style="width:65%;background:#f59e0b">65%</div></div></div>
+<div class="agg-bar"><span class="agg-label">Retros</span><div class="agg-track"><div class="agg-fill" style="width:45%;background:#ef4444">45%</div></div></div>
+</div>
+</div>
+<div style="text-align:center;margin-top:2rem;padding:1.5rem;background:rgba(34,197,94,.08);border-radius:12px;border:1px solid rgba(34,197,94,.2)">
+<p style="color:#22c55e;font-weight:600;font-size:1.1rem">This builds trust.</p>
+<p style="color:#94a3b8;font-size:.9rem;margin-top:.5rem">Managers get real insights about team health. Employees get coaching, not policing. Everyone improves together.</p>
+</div>
+</div>
+</div>
+
+<div style="padding:2rem">
+<div class="privacy-features">
+<div class="privacy-feat"><h3><span class="shield">&#128274;</span> No Screenshots</h3><p>Go2 never captures your screen. Period. We analyze work patterns, not screen content.</p></div>
+<div class="privacy-feat"><h3><span class="shield">&#128274;</span> No Keylogging</h3><p>We don't count keystrokes or track typing patterns. That's surveillance, not coaching.</p></div>
+<div class="privacy-feat"><h3><span class="shield">&#128274;</span> Aggregated Data Only</h3><p>Managers see team-level patterns, not individual activity. Individual data stays private to the employee.</p></div>
+<div class="privacy-feat"><h3><span class="shield">&#128274;</span> Employee-Controlled Sharing</h3><p>Employees choose what insights they share with managers. Transparency by choice, not force.</p></div>
+<div class="privacy-feat"><h3><span class="shield">&#128274;</span> No "Active/Idle" Status</h3><p>Taking a walk to think through a problem? That's productive. We don't penalize human work patterns.</p></div>
+<div class="privacy-feat"><h3><span class="shield">&#128274;</span> Coaching, Not Scoring</h3><p>No "productivity scores." No leaderboards. Just personalized coaching to help everyone do their best work.</p></div>
+</div>
+</div>
+
+<div class="comparison-table">
+<h2>Go2 vs. Surveillance Tools</h2>
+<table class="comp-table">
+<thead><tr><th>Feature</th><th>Surveillance (Time Doctor, Hubstaff)</th><th>Go2</th></tr></thead>
+<tbody>
+<tr><td>Screenshots</td><td>Every 10 minutes</td><td>Never</td></tr>
+<tr><td>Keystroke tracking</td><td>Yes, per person</td><td>Never</td></tr>
+<tr><td>Individual time tracking</td><td>Per minute, visible to manager</td><td>Private to employee only</td></tr>
+<tr><td>App/website monitoring</td><td>Per person, categorized</td><td>Aggregated team patterns only</td></tr>
+<tr><td>"Productive" scoring</td><td>Yes, visible to all managers</td><td>No scoring system</td></tr>
+<tr><td>Employee experience</td><td>Anxiety, gaming, resentment</td><td>Trust, growth, engagement</td></tr>
+<tr><td>Manager insight quality</td><td>Low (compliance != productivity)</td><td>High (patterns, coaching, trends)</td></tr>
+<tr><td>Retention impact</td><td>-22% (increased attrition)</td><td>+15% (improved satisfaction)</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="employee-section">
+<h2>What Employees Actually Say</h2>
+<div class="testimonial"><p>Before Go2, my manager used Time Doctor. I spent more time worrying about my 'productivity score' than actually being productive. With Go2, I get coaching that actually helps. Nobody's watching my screen.</p><div class="author">— Senior Developer, 150-person SaaS company</div></div>
+<div class="testimonial"><p>I was about to quit because of the surveillance tools. When they switched to Go2, I decided to stay. The coaching genuinely made me better at my job, and I don't feel like a child being monitored.</p><div class="author">— Account Manager, remote team of 40</div></div>
+<div class="testimonial"><p>As a manager, I was skeptical about losing individual tracking. But Go2's team insights actually tell me more. I can see systemic issues like meeting overload instead of blaming individuals for low 'activity.'</p><div class="author">— Engineering Manager, distributed team</div></div>
+</div>
+
+<div style="padding:2rem">
+<div class="metrics-section">
+<div class="metric"><div class="val">89%</div><div class="label">Employee approval rating</div></div>
+<div class="metric"><div class="val">+31%</div><div class="label">Actual productivity gain</div></div>
+<div class="metric"><div class="val">+15%</div><div class="label">Retention improvement</div></div>
+<div class="metric"><div class="val">Zero</div><div class="label">Screenshots taken. Ever.</div></div>
+</div>
+</div>
+
+<div class="cta-section">
+<h2>Trust Your Team. Coach Them Better.</h2>
+<p>Visibility doesn't require surveillance. Go2 proves it every day.</p>
+<a href="https://go2.io" class="cta-btn">See It In Action &rarr;</a>
+</div>
+
+<script>
+function showView(v){
+    document.querySelectorAll('.view-btn').forEach(b=>{b.classList.remove('active');b.classList.remove('surveillance')});
+    document.querySelectorAll('.demo-panel').forEach(p=>p.classList.remove('active'));
+    if(v==='surv'){
+        document.getElementById('survPanel').classList.add('active');
+        event.target.classList.add('surveillance');
+        document.getElementById('marker').style.left='8%';
+    } else {
+        document.getElementById('go2Panel').classList.add('active');
+        event.target.classList.add('active');
+        document.getElementById('marker').style.left='85%';
+    }
+}
+</script>
+</body>
+</html>

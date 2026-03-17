@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Don't Leave Without Knowing This</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0a0a0a;color:#fff;min-height:100vh;overflow-x:hidden}
+.exit-gate{position:fixed;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;z-index:100;background:#0a0a0a;transition:transform .8s cubic-bezier(.77,0,.175,1)}
+.exit-gate.open{transform:translateY(-100%)}
+.gate-content{text-align:center;max-width:600px;padding:2rem}
+.gate-icon{font-size:4rem;margin-bottom:1.5rem;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.gate-title{font-size:clamp(2rem,6vw,3.5rem);font-weight:900;line-height:1.1;margin-bottom:1rem}
+.gate-title .highlight{background:linear-gradient(135deg,#ff6b6b,#ffa502);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.gate-sub{color:#888;font-size:1.1rem;margin-bottom:2.5rem;line-height:1.6}
+.reveal-btn{display:inline-block;padding:1.2rem 3rem;background:linear-gradient(135deg,#ff6b6b,#ffa502);color:#000;font-weight:800;font-size:1.1rem;border:none;border-radius:50px;cursor:pointer;transition:all .3s;letter-spacing:.02em}
+.reveal-btn:hover{transform:scale(1.05);box-shadow:0 0 40px rgba(255,107,107,.3)}
+.main-content{min-height:100vh;padding:4rem 2rem;opacity:0;transition:opacity .6s}
+.main-content.visible{opacity:1}
+.container{max-width:900px;margin:0 auto}
+.ticket{background:#111;border:2px solid #222;border-radius:20px;overflow:hidden;margin-bottom:3rem;position:relative}
+.ticket::before{content:'';position:absolute;top:50%;left:-15px;width:30px;height:30px;background:#0a0a0a;border-radius:50%;border:2px solid #222}
+.ticket::after{content:'';position:absolute;top:50%;right:-15px;width:30px;height:30px;background:#0a0a0a;border-radius:50%;border:2px solid #222}
+.ticket-top{padding:2.5rem;border-bottom:2px dashed #222}
+.ticket-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.3em;color:#ff6b6b;margin-bottom:.5rem}
+.ticket-stat{font-size:clamp(3rem,10vw,6rem);font-weight:900;line-height:1;margin-bottom:.5rem;background:linear-gradient(135deg,#ff6b6b,#ffa502);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.ticket-desc{color:#888;font-size:1rem;line-height:1.6}
+.ticket-bottom{padding:2.5rem;display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+@media(max-width:600px){.ticket-bottom{grid-template-columns:1fr}}
+.mini-stat{text-align:center}
+.mini-num{font-size:1.8rem;font-weight:900;color:#fff;margin-bottom:.3rem}
+.mini-label{font-size:.75rem;color:#666;text-transform:uppercase;letter-spacing:.1em}
+.fact-stream{margin:3rem 0}
+.fact{padding:2rem;border-left:3px solid #222;margin-bottom:1.5rem;position:relative;opacity:0;transform:translateX(-20px);transition:all .6s ease}
+.fact.visible{opacity:1;transform:translateX(0)}
+.fact:nth-child(1){border-color:#ff6b6b}
+.fact:nth-child(2){border-color:#ffa502}
+.fact:nth-child(3){border-color:#22c55e}
+.fact:nth-child(4){border-color:#3b82f6}
+.fact:nth-child(5){border-color:#a855f7}
+.fact-num{font-size:3rem;font-weight:900;margin-bottom:.5rem}
+.fact-text{font-size:1.1rem;color:#aaa;line-height:1.6}
+.fact-source{font-size:.75rem;color:#555;margin-top:.5rem}
+.countdown-bar{position:fixed;bottom:0;left:0;width:100%;height:60px;background:#111;border-top:1px solid #222;display:flex;align-items:center;justify-content:center;gap:2rem;z-index:50;opacity:0;transition:opacity .3s}
+.countdown-bar.visible{opacity:1}
+.countdown-text{color:#888;font-size:.9rem}
+.countdown-num{color:#ff6b6b;font-weight:900;font-size:1.2rem;min-width:40px;text-align:center}
+.final-cta{text-align:center;padding:4rem 2rem;background:linear-gradient(180deg,transparent,rgba(255,107,107,.05));border-radius:20px;margin:3rem 0}
+.final-title{font-size:clamp(1.5rem,4vw,2.5rem);font-weight:900;margin-bottom:1rem}
+.final-sub{color:#888;font-size:1rem;margin-bottom:2rem;max-width:500px;margin-left:auto;margin-right:auto;line-height:1.6}
+.cta-link{display:inline-block;padding:1rem 2.5rem;background:linear-gradient(135deg,#ff6b6b,#ffa502);color:#000;font-weight:800;text-decoration:none;border-radius:50px;font-size:1rem;transition:all .3s}
+.cta-link:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(255,107,107,.3)}
+.share-bar{display:flex;gap:1rem;justify-content:center;margin-top:1.5rem;flex-wrap:wrap}
+.share-btn{padding:.6rem 1.5rem;border:1px solid #333;background:transparent;color:#888;border-radius:20px;font-size:.85rem;cursor:pointer;transition:all .3s;font-family:'Inter',sans-serif}
+.share-btn:hover{border-color:#ff6b6b;color:#ff6b6b}
+</style>
+</head>
+<body>
+<div class="exit-gate" id="gate">
+<div class="gate-content">
+<div class="gate-icon">🎫</div>
+<div class="gate-title">Don't leave without<br>knowing <span class="highlight">this one stat</span></div>
+<p class="gate-sub">Behind this gate is a number that will change how you think about your team's productivity. Ready?</p>
+<button class="reveal-btn" onclick="openGate()">Reveal the Stat</button>
+</div>
+</div>
+
+<div class="main-content" id="main">
+<div class="container">
+<div class="ticket">
+<div class="ticket-top">
+<div class="ticket-label">Your exit ticket — admit one truth</div>
+<div class="ticket-stat">$4.4T</div>
+<div class="ticket-desc">That's <strong>trillion</strong>, with a T. The amount of global productivity lost every year to inefficient work patterns, poor knowledge transfer, context switching, and invisible friction. Not in some abstract economic model — in real companies, with real teams, right now.</div>
+</div>
+<div class="ticket-bottom">
+<div class="mini-stat">
+<div class="mini-num">95%</div>
+<div class="mini-label">AI projects that fail (MIT)</div>
+</div>
+<div class="mini-stat">
+<div class="mini-num">23 min</div>
+<div class="mini-label">To refocus after interruption</div>
+</div>
+<div class="mini-stat">
+<div class="mini-num">$15K</div>
+<div class="mini-label">Lost per employee per year</div>
+</div>
+</div>
+</div>
+
+<h2 style="font-size:1.5rem;margin-bottom:.5rem">Five things you can't unsee</h2>
+<p style="color:#666;margin-bottom:2rem">Each one backed by research. Each one happening in your org right now.</p>
+
+<div class="fact-stream" id="facts">
+<div class="fact">
+<div class="fact-num" style="color:#ff6b6b">1.</div>
+<div class="fact-text">The average knowledge worker spends <strong>58% of their day</strong> on "work about work" — status updates, searching for information, duplicating effort, switching between apps. Less than half their time is spent on skilled, meaningful work.</div>
+<div class="fact-source">Source: Anatomy of Work Index, 2023</div>
+</div>
+<div class="fact">
+<div class="fact-num" style="color:#ffa502">2.</div>
+<div class="fact-text">When a senior employee leaves, they take <strong>60-70% of their role-specific knowledge</strong> with them. It costs 6-9 months of salary to replace them — and the institutional knowledge? That's gone forever.</div>
+<div class="fact-source">Source: Deloitte Human Capital Trends</div>
+</div>
+<div class="fact">
+<div class="fact-num" style="color:#22c55e">3.</div>
+<div class="fact-text">Teams that receive <strong>AI-powered coaching</strong> (not surveillance) show 23% higher engagement and 31% lower turnover. The difference? Coaching says "here's how to improve." Surveillance says "we're watching."</div>
+<div class="fact-source">Source: Gallup Workplace Analytics</div>
+</div>
+<div class="fact">
+<div class="fact-num" style="color:#3b82f6">4.</div>
+<div class="fact-text">The average company uses <strong>88 different SaaS applications</strong>. Nobody knows how they all connect, where work actually happens, or how to optimize across all of them. It's digital chaos.</div>
+<div class="fact-source">Source: Productiv SaaS Report</div>
+</div>
+<div class="fact">
+<div class="fact-num" style="color:#a855f7">5.</div>
+<div class="fact-text">Companies that implement <strong>workforce intelligence</strong> (not monitoring — intelligence) see an average ROI of 340% in the first year. Not from catching slackers. From finding and fixing invisible friction.</div>
+<div class="fact-source">Source: McKinsey Digital Workplace Report</div>
+</div>
+</div>
+
+<div class="final-cta">
+<div class="final-title">Now you know. What will you do about it?</div>
+<p class="final-sub">Go2 is the AI productivity platform that captures how work really happens — then coaches your team to do it better. No screenshots. No surveillance. Just intelligence.</p>
+<a href="https://go2.io" class="cta-link">See Go2 in Action →</a>
+<div class="share-bar">
+<button class="share-btn" onclick="shareThis('twitter')">Share on X</button>
+<button class="share-btn" onclick="shareThis('linkedin')">Share on LinkedIn</button>
+<button class="share-btn" onclick="shareThis('copy')">Copy Link</button>
+</div>
+</div>
+</div>
+</div>
+
+<div class="countdown-bar" id="countdown">
+<span class="countdown-text">Time spent on this page that could have been productive:</span>
+<span class="countdown-num" id="timer">0:00</span>
+<span class="countdown-text" style="color:#ff6b6b;font-weight:600">Worth seeing though, right?</span>
+</div>
+
+<script>
+let startTime=null;
+function openGate(){
+document.getElementById('gate').classList.add('open');
+document.getElementById('main').classList.add('visible');
+startTime=Date.now();
+setTimeout(()=>{document.getElementById('countdown').classList.add('visible')},2000);
+startTimer();
+observeFacts();
+}
+function startTimer(){
+setInterval(()=>{
+if(!startTime)return;
+const elapsed=Math.floor((Date.now()-startTime)/1000);
+const m=Math.floor(elapsed/60);
+const s=elapsed%60;
+document.getElementById('timer').textContent=m+':'+(s<10?'0':'')+s;
+},1000);
+}
+function observeFacts(){
+const obs=new IntersectionObserver((entries)=>{
+entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target)}});
+},{threshold:.2});
+document.querySelectorAll('.fact').forEach(f=>obs.observe(f));
+}
+function shareThis(platform){
+const url=encodeURIComponent(window.location.href);
+const text=encodeURIComponent('$4.4 trillion in productivity is lost globally every year. Here\'s your exit ticket to understanding why.');
+if(platform==='twitter')window.open('https://twitter.com/intent/tweet?text='+text+'&url='+url);
+else if(platform==='linkedin')window.open('https://www.linkedin.com/sharing/share-offsite/?url='+url);
+else{navigator.clipboard.writeText(window.location.href);alert('Link copied!')}
+}
+</script>
+</body>
+</html>

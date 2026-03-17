@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 OS - Desktop Experience</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;user-select:none}
+body{font-family:'Inter',sans-serif;overflow:hidden;height:100vh;width:100vw}
+.desktop{width:100%;height:100%;background:linear-gradient(135deg,#0a1628 0%,#1a2a4a 30%,#0d2137 60%,#162d50 100%);position:relative;display:flex;flex-direction:column}
+.wallpaper-overlay{position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='600'%3E%3Cdefs%3E%3CradialGradient id='a' cx='400' cy='300' r='400'%3E%3Cstop offset='0%25' stop-color='%23ff6b3520'/%3E%3Cstop offset='100%25' stop-color='transparent'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='400' cy='300' r='400' fill='url(%23a)'/%3E%3C/svg%3E") center/cover;pointer-events:none}
+.desktop-icons{flex:1;padding:20px;display:flex;flex-direction:column;flex-wrap:wrap;gap:10px;align-content:flex-start;position:relative;z-index:1}
+.desktop-icon{width:80px;height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;border-radius:8px;padding:8px;transition:background 0.15s}
+.desktop-icon:hover{background:rgba(255,255,255,0.1)}
+.desktop-icon.selected{background:rgba(59,130,246,0.3)}
+.icon-img{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+.icon-label{font-size:11px;color:#fff;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,0.8);line-height:1.2;max-width:75px;word-wrap:break-word}
+.taskbar{height:48px;background:rgba(15,15,20,0.85);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;padding:0 10px;z-index:1000;position:relative}
+.start-btn{background:linear-gradient(135deg,#ff6b35,#ff8c42);border:none;color:#fff;padding:6px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s}
+.start-btn:hover{transform:scale(1.05);box-shadow:0 2px 12px rgba(255,107,53,0.4)}
+.start-btn svg{width:16px;height:16px}
+.taskbar-apps{flex:1;display:flex;align-items:center;gap:4px;padding:0 10px}
+.taskbar-app{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);padding:4px 12px;border-radius:6px;font-size:12px;color:#ccc;cursor:pointer;transition:all 0.15s;white-space:nowrap}
+.taskbar-app:hover{background:rgba(255,255,255,0.15)}
+.taskbar-app.active{background:rgba(59,130,246,0.3);border-color:rgba(59,130,246,0.5);color:#fff}
+.taskbar-clock{font-size:12px;color:#ccc;font-family:'JetBrains Mono',monospace;display:flex;flex-direction:column;align-items:flex-end;line-height:1.3}
+.taskbar-tray{display:flex;align-items:center;gap:8px;padding:0 10px;font-size:14px;color:#aaa}
+
+/* Windows */
+.window{position:absolute;background:#1e1e2e;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.1);display:none;flex-direction:column;overflow:hidden;min-width:300px;min-height:200px;z-index:100}
+.window.visible{display:flex}
+.window-titlebar{height:36px;background:rgba(30,30,46,0.95);display:flex;align-items:center;padding:0 12px;gap:8px;cursor:move;border-bottom:1px solid rgba(255,255,255,0.05)}
+.window-dots{display:flex;gap:6px}
+.window-dot{width:12px;height:12px;border-radius:50%;cursor:pointer;transition:opacity 0.15s}
+.window-dot:hover{opacity:0.8}
+.dot-red{background:#ff5f57}
+.dot-yellow{background:#ffbd2e}
+.dot-green{background:#28ca42}
+.window-title{font-size:12px;color:#aaa;flex:1;text-align:center;font-weight:500}
+.window-body{flex:1;overflow:auto;color:#ddd;font-size:13px;line-height:1.6}
+
+/* Start Menu */
+.start-menu{position:absolute;bottom:52px;left:10px;width:380px;background:rgba(20,20,30,0.95);backdrop-filter:blur(30px);border-radius:12px;border:1px solid rgba(255,255,255,0.1);box-shadow:0 10px 50px rgba(0,0,0,0.5);z-index:999;display:none;flex-direction:column;overflow:hidden}
+.start-menu.visible{display:flex}
+.start-menu-header{padding:20px;border-bottom:1px solid rgba(255,255,255,0.05)}
+.start-menu-header h2{color:#fff;font-size:18px;font-weight:600}
+.start-menu-header p{color:#888;font-size:12px;margin-top:4px}
+.start-menu-search{margin:12px;padding:8px 12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-size:13px;outline:none;font-family:'Inter',sans-serif}
+.start-menu-search::placeholder{color:#666}
+.start-menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:12px}
+.start-menu-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:background 0.15s}
+.start-menu-item:hover{background:rgba(255,255,255,0.1)}
+.start-menu-item .smi-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.start-menu-item .smi-text{font-size:12px;color:#ddd;font-weight:500}
+.start-menu-item .smi-desc{font-size:10px;color:#888}
+.start-menu-footer{padding:12px;border-top:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:center}
+.start-menu-footer span{font-size:11px;color:#666;cursor:pointer;padding:4px 8px;border-radius:4px}
+.start-menu-footer span:hover{background:rgba(255,255,255,0.05);color:#aaa}
+
+/* Notification */
+.notification{position:absolute;top:20px;right:20px;background:rgba(20,20,30,0.95);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px 20px;box-shadow:0 8px 30px rgba(0,0,0,0.4);z-index:2000;transform:translateX(120%);transition:transform 0.4s cubic-bezier(0.2,0.8,0.2,1);max-width:320px}
+.notification.show{transform:translateX(0)}
+.notification-title{font-size:13px;font-weight:600;color:#fff;margin-bottom:4px}
+.notification-body{font-size:12px;color:#aaa;line-height:1.4}
+
+/* App-specific styles */
+.app-coaching .window-body{padding:20px}
+.coaching-header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.coaching-avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#ff6b35,#ff8c42);display:flex;align-items:center;justify-content:center;font-size:22px}
+.coaching-name{font-size:16px;font-weight:600;color:#fff}
+.coaching-status{font-size:11px;color:#4ade80}
+.coaching-chat{display:flex;flex-direction:column;gap:10px}
+.chat-msg{max-width:80%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5;animation:fadeInUp 0.3s ease}
+.chat-msg.ai{background:rgba(59,130,246,0.2);border:1px solid rgba(59,130,246,0.3);align-self:flex-start;border-bottom-left-radius:4px}
+.chat-msg.user{background:rgba(255,107,53,0.2);border:1px solid rgba(255,107,53,0.3);align-self:flex-end;border-bottom-right-radius:4px}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.app-analytics .window-body{padding:20px}
+.analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.analytics-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:16px}
+.analytics-card .label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px}
+.analytics-card .value{font-size:28px;font-weight:700;color:#fff;margin:4px 0}
+.analytics-card .change{font-size:12px;color:#4ade80}
+.analytics-card .change.down{color:#f87171}
+.analytics-chart{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:16px;height:160px;position:relative;overflow:hidden}
+.chart-bar{position:absolute;bottom:16px;width:30px;background:linear-gradient(to top,#ff6b35,#ff8c42);border-radius:4px 4px 0 0;transition:height 1s ease}
+
+.app-docs .window-body{padding:20px}
+.doc-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:8px;cursor:pointer;transition:background 0.15s;border-bottom:1px solid rgba(255,255,255,0.05)}
+.doc-item:hover{background:rgba(255,255,255,0.05)}
+.doc-icon{font-size:24px}
+.doc-info h4{font-size:13px;color:#fff;font-weight:500}
+.doc-info p{font-size:11px;color:#888}
+.doc-badge{margin-left:auto;background:rgba(74,222,128,0.15);color:#4ade80;font-size:10px;padding:2px 8px;border-radius:10px}
+
+.app-terminal .window-body{background:#0d0d0d;padding:12px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#4ade80}
+.term-line{margin-bottom:4px;line-height:1.5}
+.term-prompt{color:#ff6b35}
+.term-output{color:#aaa}
+.term-cursor{display:inline-block;width:8px;height:14px;background:#4ade80;animation:blink 1s step-end infinite;vertical-align:middle}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+.app-settings .window-body{padding:20px}
+.settings-section{margin-bottom:20px}
+.settings-section h3{font-size:14px;color:#fff;margin-bottom:10px;font-weight:600}
+.setting-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.setting-label{font-size:13px;color:#ccc}
+.setting-desc{font-size:11px;color:#666}
+.toggle{width:40px;height:22px;background:rgba(255,255,255,0.15);border-radius:11px;cursor:pointer;position:relative;transition:background 0.2s}
+.toggle.on{background:#ff6b35}
+.toggle::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:2px;left:2px;transition:left 0.2s}
+.toggle.on::after{left:20px}
+
+.app-about .window-body{padding:30px;text-align:center}
+.about-logo{font-size:48px;margin-bottom:10px}
+.about-name{font-size:24px;font-weight:700;color:#fff;margin-bottom:4px}
+.about-version{font-size:13px;color:#888;margin-bottom:20px}
+.about-desc{font-size:13px;color:#aaa;line-height:1.6;max-width:400px;margin:0 auto 20px}
+.about-stats{display:flex;justify-content:center;gap:30px;margin-top:15px}
+.about-stat{text-align:center}
+.about-stat .val{font-size:22px;font-weight:700;color:#ff6b35}
+.about-stat .lbl{font-size:11px;color:#888}
+.about-cta{display:inline-block;margin-top:20px;background:linear-gradient(135deg,#ff6b35,#ff8c42);color:#fff;padding:10px 30px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:transform 0.2s}
+.about-cta:hover{transform:scale(1.05)}
+
+/* Right-click menu */
+.context-menu{position:absolute;background:rgba(25,25,35,0.95);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:4px;box-shadow:0 8px 30px rgba(0,0,0,0.5);z-index:3000;display:none;min-width:180px}
+.context-menu.visible{display:block}
+.ctx-item{padding:8px 12px;border-radius:4px;font-size:12px;color:#ccc;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background 0.1s}
+.ctx-item:hover{background:rgba(255,255,255,0.1);color:#fff}
+.ctx-separator{height:1px;background:rgba(255,255,255,0.08);margin:4px 0}
+</style>
+</head>
+<body>
+
+<div class="desktop" id="desktop">
+<div class="wallpaper-overlay"></div>
+
+<div class="desktop-icons" id="desktopIcons">
+<div class="desktop-icon" data-app="coaching" ondblclick="openApp('coaching')">
+<div class="icon-img" style="background:linear-gradient(135deg,#3b82f6,#2563eb)">🧠</div>
+<span class="icon-label">AI Coach</span>
+</div>
+<div class="desktop-icon" data-app="analytics" ondblclick="openApp('analytics')">
+<div class="icon-img" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed)">📊</div>
+<span class="icon-label">Workforce Intelligence</span>
+</div>
+<div class="desktop-icon" data-app="docs" ondblclick="openApp('docs')">
+<div class="icon-img" style="background:linear-gradient(135deg,#10b981,#059669)">📝</div>
+<span class="icon-label">Auto-Docs</span>
+</div>
+<div class="desktop-icon" data-app="terminal" ondblclick="openApp('terminal')">
+<div class="icon-img" style="background:linear-gradient(135deg,#333,#111)">⌨️</div>
+<span class="icon-label">Terminal</span>
+</div>
+<div class="desktop-icon" data-app="settings" ondblclick="openApp('settings')">
+<div class="icon-img" style="background:linear-gradient(135deg,#6b7280,#4b5563)">⚙️</div>
+<span class="icon-label">Settings</span>
+</div>
+<div class="desktop-icon" data-app="about" ondblclick="openApp('about')">
+<div class="icon-img" style="background:linear-gradient(135deg,#ff6b35,#ff8c42)">🚀</div>
+<span class="icon-label">About Go2</span>
+</div>
+</div>
+
+<!-- Start Menu -->
+<div class="start-menu" id="startMenu">
+<div class="start-menu-header">
+<h2>Go2 OS</h2>
+<p>AI Productivity Operating System v2.0</p>
+</div>
+<input type="text" class="start-menu-search" placeholder="Search apps..." id="startSearch">
+<div class="start-menu-grid" id="startGrid">
+<div class="start-menu-item" onclick="openApp('coaching')">
+<div class="smi-icon" style="background:linear-gradient(135deg,#3b82f6,#2563eb)">🧠</div>
+<div><div class="smi-text">AI Coach</div><div class="smi-desc">Personal productivity coach</div></div>
+</div>
+<div class="start-menu-item" onclick="openApp('analytics')">
+<div class="smi-icon" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed)">📊</div>
+<div><div class="smi-text">Workforce Intelligence</div><div class="smi-desc">Team analytics dashboard</div></div>
+</div>
+<div class="start-menu-item" onclick="openApp('docs')">
+<div class="smi-icon" style="background:linear-gradient(135deg,#10b981,#059669)">📝</div>
+<div><div class="smi-text">Auto-Docs</div><div class="smi-desc">AI documentation engine</div></div>
+</div>
+<div class="start-menu-item" onclick="openApp('terminal')">
+<div class="smi-icon" style="background:linear-gradient(135deg,#333,#111)">⌨️</div>
+<div><div class="smi-text">Terminal</div><div class="smi-desc">Go2 command line</div></div>
+</div>
+<div class="start-menu-item" onclick="openApp('settings')">
+<div class="smi-icon" style="background:linear-gradient(135deg,#6b7280,#4b5563)">⚙️</div>
+<div><div class="smi-text">Settings</div><div class="smi-desc">System preferences</div></div>
+</div>
+<div class="start-menu-item" onclick="openApp('about')">
+<div class="smi-icon" style="background:linear-gradient(135deg,#ff6b35,#ff8c42)">🚀</div>
+<div><div class="smi-text">About Go2</div><div class="smi-desc">Platform overview</div></div>
+</div>
+</div>
+<div class="start-menu-footer">
+<span>go2.io</span>
+<span onclick="showNotif('System','Go2 OS is always running. Your productivity never sleeps.')">🔒 Lock</span>
+<span onclick="showNotif('Shutdown','Just kidding. Go2 never stops working for you.')">⏻ Shutdown</span>
+</div>
+</div>
+
+<!-- Windows -->
+<div class="window app-coaching" id="win-coaching" style="width:450px;height:500px;top:60px;left:200px">
+<div class="window-titlebar" onmousedown="startDrag(event,'win-coaching')">
+<div class="window-dots"><div class="window-dot dot-red" onclick="closeApp('coaching')"></div><div class="window-dot dot-yellow"></div><div class="window-dot dot-green"></div></div>
+<span class="window-title">AI Coach - Go2</span>
+</div>
+<div class="window-body">
+<div class="coaching-header">
+<div class="coaching-avatar">🧠</div>
+<div><div class="coaching-name">Go2 AI Coach</div><div class="coaching-status">● Online - Watching your back (not your screen)</div></div>
+</div>
+<div class="coaching-chat" id="coachChat">
+<div class="chat-msg ai">Hey! I noticed you've been in deep focus for 90 minutes. That's amazing! Studies show a 5-minute break now will boost your next session by 20%.</div>
+<div class="chat-msg user">Good call. I was starting to lose steam.</div>
+<div class="chat-msg ai">Your productivity pattern this week shows you do your best creative work between 9-11am. Want me to block that time tomorrow?</div>
+<div class="chat-msg user">Yes please! Also, can you prep the standup notes?</div>
+<div class="chat-msg ai">Already done! I documented yesterday's progress automatically. Your standup notes are in Auto-Docs. You shipped 3 features and reviewed 5 PRs. Impressive week! 🎯</div>
+</div>
+</div>
+</div>
+
+<div class="window app-analytics" id="win-analytics" style="width:520px;height:420px;top:40px;left:350px">
+<div class="window-titlebar" onmousedown="startDrag(event,'win-analytics')">
+<div class="window-dots"><div class="window-dot dot-red" onclick="closeApp('analytics')"></div><div class="window-dot dot-yellow"></div><div class="window-dot dot-green"></div></div>
+<span class="window-title">Workforce Intelligence - Go2</span>
+</div>
+<div class="window-body">
+<div class="analytics-grid">
+<div class="analytics-card"><div class="label">Team Productivity</div><div class="value">94%</div><div class="change">↑ 23% this month</div></div>
+<div class="analytics-card"><div class="label">Focus Time</div><div class="value">6.2h</div><div class="change">↑ 1.8h vs last week</div></div>
+<div class="analytics-card"><div class="label">Auto-Documented</div><div class="value">847</div><div class="change">items this week</div></div>
+<div class="analytics-card"><div class="label">Time Saved</div><div class="value">12h</div><div class="change">per employee/week</div></div>
+</div>
+<div class="analytics-chart" id="chart">
+<div style="position:absolute;top:8px;left:12px;font-size:11px;color:#888">Weekly Output Trend</div>
+</div>
+</div>
+</div>
+
+<div class="window app-docs" id="win-docs" style="width:420px;height:400px;top:100px;left:120px">
+<div class="window-titlebar" onmousedown="startDrag(event,'win-docs')">
+<div class="window-dots"><div class="window-dot dot-red" onclick="closeApp('docs')"></div><div class="window-dot dot-yellow"></div><div class="window-dot dot-green"></div></div>
+<span class="window-title">Auto-Docs - Go2</span>
+</div>
+<div class="window-body">
+<div style="padding:12px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:11px;color:#888">Recent auto-generated documentation:</div>
+<div class="doc-item"><div class="doc-icon">📋</div><div class="doc-info"><h4>Sprint 24 Standup Notes</h4><p>Auto-generated 2 minutes ago</p></div><div class="doc-badge">NEW</div></div>
+<div class="doc-item"><div class="doc-icon">📊</div><div class="doc-info"><h4>Q1 Progress Report</h4><p>Auto-generated from project data</p></div><div class="doc-badge">NEW</div></div>
+<div class="doc-item"><div class="doc-icon">🔄</div><div class="doc-info"><h4>API Migration Decision Log</h4><p>Captured from team discussions</p></div></div>
+<div class="doc-item"><div class="doc-icon">💡</div><div class="doc-info"><h4>Architecture Decision Record #47</h4><p>Auto-documented from code review</p></div></div>
+<div class="doc-item"><div class="doc-icon">📈</div><div class="doc-info"><h4>Team Velocity Analysis</h4><p>Weekly automated report</p></div></div>
+<div class="doc-item"><div class="doc-icon">🎯</div><div class="doc-info"><h4>OKR Progress Update</h4><p>Real-time goal tracking</p></div></div>
+</div>
+</div>
+
+<div class="window app-terminal" id="win-terminal" style="width:500px;height:350px;top:80px;left:300px">
+<div class="window-titlebar" onmousedown="startDrag(event,'win-terminal')">
+<div class="window-dots"><div class="window-dot dot-red" onclick="closeApp('terminal')"></div><div class="window-dot dot-yellow"></div><div class="window-dot dot-green"></div></div>
+<span class="window-title">Terminal - Go2 Shell</span>
+</div>
+<div class="window-body" id="termBody">
+<div class="term-line"><span class="term-output">Go2 OS v2.0 - AI Productivity Shell</span></div>
+<div class="term-line"><span class="term-output">Type 'help' for available commands</span></div>
+<div class="term-line"><span class="term-output">---</span></div>
+<div class="term-line"><span class="term-prompt">go2 ~ $ </span><span class="term-output">go2 status</span></div>
+<div class="term-line"><span class="term-output">✓ AI Coach: Active</span></div>
+<div class="term-line"><span class="term-output">✓ Workforce Intelligence: Collecting insights</span></div>
+<div class="term-line"><span class="term-output">✓ Auto-Docs: 847 items documented today</span></div>
+<div class="term-line"><span class="term-output">✓ Surveillance: DISABLED (we don't do that here)</span></div>
+<div class="term-line"><span class="term-output">✓ Team Morale: Excellent</span></div>
+<div class="term-line"><span class="term-prompt">go2 ~ $ </span><span class="term-output">go2 productivity --report</span></div>
+<div class="term-line"><span class="term-output">Generating productivity report...</span></div>
+<div class="term-line"><span class="term-output">  Focus time: 6.2h avg (+41%)</span></div>
+<div class="term-line"><span class="term-output">  Meetings reduced: 12 → 4/week</span></div>
+<div class="term-line"><span class="term-output">  Docs auto-generated: 847</span></div>
+<div class="term-line"><span class="term-output">  Hours saved: 12h/employee/week</span></div>
+<div class="term-line"><span class="term-output">  ROI: 4,200% (not a typo)</span></div>
+<div class="term-line"><span class="term-prompt">go2 ~ $ </span><span class="term-cursor"></span></div>
+</div>
+</div>
+
+<div class="window app-settings" id="win-settings" style="width:420px;height:450px;top:50px;left:250px">
+<div class="window-titlebar" onmousedown="startDrag(event,'win-settings')">
+<div class="window-dots"><div class="window-dot dot-red" onclick="closeApp('settings')"></div><div class="window-dot dot-yellow"></div><div class="window-dot dot-green"></div></div>
+<span class="window-title">Settings - Go2</span>
+</div>
+<div class="window-body">
+<div class="settings-section">
+<h3>AI Coaching</h3>
+<div class="setting-row"><div><div class="setting-label">Smart Break Reminders</div><div class="setting-desc">AI-powered break suggestions</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+<div class="setting-row"><div><div class="setting-label">Focus Time Protection</div><div class="setting-desc">Block notifications during deep work</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+<div class="setting-row"><div><div class="setting-label">Meeting Optimization</div><div class="setting-desc">Suggest async alternatives</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+</div>
+<div class="settings-section">
+<h3>Auto-Documentation</h3>
+<div class="setting-row"><div><div class="setting-label">Standup Notes</div><div class="setting-desc">Auto-generate daily standups</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+<div class="setting-row"><div><div class="setting-label">Decision Logging</div><div class="setting-desc">Capture key decisions automatically</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+</div>
+<div class="settings-section">
+<h3>Privacy</h3>
+<div class="setting-row"><div><div class="setting-label">Screen Recording</div><div class="setting-desc">We literally don't have this feature</div></div><div class="toggle" style="opacity:0.3;cursor:not-allowed"></div></div>
+<div class="setting-row"><div><div class="setting-label">Keystroke Logging</div><div class="setting-desc">Nope. Not a thing here.</div></div><div class="toggle" style="opacity:0.3;cursor:not-allowed"></div></div>
+<div class="setting-row"><div><div class="setting-label">GPS Tracking</div><div class="setting-desc">Are you serious? No.</div></div><div class="toggle" style="opacity:0.3;cursor:not-allowed"></div></div>
+</div>
+</div>
+</div>
+
+<div class="window app-about" id="win-about" style="width:460px;height:440px;top:70px;left:280px">
+<div class="window-titlebar" onmousedown="startDrag(event,'win-about')">
+<div class="window-dots"><div class="window-dot dot-red" onclick="closeApp('about')"></div><div class="window-dot dot-yellow"></div><div class="window-dot dot-green"></div></div>
+<span class="window-title">About Go2</span>
+</div>
+<div class="window-body">
+<div class="about-logo">🚀</div>
+<div class="about-name">Go2</div>
+<div class="about-version">AI Productivity Platform v2.0</div>
+<div class="about-desc">Go2 is the AI productivity platform that coaches your workforce to peak performance. No surveillance. No monitoring. Just intelligent coaching, automatic documentation, and workforce intelligence that makes everyone better.</div>
+<div class="about-stats">
+<div class="about-stat"><div class="val">$4.4T</div><div class="lbl">Lost Productivity</div></div>
+<div class="about-stat"><div class="val">95%</div><div class="lbl">AI Projects Fail</div></div>
+<div class="about-stat"><div class="val">47%</div><div class="lbl">Avg. Improvement</div></div>
+</div>
+<button class="about-cta" onclick="window.open('https://go2.io','_blank')">Visit go2.io</button>
+</div>
+</div>
+
+<!-- Notification -->
+<div class="notification" id="notification">
+<div class="notification-title" id="notifTitle"></div>
+<div class="notification-body" id="notifBody"></div>
+</div>
+
+<!-- Context Menu -->
+<div class="context-menu" id="contextMenu">
+<div class="ctx-item" onclick="openApp('about')">ℹ️ About Go2 OS</div>
+<div class="ctx-item" onclick="openApp('settings')">⚙️ Settings</div>
+<div class="ctx-separator"></div>
+<div class="ctx-item" onclick="openApp('coaching')">🧠 Open AI Coach</div>
+<div class="ctx-item" onclick="openApp('analytics')">📊 View Analytics</div>
+<div class="ctx-separator"></div>
+<div class="ctx-item" onclick="showNotif('Go2','Your desktop is already optimized for maximum productivity!')">✨ Optimize Desktop</div>
+</div>
+
+<!-- Taskbar -->
+<div class="taskbar">
+<button class="start-btn" onclick="toggleStart(event)">
+<svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 1h6.5v6.5H1V1zm8.5 0H16v6.5H9.5V1zM1 9.5h6.5V16H1V9.5zm8.5 0H16V16H9.5V9.5z"/></svg>
+Go2
+</button>
+<div class="taskbar-apps" id="taskbarApps"></div>
+<div class="taskbar-tray">
+<span title="Wi-Fi">📶</span>
+<span title="Battery">🔋</span>
+<span title="Notifications" onclick="showNotif('Go2 AI','Your team productivity is up 23% this week! Keep it up!')">🔔</span>
+</div>
+<div class="taskbar-clock" id="clock"></div>
+</div>
+</div>
+
+<script>
+const openWindows = new Set();
+let dragTarget = null, dragOffset = {x:0,y:0};
+let highestZ = 100;
+
+function openApp(name){
+  const win = document.getElementById('win-'+name);
+  if(!win) return;
+  win.classList.add('visible');
+  win.style.zIndex = ++highestZ;
+  openWindows.add(name);
+  updateTaskbar();
+  closeStart();
+  closeContext();
+  if(name==='analytics') animateChart();
+}
+
+function closeApp(name){
+  const win = document.getElementById('win-'+name);
+  if(win) win.classList.remove('visible');
+  openWindows.delete(name);
+  updateTaskbar();
+}
+
+function focusApp(name){
+  const win = document.getElementById('win-'+name);
+  if(win) win.style.zIndex = ++highestZ;
+  updateTaskbar();
+}
+
+function updateTaskbar(){
+  const bar = document.getElementById('taskbarApps');
+  const names = {coaching:'AI Coach',analytics:'Analytics',docs:'Auto-Docs',terminal:'Terminal',settings:'Settings',about:'About'};
+  bar.innerHTML = '';
+  openWindows.forEach(name=>{
+    const btn = document.createElement('div');
+    btn.className = 'taskbar-app active';
+    btn.textContent = names[name]||name;
+    btn.onclick = ()=>focusApp(name);
+    bar.appendChild(btn);
+  });
+}
+
+function startDrag(e, winId){
+  const win = document.getElementById(winId);
+  win.style.zIndex = ++highestZ;
+  dragTarget = win;
+  dragOffset.x = e.clientX - win.offsetLeft;
+  dragOffset.y = e.clientY - win.offsetTop;
+  e.preventDefault();
+}
+
+document.addEventListener('mousemove',e=>{
+  if(dragTarget){
+    dragTarget.style.left = (e.clientX - dragOffset.x)+'px';
+    dragTarget.style.top = (e.clientY - dragOffset.y)+'px';
+  }
+});
+document.addEventListener('mouseup',()=>{dragTarget=null});
+
+function toggleStart(e){
+  e&&e.stopPropagation();
+  document.getElementById('startMenu').classList.toggle('visible');
+  closeContext();
+}
+function closeStart(){document.getElementById('startMenu').classList.remove('visible')}
+
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.start-menu')&&!e.target.closest('.start-btn')) closeStart();
+  closeContext();
+});
+
+document.getElementById('desktop').addEventListener('contextmenu',e=>{
+  e.preventDefault();
+  const cm = document.getElementById('contextMenu');
+  cm.style.left = e.clientX+'px';
+  cm.style.top = e.clientY+'px';
+  cm.classList.add('visible');
+});
+function closeContext(){document.getElementById('contextMenu').classList.remove('visible')}
+
+let notifTimeout;
+function showNotif(title,body){
+  const n = document.getElementById('notification');
+  document.getElementById('notifTitle').textContent = title;
+  document.getElementById('notifBody').textContent = body;
+  n.classList.add('show');
+  clearTimeout(notifTimeout);
+  notifTimeout = setTimeout(()=>n.classList.remove('show'),4000);
+}
+
+function updateClock(){
+  const now = new Date();
+  document.getElementById('clock').innerHTML = now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'<span style="font-size:10px">'+now.toLocaleDateString([],{month:'short',day:'numeric'})+'</span>';
+}
+setInterval(updateClock,1000);
+updateClock();
+
+function animateChart(){
+  const chart = document.getElementById('chart');
+  const existing = chart.querySelectorAll('.chart-bar');
+  existing.forEach(b=>b.remove());
+  const data = [40,55,45,70,65,80,75,90,85,95,88,94];
+  data.forEach((val,i)=>{
+    const bar = document.createElement('div');
+    bar.className = 'chart-bar';
+    bar.style.left = (30+i*38)+'px';
+    bar.style.height = '0px';
+    chart.appendChild(bar);
+    setTimeout(()=>{bar.style.height = val*1.2+'px'},100+i*80);
+  });
+}
+
+// Boot sequence
+setTimeout(()=>showNotif('Go2 OS','Welcome back! Your AI coach is ready. Double-click any icon to begin.'),1500);
+setTimeout(()=>showNotif('Productivity Update','Your focus time is up 41% this week. You\'re on fire!'),8000);
+
+// Search filter
+document.getElementById('startSearch').addEventListener('input',function(){
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.start-menu-item').forEach(item=>{
+    const text = item.textContent.toLowerCase();
+    item.style.display = text.includes(q)?'flex':'none';
+  });
+});
+</script>
+</body>
+</html>

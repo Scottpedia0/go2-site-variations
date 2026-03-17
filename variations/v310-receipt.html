@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Your Wasted Productivity Receipt</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f5f0eb;color:#333;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem}
+.receipt-wrapper{max-width:440px;width:100%;margin:0 auto}
+.receipt{background:#fff;padding:2.5rem 2rem;position:relative;font-family:'IBM Plex Mono',monospace;box-shadow:0 8px 40px rgba(0,0,0,.08)}
+.receipt::before{content:'';position:absolute;top:-10px;left:0;width:100%;height:10px;background:linear-gradient(135deg,#fff 33.33%,transparent 33.33%,transparent 66.66%,#fff 66.66%);background-size:14px 10px}
+.receipt::after{content:'';position:absolute;bottom:-10px;left:0;width:100%;height:10px;background:linear-gradient(-45deg,#fff 33.33%,transparent 33.33%,transparent 66.66%,#fff 66.66%);background-size:14px 10px}
+.receipt-header{text-align:center;padding-bottom:1.5rem;border-bottom:2px dashed #ddd}
+.receipt-logo{font-size:1.5rem;font-weight:700;letter-spacing:.1em;margin-bottom:.3rem}
+.receipt-addr{font-size:.7rem;color:#999;line-height:1.5}
+.receipt-section{padding:1.5rem 0;border-bottom:1px dashed #ddd}
+.receipt-row{display:flex;justify-content:space-between;margin-bottom:.6rem;font-size:.85rem}
+.receipt-row.total{font-weight:700;font-size:1rem;margin-top:.5rem;padding-top:.5rem;border-top:2px solid #333}
+.receipt-row .label{color:#666}
+.receipt-row .value{font-weight:600;text-align:right}
+.receipt-row .value.red{color:#dc3545}
+.receipt-row .value.green{color:#22a355}
+.input-section{padding:1.5rem 0;border-bottom:1px dashed #ddd}
+.input-group{margin-bottom:1rem}
+.input-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.15em;color:#999;margin-bottom:.3rem;display:block}
+.input-field{width:100%;border:1px solid #ddd;padding:.7rem;font-family:'IBM Plex Mono',monospace;font-size:1rem;border-radius:4px;background:#fafafa;transition:border-color .3s}
+.input-field:focus{outline:none;border-color:#333}
+.barcode{text-align:center;padding:1.5rem 0}
+.barcode-lines{display:flex;justify-content:center;gap:1px;height:50px;margin-bottom:.5rem}
+.barcode-line{background:#333;width:2px}
+.barcode-num{font-size:.65rem;color:#999;letter-spacing:.3em}
+.receipt-footer{text-align:center;padding-top:1.5rem}
+.footer-msg{font-size:.8rem;color:#666;line-height:1.6;margin-bottom:1rem}
+.footer-msg strong{color:#333}
+.cta-btn{display:inline-block;background:#333;color:#fff;padding:.8rem 2rem;font-family:'IBM Plex Mono',monospace;font-size:.85rem;text-decoration:none;border:none;cursor:pointer;transition:all .3s;font-weight:600}
+.cta-btn:hover{background:#000}
+.stars{text-align:center;font-size:.8rem;color:#999;margin-top:1rem}
+.section-title{font-size:.65rem;text-transform:uppercase;letter-spacing:.25em;color:#999;margin-bottom:1rem;text-align:center}
+.highlight-box{background:#fff3cd;border:1px solid #ffc107;padding:1rem;margin:1rem 0;border-radius:4px;font-size:.8rem;text-align:center;line-height:1.5}
+.highlight-box strong{color:#856404}
+.savings-box{background:#d4edda;border:1px solid #28a745;padding:1rem;margin:1rem 0;border-radius:4px;font-size:.8rem;text-align:center;line-height:1.5}
+.savings-box strong{color:#155724}
+.line-items{padding:1.5rem 0;border-bottom:1px dashed #ddd}
+.line-item{display:grid;grid-template-columns:auto 1fr auto;gap:.5rem;margin-bottom:.5rem;font-size:.8rem;align-items:baseline}
+.line-item .qty{color:#999}
+.line-item .desc{color:#666}
+.line-item .amt{font-weight:600;text-align:right}
+.thermal-fade{opacity:.7;font-size:.65rem;color:#bbb;text-align:center;margin-top:1rem;font-style:italic}
+</style>
+</head>
+<body>
+<div class="receipt-wrapper">
+<div class="receipt">
+<div class="receipt-header">
+<div class="receipt-logo">GO2.IO</div>
+<div class="receipt-addr">AI PRODUCTIVITY INTELLIGENCE<br>THE COST OF DOING NOTHING<br>================================</div>
+</div>
+
+<div class="input-section">
+<div class="section-title">Your Company Details</div>
+<div class="input-group">
+<label class="input-label">Company Name</label>
+<input class="input-field" type="text" id="company" placeholder="Acme Corp" oninput="recalc()">
+</div>
+<div class="input-group">
+<label class="input-label">Number of Employees</label>
+<input class="input-field" type="number" id="employees" value="50" oninput="recalc()">
+</div>
+<div class="input-group">
+<label class="input-label">Average Salary</label>
+<input class="input-field" type="number" id="salary" value="75000" oninput="recalc()">
+</div>
+</div>
+
+<div class="line-items">
+<div class="section-title">Itemized Waste — Per Year</div>
+<div class="line-item"><span class="qty">58%</span><span class="desc">Time on "work about work"</span><span class="amt red" id="workAboutWork">$0</span></div>
+<div class="line-item"><span class="qty">23m</span><span class="desc">Context switch recovery (×50/day)</span><span class="amt red" id="contextSwitch">$0</span></div>
+<div class="line-item"><span class="qty">31h</span><span class="desc">Unnecessary meetings/mo</span><span class="amt red" id="meetings">$0</span></div>
+<div class="line-item"><span class="qty">20%</span><span class="desc">Knowledge search & duplication</span><span class="amt red" id="knowledge">$0</span></div>
+<div class="line-item"><span class="qty">15%</span><span class="desc">Tool sprawl overhead (88 avg tools)</span><span class="amt red" id="toolSprawl">$0</span></div>
+</div>
+
+<div class="receipt-section">
+<div class="receipt-row total">
+<span class="label">SUBTOTAL (ANNUAL WASTE)</span>
+<span class="value red" id="subtotal">$0</span>
+</div>
+<div class="receipt-row">
+<span class="label">TAX (opportunity cost @ 15%)</span>
+<span class="value red" id="oppCost">$0</span>
+</div>
+<div class="receipt-row total" style="font-size:1.2rem">
+<span class="label">TOTAL WASTED</span>
+<span class="value red" id="totalWaste">$0</span>
+</div>
+</div>
+
+<div class="highlight-box">
+<strong>That's <span id="perEmployee">$0</span> per employee</strong> walking out the door every year in invisible productivity losses.
+</div>
+
+<div class="receipt-section">
+<div class="section-title">With Go2 — Conservative Recovery</div>
+<div class="receipt-row">
+<span class="label">Go2 Annual Investment</span>
+<span class="value" id="go2Cost">$0</span>
+</div>
+<div class="receipt-row">
+<span class="label">Estimated Recovery (15-30%)</span>
+<span class="value green" id="recovery">$0</span>
+</div>
+<div class="receipt-row total">
+<span class="label">NET SAVINGS</span>
+<span class="value green" id="netSavings">$0</span>
+</div>
+<div class="receipt-row">
+<span class="label">ROI</span>
+<span class="value green" id="roi">0%</span>
+</div>
+</div>
+
+<div class="savings-box">
+<strong>You'd save <span id="savingsHighlight">$0</span>/year</strong> — that's <span id="hireEquiv">0</span> additional hires worth of productivity, without hiring anyone.
+</div>
+
+<div class="barcode">
+<div class="barcode-lines" id="barcode"></div>
+<div class="barcode-num" id="barcodeNum">GO2-2026-0000-SAVE</div>
+</div>
+
+<div class="receipt-footer">
+<p class="footer-msg">This receipt is your wake-up call.<br><strong>Every day you wait costs <span id="dailyCost">$0</span>.</strong></p>
+<a href="https://go2.io" class="cta-btn">STOP THE WASTE → GO2.IO</a>
+<div class="stars">★ ★ ★ ★ ★<br>Thank you for your honesty</div>
+<div class="thermal-fade">** receipt will fade like your productivity without Go2 **</div>
+</div>
+</div>
+</div>
+
+<script>
+function fmt(n){return'$'+Math.round(n).toLocaleString()}
+
+function recalc(){
+const emp=parseInt(document.getElementById('employees').value)||50;
+const sal=parseInt(document.getElementById('salary').value)||75000;
+const total=emp*sal;
+const workAboutWork=total*0.58*0.3;
+const contextSwitch=total*0.12;
+const meetings=total*0.15;
+const knowledge=total*0.10;
+const toolSprawl=total*0.08;
+const subtotal=workAboutWork+contextSwitch+meetings+knowledge+toolSprawl;
+const oppCost=subtotal*0.15;
+const totalWaste=subtotal+oppCost;
+const go2Cost=emp*60*12;
+const recovery=subtotal*0.2;
+const net=recovery-go2Cost;
+const roi=go2Cost>0?Math.round((net/go2Cost)*100):0;
+
+document.getElementById('workAboutWork').textContent=fmt(workAboutWork);
+document.getElementById('contextSwitch').textContent=fmt(contextSwitch);
+document.getElementById('meetings').textContent=fmt(meetings);
+document.getElementById('knowledge').textContent=fmt(knowledge);
+document.getElementById('toolSprawl').textContent=fmt(toolSprawl);
+document.getElementById('subtotal').textContent=fmt(subtotal);
+document.getElementById('oppCost').textContent=fmt(oppCost);
+document.getElementById('totalWaste').textContent=fmt(totalWaste);
+document.getElementById('perEmployee').textContent=fmt(totalWaste/emp);
+document.getElementById('go2Cost').textContent=fmt(go2Cost);
+document.getElementById('recovery').textContent=fmt(recovery);
+document.getElementById('netSavings').textContent=fmt(net);
+document.getElementById('roi').textContent=roi+'%';
+document.getElementById('savingsHighlight').textContent=fmt(net);
+document.getElementById('hireEquiv').textContent=Math.round(net/sal);
+document.getElementById('dailyCost').textContent=fmt(totalWaste/260);
+document.getElementById('barcodeNum').textContent='GO2-2026-'+String(emp).padStart(4,'0')+'-SAVE';
+}
+
+// Generate barcode
+const bc=document.getElementById('barcode');
+for(let i=0;i<60;i++){
+const line=document.createElement('div');
+line.className='barcode-line';
+line.style.width=(Math.random()>.5?2:1)+'px';
+line.style.height=(30+Math.random()*20)+'px';
+line.style.opacity=.5+Math.random()*.5;
+bc.appendChild(line);
+}
+
+recalc();
+</script>
+</body>
+</html>

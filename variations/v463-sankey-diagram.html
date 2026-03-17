@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Where Does Work Time Go? — Go2 Sankey Diagram</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#08080d;color:#e0e0e0;min-height:100vh;overflow-x:hidden}
+nav{padding:20px 40px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.05)}
+.logo{font-size:1.4rem;font-weight:800;background:linear-gradient(135deg,#fff,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header{text-align:center;padding:60px 20px 20px;max-width:800px;margin:0 auto}
+.header h1{font-size:clamp(2rem,4vw,3rem);font-weight:800;margin-bottom:16px;background:linear-gradient(135deg,#fff,#c7d2fe);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header p{color:#888;font-size:1.05rem;line-height:1.6}
+.toggle-row{display:flex;justify-content:center;gap:12px;margin:30px 0 10px}
+.toggle-btn{padding:10px 24px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#888;font-size:0.85rem;cursor:pointer;transition:all 0.3s;font-family:'Inter',sans-serif}
+.toggle-btn.active{background:rgba(99,102,241,0.15);border-color:rgba(99,102,241,0.4);color:#c7d2fe}
+.sankey-wrapper{width:100%;max-width:1100px;margin:20px auto;padding:0 20px;position:relative}
+#sankeySvg{width:100%;height:auto}
+.sankey-node{cursor:pointer;transition:opacity 0.3s}
+.sankey-node:hover{opacity:0.85}
+.sankey-link{fill-opacity:0.25;transition:fill-opacity 0.3s,stroke-opacity 0.3s}
+.sankey-link:hover{fill-opacity:0.5}
+.node-label{font-size:12px;fill:#ccc;font-weight:500;pointer-events:none}
+.node-value{font-size:10px;fill:#888;font-weight:400;pointer-events:none}
+.tooltip{position:fixed;padding:12px 18px;background:rgba(20,20,30,0.95);border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-size:0.8rem;color:#ccc;pointer-events:none;z-index:100;opacity:0;transition:opacity 0.2s;max-width:250px;backdrop-filter:blur(10px)}
+.tooltip strong{color:#fff;display:block;margin-bottom:4px}
+.legend{display:flex;justify-content:center;gap:24px;padding:20px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:0.8rem;color:#888}
+.legend-dot{width:12px;height:12px;border-radius:3px}
+.insight-bar{max-width:800px;margin:20px auto 60px;padding:24px 32px;background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.15);border-radius:16px;text-align:center}
+.insight-bar .big{font-size:1.8rem;font-weight:800;color:#fff;margin-bottom:8px}
+.insight-bar .sub{color:#888;font-size:0.95rem}
+.cta-section{text-align:center;padding:40px 20px 100px}
+.cta-btn{display:inline-block;padding:16px 48px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;font-size:1.05rem;font-weight:600;cursor:pointer;text-decoration:none;transition:all 0.3s}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 20px 40px rgba(99,102,241,0.3)}
+</style>
+</head>
+<body>
+<nav><div class="logo">Go2</div></nav>
+
+<div class="header">
+<h1>Where Does Your Work Time Actually Go?</h1>
+<p>A Sankey diagram showing how 40 available hours per week flow through the modern knowledge worker's day. Hover any flow for details.</p>
+</div>
+
+<div class="toggle-row">
+<button class="toggle-btn active" data-mode="before">Without Go2</button>
+<button class="toggle-btn" data-mode="after">With Go2</button>
+</div>
+
+<div class="sankey-wrapper">
+<svg id="sankeySvg" viewBox="0 0 1000 600"></svg>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<div class="legend">
+<div class="legend-item"><div class="legend-dot" style="background:#6366f1"></div>Productive Work</div>
+<div class="legend-item"><div class="legend-dot" style="background:#f43f5e"></div>Meetings</div>
+<div class="legend-item"><div class="legend-dot" style="background:#fb923c"></div>Communication</div>
+<div class="legend-item"><div class="legend-dot" style="background:#a78bfa"></div>Admin/Overhead</div>
+<div class="legend-item"><div class="legend-dot" style="background:#64748b"></div>Context Switching</div>
+</div>
+
+<div class="insight-bar">
+<div class="big" id="insightBig">Only 11.5 hours of real work from 40 available</div>
+<div class="sub" id="insightSub">That's 28.75% efficiency. Go2's AI coaching pushes teams to 47%+</div>
+</div>
+
+<div class="cta-section">
+<a href="#" class="cta-btn">See Where Your Time Goes</a>
+</div>
+
+<script>
+const dataBefore={
+nodes:[
+{id:'available',label:'Available Hours',x:0,color:'#e2e8f0',value:40},
+{id:'meetings',label:'Meetings',x:1,color:'#f43f5e',value:11.2},
+{id:'comms',label:'Email & Chat',x:1,color:'#fb923c',value:9.2},
+{id:'deepwork',label:'Deep Work',x:1,color:'#6366f1',value:9.2},
+{id:'admin',label:'Admin Tasks',x:1,color:'#a78bfa',value:6.0},
+{id:'switching',label:'Context Switching',x:1,color:'#64748b',value:4.4},
+{id:'productive_mtg',label:'Productive Meetings',x:2,color:'#6366f1',value:3.4},
+{id:'wasteful_mtg',label:'Wasteful Meetings',x:2,color:'#f43f5e',value:7.8},
+{id:'useful_comms',label:'Useful Communication',x:2,color:'#6366f1',value:3.7},
+{id:'noise_comms',label:'Noise & Interruptions',x:2,color:'#fb923c',value:5.5},
+{id:'focused',label:'Focused Output',x:2,color:'#6366f1',value:7.0},
+{id:'shallow',label:'Shallow Work',x:2,color:'#a78bfa',value:2.2},
+{id:'necessary_admin',label:'Necessary Admin',x:2,color:'#a78bfa',value:2.4},
+{id:'busywork',label:'Busywork',x:2,color:'#64748b',value:3.6},
+{id:'lost_switching',label:'Lost to Switching',x:2,color:'#64748b',value:4.4},
+{id:'real_output',label:'Real Output',x:3,color:'#10b981',value:14.1},
+{id:'total_waste',label:'Total Waste',x:3,color:'#f43f5e',value:25.9}
+],
+links:[
+{source:'available',target:'meetings',value:11.2},{source:'available',target:'comms',value:9.2},
+{source:'available',target:'deepwork',value:9.2},{source:'available',target:'admin',value:6.0},
+{source:'available',target:'switching',value:4.4},
+{source:'meetings',target:'productive_mtg',value:3.4},{source:'meetings',target:'wasteful_mtg',value:7.8},
+{source:'comms',target:'useful_comms',value:3.7},{source:'comms',target:'noise_comms',value:5.5},
+{source:'deepwork',target:'focused',value:7.0},{source:'deepwork',target:'shallow',value:2.2},
+{source:'admin',target:'necessary_admin',value:2.4},{source:'admin',target:'busywork',value:3.6},
+{source:'switching',target:'lost_switching',value:4.4},
+{source:'productive_mtg',target:'real_output',value:3.4},{source:'useful_comms',target:'real_output',value:3.7},
+{source:'focused',target:'real_output',value:7.0},{source:'necessary_admin',target:'real_output',value:0},
+{source:'wasteful_mtg',target:'total_waste',value:7.8},{source:'noise_comms',target:'total_waste',value:5.5},
+{source:'shallow',target:'total_waste',value:2.2},{source:'busywork',target:'total_waste',value:3.6},
+{source:'lost_switching',target:'total_waste',value:4.4},{source:'necessary_admin',target:'total_waste',value:2.4}
+]
+};
+
+const dataAfter={
+nodes:[
+{id:'available',label:'Available Hours',x:0,color:'#e2e8f0',value:40},
+{id:'meetings',label:'Meetings',x:1,color:'#f43f5e',value:6.5},
+{id:'comms',label:'Email & Chat',x:1,color:'#fb923c',value:6.0},
+{id:'deepwork',label:'Deep Work',x:1,color:'#6366f1',value:16.5},
+{id:'admin',label:'Admin Tasks',x:1,color:'#a78bfa',value:4.0},
+{id:'switching',label:'Context Switching',x:1,color:'#64748b',value:2.0},
+{id:'ai_coaching',label:'Go2 AI Coaching',x:1,color:'#10b981',value:5.0},
+{id:'productive_mtg',label:'Productive Meetings',x:2,color:'#6366f1',value:5.2},
+{id:'wasteful_mtg',label:'Wasteful Meetings',x:2,color:'#f43f5e',value:1.3},
+{id:'useful_comms',label:'Useful Communication',x:2,color:'#6366f1',value:4.8},
+{id:'noise_comms',label:'Noise & Interruptions',x:2,color:'#fb923c',value:1.2},
+{id:'focused',label:'Focused Output',x:2,color:'#6366f1',value:15.0},
+{id:'shallow',label:'Shallow Work',x:2,color:'#a78bfa',value:1.5},
+{id:'necessary_admin',label:'Necessary Admin',x:2,color:'#a78bfa',value:2.0},
+{id:'busywork',label:'Busywork',x:2,color:'#64748b',value:2.0},
+{id:'lost_switching',label:'Lost to Switching',x:2,color:'#64748b',value:2.0},
+{id:'coaching_output',label:'Coaching Gains',x:2,color:'#10b981',value:5.0},
+{id:'real_output',label:'Real Output',x:3,color:'#10b981',value:30.0},
+{id:'total_waste',label:'Total Waste',x:3,color:'#f43f5e',value:10.0}
+],
+links:[
+{source:'available',target:'meetings',value:6.5},{source:'available',target:'comms',value:6.0},
+{source:'available',target:'deepwork',value:16.5},{source:'available',target:'admin',value:4.0},
+{source:'available',target:'switching',value:2.0},{source:'available',target:'ai_coaching',value:5.0},
+{source:'meetings',target:'productive_mtg',value:5.2},{source:'meetings',target:'wasteful_mtg',value:1.3},
+{source:'comms',target:'useful_comms',value:4.8},{source:'comms',target:'noise_comms',value:1.2},
+{source:'deepwork',target:'focused',value:15.0},{source:'deepwork',target:'shallow',value:1.5},
+{source:'admin',target:'necessary_admin',value:2.0},{source:'admin',target:'busywork',value:2.0},
+{source:'switching',target:'lost_switching',value:2.0},{source:'ai_coaching',target:'coaching_output',value:5.0},
+{source:'productive_mtg',target:'real_output',value:5.2},{source:'useful_comms',target:'real_output',value:4.8},
+{source:'focused',target:'real_output',value:15.0},{source:'coaching_output',target:'real_output',value:5.0},
+{source:'wasteful_mtg',target:'total_waste',value:1.3},{source:'noise_comms',target:'total_waste',value:1.2},
+{source:'shallow',target:'total_waste',value:1.5},{source:'busywork',target:'total_waste',value:2.0},
+{source:'lost_switching',target:'total_waste',value:2.0},{source:'necessary_admin',target:'total_waste',value:2.0}
+]
+};
+
+let currentMode='before';
+const svg=document.getElementById('sankeySvg');
+const tooltip=document.getElementById('tooltip');
+const W=1000,H=600;
+const PAD_LEFT=120,PAD_RIGHT=120,PAD_TOP=30,PAD_BOTTOM=30;
+
+function drawSankey(data){
+svg.innerHTML='';
+const nodeMap={};
+data.nodes.forEach(n=>{nodeMap[n.id]=n;n._links_out=[];n._links_in=[];});
+data.links.forEach(l=>{
+nodeMap[l.source]._links_out.push(l);
+nodeMap[l.target]._links_in.push(l);
+});
+
+// Position nodes by x column
+const columns=[[],[],[],[]];
+data.nodes.forEach(n=>columns[n.x].push(n));
+
+const colXs=[PAD_LEFT,320,600,W-PAD_RIGHT];
+const drawH=H-PAD_TOP-PAD_BOTTOM;
+
+columns.forEach((col,ci)=>{
+const totalVal=col.reduce((s,n)=>s+n.value,0);
+const gap=10;
+const totalGap=gap*(col.length-1);
+const scale=(drawH-totalGap)/totalVal;
+let y=PAD_TOP;
+col.forEach(n=>{
+const h=Math.max(n.value*scale,4);
+n._x=colXs[ci];
+n._y=y;
+n._h=h;
+n._w=20;
+y+=h+gap;
+});
+});
+
+// Draw links
+const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
+svg.appendChild(defs);
+
+data.links.forEach((l,i)=>{
+const src=nodeMap[l.source];
+const tgt=nodeMap[l.target];
+if(!src||!tgt)return;
+
+const srcOutTotal=src._links_out.reduce((s,ll)=>s+ll.value,0);
+const srcOutBefore=src._links_out.slice(0,src._links_out.indexOf(l)).reduce((s,ll)=>s+ll.value,0);
+const srcY=src._y+(srcOutBefore/srcOutTotal)*src._h;
+const srcH=(l.value/srcOutTotal)*src._h;
+
+const tgtInTotal=tgt._links_in.reduce((s,ll)=>s+ll.value,0);
+const tgtInBefore=tgt._links_in.slice(0,tgt._links_in.indexOf(l)).reduce((s,ll)=>s+ll.value,0);
+const tgtY=tgt._y+(tgtInBefore/tgtInTotal)*tgt._h;
+const tgtH=(l.value/tgtInTotal)*tgt._h;
+
+const gradId='grad-'+i;
+const grad=document.createElementNS('http://www.w3.org/2000/svg','linearGradient');
+grad.setAttribute('id',gradId);
+grad.innerHTML=`<stop offset="0%" stop-color="${src.color}"/><stop offset="100%" stop-color="${tgt.color}"/>`;
+defs.appendChild(grad);
+
+const x0=src._x+src._w;
+const x1=tgt._x;
+const mx=(x0+x1)/2;
+
+const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+const d=`M${x0},${srcY} C${mx},${srcY} ${mx},${tgtY} ${x1},${tgtY} L${x1},${tgtY+tgtH} C${mx},${tgtY+tgtH} ${mx},${srcY+srcH} ${x0},${srcY+srcH} Z`;
+path.setAttribute('d',d);
+path.setAttribute('fill',`url(#${gradId})`);
+path.setAttribute('class','sankey-link');
+path.addEventListener('mouseenter',e=>{
+tooltip.innerHTML=`<strong>${src.label} &rarr; ${tgt.label}</strong>${l.value} hours/week`;
+tooltip.style.opacity='1';
+});
+path.addEventListener('mousemove',e=>{
+tooltip.style.left=(e.clientX+15)+'px';
+tooltip.style.top=(e.clientY-10)+'px';
+});
+path.addEventListener('mouseleave',()=>{tooltip.style.opacity='0'});
+svg.appendChild(path);
+});
+
+// Draw nodes
+data.nodes.forEach(n=>{
+const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');
+rect.setAttribute('x',n._x);rect.setAttribute('y',n._y);
+rect.setAttribute('width',n._w);rect.setAttribute('height',n._h);
+rect.setAttribute('rx',4);rect.setAttribute('fill',n.color);
+rect.setAttribute('class','sankey-node');
+rect.addEventListener('mouseenter',e=>{
+tooltip.innerHTML=`<strong>${n.label}</strong>${n.value} hours/week<br>${((n.value/40)*100).toFixed(1)}% of available time`;
+tooltip.style.opacity='1';
+});
+rect.addEventListener('mousemove',e=>{
+tooltip.style.left=(e.clientX+15)+'px';
+tooltip.style.top=(e.clientY-10)+'px';
+});
+rect.addEventListener('mouseleave',()=>{tooltip.style.opacity='0'});
+svg.appendChild(rect);
+
+const labelX=n.x===0?n._x-8:n.x===3?n._x+n._w+8:n._x+n._w+8;
+const anchor=n.x===0?'end':'start';
+const label=document.createElementNS('http://www.w3.org/2000/svg','text');
+label.setAttribute('x',labelX);label.setAttribute('y',n._y+n._h/2-6);
+label.setAttribute('text-anchor',anchor);label.setAttribute('class','node-label');
+label.textContent=n.label;
+svg.appendChild(label);
+
+const valText=document.createElementNS('http://www.w3.org/2000/svg','text');
+valText.setAttribute('x',labelX);valText.setAttribute('y',n._y+n._h/2+8);
+valText.setAttribute('text-anchor',anchor);valText.setAttribute('class','node-value');
+valText.textContent=n.value+'h ('+((n.value/40)*100).toFixed(0)+'%)';
+svg.appendChild(valText);
+});
+}
+
+drawSankey(dataBefore);
+
+document.querySelectorAll('.toggle-btn').forEach(btn=>{
+btn.addEventListener('click',()=>{
+document.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+const mode=btn.dataset.mode;
+if(mode==='before'){
+drawSankey(dataBefore);
+document.getElementById('insightBig').textContent='Only 14.1 hours of real work from 40 available';
+document.getElementById('insightSub').textContent="That's 35% efficiency. Go2's AI coaching pushes teams to 75%+";
+}else{
+drawSankey(dataAfter);
+document.getElementById('insightBig').textContent='30 hours of real output from 40 available';
+document.getElementById('insightSub').textContent="75% efficiency. Go2's AI coaching reclaims 15.9 hours per week per person.";
+}
+});
+});
+</script>
+</body>
+</html>

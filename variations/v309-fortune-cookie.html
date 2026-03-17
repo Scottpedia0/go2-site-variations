@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Productivity Fortune Cookie</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a0f0a;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at 50% 50%,rgba(255,180,80,.06),transparent 70%);pointer-events:none}
+.scene{perspective:1000px;width:100%;max-width:700px;padding:2rem;text-align:center}
+.cookie-wrap{position:relative;width:280px;height:200px;margin:0 auto 3rem;cursor:pointer;transform-style:preserve-3d}
+.cookie{width:100%;height:100%;transition:all .8s cubic-bezier(.68,-.55,.27,1.55);position:relative}
+.cookie.cracked .cookie-half-left{transform:translateX(-60px) rotate(-25deg);opacity:.6}
+.cookie.cracked .cookie-half-right{transform:translateX(60px) rotate(25deg);opacity:.6}
+.cookie-half-left,.cookie-half-right{position:absolute;top:0;width:50%;height:100%;transition:all .8s cubic-bezier(.68,-.55,.27,1.55)}
+.cookie-half-left{left:0;transform-origin:right center}
+.cookie-half-right{right:0;transform-origin:left center}
+.cookie-svg{width:280px;height:200px}
+.fortune-paper{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:260px;background:#faf0e6;color:#2d1810;padding:1.5rem;border-radius:4px;font-family:'Playfair Display',serif;font-size:1.1rem;line-height:1.5;box-shadow:0 4px 20px rgba(0,0,0,.3);opacity:0;transition:all .8s ease .3s;text-align:center}
+.fortune-paper.visible{opacity:1;transform:translate(-50%,-50%) translateY(-20px)}
+.fortune-paper::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");pointer-events:none;border-radius:4px}
+.lucky-numbers{font-size:.75rem;color:#8a7060;margin-top:1rem;letter-spacing:.1em}
+.title{font-family:'Playfair Display',serif;font-size:clamp(2rem,6vw,3rem);margin-bottom:.5rem;color:#ffd4a0}
+.subtitle{color:#8a7060;font-size:1rem;margin-bottom:3rem}
+.crack-btn{display:inline-block;padding:1rem 2.5rem;background:linear-gradient(135deg,#ffa040,#ff6b20);color:#fff;font-weight:800;font-size:1.1rem;border:none;border-radius:50px;cursor:pointer;transition:all .3s;margin-bottom:2rem}
+.crack-btn:hover{transform:scale(1.05);box-shadow:0 0 40px rgba(255,160,64,.3)}
+.crack-btn.hidden{display:none}
+.again-btn{display:none;padding:.8rem 2rem;background:transparent;border:1px solid #ffa040;color:#ffa040;border-radius:50px;cursor:pointer;font-size:.9rem;transition:all .3s;margin:.5rem;font-family:'Inter',sans-serif}
+.again-btn.visible{display:inline-block}
+.again-btn:hover{background:rgba(255,160,64,.1)}
+.crumbs{position:fixed;pointer-events:none;z-index:999}
+@keyframes crumbFall{0%{opacity:1;transform:translate(0,0) rotate(0deg)}100%{opacity:0;transform:translate(var(--dx),80px) rotate(var(--rot))}}
+.fortune-count{font-size:.8rem;color:#5a4a3a;margin-top:1rem}
+.collection{margin-top:2rem;max-width:500px;margin-left:auto;margin-right:auto}
+.collection-title{font-size:.75rem;text-transform:uppercase;letter-spacing:.2em;color:#5a4a3a;margin-bottom:1rem}
+.past-fortune{background:rgba(250,240,230,.08);border:1px solid rgba(250,240,230,.1);border-radius:8px;padding:.8rem 1rem;margin-bottom:.5rem;font-size:.85rem;color:#c0a080;text-align:left;animation:slideIn .3s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.bottom-cta{position:fixed;bottom:0;left:0;width:100%;padding:1.5rem;text-align:center;background:linear-gradient(transparent,#1a0f0a);z-index:10}
+.bottom-cta a{color:#ffa040;text-decoration:none;font-weight:600;font-size:.9rem;transition:color .3s}
+.bottom-cta a:hover{color:#ffd4a0}
+.particles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.particle{position:absolute;width:3px;height:3px;background:#ffa040;border-radius:50%;opacity:.2;animation:float 8s infinite ease-in-out}
+@keyframes float{0%,100%{transform:translateY(0) translateX(0)}25%{transform:translateY(-30px) translateX(15px)}50%{transform:translateY(-10px) translateX(-10px)}75%{transform:translateY(-40px) translateX(5px)}}
+</style>
+</head>
+<body>
+<div class="particles" id="particles"></div>
+<div class="scene">
+<div class="title">Crack Open Your<br>Productivity Fortune</div>
+<p class="subtitle">Ancient wisdom meets modern workforce intelligence.</p>
+
+<div class="cookie-wrap" id="cookieWrap" onclick="crackCookie()">
+<svg class="cookie-svg" viewBox="0 0 280 200">
+<defs>
+<linearGradient id="cg" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" style="stop-color:#e8a050"/>
+<stop offset="50%" style="stop-color:#d4863c"/>
+<stop offset="100%" style="stop-color:#c07030"/>
+</linearGradient>
+<filter id="shadow"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity=".3"/></filter>
+</defs>
+<g id="cookieLeft" style="transition:all .8s cubic-bezier(.68,-.55,.27,1.55)">
+<path d="M140,30 Q80,30 50,70 Q20,110 40,150 Q60,190 140,180" fill="url(#cg)" filter="url(#shadow)"/>
+<path d="M140,50 Q100,50 75,80 Q55,110 65,140 Q80,170 140,165" fill="none" stroke="#b06028" stroke-width=".5" opacity=".3"/>
+</g>
+<g id="cookieRight" style="transition:all .8s cubic-bezier(.68,-.55,.27,1.55)">
+<path d="M140,30 Q200,30 230,70 Q260,110 240,150 Q220,190 140,180" fill="url(#cg)" filter="url(#shadow)"/>
+<path d="M140,50 Q180,50 205,80 Q225,110 215,140 Q200,170 140,165" fill="none" stroke="#b06028" stroke-width=".5" opacity=".3"/>
+</g>
+<text x="140" y="115" text-anchor="middle" fill="#fff" font-size="28" opacity=".15" style="font-family:serif">🥠</text>
+</svg>
+</div>
+
+<div class="fortune-paper" id="fortune"></div>
+
+<button class="crack-btn" id="crackBtn" onclick="crackCookie()">Crack the Cookie</button>
+<button class="again-btn" id="againBtn" onclick="resetCookie()">Crack Another</button>
+<button class="again-btn" id="ctaBtn" onclick="window.open('https://go2.io','_blank')">Visit go2.io</button>
+
+<div class="fortune-count" id="fortuneCount"></div>
+
+<div class="collection" id="collection" style="display:none">
+<div class="collection-title">Your Fortune Collection</div>
+<div id="pastFortunes"></div>
+</div>
+</div>
+
+<div class="bottom-cta">
+<a href="https://go2.io">Go2.io — AI productivity coaching that doesn't spy on your team →</a>
+</div>
+
+<script>
+const fortunes=[
+{text:"Your team's greatest productivity blocker is not laziness — it's invisible friction. Go2 makes it visible.",numbers:"4 17 23 42 88"},
+{text:"A wise manager measures outcomes, not keystrokes. Your fortune favors the courageous leader.",numbers:"5 12 31 56 95"},
+{text:"$4.4 trillion is lost globally to productivity gaps. Some of that fortune is yours to reclaim.",numbers:"3 19 44 67 82"},
+{text:"The tool that watches breeds fear. The tool that coaches breeds excellence. Choose wisely.",numbers:"7 21 38 61 99"},
+{text:"95% of AI projects fail. The 5% that succeed start with trust, not surveillance.",numbers:"2 15 33 58 73"},
+{text:"Context switching costs your team 23 minutes per interruption. Your future holds fewer interruptions.",numbers:"8 23 40 55 91"},
+{text:"The knowledge that walks out the door when someone quits is worth more than their salary. Capture it.",numbers:"1 14 29 63 87"},
+{text:"Your competitors are not faster than you. They just have less friction. Remove the friction.",numbers:"6 18 35 52 78"},
+{text:"A team that understands its own patterns can change them. Understanding starts with Go2.",numbers:"9 22 41 59 84"},
+{text:"The best productivity tool is not the one that tracks more — it's the one that understands better.",numbers:"4 16 30 48 96"},
+{text:"Work about work consumes 58% of your team's day. Reclaim that time and watch what they build.",numbers:"11 25 37 64 80"},
+{text:"Employee surveillance has a 0% chance of making people care more. Coaching has a 100% chance of making them grow.",numbers:"3 13 27 50 71"},
+{text:"Your team uses 88 different tools. None of them talk to each other. Except Go2.",numbers:"10 20 36 53 88"},
+{text:"The cost of doing nothing is not zero — it's $15,000 per employee per year in hidden waste.",numbers:"2 15 34 57 76"},
+{text:"In the age of AI, the companies that win are not the ones that monitor — they're the ones that learn.",numbers:"8 19 32 46 93"},
+];
+let cracked=false;
+let collection=[];
+let currentFortune=null;
+
+function crackCookie(){
+if(cracked)return;
+cracked=true;
+document.getElementById('crackBtn').classList.add('hidden');
+const left=document.getElementById('cookieLeft');
+const right=document.getElementById('cookieRight');
+left.style.transform='translateX(-40px) rotate(-20deg)';
+left.style.opacity='.5';
+right.style.transform='translateX(40px) rotate(20deg)';
+right.style.opacity='.5';
+createCrumbs();
+const fortune=fortunes[Math.floor(Math.random()*fortunes.length)];
+currentFortune=fortune;
+const el=document.getElementById('fortune');
+el.innerHTML=`<em>"${fortune.text}"</em><div class="lucky-numbers">Lucky numbers: ${fortune.numbers}</div>`;
+setTimeout(()=>{
+el.classList.add('visible');
+document.getElementById('againBtn').classList.add('visible');
+document.getElementById('ctaBtn').classList.add('visible');
+collection.push(fortune.text);
+updateCollection();
+},400);
+}
+
+function resetCookie(){
+cracked=false;
+const left=document.getElementById('cookieLeft');
+const right=document.getElementById('cookieRight');
+left.style.transform='';left.style.opacity='1';
+right.style.transform='';right.style.opacity='1';
+document.getElementById('fortune').classList.remove('visible');
+document.getElementById('fortune').innerHTML='';
+document.getElementById('againBtn').classList.remove('visible');
+document.getElementById('ctaBtn').classList.remove('visible');
+setTimeout(()=>{},100);
+}
+
+function updateCollection(){
+if(collection.length===0)return;
+document.getElementById('collection').style.display='block';
+document.getElementById('fortuneCount').textContent=`Fortunes cracked: ${collection.length}`;
+const container=document.getElementById('pastFortunes');
+container.innerHTML='';
+collection.forEach((f,i)=>{
+const div=document.createElement('div');
+div.className='past-fortune';
+div.textContent=`#${i+1}: "${f}"`;
+container.prepend(div);
+});
+}
+
+function createCrumbs(){
+const wrap=document.getElementById('cookieWrap');
+const rect=wrap.getBoundingClientRect();
+for(let i=0;i<20;i++){
+const crumb=document.createElement('div');
+crumb.className='crumbs';
+const dx=(Math.random()-.5)*100;
+crumb.style.cssText=`left:${rect.left+rect.width/2}px;top:${rect.top+rect.height/2}px;width:${3+Math.random()*5}px;height:${3+Math.random()*5}px;background:#d4863c;border-radius:2px;--dx:${dx}px;--rot:${Math.random()*360}deg;animation:crumbFall ${.5+Math.random()*.5}s ease-out forwards`;
+document.body.appendChild(crumb);
+setTimeout(()=>crumb.remove(),2000);
+}
+}
+
+// Particles
+for(let i=0;i<30;i++){
+const p=document.createElement('div');
+p.className='particle';
+p.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${-Math.random()*8}s;animation-duration:${6+Math.random()*6}s;width:${2+Math.random()*3}px;height:${2+Math.random()*3}px;opacity:${.05+Math.random()*.15}`;
+document.getElementById('particles').appendChild(p);
+}
+</script>
+</body>
+</html>

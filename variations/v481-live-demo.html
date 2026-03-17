@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Live Product Demo (v481)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#0f1117;--sidebar:#161822;--surface:#1a1d2e;--surface2:#232640;--border:#2a2d42;
+--accent:#6366f1;--accent-light:#818cf8;--accent-glow:rgba(99,102,241,.15);
+--green:#10b981;--yellow:#f59e0b;--red:#ef4444;--blue:#3b82f6;
+--text:#e2e8f0;--muted:#94a3b8;--white:#ffffff;
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.6}
+
+/* Splash overlay */
+.splash{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s,visibility .6s}
+.splash.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.splash h1{font-size:2.5rem;font-weight:700;margin-bottom:.5rem}
+.splash h1 span{color:var(--accent)}
+.splash p{color:var(--muted);font-size:1.1rem;margin-bottom:2rem;max-width:500px;text-align:center}
+.splash-btn{background:var(--accent);color:#fff;border:none;padding:.9rem 2.5rem;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:all .3s;font-family:inherit}
+.splash-btn:hover{background:var(--accent-light);transform:translateY(-2px);box-shadow:0 8px 30px rgba(99,102,241,.3)}
+.splash-note{color:var(--muted);font-size:.8rem;margin-top:1rem;opacity:.7}
+
+/* App layout */
+.app{display:grid;grid-template-columns:240px 1fr;grid-template-rows:56px 1fr;height:100vh;opacity:0;transition:opacity .6s}
+.app.visible{opacity:1}
+
+/* Top bar */
+.topbar{grid-column:1/-1;background:var(--sidebar);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1.5rem;gap:1rem;z-index:10}
+.topbar-logo{font-size:1.1rem;font-weight:700;color:var(--white);display:flex;align-items:center;gap:.5rem}
+.topbar-logo .dot{width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.topbar-search{flex:1;max-width:400px;margin:0 auto}
+.topbar-search input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.5rem 1rem;color:var(--text);font-size:.85rem;font-family:inherit;outline:none}
+.topbar-search input:focus{border-color:var(--accent)}
+.topbar-right{display:flex;align-items:center;gap:1rem}
+.topbar-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#a855f7);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:600;color:#fff}
+.notif-bell{position:relative;cursor:pointer;color:var(--muted);font-size:1.2rem}
+.notif-bell .badge{position:absolute;top:-4px;right:-4px;width:14px;height:14px;background:var(--red);border-radius:50%;font-size:.6rem;display:flex;align-items:center;justify-content:center;color:#fff}
+
+/* Sidebar */
+.sidebar{background:var(--sidebar);border-right:1px solid var(--border);padding:1rem 0;overflow-y:auto}
+.sidebar-section{margin-bottom:1.5rem}
+.sidebar-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:0 1.25rem;margin-bottom:.5rem}
+.sidebar-item{display:flex;align-items:center;gap:.75rem;padding:.55rem 1.25rem;color:var(--muted);font-size:.85rem;cursor:pointer;transition:all .15s;border-left:3px solid transparent}
+.sidebar-item:hover{background:var(--surface);color:var(--text)}
+.sidebar-item.active{background:var(--accent-glow);color:var(--accent-light);border-left-color:var(--accent)}
+.sidebar-item .icon{width:18px;text-align:center;font-size:.9rem}
+.sidebar-item .count{margin-left:auto;background:var(--surface2);padding:.1rem .45rem;border-radius:10px;font-size:.7rem}
+
+/* Main content */
+.main{overflow-y:auto;padding:1.5rem 2rem;background:var(--bg)}
+.main-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem}
+.main-header h2{font-size:1.4rem;font-weight:600;color:var(--white)}
+.main-header p{color:var(--muted);font-size:.85rem;margin-top:.25rem}
+.header-actions{display:flex;gap:.75rem}
+.header-btn{padding:.5rem 1rem;border-radius:6px;font-size:.8rem;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;transition:all .2s}
+.header-btn:hover{border-color:var(--accent);color:var(--accent)}
+.header-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.header-btn.primary:hover{background:var(--accent-light)}
+
+/* Stats row */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;position:relative;overflow:hidden;transition:all .3s}
+.stat-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.stat-card::after{content:'';position:absolute;top:0;right:0;width:60px;height:60px;border-radius:50%;filter:blur(30px);opacity:.15}
+.stat-card:nth-child(1)::after{background:var(--green)}
+.stat-card:nth-child(2)::after{background:var(--blue)}
+.stat-card:nth-child(3)::after{background:var(--yellow)}
+.stat-card:nth-child(4)::after{background:var(--accent)}
+.stat-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.5rem}
+.stat-value{font-size:1.8rem;font-weight:700;color:var(--white);line-height:1}
+.stat-change{display:inline-flex;align-items:center;gap:.25rem;font-size:.75rem;margin-top:.5rem;padding:.15rem .5rem;border-radius:4px}
+.stat-change.up{color:var(--green);background:rgba(16,185,129,.1)}
+.stat-change.down{color:var(--red);background:rgba(239,68,68,.1)}
+
+/* Grid layout for panels */
+.panels{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.panel-header{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:1px solid var(--border)}
+.panel-title{font-size:.9rem;font-weight:600;color:var(--white)}
+.panel-badge{font-size:.65rem;padding:.2rem .5rem;border-radius:4px;background:var(--accent-glow);color:var(--accent-light)}
+.panel-body{padding:1.25rem}
+
+/* AI Insights */
+.ai-insight{display:flex;gap:.75rem;padding:.75rem;border-radius:8px;margin-bottom:.75rem;background:rgba(99,102,241,.05);border:1px solid rgba(99,102,241,.1);animation:fadeSlideIn .5s ease-out both;cursor:pointer;transition:all .2s}
+.ai-insight:hover{background:rgba(99,102,241,.1);border-color:rgba(99,102,241,.3)}
+.ai-insight:nth-child(2){animation-delay:.3s}
+.ai-insight:nth-child(3){animation-delay:.6s}
+.ai-insight:nth-child(4){animation-delay:.9s}
+@keyframes fadeSlideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.ai-icon{width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,var(--accent),#a855f7);display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0;color:#fff}
+.ai-insight-content h4{font-size:.8rem;font-weight:600;color:var(--white);margin-bottom:.2rem}
+.ai-insight-content p{font-size:.75rem;color:var(--muted);line-height:1.4}
+.ai-confidence{font-size:.6rem;color:var(--accent-light);margin-top:.3rem}
+
+/* Team activity */
+.team-row{display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.03)}
+.team-row:last-child{border:none}
+.team-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:600;color:#fff;flex-shrink:0}
+.team-info{flex:1}
+.team-name{font-size:.8rem;font-weight:500;color:var(--text)}
+.team-task{font-size:.7rem;color:var(--muted)}
+.team-status{font-size:.65rem;padding:.2rem .5rem;border-radius:4px;font-weight:500}
+.status-flow{background:rgba(16,185,129,.1);color:var(--green)}
+.status-meeting{background:rgba(59,130,246,.1);color:var(--blue)}
+.status-break{background:rgba(245,158,11,.1);color:var(--yellow)}
+
+/* Chart area */
+.chart-area{height:180px;position:relative;margin-top:.5rem}
+.chart-bar-group{display:flex;align-items:flex-end;justify-content:space-around;height:100%;padding-top:20px}
+.chart-bar-col{display:flex;flex-direction:column;align-items:center;gap:.3rem;flex:1}
+.chart-bar{width:24px;border-radius:4px 4px 0 0;transition:height 1s ease-out;position:relative}
+.chart-bar.focus{background:linear-gradient(to top,var(--accent),var(--accent-light))}
+.chart-bar.collab{background:linear-gradient(to top,var(--green),#34d399)}
+.chart-bar.admin{background:linear-gradient(to top,var(--yellow),#fbbf24)}
+.chart-label{font-size:.6rem;color:var(--muted)}
+.chart-legend{display:flex;gap:1rem;justify-content:center;margin-top:1rem}
+.chart-legend span{display:flex;align-items:center;gap:.35rem;font-size:.7rem;color:var(--muted)}
+.chart-legend .dot{width:8px;height:8px;border-radius:2px}
+
+/* Recommendations panel */
+.rec-card{padding:.75rem;border-radius:8px;border:1px solid var(--border);margin-bottom:.75rem;transition:all .2s;cursor:pointer}
+.rec-card:hover{border-color:var(--accent);background:rgba(99,102,241,.03)}
+.rec-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem}
+.rec-title{font-size:.8rem;font-weight:600;color:var(--white)}
+.rec-impact{font-size:.6rem;padding:.15rem .4rem;border-radius:3px;font-weight:600}
+.impact-high{background:rgba(16,185,129,.15);color:var(--green)}
+.impact-med{background:rgba(245,158,11,.15);color:var(--yellow)}
+.rec-desc{font-size:.72rem;color:var(--muted);line-height:1.4}
+.rec-action{display:flex;align-items:center;gap:.3rem;font-size:.7rem;color:var(--accent-light);margin-top:.4rem;font-weight:500}
+
+/* Full width panel */
+.full-panel{grid-column:1/-1}
+
+/* Timeline */
+.timeline{display:flex;gap:0;overflow-x:auto;padding:.5rem 0}
+.timeline-block{flex:1;min-width:80px;text-align:center;position:relative;padding:.5rem .25rem}
+.timeline-block::before{content:'';position:absolute;top:1.7rem;left:0;right:0;height:2px;background:var(--border)}
+.timeline-block.active::before{background:var(--accent)}
+.timeline-dot{width:10px;height:10px;border-radius:50%;background:var(--border);margin:0 auto .5rem;position:relative;z-index:1}
+.timeline-block.active .timeline-dot{background:var(--accent);box-shadow:0 0 10px rgba(99,102,241,.5)}
+.timeline-block.done .timeline-dot{background:var(--green)}
+.timeline-time{font-size:.6rem;color:var(--muted)}
+.timeline-event{font-size:.65rem;color:var(--text);margin-top:.2rem}
+
+/* Toast notification */
+.toast{position:fixed;bottom:2rem;right:2rem;background:var(--surface);border:1px solid var(--accent);border-radius:12px;padding:1rem 1.5rem;display:flex;align-items:center;gap:.75rem;box-shadow:0 10px 40px rgba(0,0,0,.4);z-index:100;transform:translateY(120%);transition:transform .4s cubic-bezier(.175,.885,.32,1.275);max-width:380px}
+.toast.show{transform:translateY(0)}
+.toast-icon{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#a855f7);display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0}
+.toast-content h4{font-size:.85rem;font-weight:600;color:var(--white);margin-bottom:.15rem}
+.toast-content p{font-size:.75rem;color:var(--muted);line-height:1.3}
+.toast-close{position:absolute;top:.5rem;right:.75rem;background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem}
+
+/* Typing indicator */
+.typing{display:inline-flex;gap:3px;align-items:center;padding:.2rem 0}
+.typing span{width:4px;height:4px;border-radius:50%;background:var(--accent-light);animation:typingDot 1.4s infinite}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes typingDot{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:all .3s}
+.modal-overlay.show{opacity:1;visibility:visible}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;max-width:500px;width:90%;transform:scale(.9);transition:transform .3s}
+.modal-overlay.show .modal{transform:scale(1)}
+.modal h3{font-size:1.1rem;font-weight:600;color:var(--white);margin-bottom:.5rem}
+.modal p{color:var(--muted);font-size:.85rem;margin-bottom:1.5rem;line-height:1.5}
+.modal-actions{display:flex;gap:.75rem;justify-content:flex-end}
+
+/* CTA bar at bottom */
+.demo-cta{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(to right,var(--sidebar),var(--surface));border-top:1px solid var(--border);padding:.75rem 2rem;display:flex;align-items:center;justify-content:center;gap:1.5rem;z-index:50;transform:translateY(100%);transition:transform .5s}
+.demo-cta.show{transform:translateY(0)}
+.demo-cta p{color:var(--muted);font-size:.85rem}
+.demo-cta p strong{color:var(--white)}
+.demo-cta a{background:var(--accent);color:#fff;padding:.6rem 1.8rem;border-radius:8px;font-weight:600;font-size:.85rem;text-decoration:none;transition:all .2s}
+.demo-cta a:hover{background:var(--accent-light);transform:translateY(-1px)}
+
+@media(max-width:768px){
+.app{grid-template-columns:1fr;grid-template-rows:56px 1fr}
+.sidebar{display:none}
+.stats-row{grid-template-columns:repeat(2,1fr)}
+.panels{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- Splash screen -->
+<div class="splash" id="splash">
+  <h1>Try <span>Go2</span> Live</h1>
+  <p>Experience the full Go2 dashboard. Click around, explore AI recommendations, and see how your team's productivity transforms.</p>
+  <button class="splash-btn" onclick="launchDemo()">Launch Interactive Demo →</button>
+  <div class="splash-note">No signup required. This is a fully interactive product demo.</div>
+</div>
+
+<!-- App -->
+<div class="app" id="app">
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-logo"><div class="dot"></div> Go2</div>
+    <div class="topbar-search"><input type="text" placeholder="Search teams, people, insights... (⌘K)"></div>
+    <div class="topbar-right">
+      <div class="notif-bell" onclick="showNotification()">🔔<div class="badge">3</div></div>
+      <div class="topbar-avatar">SM</div>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Overview</div>
+      <div class="sidebar-item active" onclick="switchView(this,'dashboard')"><span class="icon">📊</span>Dashboard</div>
+      <div class="sidebar-item" onclick="switchView(this,'team')"><span class="icon">👥</span>Team<span class="count">12</span></div>
+      <div class="sidebar-item" onclick="switchView(this,'insights')"><span class="icon">🧠</span>AI Insights<span class="count">5</span></div>
+      <div class="sidebar-item" onclick="switchView(this,'goals')"><span class="icon">🎯</span>Goals</div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Tools</div>
+      <div class="sidebar-item" onclick="switchView(this,'automations')"><span class="icon">⚡</span>Automations<span class="count">8</span></div>
+      <div class="sidebar-item" onclick="switchView(this,'reports')"><span class="icon">📈</span>Reports</div>
+      <div class="sidebar-item" onclick="switchView(this,'integrations')"><span class="icon">🔗</span>Integrations<span class="count">6</span></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Settings</div>
+      <div class="sidebar-item" onclick="switchView(this,'settings')"><span class="icon">⚙️</span>Settings</div>
+      <div class="sidebar-item"><span class="icon">❓</span>Help & Support</div>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="main" id="mainContent">
+    <div class="main-header">
+      <div>
+        <h2>Good afternoon, Scott 👋</h2>
+        <p>Monday, March 17 — Your team is having a productive week</p>
+      </div>
+      <div class="header-actions">
+        <button class="header-btn" onclick="showModal()">+ Add Widget</button>
+        <button class="header-btn primary" onclick="triggerAI()">Ask Go2 AI</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card" id="stat1">
+        <div class="stat-label">Team Productivity Score</div>
+        <div class="stat-value" id="prodScore">87</div>
+        <div class="stat-change up">↑ 12% vs last week</div>
+      </div>
+      <div class="stat-card" id="stat2">
+        <div class="stat-label">Focus Time Today</div>
+        <div class="stat-value"><span id="focusHours">4.2</span>h</div>
+        <div class="stat-change up">↑ 0.8h vs average</div>
+      </div>
+      <div class="stat-card" id="stat3">
+        <div class="stat-label">Meeting Load</div>
+        <div class="stat-value"><span id="meetingHours">2.1</span>h</div>
+        <div class="stat-change down">↓ 23% this week</div>
+      </div>
+      <div class="stat-card" id="stat4">
+        <div class="stat-label">AI Actions Taken</div>
+        <div class="stat-value" id="aiActions">34</div>
+        <div class="stat-change up">↑ 8 today</div>
+      </div>
+    </div>
+
+    <!-- Panels -->
+    <div class="panels">
+      <!-- AI Insights -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">🧠 AI Insights</div>
+          <div class="panel-badge">Live</div>
+        </div>
+        <div class="panel-body" id="insightsPanel">
+          <div class="ai-insight" onclick="expandInsight(this)">
+            <div class="ai-icon">AI</div>
+            <div class="ai-insight-content">
+              <h4>Meeting Overload Detected — Design Team</h4>
+              <p>The design team spent 62% of this week in meetings. Recommend canceling the 3pm Thursday sync.</p>
+              <div class="ai-confidence">92% confidence · Based on 4 weeks of data</div>
+            </div>
+          </div>
+          <div class="ai-insight" onclick="expandInsight(this)">
+            <div class="ai-icon">AI</div>
+            <div class="ai-insight-content">
+              <h4>Peak Performance Window: 9–11am</h4>
+              <p>Your engineering team produces 3.2x more output between 9–11am. Consider protecting this block.</p>
+              <div class="ai-confidence">88% confidence · Based on commit data + calendar</div>
+            </div>
+          </div>
+          <div class="ai-insight" onclick="expandInsight(this)">
+            <div class="ai-icon">AI</div>
+            <div class="ai-insight-content">
+              <h4>Onboarding Bottleneck Found</h4>
+              <p>New hires take 23 days to reach productivity. Industry avg is 14 days. Root cause: missing documentation.</p>
+              <div class="ai-confidence">95% confidence · 6 data sources</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Team Activity -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">👥 Team Activity</div>
+          <div class="panel-badge">Real-time</div>
+        </div>
+        <div class="panel-body">
+          <div class="team-row">
+            <div class="team-avatar" style="background:linear-gradient(135deg,#6366f1,#a855f7)">JD</div>
+            <div class="team-info"><div class="team-name">Jake Davis</div><div class="team-task">Working on API integration</div></div>
+            <div class="team-status status-flow">Deep Focus</div>
+          </div>
+          <div class="team-row">
+            <div class="team-avatar" style="background:linear-gradient(135deg,#3b82f6,#06b6d4)">SC</div>
+            <div class="team-info"><div class="team-name">Sarah Chen</div><div class="team-task">Sprint planning with PM team</div></div>
+            <div class="team-status status-meeting">In Meeting</div>
+          </div>
+          <div class="team-row">
+            <div class="team-avatar" style="background:linear-gradient(135deg,#10b981,#14b8a6)">MR</div>
+            <div class="team-info"><div class="team-name">Mike Rodriguez</div><div class="team-task">Code review — PR #847</div></div>
+            <div class="team-status status-flow">Focused</div>
+          </div>
+          <div class="team-row">
+            <div class="team-avatar" style="background:linear-gradient(135deg,#f59e0b,#f97316)">AL</div>
+            <div class="team-info"><div class="team-name">Aisha Lopez</div><div class="team-task">Lunch break</div></div>
+            <div class="team-status status-break">Break</div>
+          </div>
+          <div class="team-row">
+            <div class="team-avatar" style="background:linear-gradient(135deg,#ef4444,#ec4899)">TW</div>
+            <div class="team-info"><div class="team-name">Tom Wilson</div><div class="team-task">Drafting Q2 roadmap</div></div>
+            <div class="team-status status-flow">Creating</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Productivity chart -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">📊 This Week's Time Distribution</div>
+        </div>
+        <div class="panel-body">
+          <div class="chart-area">
+            <div class="chart-bar-group" id="chartBars">
+              <!-- Filled by JS -->
+            </div>
+          </div>
+          <div class="chart-legend">
+            <span><div class="dot" style="background:var(--accent)"></div>Focus Work</span>
+            <span><div class="dot" style="background:var(--green)"></div>Collaboration</span>
+            <span><div class="dot" style="background:var(--yellow)"></div>Admin/Other</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Recommendations -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">⚡ Smart Recommendations</div>
+        </div>
+        <div class="panel-body">
+          <div class="rec-card" onclick="applyRec(this)">
+            <div class="rec-header">
+              <div class="rec-title">Cancel Thursday 3pm Sync</div>
+              <div class="rec-impact impact-high">High Impact</div>
+            </div>
+            <div class="rec-desc">Saves 5 hours/week across the team. Topics can be covered async in Slack.</div>
+            <div class="rec-action">→ Apply recommendation</div>
+          </div>
+          <div class="rec-card" onclick="applyRec(this)">
+            <div class="rec-header">
+              <div class="rec-title">Enable Focus Blocks 9–11am</div>
+              <div class="rec-impact impact-high">High Impact</div>
+            </div>
+            <div class="rec-desc">Auto-decline meetings during peak productivity windows. Est. +15% output.</div>
+            <div class="rec-action">→ Apply recommendation</div>
+          </div>
+          <div class="rec-card" onclick="applyRec(this)">
+            <div class="rec-header">
+              <div class="rec-title">Create Onboarding Checklist</div>
+              <div class="rec-impact impact-med">Medium Impact</div>
+            </div>
+            <div class="rec-desc">Auto-generate from top performers' first-30-days patterns. Cut ramp time 40%.</div>
+            <div class="rec-action">→ Apply recommendation</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Today's Timeline -->
+      <div class="panel full-panel">
+        <div class="panel-header">
+          <div class="panel-title">🕐 Today's Team Timeline</div>
+        </div>
+        <div class="panel-body">
+          <div class="timeline">
+            <div class="timeline-block done"><div class="timeline-dot"></div><div class="timeline-time">8:00</div><div class="timeline-event">Standup</div></div>
+            <div class="timeline-block done"><div class="timeline-dot"></div><div class="timeline-time">9:00</div><div class="timeline-event">Focus Block</div></div>
+            <div class="timeline-block done"><div class="timeline-dot"></div><div class="timeline-time">10:00</div><div class="timeline-event">Focus Block</div></div>
+            <div class="timeline-block done"><div class="timeline-dot"></div><div class="timeline-time">11:00</div><div class="timeline-event">Sprint Plan</div></div>
+            <div class="timeline-block active"><div class="timeline-dot"></div><div class="timeline-time">12:00</div><div class="timeline-event">Lunch</div></div>
+            <div class="timeline-block"><div class="timeline-dot"></div><div class="timeline-time">1:00</div><div class="timeline-event">Code Review</div></div>
+            <div class="timeline-block"><div class="timeline-dot"></div><div class="timeline-time">2:00</div><div class="timeline-event">Focus Block</div></div>
+            <div class="timeline-block"><div class="timeline-dot"></div><div class="timeline-time">3:00</div><div class="timeline-event">1-on-1s</div></div>
+            <div class="timeline-block"><div class="timeline-dot"></div><div class="timeline-time">4:00</div><div class="timeline-event">Wrap Up</div></div>
+            <div class="timeline-block"><div class="timeline-dot"></div><div class="timeline-time">5:00</div><div class="timeline-event">EOD</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <button class="toast-close" onclick="hideToast()">×</button>
+  <div class="toast-icon">🧠</div>
+  <div class="toast-content">
+    <h4 id="toastTitle">New Insight Detected</h4>
+    <p id="toastMsg">Your team's collaboration score jumped 18% this week.</p>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3>🧠 Ask Go2 AI</h3>
+    <p>Ask anything about your team's productivity, and Go2's AI will analyze patterns across all your connected tools.</p>
+    <input type="text" placeholder="e.g., Why did engineering output drop last week?" style="width:100%;padding:.75rem 1rem;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.9rem;margin-bottom:1rem;font-family:inherit;outline:none" id="aiQuestion">
+    <div id="aiResponse" style="display:none;padding:.75rem;border-radius:8px;background:rgba(99,102,241,.05);border:1px solid rgba(99,102,241,.15);margin-bottom:1rem;font-size:.85rem;line-height:1.5"></div>
+    <div class="modal-actions">
+      <button class="header-btn" onclick="hideModal()">Close</button>
+      <button class="header-btn primary" onclick="askAI()">Ask AI</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom CTA -->
+<div class="demo-cta" id="demoCta">
+  <p><strong>Like what you see?</strong> This is a live demo. The real Go2 connects to your actual tools.</p>
+  <a href="#start">Start Free Trial →</a>
+</div>
+
+<script>
+// Chart data
+const days=['Mon','Tue','Wed','Thu','Fri'];
+const focus=[65,72,58,70,80];
+const collab=[20,18,28,22,15];
+const admin=[15,10,14,8,5];
+
+function buildChart(){
+  const c=document.getElementById('chartBars');
+  c.innerHTML='';
+  days.forEach((d,i)=>{
+    const col=document.createElement('div');
+    col.className='chart-bar-col';
+    col.innerHTML=`
+      <div class="chart-bar admin" style="height:0;width:20px" data-h="${admin[i]}"></div>
+      <div class="chart-bar collab" style="height:0;width:20px" data-h="${collab[i]}"></div>
+      <div class="chart-bar focus" style="height:0;width:22px" data-h="${focus[i]}"></div>
+      <div class="chart-label">${d}</div>
+    `;
+    c.appendChild(col);
+  });
+  setTimeout(()=>{
+    document.querySelectorAll('.chart-bar').forEach(b=>{
+      b.style.height=b.dataset.h*1.4+'px';
+    });
+  },300);
+}
+
+// Launch demo
+function launchDemo(){
+  document.getElementById('splash').classList.add('hidden');
+  document.getElementById('app').classList.add('visible');
+  buildChart();
+  // Auto-show insights with animation
+  setTimeout(()=>showToast('New Pattern Discovered','Engineering velocity correlates 87% with meeting-free mornings.'),3000);
+  setTimeout(()=>showToast('Automation Triggered','Focus blocks auto-scheduled for Jake Davis tomorrow 9–11am.'),8000);
+  setTimeout(()=>{document.getElementById('demoCta').classList.add('show')},12000);
+  startLiveUpdates();
+}
+
+// Live metric updates
+function startLiveUpdates(){
+  setInterval(()=>{
+    const ps=document.getElementById('prodScore');
+    const v=parseInt(ps.textContent);
+    ps.textContent=v+Math.floor(Math.random()*3-1);
+  },5000);
+  setInterval(()=>{
+    const aa=document.getElementById('aiActions');
+    aa.textContent=parseInt(aa.textContent)+1;
+  },7000);
+}
+
+// Toast
+function showToast(title,msg){
+  document.getElementById('toastTitle').textContent=title;
+  document.getElementById('toastMsg').textContent=msg;
+  document.getElementById('toast').classList.add('show');
+  setTimeout(hideToast,5000);
+}
+function hideToast(){document.getElementById('toast').classList.remove('show')}
+
+// Show notification
+function showNotification(){
+  showToast('3 New Notifications','Sarah shared a report • Jake hit a milestone • AI found a pattern');
+}
+
+// Modal
+function showModal(){document.getElementById('modal').classList.add('show')}
+function hideModal(){document.getElementById('modal').classList.remove('show');document.getElementById('aiResponse').style.display='none'}
+
+// Ask AI
+function askAI(){
+  const q=document.getElementById('aiQuestion').value||'What patterns do you see this week?';
+  const r=document.getElementById('aiResponse');
+  r.style.display='block';
+  r.innerHTML='<div class="typing"><span></span><span></span><span></span></div>';
+  setTimeout(()=>{
+    const answers={
+      default:`Based on analysis of 2,847 data points across your team's tools:\n\n📊 **Key Finding:** Your team's productivity follows a clear pattern — output peaks Tuesday-Wednesday, then drops 34% on Thursday (likely due to the 4 recurring meetings).\n\n💡 **Recommendation:** Move the Thursday design review to async. This alone could recover ~12 hours/week of deep work across the team.\n\n🎯 **Predicted Impact:** +18% team velocity within 2 weeks if implemented.`
+    };
+    r.innerHTML=answers.default.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  },2000);
+}
+
+// Trigger AI
+function triggerAI(){showModal();document.getElementById('aiQuestion').focus()}
+
+// Apply recommendation
+function applyRec(el){
+  el.style.borderColor='var(--green)';
+  el.querySelector('.rec-action').innerHTML='✓ Applied successfully';
+  el.querySelector('.rec-action').style.color='var(--green)';
+  showToast('Recommendation Applied','Changes will take effect within the hour. We\'ll track the impact.');
+}
+
+// Expand insight
+function expandInsight(el){
+  el.style.borderColor='var(--accent)';
+  el.style.background='rgba(99,102,241,.12)';
+  showToast('Insight Expanded','Full analysis available in the Reports section.');
+}
+
+// Switch view
+function switchView(el,view){
+  document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));
+  el.classList.add('active');
+  if(view!=='dashboard'){
+    showToast('View: '+view.charAt(0).toUpperCase()+view.slice(1),'This is a demo — in the real product, this opens the full '+view+' view.');
+  }
+}
+</script>
+</body>
+</html>

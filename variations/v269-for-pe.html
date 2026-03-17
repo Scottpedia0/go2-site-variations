@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The Private Equity View</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0c1221;--surface:#131b2e;--card:#1a2440;--border:rgba(100,130,180,0.15);--text:#c8d4e6;--muted:#7a8da6;--accent:#2563eb;--accent2:#3b82f6;--green:#10b981;--red:#ef4444;--gold:#eab308;--white:#eef2f7;--navy:#0f1729}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(12,18,33,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 40px;display:flex;justify-content:space-between;align-items:center}
+.nav-logo{font-size:18px;font-weight:800;color:var(--accent2)}
+.nav-logo span{color:var(--muted);font-weight:300;font-size:13px;margin-left:8px}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:12px;margin-left:24px;font-weight:500;letter-spacing:0.5px;transition:color 0.2s}
+.nav-links a:hover{color:var(--accent2)}
+
+.hero{min-height:100vh;display:flex;align-items:center;padding:120px 60px;position:relative}
+.hero::after{content:'';position:absolute;top:0;right:0;width:50%;height:100%;background:radial-gradient(circle at 70% 40%,rgba(37,99,235,0.06),transparent 60%)}
+.hero-content{max-width:640px;z-index:1}
+.hero-badge{display:inline-block;padding:6px 16px;background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.2);border-radius:4px;color:var(--accent2);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:24px}
+.hero h1{font-size:clamp(32px,4.5vw,52px);font-weight:800;line-height:1.15;margin-bottom:20px;color:var(--white)}
+.hero h1 em{font-style:normal;color:var(--accent2)}
+.hero p{font-size:17px;color:var(--muted);line-height:1.8;margin-bottom:36px}
+.btn{padding:12px 28px;font-size:14px;font-weight:600;border:none;cursor:pointer;border-radius:4px;transition:all 0.2s;text-decoration:none;display:inline-block}
+.btn-accent{background:var(--accent);color:white;border:1px solid var(--accent)}
+.btn-accent:hover{background:var(--accent2)}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border);margin-left:12px}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent2)}
+
+.sec-label{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent2);font-weight:600;margin-bottom:8px}
+.sec-title{font-size:32px;font-weight:800;margin-bottom:12px;color:var(--white)}
+.sec-desc{color:var(--muted);font-size:15px;max-width:560px;margin-bottom:48px;line-height:1.8}
+
+/* Portfolio Impact */
+.portfolio-section{padding:100px 40px;max-width:1400px;margin:0 auto}
+.port-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:40px}
+.port-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:28px;text-align:center;transition:all 0.3s}
+.port-card:hover{border-color:var(--accent);transform:translateY(-3px)}
+.port-value{font-size:40px;font-weight:800;color:var(--accent2)}
+.port-label{font-size:12px;color:var(--muted);margin-top:4px;letter-spacing:0.5px}
+.port-detail{font-size:11px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+
+/* Value Creation Model */
+.value-section{padding:80px 40px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.value-inner{max-width:1200px;margin:0 auto}
+.value-table{width:100%;border-collapse:collapse;margin-top:40px;font-size:14px}
+.value-table th{text-align:left;padding:14px 16px;border-bottom:2px solid var(--accent);color:var(--accent2);font-size:11px;letter-spacing:1px;text-transform:uppercase;font-weight:600}
+.value-table td{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.04)}
+.value-table tr:hover td{background:rgba(37,99,235,0.03)}
+.value-table .total-row td{border-top:2px solid var(--accent);font-weight:700;color:var(--accent2);font-size:15px}
+
+/* EBITDA Calculator */
+.ebitda-section{padding:100px 40px;max-width:1200px;margin:0 auto}
+.ebitda-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:40px}
+.ebitda-inputs{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:28px}
+.ebitda-input{margin-bottom:20px}
+.ebitda-input label{display:block;font-size:12px;color:var(--muted);letter-spacing:0.5px;margin-bottom:8px}
+.ebitda-input input[type=range]{width:100%;accent-color:var(--accent)}
+.ebitda-val{font-size:22px;font-weight:700;color:var(--accent2);margin-top:4px}
+.ebitda-output{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:28px}
+.ebitda-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:14px}
+.ebitda-row.total{border-top:2px solid var(--accent);border-bottom:none;padding-top:16px;margin-top:8px}
+.ebitda-row.total span{font-weight:700;color:var(--accent2);font-size:16px}
+
+/* Portfolio Deployment */
+.deploy-section{padding:80px 40px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.deploy-inner{max-width:1400px;margin:0 auto}
+.deploy-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:40px}
+.deploy-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:28px;transition:all 0.3s}
+.deploy-card:hover{border-color:var(--accent)}
+.deploy-phase{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--accent2);font-weight:600;margin-bottom:12px}
+.deploy-title{font-size:18px;font-weight:700;color:var(--white);margin-bottom:8px}
+.deploy-desc{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:16px}
+.deploy-metric{display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid var(--border);font-size:12px}
+.deploy-metric span:last-child{font-weight:600;color:var(--accent2)}
+
+/* Benchmark Data */
+.bench-section{padding:100px 40px;max-width:1200px;margin:0 auto}
+.bench-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:40px}
+.bench-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:24px}
+.bench-title{font-size:14px;font-weight:700;color:var(--white);margin-bottom:16px;display:flex;justify-content:space-between}
+.bench-bar-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;font-size:12px}
+.bench-label{min-width:100px;color:var(--muted)}
+.bench-bar{flex:1;height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden}
+.bench-fill{height:100%;border-radius:4px;transition:width 1.5s ease}
+.bench-fill-blue{background:var(--accent)}
+.bench-fill-green{background:var(--green)}
+.bench-fill-gold{background:var(--gold)}
+.bench-val{min-width:50px;text-align:right;font-weight:600;color:var(--white)}
+
+/* Deal Scenarios */
+.scenario-section{padding:80px 40px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.scenario-inner{max-width:1400px;margin:0 auto}
+.scenario-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:40px}
+.scenario-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:28px;transition:all 0.3s}
+.scenario-card:hover{border-color:var(--accent)}
+.scenario-type{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:8px}
+.scenario-title{font-size:18px;font-weight:700;color:var(--white);margin-bottom:4px}
+.scenario-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
+.scenario-metrics{margin-top:8px}
+.scenario-metric{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:13px}
+.scenario-metric span:last-child{font-weight:700}
+.scenario-metric .up{color:var(--green)}
+
+/* CTA */
+.cta{padding:120px 40px;text-align:center}
+.cta h2{font-size:36px;font-weight:800;color:var(--white);margin-bottom:16px}
+.cta h2 em{font-style:normal;color:var(--accent2)}
+.cta p{font-size:16px;color:var(--muted);max-width:520px;margin:0 auto 32px;line-height:1.8}
+
+footer{padding:40px;text-align:center;font-size:12px;color:var(--muted);border-top:1px solid var(--border)}
+
+@media(max-width:900px){
+.port-grid{grid-template-columns:1fr 1fr}
+.ebitda-grid,.bench-grid{grid-template-columns:1fr}
+.deploy-grid,.scenario-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">GO2 <span>Portfolio Operations</span></div>
+  <div class="nav-links">
+    <a href="#portfolio">Portfolio Impact</a>
+    <a href="#ebitda">EBITDA Model</a>
+    <a href="#deployment">Deployment</a>
+    <a href="#scenarios">Deal Scenarios</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">For Private Equity & Growth Investors</div>
+    <h1>Add <em>30% EBITDA</em> across your portfolio.</h1>
+    <p>Go2 is a value creation lever that deploys across every portfolio company in weeks, not months. Operational intelligence that compounds returns. One platform, every portco.</p>
+    <a class="btn btn-accent" href="#ebitda">Model the EBITDA Impact</a>
+    <a class="btn btn-ghost" href="#scenarios">Deal Scenarios</a>
+  </div>
+</section>
+
+<section class="portfolio-section" id="portfolio">
+  <div class="sec-label">Portfolio-Wide Impact</div>
+  <div class="sec-title">One deployment. Every portco.</div>
+  <div class="sec-desc">Go2 deployed across a 10-company portfolio generates compounding operational improvements. Here's what the aggregate looks like.</div>
+
+  <div class="port-grid">
+    <div class="port-card">
+      <div class="port-value">+30%</div>
+      <div class="port-label">Average EBITDA Improvement</div>
+      <div class="port-detail">Across Go2 PE portfolio customers</div>
+    </div>
+    <div class="port-card">
+      <div class="port-value">2.1x</div>
+      <div class="port-label">MOIC Contribution</div>
+      <div class="port-detail">Attributable to Go2 operational gains</div>
+    </div>
+    <div class="port-card">
+      <div class="port-value">14 mo</div>
+      <div class="port-label">Avg Value Creation Timeline</div>
+      <div class="port-detail">From deployment to full EBITDA impact</div>
+    </div>
+    <div class="port-card">
+      <div class="port-value">$4.2M</div>
+      <div class="port-label">Avg Annual Savings Per Portco</div>
+      <div class="port-detail">500-employee company benchmark</div>
+    </div>
+  </div>
+</section>
+
+<section class="value-section">
+  <div class="value-inner">
+    <div class="sec-label">Value Creation Playbook</div>
+    <div class="sec-title">The 100-day Go2 value creation plan.</div>
+    <div class="sec-desc">Deploy Go2 alongside your operating playbook. Here's the value creation waterfall for a typical 500-employee portco at $50M revenue.</div>
+
+    <table class="value-table">
+      <thead>
+        <tr><th>Value Lever</th><th>Timeline</th><th>Annual Impact</th><th>EBITDA Points</th><th>Confidence</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Productivity improvement (12% avg)</td><td>Month 1-3</td><td style="color:var(--green)">$3.6M</td><td style="color:var(--green)">+7.2%</td><td>High (measured)</td></tr>
+        <tr><td>Process automation (52 automations avg)</td><td>Month 2-6</td><td style="color:var(--green)">$1.8M</td><td style="color:var(--green)">+3.6%</td><td>High (measured)</td></tr>
+        <tr><td>Headcount avoidance (not reduction)</td><td>Month 3-9</td><td style="color:var(--green)">$2.4M</td><td style="color:var(--green)">+4.8%</td><td>Medium</td></tr>
+        <tr><td>Process compliance / quality</td><td>Month 2-6</td><td style="color:var(--green)">$900K</td><td style="color:var(--green)">+1.8%</td><td>High</td></tr>
+        <tr><td>Reduced turnover (retention)</td><td>Month 4-12</td><td style="color:var(--green)">$1.2M</td><td style="color:var(--green)">+2.4%</td><td>Medium</td></tr>
+        <tr><td>Tool consolidation</td><td>Month 3-6</td><td style="color:var(--green)">$400K</td><td style="color:var(--green)">+0.8%</td><td>High</td></tr>
+        <tr><td>AI agent deployment</td><td>Month 6-14</td><td style="color:var(--green)">$2.8M</td><td style="color:var(--green)">+5.6%</td><td>Medium</td></tr>
+        <tr><td style="color:var(--red)">Go2 platform cost</td><td>Month 1</td><td style="color:var(--red)">($60K)</td><td style="color:var(--red)">-0.1%</td><td>-</td></tr>
+        <tr class="total-row"><td>Net Value Creation</td><td></td><td>$13.0M</td><td>+26.1%</td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="ebitda-section" id="ebitda">
+  <div class="sec-label">EBITDA Impact Calculator</div>
+  <div class="sec-title">Model your portfolio impact.</div>
+  <div class="sec-desc">Adjust to match your portfolio company profile. See the EBITDA impact in real-time.</div>
+
+  <div class="ebitda-grid">
+    <div class="ebitda-inputs">
+      <div style="font-size:16px;font-weight:700;color:var(--white);margin-bottom:20px">Portfolio Company Profile</div>
+      <div class="ebitda-input">
+        <label>Revenue ($M)</label>
+        <input type="range" id="peRev" min="10" max="500" value="75" step="5">
+        <div class="ebitda-val" id="peRevVal">$75M</div>
+      </div>
+      <div class="ebitda-input">
+        <label>Employees</label>
+        <input type="range" id="peEmp" min="100" max="5000" value="500" step="50">
+        <div class="ebitda-val" id="peEmpVal">500</div>
+      </div>
+      <div class="ebitda-input">
+        <label>Current EBITDA Margin (%)</label>
+        <input type="range" id="peMargin" min="5" max="35" value="15" step="1">
+        <div class="ebitda-val" id="peMarginVal">15%</div>
+      </div>
+      <div class="ebitda-input">
+        <label>Exit Multiple (x)</label>
+        <input type="range" id="peMult" min="5" max="20" value="10" step="0.5">
+        <div class="ebitda-val" id="peMultVal">10.0x</div>
+      </div>
+      <div class="ebitda-input">
+        <label>Number of Portfolio Companies</label>
+        <input type="range" id="pePortcos" min="1" max="25" value="8" step="1">
+        <div class="ebitda-val" id="pePortcosVal">8</div>
+      </div>
+    </div>
+
+    <div class="ebitda-output">
+      <div style="font-size:16px;font-weight:700;color:var(--white);margin-bottom:20px">Value Creation Impact</div>
+      <div id="ebitdaResults"></div>
+    </div>
+  </div>
+</section>
+
+<section class="deploy-section" id="deployment">
+  <div class="deploy-inner">
+    <div class="sec-label">Portfolio Deployment</div>
+    <div class="sec-title">The operating partner's playbook.</div>
+    <div class="sec-desc">Deploy Go2 across your portfolio in 3 phases. Each portco takes 1-2 weeks to activate.</div>
+
+    <div class="deploy-grid">
+      <div class="deploy-card">
+        <div class="deploy-phase">Phase 1: Days 1-14</div>
+        <div class="deploy-title">Deploy & Discover</div>
+        <div class="deploy-desc">15-minute deployment per portco. Go2 begins mapping operations. Zero disruption. First insights within 48 hours.</div>
+        <div class="deploy-metric"><span>Deployment time</span><span>15 minutes</span></div>
+        <div class="deploy-metric"><span>First insights</span><span>48 hours</span></div>
+        <div class="deploy-metric"><span>IT requirements</span><span>None</span></div>
+      </div>
+      <div class="deploy-card">
+        <div class="deploy-phase">Phase 2: Weeks 2-8</div>
+        <div class="deploy-title">Optimize & Automate</div>
+        <div class="deploy-desc">AI coaching activates. Automation pipeline starts building. Quick wins materialize. Board-ready dashboards populate.</div>
+        <div class="deploy-metric"><span>Avg automations identified</span><span>127</span></div>
+        <div class="deploy-metric"><span>Quick win savings</span><span>$400K-$800K</span></div>
+        <div class="deploy-metric"><span>Productivity lift</span><span>15-25%</span></div>
+      </div>
+      <div class="deploy-card">
+        <div class="deploy-phase">Phase 3: Months 3-14</div>
+        <div class="deploy-title">Scale & Compound</div>
+        <div class="deploy-desc">Full operational intelligence. AI agents trained on portco-specific workflows. Cross-portfolio benchmarking enabled.</div>
+        <div class="deploy-metric"><span>EBITDA improvement</span><span>20-35%</span></div>
+        <div class="deploy-metric"><span>Automation coverage</span><span>50+ live</span></div>
+        <div class="deploy-metric"><span>AI agents deployed</span><span>10-20</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="bench-section">
+  <div class="sec-label">Benchmark Data</div>
+  <div class="sec-title">Cross-portfolio benchmarking.</div>
+  <div class="sec-desc">Go2 provides the operational benchmarks PE firms have always wanted. Compare portcos on real metrics, not self-reported surveys.</div>
+
+  <div class="bench-grid" id="benchGrid">
+    <div class="bench-card">
+      <div class="bench-title"><span>Productivity Index</span><span style="color:var(--muted);font-size:12px">Higher = better</span></div>
+      <div class="bench-bar-row"><span class="bench-label">Portco Alpha</span><div class="bench-bar"><div class="bench-fill bench-fill-blue" style="width:0%" data-w="92%"></div></div><span class="bench-val">92</span></div>
+      <div class="bench-bar-row"><span class="bench-label">Portco Beta</span><div class="bench-bar"><div class="bench-fill bench-fill-blue" style="width:0%" data-w="84%"></div></div><span class="bench-val">84</span></div>
+      <div class="bench-bar-row"><span class="bench-label">Portco Gamma</span><div class="bench-bar"><div class="bench-fill bench-fill-blue" style="width:0%" data-w="78%"></div></div><span class="bench-val">78</span></div>
+      <div class="bench-bar-row"><span class="bench-label">Portco Delta</span><div class="bench-bar"><div class="bench-fill bench-fill-blue" style="width:0%" data-w="71%"></div></div><span class="bench-val">71</span></div>
+      <div class="bench-bar-row"><span class="bench-label">Portfolio Avg</span><div class="bench-bar"><div class="bench-fill bench-fill-gold" style="width:0%" data-w="81%"></div></div><span class="bench-val">81</span></div>
+    </div>
+    <div class="bench-card">
+      <div class="bench-title"><span>Automation Maturity</span><span style="color:var(--muted);font-size:12px">% of opportunities captured</span></div>
+      <div class="bench-bar-row"><span class="bench-label">Portco Alpha</span><div class="bench-bar"><div class="bench-fill bench-fill-green" style="width:0%" data-w="67%"></div></div><span class="bench-val">67%</span></div>
+      <div class="bench-bar-row"><span class="bench-label">Portco Beta</span><div class="bench-bar"><div class="bench-fill bench-fill-green" style="width:0%" data-w="52%"></div></div><span class="bench-val">52%</span></div>
+      <div class="bench-bar-row"><span class="bench-label">Portco Gamma</span><div class="bench-bar"><div class="bench-fill bench-fill-green" style="width:0%" data-w="41%"></div></div><span class="bench-val">41%</span></div>
+      <div class="bench-bar-row"><span class="bench-label">Portco Delta</span><div class="bench-bar"><div class="bench-fill bench-fill-green" style="width:0%" data-w="23%"></div></div><span class="bench-val">23%</span></div>
+      <div class="bench-bar-row"><span class="bench-label">Portfolio Avg</span><div class="bench-bar"><div class="bench-fill bench-fill-gold" style="width:0%" data-w="46%"></div></div><span class="bench-val">46%</span></div>
+    </div>
+    <div class="bench-card">
+      <div class="bench-title"><span>Process Documentation</span><span style="color:var(--muted);font-size:12px">% documented & current</span></div>
+      <div class="bench-bar-row"><span class="bench-label">Portco Alpha</span><div class="bench-bar"><div class="bench-fill bench-fill-blue" style="width:0%" data-w="94%"></div></div><span class="bench-val">94%</span></div>
+      <div class="bench-bar-row"><span class="bench-label">Portco Beta</span><div class="bench-bar"><div class="bench-fill bench-fill-blue" style="width:0%" data-w="88%"></div></div><span class="bench-val">88%</span></div>
+      <div class="bench-bar-row"><span class="bench-label">Portco Gamma</span><div class="bench-bar"><div class="bench-fill bench-fill-blue" style="width:0%" data-w="76%"></div></div><span class="bench-val">76%</span></div>
+      <div class="bench-bar-row"><span class="bench-label">Portco Delta</span><div class="bench-bar"><div class="bench-fill bench-fill-blue" style="width:0%" data-w="82%"></div></div><span class="bench-val">82%</span></div>
+      <div class="bench-bar-row"><span class="bench-label">Portfolio Avg</span><div class="bench-bar"><div class="bench-fill bench-fill-gold" style="width:0%" data-w="85%"></div></div><span class="bench-val">85%</span></div>
+    </div>
+    <div class="bench-card">
+      <div class="bench-title"><span>AI Readiness Score</span><span style="color:var(--muted);font-size:12px">Scale: 0-100</span></div>
+      <div class="bench-bar-row"><span class="bench-label">Portco Alpha</span><div class="bench-bar"><div class="bench-fill bench-fill-green" style="width:0%" data-w="89%"></div></div><span class="bench-val">89</span></div>
+      <div class="bench-bar-row"><span class="bench-label">Portco Beta</span><div class="bench-bar"><div class="bench-fill bench-fill-green" style="width:0%" data-w="74%"></div></div><span class="bench-val">74</span></div>
+      <div class="bench-bar-row"><span class="bench-label">Portco Gamma</span><div class="bench-bar"><div class="bench-fill bench-fill-green" style="width:0%" data-w="61%"></div></div><span class="bench-val">61</span></div>
+      <div class="bench-bar-row"><span class="bench-label">Portco Delta</span><div class="bench-bar"><div class="bench-fill bench-fill-green" style="width:0%" data-w="45%"></div></div><span class="bench-val">45</span></div>
+      <div class="bench-bar-row"><span class="bench-label">Portfolio Avg</span><div class="bench-bar"><div class="bench-fill bench-fill-gold" style="width:0%" data-w="67%"></div></div><span class="bench-val">67</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="scenario-section" id="scenarios">
+  <div class="scenario-inner">
+    <div class="sec-label">Deal Scenarios</div>
+    <div class="sec-title">Go2 in every stage of the deal.</div>
+
+    <div class="scenario-grid">
+      <div class="scenario-card">
+        <div class="scenario-type">Pre-Acquisition</div>
+        <div class="scenario-title">Due Diligence Accelerator</div>
+        <div class="scenario-sub">Deploy Go2 during diligence to see real operations</div>
+        <div class="scenario-metrics">
+          <div class="scenario-metric"><span>DD timeline reduction</span><span class="up">-40%</span></div>
+          <div class="scenario-metric"><span>Hidden risks identified</span><span class="up">3-5 per deal</span></div>
+          <div class="scenario-metric"><span>Valuation accuracy</span><span class="up">+25%</span></div>
+          <div class="scenario-metric"><span>Post-close surprises</span><span class="up">Near zero</span></div>
+        </div>
+      </div>
+      <div class="scenario-card">
+        <div class="scenario-type">Value Creation</div>
+        <div class="scenario-title">100-Day Operating Plan</div>
+        <div class="scenario-sub">Accelerate value creation from day one</div>
+        <div class="scenario-metrics">
+          <div class="scenario-metric"><span>First savings identified</span><span class="up">Week 1</span></div>
+          <div class="scenario-metric"><span>Quick win value</span><span class="up">$400K-$800K</span></div>
+          <div class="scenario-metric"><span>Full EBITDA impact</span><span class="up">Month 6-14</span></div>
+          <div class="scenario-metric"><span>Avg EBITDA lift</span><span class="up">+26%</span></div>
+        </div>
+      </div>
+      <div class="scenario-card">
+        <div class="scenario-type">Exit Preparation</div>
+        <div class="scenario-title">Exit Readiness Package</div>
+        <div class="scenario-sub">Document operations for maximum exit multiple</div>
+        <div class="scenario-metrics">
+          <div class="scenario-metric"><span>Process documentation</span><span class="up">100% auto</span></div>
+          <div class="scenario-metric"><span>Operational transparency</span><span class="up">Full visibility</span></div>
+          <div class="scenario-metric"><span>Multiple premium</span><span class="up">0.5-1.0x</span></div>
+          <div class="scenario-metric"><span>Buyer confidence</span><span class="up">Significantly higher</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="sec-label">Let's Talk Returns</div>
+  <h2>This is a <em>portfolio-level</em> value lever.</h2>
+  <p>Schedule a private briefing with our PE practice lead. We'll model your specific portfolio. NDA in place. Institutional-quality analysis.</p>
+  <a class="btn btn-accent" href="#">Schedule PE Briefing</a>
+  <a class="btn btn-ghost" href="#">Download PE Playbook</a>
+</section>
+
+<footer>&copy; 2026 Go2. Institutional-grade operational intelligence.</footer>
+
+<script>
+// EBITDA Calculator
+const peRev=document.getElementById('peRev');
+const peEmp=document.getElementById('peEmp');
+const peMargin=document.getElementById('peMargin');
+const peMult=document.getElementById('peMult');
+const pePortcos=document.getElementById('pePortcos');
+
+function updateEBITDA(){
+  const r=parseInt(peRev.value);
+  const e=parseInt(peEmp.value);
+  const m=parseInt(peMargin.value);
+  const mult=parseFloat(peMult.value);
+  const p=parseInt(pePortcos.value);
+
+  document.getElementById('peRevVal').textContent='$'+r+'M';
+  document.getElementById('peEmpVal').textContent=e.toLocaleString();
+  document.getElementById('peMarginVal').textContent=m+'%';
+  document.getElementById('peMultVal').textContent=mult.toFixed(1)+'x';
+  document.getElementById('pePortcosVal').textContent=p;
+
+  const currentEBITDA=r*m/100;
+  const prodSave=e*120000*0.12/1000000;
+  const autoSave=e*120000*0.04/1000000;
+  const otherSave=(prodSave+autoSave)*0.3;
+  const totalSave=prodSave+autoSave+otherSave;
+  const go2Cost=e*10*12/1000000;
+  const netImpact=totalSave-go2Cost;
+  const newEBITDA=currentEBITDA+netImpact;
+  const newMargin=(newEBITDA/r*100);
+  const evBefore=currentEBITDA*mult;
+  const evAfter=newEBITDA*mult;
+  const evLift=evAfter-evBefore;
+  const portfolioLift=evLift*p;
+
+  const fmt=(v)=>v>=1?'$'+v.toFixed(1)+'M':'$'+(v*1000).toFixed(0)+'K';
+
+  document.getElementById('ebitdaResults').innerHTML=`
+    <div style="font-size:13px;color:var(--muted);margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">PER PORTFOLIO COMPANY</div>
+    <div class="ebitda-row"><span>Current EBITDA</span><span>${fmt(currentEBITDA)}</span></div>
+    <div class="ebitda-row"><span>Productivity savings (12%)</span><span style="color:var(--green)">+${fmt(prodSave)}</span></div>
+    <div class="ebitda-row"><span>Automation savings (4%)</span><span style="color:var(--green)">+${fmt(autoSave)}</span></div>
+    <div class="ebitda-row"><span>Other improvements</span><span style="color:var(--green)">+${fmt(otherSave)}</span></div>
+    <div class="ebitda-row"><span>Go2 cost</span><span style="color:var(--red)">-${fmt(go2Cost)}</span></div>
+    <div class="ebitda-row total"><span>New EBITDA</span><span>${fmt(newEBITDA)} (${newMargin.toFixed(1)}%)</span></div>
+    <div class="ebitda-row"><span>EBITDA improvement</span><span style="color:var(--green)">+${((netImpact/currentEBITDA)*100).toFixed(0)}%</span></div>
+
+    <div style="font-size:13px;color:var(--muted);margin:20px 0 16px;padding:12px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">ENTERPRISE VALUE IMPACT</div>
+    <div class="ebitda-row"><span>EV before Go2 (${mult.toFixed(1)}x)</span><span>${fmt(evBefore)}</span></div>
+    <div class="ebitda-row"><span>EV after Go2 (${mult.toFixed(1)}x)</span><span style="color:var(--accent2)">${fmt(evAfter)}</span></div>
+    <div class="ebitda-row"><span>EV lift per portco</span><span style="color:var(--green)">+${fmt(evLift)}</span></div>
+    <div class="ebitda-row total"><span>Portfolio EV lift (${p} portcos)</span><span>+${fmt(portfolioLift)}</span></div>
+  `;
+}
+
+[peRev,peEmp,peMargin,peMult,pePortcos].forEach(el=>el.addEventListener('input',updateEBITDA));
+updateEBITDA();
+
+// Benchmark bars animation
+const bObs=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.querySelectorAll('.bench-fill').forEach(f=>{
+        setTimeout(()=>{f.style.width=f.dataset.w},200);
+      });
+    }
+  });
+},{threshold:0.2});
+document.querySelectorAll('.bench-section').forEach(el=>bObs.observe(el));
+
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth'});});
+});
+</script>
+</body>
+</html>

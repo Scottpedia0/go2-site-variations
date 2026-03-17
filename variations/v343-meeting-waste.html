@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Meetings Are Killing Productivity | Go2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0f;color:#e0e0e0;overflow-x:hidden}
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem}
+.hero h1{font-size:clamp(2rem,5vw,3.8rem);font-weight:800;background:linear-gradient(135deg,#f59e0b,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:1rem}
+.hero p{font-size:1.3rem;color:#94a3b8;max-width:650px;margin-bottom:2rem}
+.stat-row{display:flex;gap:2rem;flex-wrap:wrap;justify-content:center;margin:2rem 0}
+.stat-box{text-align:center;padding:1.5rem 2rem;background:rgba(255,255,255,.05);border-radius:12px;border:1px solid rgba(255,255,255,.08);min-width:150px}
+.stat-box .num{font-size:2.5rem;font-weight:800;color:#f59e0b}
+.stat-box .label{color:#94a3b8;font-size:.9rem;margin-top:.3rem}
+.dashboard{max-width:1100px;margin:0 auto;padding:2rem}
+.dash-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;flex-wrap:wrap;gap:1rem}
+.dash-header h2{font-size:1.8rem;font-weight:700}
+.dash-tabs{display:flex;gap:.5rem}
+.dash-tab{padding:.5rem 1rem;border-radius:8px;border:1px solid #333;background:transparent;color:#94a3b8;cursor:pointer;font-size:.85rem;transition:all .3s}
+.dash-tab.active{border-color:#f59e0b;background:rgba(245,158,11,.12);color:#f59e0b}
+.calendar-grid{display:grid;grid-template-columns:80px repeat(5,1fr);gap:2px;margin-bottom:2rem}
+.cal-header{padding:.5rem;text-align:center;font-size:.85rem;color:#94a3b8;font-weight:600}
+.cal-time{padding:.3rem .5rem;font-size:.75rem;color:#666;text-align:right}
+.cal-block{border-radius:4px;padding:.3rem .5rem;font-size:.7rem;cursor:pointer;transition:all .2s;position:relative}
+.cal-block:hover{transform:scale(1.05);z-index:2}
+.cal-block.meeting{background:rgba(239,68,68,.2);border-left:3px solid #ef4444;color:#fca5a5}
+.cal-block.focus{background:rgba(34,197,94,.1);border-left:3px solid #22c55e;color:#86efac}
+.cal-block.unnecessary{background:rgba(245,158,11,.2);border-left:3px solid #f59e0b;color:#fcd34d}
+.cal-block.empty{background:transparent}
+.analysis-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;margin:2rem 0}
+.analysis-card{padding:1.5rem;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+.analysis-card h3{font-size:1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+.bar-chart{margin:.5rem 0}
+.bar-row{display:flex;align-items:center;gap:.8rem;margin:.4rem 0}
+.bar-label{width:100px;font-size:.8rem;color:#94a3b8;text-align:right}
+.bar-track{flex:1;height:24px;background:#1e293b;border-radius:4px;overflow:hidden;position:relative}
+.bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding:0 8px;font-size:.75rem;font-weight:600;transition:width 1s ease}
+.bar-fill.red{background:linear-gradient(90deg,#ef4444,#f87171);color:white}
+.bar-fill.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24);color:#1e293b}
+.bar-fill.green{background:linear-gradient(90deg,#22c55e,#4ade80);color:#1e293b}
+.bar-fill.blue{background:linear-gradient(90deg,#60a5fa,#93c5fd);color:#1e293b}
+.donut-container{display:flex;align-items:center;gap:2rem;justify-content:center}
+.donut{width:150px;height:150px;position:relative}
+.donut svg{transform:rotate(-90deg)}
+.donut-label{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.donut-label .pct{font-size:1.8rem;font-weight:800;color:#f59e0b}
+.donut-label .txt{font-size:.75rem;color:#94a3b8}
+.donut-legend{list-style:none}
+.donut-legend li{padding:.3rem 0;font-size:.85rem;color:#94a3b8;display:flex;align-items:center;gap:.5rem}
+.donut-legend .dot{width:10px;height:10px;border-radius:50%}
+.coaching-section{max-width:900px;margin:4rem auto;padding:2rem}
+.coaching-section h2{text-align:center;font-size:2rem;font-weight:700;margin-bottom:2rem}
+.coaching-card{padding:1.5rem;margin:1rem 0;border-radius:12px;background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.2);cursor:pointer;transition:all .3s}
+.coaching-card:hover{border-color:rgba(96,165,250,.4)}
+.coaching-card h4{color:#60a5fa;margin-bottom:.5rem;display:flex;justify-content:space-between;align-items:center}
+.coaching-card .arrow{transition:transform .3s}
+.coaching-card.open .arrow{transform:rotate(180deg)}
+.coaching-detail{max-height:0;overflow:hidden;transition:max-height .4s;color:#94a3b8;font-size:.95rem;line-height:1.6}
+.coaching-card.open .coaching-detail{max-height:500px}
+.impact-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2rem;max-width:800px;margin:4rem auto;padding:0 2rem}
+.impact-item{text-align:center;padding:2rem;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08)}
+.impact-item .before{font-size:2rem;font-weight:800;color:#ef4444;text-decoration:line-through;opacity:.6}
+.impact-item .after{font-size:2.5rem;font-weight:800;color:#22c55e}
+.impact-item p{color:#94a3b8;margin-top:.5rem;font-size:.9rem}
+.cta-section{text-align:center;padding:6rem 2rem}
+.cta-section h2{font-size:2.5rem;font-weight:800;margin-bottom:1rem}
+.cta-section p{color:#94a3b8;font-size:1.2rem;margin-bottom:2rem}
+.cta-btn{display:inline-block;padding:1rem 3rem;background:linear-gradient(135deg,#f59e0b,#ef4444);color:white;font-size:1.2rem;font-weight:700;border-radius:12px;text-decoration:none;transition:all .3s}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 10px 40px rgba(245,158,11,.3)}
+@media(max-width:768px){.impact-grid,.calendar-grid{grid-template-columns:1fr}.stat-row{flex-direction:column;align-items:center}}
+</style>
+</head>
+<body>
+<div class="hero">
+<h1>Your Meetings Are Killing Productivity</h1>
+<p>The average knowledge worker spends 31 hours per week in meetings. Most of them are unnecessary, too long, or have the wrong people in them.</p>
+<div class="stat-row">
+<div class="stat-box"><div class="num">31h</div><div class="label">Weekly meeting time</div></div>
+<div class="stat-box"><div class="num">$37K</div><div class="label">Annual cost per employee</div></div>
+<div class="stat-box"><div class="num">67%</div><div class="label">Meetings rated unnecessary</div></div>
+<div class="stat-box"><div class="num">2.1h</div><div class="label">Largest focus block</div></div>
+</div>
+</div>
+
+<div class="dashboard">
+<div class="dash-header">
+<h2>Meeting Analysis Dashboard</h2>
+<div class="dash-tabs">
+<button class="dash-tab active" onclick="showDash('week')">This Week</button>
+<button class="dash-tab" onclick="showDash('month')">This Month</button>
+<button class="dash-tab" onclick="showDash('quarter')">Quarter</button>
+</div>
+</div>
+
+<div class="analysis-cards">
+<div class="analysis-card">
+<h3>Time Allocation</h3>
+<div class="donut-container">
+<div class="donut">
+<svg viewBox="0 0 100 100" width="150" height="150">
+<circle cx="50" cy="50" r="40" fill="none" stroke="#1e293b" stroke-width="12"/>
+<circle cx="50" cy="50" r="40" fill="none" stroke="#ef4444" stroke-width="12" stroke-dasharray="155 251" stroke-dashoffset="0"/>
+<circle cx="50" cy="50" r="40" fill="none" stroke="#f59e0b" stroke-width="12" stroke-dasharray="50 251" stroke-dashoffset="-155"/>
+<circle cx="50" cy="50" r="40" fill="none" stroke="#22c55e" stroke-width="12" stroke-dasharray="46 251" stroke-dashoffset="-205"/>
+</svg>
+<div class="donut-label"><div class="pct">62%</div><div class="txt">in meetings</div></div>
+</div>
+<ul class="donut-legend">
+<li><span class="dot" style="background:#ef4444"></span>Meetings (31h)</li>
+<li><span class="dot" style="background:#f59e0b"></span>Email/Slack (10h)</li>
+<li><span class="dot" style="background:#22c55e"></span>Deep work (9h)</li>
+</ul>
+</div>
+</div>
+
+<div class="analysis-card">
+<h3>Meeting Quality Score</h3>
+<div class="bar-chart">
+<div class="bar-row"><span class="bar-label">Had agenda</span><div class="bar-track"><div class="bar-fill red" style="width:28%">28%</div></div></div>
+<div class="bar-row"><span class="bar-label">Had outcome</span><div class="bar-track"><div class="bar-fill red" style="width:19%">19%</div></div></div>
+<div class="bar-row"><span class="bar-label">Right people</span><div class="bar-track"><div class="bar-fill amber" style="width:41%">41%</div></div></div>
+<div class="bar-row"><span class="bar-label">Right length</span><div class="bar-track"><div class="bar-fill amber" style="width:35%">35%</div></div></div>
+<div class="bar-row"><span class="bar-label">Could be async</span><div class="bar-track"><div class="bar-fill red" style="width:67%">67%</div></div></div>
+</div>
+</div>
+
+<div class="analysis-card">
+<h3>Unnecessary Attendees</h3>
+<div class="bar-chart">
+<div class="bar-row"><span class="bar-label">Eng standup</span><div class="bar-track"><div class="bar-fill amber" style="width:40%">+4 extra</div></div></div>
+<div class="bar-row"><span class="bar-label">Sprint review</span><div class="bar-track"><div class="bar-fill red" style="width:60%">+7 extra</div></div></div>
+<div class="bar-row"><span class="bar-label">All-hands</span><div class="bar-track"><div class="bar-fill green" style="width:15%">OK</div></div></div>
+<div class="bar-row"><span class="bar-label">1:1 syncs</span><div class="bar-track"><div class="bar-fill green" style="width:10%">OK</div></div></div>
+<div class="bar-row"><span class="bar-label">Project updates</span><div class="bar-track"><div class="bar-fill red" style="width:75%">+8 extra</div></div></div>
+</div>
+</div>
+
+<div class="analysis-card">
+<h3>Meeting Duration Analysis</h3>
+<div class="bar-chart">
+<div class="bar-row"><span class="bar-label">15 min</span><div class="bar-track"><div class="bar-fill green" style="width:12%">3</div></div></div>
+<div class="bar-row"><span class="bar-label">30 min</span><div class="bar-track"><div class="bar-fill blue" style="width:48%">12</div></div></div>
+<div class="bar-row"><span class="bar-label">60 min</span><div class="bar-track"><div class="bar-fill amber" style="width:72%">18</div></div></div>
+<div class="bar-row"><span class="bar-label">90 min</span><div class="bar-track"><div class="bar-fill red" style="width:20%">5</div></div></div>
+</div>
+<p style="font-size:.85rem;color:#94a3b8;margin-top:1rem">Go2 found: 18 of 25 hour-long meetings could be 30 minutes. That's 9 hours back per week.</p>
+</div>
+
+<div class="analysis-card">
+<h3>Focus Time Impact</h3>
+<div class="bar-chart">
+<div class="bar-row"><span class="bar-label">Monday</span><div class="bar-track"><div class="bar-fill red" style="width:15%">0.8h</div></div></div>
+<div class="bar-row"><span class="bar-label">Tuesday</span><div class="bar-track"><div class="bar-fill red" style="width:25%">1.2h</div></div></div>
+<div class="bar-row"><span class="bar-label">Wednesday</span><div class="bar-track"><div class="bar-fill amber" style="width:45%">2.1h</div></div></div>
+<div class="bar-row"><span class="bar-label">Thursday</span><div class="bar-track"><div class="bar-fill red" style="width:20%">1.0h</div></div></div>
+<div class="bar-row"><span class="bar-label">Friday</span><div class="bar-track"><div class="bar-fill amber" style="width:55%">2.8h</div></div></div>
+</div>
+<p style="font-size:.85rem;color:#94a3b8;margin-top:1rem">Largest uninterrupted block: 2.1 hours. Deep work requires 4+ hours.</p>
+</div>
+
+<div class="analysis-card">
+<h3>Meeting Cost This Week</h3>
+<div style="text-align:center;padding:1rem">
+<div style="font-size:3rem;font-weight:800;color:#ef4444" id="weekCost">$0</div>
+<p style="color:#94a3b8;margin-top:.5rem">Based on average salary of attendees</p>
+<div style="margin-top:1rem;display:grid;grid-template-columns:1fr 1fr;gap:.5rem;font-size:.85rem">
+<div style="padding:.5rem;background:rgba(239,68,68,.1);border-radius:6px"><span style="color:#ef4444;font-weight:700">$4,200</span><br><span style="color:#94a3b8">Unnecessary meetings</span></div>
+<div style="padding:.5rem;background:rgba(245,158,11,.1);border-radius:6px"><span style="color:#f59e0b;font-weight:700">$2,100</span><br><span style="color:#94a3b8">Extra attendees</span></div>
+<div style="padding:.5rem;background:rgba(239,68,68,.1);border-radius:6px"><span style="color:#ef4444;font-weight:700">$1,800</span><br><span style="color:#94a3b8">Overlong meetings</span></div>
+<div style="padding:.5rem;background:rgba(96,165,250,.1);border-radius:6px"><span style="color:#60a5fa;font-weight:700">$8,100</span><br><span style="color:#94a3b8">Recoverable cost</span></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="coaching-section">
+<h2>Go2 Meeting Coaching</h2>
+<p style="text-align:center;color:#94a3b8;margin-bottom:2rem">Click each recommendation to see the details</p>
+
+<div class="coaching-card" onclick="this.classList.toggle('open')">
+<h4>Convert 12 meetings to async updates <span class="arrow">&#9660;</span></h4>
+<div class="coaching-detail"><br>Go2 identified 12 recurring meetings that are purely status updates. No decisions are made, no collaboration needed. Recommendation: Replace with a Go2-generated async digest.<br><br><strong>Impact:</strong> Saves 6.5 hours/week per team, $169K/year for a 20-person team.<br><strong>Affected meetings:</strong> Monday standup overflow, Wednesday project sync, Thursday dept update, Friday wrap-up...</div>
+</div>
+<div class="coaching-card" onclick="this.classList.toggle('open')">
+<h4>Remove 19 unnecessary attendees this week <span class="arrow">&#9660;</span></h4>
+<div class="coaching-detail"><br>Go2 analyzed participation data: 19 attendees across 8 meetings spoke zero words and took no actions. They're in the meeting "just in case."<br><br><strong>Recommendation:</strong> Make them optional, send them the Go2 summary instead. They get the info in 2 minutes instead of 60.<br><strong>Impact:</strong> Saves 19+ hours of human time per week.</div>
+</div>
+<div class="coaching-card" onclick="this.classList.toggle('open')">
+<h4>Shorten 18 meetings from 60 to 30 minutes <span class="arrow">&#9660;</span></h4>
+<div class="coaching-detail"><br>Parkinson's Law: work expands to fill the time available. Go2 found that 18 hour-long meetings consistently wrap up meaningful discussion in 25-30 minutes, with the last 30 minutes being filler.<br><br><strong>Recommendation:</strong> Default to 30 minutes. If more time is needed, schedule a follow-up.<br><strong>Impact:</strong> 9 hours/week returned to focus time.</div>
+</div>
+<div class="coaching-card" onclick="this.classList.toggle('open')">
+<h4>Create 2 meeting-free focus blocks per week <span class="arrow">&#9660;</span></h4>
+<div class="coaching-detail"><br>Your team has zero 4-hour focus blocks this week. Deep work requires sustained attention. Go2 recommends blocking Tuesday and Thursday mornings (9am-1pm) as no-meeting zones.<br><br><strong>Impact:</strong> Teams with protected focus time show 31% higher output on complex tasks.</div>
+</div>
+<div class="coaching-card" onclick="this.classList.toggle('open')">
+<h4>Add agendas to 72% of meetings that lack them <span class="arrow">&#9660;</span></h4>
+<div class="coaching-detail"><br>Meetings without agendas are 2.5x more likely to run over time and 3x more likely to end without clear action items. Go2 can auto-generate agendas based on meeting history and context.<br><br><strong>Impact:</strong> Meetings with agendas are 34% shorter and 2x more likely to produce decisions.</div>
+</div>
+</div>
+
+<div style="padding:2rem">
+<h2 style="text-align:center;font-size:2rem;font-weight:700;margin-bottom:2rem">After 90 Days of Go2 Meeting Coaching</h2>
+<div class="impact-grid">
+<div class="impact-item"><div class="before">31h</div><div class="after">14h</div><p>Weekly meeting time</p></div>
+<div class="impact-item"><div class="before">2.1h</div><div class="after">5.5h</div><p>Largest focus block</p></div>
+<div class="impact-item"><div class="before">67%</div><div class="after">12%</div><p>Unnecessary meetings</p></div>
+<div class="impact-item"><div class="before">$37K</div><div class="after">$16K</div><p>Annual meeting cost per employee</p></div>
+</div>
+</div>
+
+<div class="cta-section">
+<h2>Take Back Your Calendar</h2>
+<p>Go2 doesn't cancel your meetings. It coaches you to make every minute count.</p>
+<a href="https://go2.io" class="cta-btn">Reclaim 17 Hours/Week &rarr;</a>
+</div>
+
+<script>
+function showDash(period){
+    document.querySelectorAll('.dash-tab').forEach(t=>t.classList.remove('active'));
+    event.target.classList.add('active');
+}
+let cost=0;const target=12300;
+function animCost(){cost=Math.min(cost+200,target);document.getElementById('weekCost').textContent='$'+cost.toLocaleString();if(cost<target)requestAnimationFrame(animCost);}
+const obs=new IntersectionObserver(e=>{e.forEach(en=>{if(en.isIntersecting){animCost();obs.disconnect();}});});
+obs.observe(document.getElementById('weekCost'));
+</script>
+</body>
+</html>

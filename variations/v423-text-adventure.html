@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2: The Productivity Quest - Text Adventure</title>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#33ff33;font-family:'IBM Plex Mono',monospace;min-height:100vh;display:flex;justify-content:center;align-items:flex-start;padding:20px}
+.container{max-width:800px;width:100%;position:relative}
+.header{text-align:center;padding:30px 0 20px;border-bottom:1px solid #1a3a1a}
+.header h1{font-family:'Press Start 2P',monospace;font-size:20px;color:#33ff33;text-shadow:0 0 10px rgba(51,255,51,0.5);margin-bottom:10px}
+.header p{font-size:12px;color:#1a8a1a}
+.header .version{font-size:10px;color:#0d5a0d;margin-top:5px}
+.screen{background:#050505;border:2px solid #1a3a1a;border-radius:8px;margin-top:20px;overflow:hidden;box-shadow:0 0 30px rgba(51,255,51,0.1),inset 0 0 60px rgba(0,0,0,0.5)}
+.scanlines{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1000;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.1) 2px,rgba(0,0,0,0.1) 4px)}
+.crt-flicker{animation:flicker 0.15s infinite}
+@keyframes flicker{0%{opacity:1}50%{opacity:0.98}100%{opacity:1}}
+.output{padding:20px;min-height:400px;max-height:60vh;overflow-y:auto;font-size:14px;line-height:1.8}
+.output::-webkit-scrollbar{width:6px}
+.output::-webkit-scrollbar-track{background:#0a0a0a}
+.output::-webkit-scrollbar-thumb{background:#1a3a1a;border-radius:3px}
+.line{margin-bottom:2px;opacity:0;animation:typeIn 0.05s forwards}
+@keyframes typeIn{to{opacity:1}}
+.line.room-title{color:#ffff33;font-weight:700;font-size:16px;margin-top:15px;margin-bottom:5px;text-transform:uppercase}
+.line.description{color:#22cc22}
+.line.system{color:#1a8a1a;font-style:italic}
+.line.error{color:#ff3333}
+.line.success{color:#33ffff}
+.line.item{color:#ff9933}
+.line.hint{color:#9933ff}
+.line.dramatic{color:#ff33ff;font-weight:700}
+.line.stat{color:#33ccff}
+.input-area{display:flex;align-items:center;padding:10px 20px;border-top:1px solid #1a3a1a;background:#030303}
+.prompt{color:#33ff33;margin-right:8px;font-weight:700}
+.input-field{flex:1;background:transparent;border:none;color:#33ff33;font-family:'IBM Plex Mono',monospace;font-size:14px;outline:none;caret-color:#33ff33}
+.input-field::placeholder{color:#0d5a0d}
+.sidebar{position:fixed;right:20px;top:20px;width:220px;background:#050505;border:1px solid #1a3a1a;border-radius:8px;padding:15px;font-size:11px}
+.sidebar h3{color:#ffff33;font-family:'Press Start 2P',monospace;font-size:8px;margin-bottom:10px;letter-spacing:1px}
+.sidebar-section{margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #0d2a0d}
+.sidebar-section:last-child{border-bottom:none}
+.stat-bar{display:flex;justify-content:space-between;margin:3px 0}
+.stat-bar .label{color:#1a8a1a}
+.stat-bar .value{color:#33ff33}
+.bar{width:100px;height:6px;background:#0d2a0d;border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle}
+.bar-fill{height:100%;background:#33ff33;border-radius:3px;transition:width 0.5s}
+.inventory-list{color:#ff9933;font-size:10px;line-height:1.8}
+.map-mini{font-family:'VT323',monospace;font-size:14px;line-height:1.2;color:#1a3a1a;letter-spacing:2px}
+.map-mini .current{color:#ffff33}
+.map-mini .visited{color:#33ff33}
+.help-panel{display:none;background:#0a0a0a;border:1px solid #1a3a1a;border-radius:8px;padding:20px;margin-top:10px}
+.help-panel.visible{display:block}
+.help-panel h3{color:#ffff33;margin-bottom:10px}
+.help-cmd{display:flex;gap:15px;margin:4px 0;font-size:12px}
+.help-cmd .cmd{color:#33ffff;min-width:120px}
+.help-cmd .desc{color:#1a8a1a}
+@media(max-width:1100px){.sidebar{display:none}}
+@media(max-width:600px){.header h1{font-size:14px}.output{font-size:12px;padding:12px}}
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+<div class="container crt-flicker">
+<div class="header">
+<h1>GO2: THE PRODUCTIVITY QUEST</h1>
+<p>A Text Adventure in Workforce Optimization</p>
+<div class="version">v2.0 | (c) 2026 Go2.io Interactive Fiction Division</div>
+</div>
+<div class="screen">
+<div class="output" id="output"></div>
+<div class="input-area">
+<span class="prompt">&gt;</span>
+<input type="text" class="input-field" id="input" placeholder="Type a command..." autofocus autocomplete="off">
+</div>
+</div>
+</div>
+
+<div class="sidebar" id="sidebar">
+<div class="sidebar-section">
+<h3>STATS</h3>
+<div class="stat-bar"><span class="label">Productivity</span><span class="value" id="statProd">20%</span></div>
+<div><div class="bar"><div class="bar-fill" id="barProd" style="width:20%"></div></div></div>
+<div class="stat-bar"><span class="label">Team Morale</span><span class="value" id="statMorale">30%</span></div>
+<div><div class="bar"><div class="bar-fill" id="barMorale" style="width:30%;background:#ffff33"></div></div></div>
+<div class="stat-bar"><span class="label">AI Readiness</span><span class="value" id="statAI">0%</span></div>
+<div><div class="bar"><div class="bar-fill" id="barAI" style="width:0%;background:#33ffff"></div></div></div>
+</div>
+<div class="sidebar-section">
+<h3>INVENTORY</h3>
+<div class="inventory-list" id="inventory">Empty</div>
+</div>
+<div class="sidebar-section">
+<h3>MAP</h3>
+<div class="map-mini" id="minimap"></div>
+</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const output = $('output');
+const input = $('input');
+
+// Game state
+const state = {
+  room: 'lobby',
+  inventory: [],
+  visited: new Set(['lobby']),
+  productivity: 20,
+  morale: 30,
+  aiReadiness: 0,
+  flags: {},
+  moves: 0
+};
+
+const rooms = {
+  lobby: {
+    title: 'Company Lobby',
+    desc: 'You stand in the sterile lobby of MegaCorp Industries. Fluorescent lights flicker overhead. A RECEPTION DESK sits abandoned. To the NORTH is the open office. To the EAST is the break room. A motivational poster on the wall reads "SYNERGIZE OR DIE." It\'s peeling at the corners.',
+    exits: {north:'office',east:'breakroom'},
+    items: ['old_memo'],
+    look: {
+      desk: 'The reception desk is covered in old TPS reports and a dusty computer showing a crashed Time Doctor installation.',
+      poster: 'The poster shows a stock photo of people high-fiving. Someone has drawn devil horns on all of them.',
+      memo: 'A crumpled memo reads: "ALL EMPLOYEES: Screen monitoring will be increased to every 30 seconds. This is for YOUR benefit. -Management"'
+    }
+  },
+  office: {
+    title: 'The Open Office',
+    desc: 'A vast sea of cubicles stretches before you. The sound of mechanical keyboards and quiet desperation fills the air. EMPLOYEES sit hunched at their desks, eyes darting nervously at their screens. A SURVEILLANCE CAMERA blinks red in the corner. To the SOUTH is the lobby. To the NORTH is the server room. To the WEST is the conference room.',
+    exits: {south:'lobby',north:'server_room',west:'conference'},
+    items: ['surveillance_report'],
+    look: {
+      employees: 'They look tired. One whispers: "Is it safe to take a bathroom break? The tracker shows me as idle after 2 minutes..."',
+      camera: 'A sophisticated camera system. You notice it\'s connected to employee monitoring software. The LED flashes menacingly.',
+      cubicles: 'Each cubicle has a small webcam pointed at the employee. Morale is clearly at rock bottom.',
+      screens: 'Every screen has a small icon in the system tray — a watching eye. The monitoring software. It screenshots every 3 minutes.'
+    }
+  },
+  breakroom: {
+    title: 'The Break Room',
+    desc: 'A sad break room with a broken coffee machine and vending machine full of expired snacks. A WHITEBOARD on the wall is covered in passive-aggressive notes about "time theft." A door to the WEST leads back to the lobby. The SOUTH door leads to the parking garage.',
+    exits: {west:'lobby',south:'garage'},
+    items: ['coffee_mug'],
+    look: {
+      whiteboard: 'Notes include: "REMINDER: Breaks longer than 4 minutes will be flagged." and "The monitoring software IS your friend." Someone added: "No it isn\'t."',
+      coffee: 'The coffee machine is broken. A sign says "Out of order since Q3." That was two years ago.',
+      vending: 'The vending machine contains nothing but crushed dreams and expired granola bars.'
+    }
+  },
+  conference: {
+    title: 'Conference Room "Synergy"',
+    desc: 'A glass-walled conference room. The table seats 20, but it\'s set up for a meeting of 3. The PROJECTOR shows a slide titled "Why Our Productivity Metrics Are Down 34%." There\'s a LAPTOP on the table. To the EAST is the open office.',
+    exits: {east:'office'},
+    items: ['go2_usb'],
+    look: {
+      projector: 'Slide 1 of 847: "Productivity Down 34% — Proposed Solution: More Monitoring." The irony is physically painful.',
+      laptop: 'The laptop is open to a browser tab: "go2.io — AI Productivity Coaching." Someone was researching alternatives!',
+      table: 'Under the table you find a crumpled napkin with "THERE HAS TO BE A BETTER WAY" written in shaky handwriting.',
+      slides: 'The presentation is a masterclass in corporate dysfunction. Slide 42: "Employee of the Month: The surveillance camera."'
+    }
+  },
+  server_room: {
+    title: 'The Server Room',
+    desc: 'Rows of humming servers fill this cold room. The MONITORING SERVER blinks furiously, processing thousands of employee screenshots per hour. A TERMINAL sits in the corner, cursor blinking. To the SOUTH is the open office. An ELEVATOR leads UP to the executive floor.',
+    exits: {south:'office',up:'executive'},
+    items: [],
+    look: {
+      server: 'The monitoring server\'s label reads "PANOPTICON-3000." It stores 2TB of employee screenshots daily. What a waste.',
+      terminal: 'The terminal shows: "MONITORING ACTIVE: 247 employees tracked. 1,847 screenshots/hour. Storage: 89% full. Cost: $47,000/month."',
+      racks: 'Most of the server budget goes to storing surveillance data. The actual business applications are starved for resources.'
+    }
+  },
+  executive: {
+    title: 'Executive Floor',
+    desc: 'Plush carpets, mahogany desks, and the faint smell of expensive coffee. The CEO\'s OFFICE door is ahead. A DASHBOARD on the wall shows real-time monitoring metrics (all red). To the DOWN elevator returns to the server room.',
+    exits: {down:'server_room'},
+    items: [],
+    look: {
+      dashboard: 'Revenue: DOWN. Turnover: UP. Morale: CRITICAL. The CEO has circled "BUY MORE MONITORING" in red marker. There\'s also a sticky note: "Meeting with Go2.io rep — Tuesday."',
+      office: 'The CEO\'s door is locked. You hear muffled sobbing inside. Even the corner office can\'t escape the dysfunction.',
+      carpet: 'The carpet probably cost more than the entire team\'s wellness budget.'
+    }
+  },
+  garage: {
+    title: 'Parking Garage',
+    desc: 'The underground parking garage. It\'s unusually full for a Monday — people are arriving early and leaving late because the monitoring software tracks their hours. A DELIVERY TRUCK is parked near the entrance. To the NORTH is the break room.',
+    exits: {north:'breakroom'},
+    items: ['go2_box'],
+    look: {
+      truck: 'The delivery truck has "Go2.io — Delivering the Future of Work" on the side. A BOX has been left by the loading dock.',
+      cars: 'Every car has a parking pass with arrival/departure times. Another form of surveillance.',
+      box: 'A sleek package labeled "Go2 AI Productivity Platform — Pilot Kit." This could change everything!'
+    }
+  }
+};
+
+const items = {
+  old_memo: {name:'Crumpled Memo',desc:'A memo about increasing surveillance. Evidence of dysfunction.'},
+  surveillance_report: {name:'Surveillance Report',desc:'Monthly monitoring report. 89,000 screenshots taken. 0 productivity insights gained.'},
+  coffee_mug: {name:'Empty Coffee Mug',desc:'A mug reading "I survived another day of being monitored." Sad.'},
+  go2_usb: {name:'Go2 USB Drive',desc:'A USB drive loaded with the Go2 AI platform installer. This is the key!'},
+  go2_box: {name:'Go2 Pilot Kit',desc:'A complete Go2 deployment package. AI coaching, auto-docs, workforce intelligence. No surveillance included.'}
+};
+
+function addLine(text, cls=''){
+  const div = document.createElement('div');
+  div.className = 'line'+(cls?' '+cls:'');
+  div.textContent = text;
+  div.style.animationDelay = '0s';
+  output.appendChild(div);
+  output.scrollTop = output.scrollHeight;
+}
+
+function addLines(lines, cls='', delay=50){
+  lines.forEach((l,i)=>{
+    setTimeout(()=>addLine(l,cls),i*delay);
+  });
+}
+
+function updateStats(){
+  $('statProd').textContent = state.productivity+'%';
+  $('barProd').style.width = state.productivity+'%';
+  $('statMorale').textContent = state.morale+'%';
+  $('barMorale').style.width = state.morale+'%';
+  $('statAI').textContent = state.aiReadiness+'%';
+  $('barAI').style.width = state.aiReadiness+'%';
+  $('inventory').innerHTML = state.inventory.length?state.inventory.map(i=>'• '+items[i].name).join('<br>'):'Empty';
+  updateMap();
+}
+
+function updateMap(){
+  const map = [
+    '         [EXEC]     ',
+    '           |        ',
+    '[CONF]-[OFFICE]-    ',
+    '       [LOBBY]-[BRK]',
+    '               |    ',
+    '             [GAR]  '
+  ];
+  const roomPos = {executive:0,server_room:1,conference:2,office:2,lobby:3,breakroom:3,garage:5};
+  // Simple text map
+  let mapStr = '';
+  const abbrevs = {lobby:'LOBBY',office:'OFFICE',breakroom:'BRK',conference:'CONF',server_room:'SRVR',executive:'EXEC',garage:'GAR'};
+  for(const [room,abbr] of Object.entries(abbrevs)){
+    const cls = room===state.room?'current':state.visited.has(room)?'visited':'';
+    mapStr += `<span class="${cls}">[${abbr}]</span> `;
+  }
+  $('minimap').innerHTML = mapStr;
+}
+
+function enterRoom(roomId){
+  state.room = roomId;
+  state.visited.add(roomId);
+  const room = rooms[roomId];
+  addLine('');
+  addLine(room.title,'room-title');
+  addLine(room.desc,'description');
+  if(room.items && room.items.length){
+    const available = room.items.filter(i=>!state.inventory.includes(i));
+    if(available.length){
+      available.forEach(i=>addLine('You notice: '+items[i].name,'item'));
+    }
+  }
+  const exits = Object.keys(room.exits);
+  addLine('Exits: '+exits.join(', ').toUpperCase(),'system');
+  updateStats();
+}
+
+function processCommand(cmd){
+  cmd = cmd.toLowerCase().trim();
+  if(!cmd) return;
+  state.moves++;
+  addLine('');
+  addLine('> '+cmd,'system');
+
+  const parts = cmd.split(/\s+/);
+  const verb = parts[0];
+  const noun = parts.slice(1).join(' ');
+  const room = rooms[state.room];
+
+  // Movement
+  const directions = ['north','south','east','west','up','down','n','s','e','w','u','d'];
+  const dirMap = {n:'north',s:'south',e:'east',w:'west',u:'up',d:'down'};
+  const dir = dirMap[verb]||verb;
+  if(directions.includes(verb)&&room.exits[dir]){
+    enterRoom(room.exits[dir]);
+    return;
+  }
+  if(directions.includes(verb)){
+    addLine('You can\'t go that way.','error');
+    return;
+  }
+
+  // Go/move
+  if((verb==='go'||verb==='move'||verb==='walk')&&noun){
+    const d = dirMap[noun]||noun;
+    if(room.exits[d]){enterRoom(room.exits[d]);return;}
+    addLine('You can\'t go that way.','error');
+    return;
+  }
+
+  // Look
+  if(verb==='look'||verb==='examine'||verb==='l'||verb==='x'){
+    if(!noun){enterRoom(state.room);return;}
+    const lookTarget = noun.replace(/^(at|the)\s+/,'');
+    // Check room lookables
+    if(room.look){
+      for(const[key,val]of Object.entries(room.look)){
+        if(lookTarget.includes(key)){addLine(val,'description');return;}
+      }
+    }
+    // Check inventory
+    const invItem = state.inventory.find(i=>items[i].name.toLowerCase().includes(lookTarget));
+    if(invItem){addLine(items[invItem].desc,'item');return;}
+    addLine('You don\'t see that here.','error');
+    return;
+  }
+
+  // Take/get
+  if(verb==='take'||verb==='get'||verb==='grab'||verb==='pick'){
+    const target = noun.replace(/^(up|the)\s+/,'');
+    if(!target){addLine('Take what?','error');return;}
+    if(room.items){
+      const found = room.items.find(i=>items[i].name.toLowerCase().includes(target));
+      if(found&&!state.inventory.includes(found)){
+        state.inventory.push(found);
+        addLine('Taken: '+items[found].name,'success');
+        if(found==='go2_usb'){state.aiReadiness+=30;addLine('Your AI Readiness increases! You have the installer!','stat');}
+        if(found==='go2_box'){state.aiReadiness+=40;addLine('Your AI Readiness surges! The full platform is here!','stat');}
+        if(found==='surveillance_report'){state.morale-=5;addLine('Reading this report makes you sad. Morale decreases.','error');}
+        updateStats();
+        return;
+      }
+    }
+    addLine('You can\'t take that.','error');
+    return;
+  }
+
+  // Inventory
+  if(verb==='inventory'||verb==='i'||verb==='inv'){
+    if(!state.inventory.length){addLine('Your inventory is empty.','system');return;}
+    addLine('You are carrying:','system');
+    state.inventory.forEach(i=>addLine('  '+items[i].name+' - '+items[i].desc,'item'));
+    return;
+  }
+
+  // Use/install
+  if(verb==='use'||verb==='install'||verb==='deploy'||verb==='implement'){
+    if(noun.includes('go2')||noun.includes('usb')||noun.includes('platform')||noun.includes('box')){
+      if(state.room==='server_room'&&(state.inventory.includes('go2_usb')||state.inventory.includes('go2_box'))){
+        if(state.flags.go2_installed){addLine('Go2 is already deployed and running!','system');return;}
+        state.flags.go2_installed = true;
+        state.productivity = 95;
+        state.morale = 95;
+        state.aiReadiness = 100;
+        addLine('','');
+        addLine('*** INSTALLING GO2 AI PRODUCTIVITY PLATFORM ***','dramatic');
+        setTimeout(()=>addLine('[████████████████████] 100%','success'),500);
+        setTimeout(()=>{
+          addLine('','');
+          addLine('The monitoring server goes dark. In its place, Go2 springs to life.','description');
+          addLine('','');
+          addLine('Across the building, something changes. Employees look up from their screens.','description');
+          addLine('The surveillance cameras power down. The keystroke loggers stop.','description');
+          addLine('In their place: AI coaching suggestions, auto-generated documentation,','description');
+          addLine('workforce intelligence that helps instead of watches.','description');
+          addLine('','');
+          addLine('An employee whispers: "Is this... is this what it feels like to be trusted?"','success');
+          addLine('','');
+          addLine('PRODUCTIVITY: 95% (+75%) | MORALE: 95% (+65%) | AI READINESS: 100%','stat');
+          addLine('','');
+          addLine('Congratulations! You have transformed MegaCorp from a surveillance','dramatic');
+          addLine('dystopia into a thriving, AI-coached workplace!','dramatic');
+          addLine('','');
+          addLine('You solved it in '+state.moves+' moves.','success');
+          addLine('','');
+          addLine('The real Go2 is at go2.io — no text adventure required.','success');
+          addLine('Type RESTART to play again, or visit go2.io to experience the real thing.','system');
+          updateStats();
+        },1000);
+        return;
+      }
+      if(!state.inventory.includes('go2_usb')&&!state.inventory.includes('go2_box')){
+        addLine('You don\'t have Go2 yet. Look around — there\'s a USB drive and a delivery somewhere...','hint');
+        return;
+      }
+      addLine('You need to install Go2 in the SERVER ROOM where it can replace the monitoring system.','hint');
+      return;
+    }
+    addLine('Use what exactly?','error');
+    return;
+  }
+
+  // Talk
+  if(verb==='talk'||verb==='speak'||verb==='ask'){
+    if(state.room==='office'&&(noun.includes('employee')||noun.includes('people')||noun.includes('worker'))){
+      addLine('"Please help us," they whisper. "The monitoring software takes a screenshot every 3 minutes. We can\'t breathe. We heard there\'s something called Go2 that actually helps instead of watches..."','description');
+      state.morale += 5;
+      addLine('Team morale improves slightly. They know someone cares.','stat');
+      updateStats();
+      return;
+    }
+    addLine('There\'s nobody here to talk to... or they\'re too afraid of being monitored to speak.','system');
+    return;
+  }
+
+  // Disable/destroy
+  if(verb==='disable'||verb==='destroy'||verb==='smash'||verb==='break'){
+    if(noun.includes('camera')||noun.includes('monitor')){
+      addLine('You can\'t just destroy the surveillance system — it\'s too deeply embedded. You need to REPLACE it with something better. Something like Go2.','hint');
+      return;
+    }
+  }
+
+  // Help
+  if(verb==='help'||verb==='?'||verb==='commands'){
+    addLine('Available commands:','system');
+    addLine('  NORTH/SOUTH/EAST/WEST/UP/DOWN — Move','stat');
+    addLine('  LOOK [thing] — Examine your surroundings','stat');
+    addLine('  TAKE [item] — Pick up an item','stat');
+    addLine('  USE/INSTALL [item] — Use an item','stat');
+    addLine('  TALK [person] — Talk to someone','stat');
+    addLine('  INVENTORY — Check your items','stat');
+    addLine('  HINT — Get a hint','stat');
+    addLine('  RESTART — Start over','stat');
+    return;
+  }
+
+  // Hint
+  if(verb==='hint'||verb==='hints'){
+    if(!state.inventory.includes('go2_usb')&&!state.inventory.includes('go2_box')){
+      addLine('HINT: Explore the building. There\'s a USB drive in the conference room and a delivery in the parking garage. Either will work.','hint');
+    } else if(!state.flags.go2_installed){
+      addLine('HINT: Take your Go2 gear to the server room (NORTH of the office) and INSTALL GO2 to replace the monitoring system.','hint');
+    } else {
+      addLine('You\'ve already won! Visit go2.io for the real experience.','hint');
+    }
+    return;
+  }
+
+  // Restart
+  if(verb==='restart'||verb==='reset'){
+    state.room='lobby';state.inventory=[];state.visited=new Set(['lobby']);
+    state.productivity=20;state.morale=30;state.aiReadiness=0;state.flags={};state.moves=0;
+    output.innerHTML='';
+    startGame();
+    return;
+  }
+
+  // Easter eggs
+  if(cmd==='xyzzy'){addLine('A hollow voice says "That trick won\'t boost productivity."','hint');return;}
+  if(cmd==='plugh'){addLine('The surveillance system blinks nervously.','hint');return;}
+  if(noun.includes('surveillance')||noun.includes('screenshot')){
+    addLine('The very mention of surveillance makes the room feel colder. There has to be a better way...','description');
+    return;
+  }
+
+  addLine('I don\'t understand "'+cmd+'". Type HELP for commands.','error');
+}
+
+function startGame(){
+  addLine('GO2: THE PRODUCTIVITY QUEST','room-title');
+  addLine('An Interactive Fiction by Go2.io','system');
+  addLine('Type HELP for commands. Release 2 / Serial number 260317','system');
+  addLine('','');
+  addLine('You are a newly hired consultant at MegaCorp Industries.','description');
+  addLine('Your mission: save this company from its own dysfunction.','description');
+  addLine('They\'ve been using employee surveillance software for years,','description');
+  addLine('and morale, productivity, and retention are all in freefall.','description');
+  addLine('','');
+  addLine('Somewhere in this building is the solution: Go2, an AI platform','description');
+  addLine('that coaches instead of monitors. Find it. Install it. Save everyone.','description');
+  enterRoom('lobby');
+}
+
+input.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    processCommand(input.value);
+    input.value='';
+  }
+});
+
+// Click to focus
+document.addEventListener('click',()=>input.focus());
+
+startGame();
+</script>
+</body>
+</html>

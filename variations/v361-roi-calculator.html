@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 ROI Calculator | See Your AI Productivity Returns</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#6C5CE7;--primary-dark:#5A4BD1;--secondary:#00CEC9;--accent:#FD79A8;--dark:#1a1a2e;--darker:#16162a;--card:#ffffff;--text:#2d3436;--text-light:#636e72;--bg:#f8f9fe;--success:#00b894;--warning:#fdcb6e;--danger:#e17055;--gradient:linear-gradient(135deg,#6C5CE7,#00CEC9)}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+.hero{background:var(--gradient);padding:60px 20px 40px;text-align:center;color:#fff;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle,rgba(255,255,255,0.1) 0%,transparent 50%);animation:pulse 8s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.hero h1{font-size:2.8rem;font-weight:900;margin-bottom:12px;position:relative}
+.hero p{font-size:1.2rem;opacity:0.9;max-width:600px;margin:0 auto;position:relative}
+.container{max-width:1100px;margin:0 auto;padding:40px 20px}
+.calculator-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:20px}
+@media(max-width:768px){.calculator-grid{grid-template-columns:1fr}}
+.input-card{background:var(--card);border-radius:20px;padding:40px;box-shadow:0 10px 40px rgba(108,92,231,0.08)}
+.input-card h2{font-size:1.5rem;font-weight:700;margin-bottom:24px;color:var(--dark)}
+.form-group{margin-bottom:24px}
+.form-group label{display:block;font-weight:600;margin-bottom:8px;color:var(--text);font-size:0.95rem}
+.form-group .hint{font-size:0.82rem;color:var(--text-light);margin-bottom:8px}
+.form-group input[type="range"]{width:100%;-webkit-appearance:none;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--primary),var(--secondary));outline:none;margin:8px 0}
+.form-group input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.2);cursor:pointer;border:3px solid var(--primary)}
+.range-labels{display:flex;justify-content:space-between;font-size:0.85rem;color:var(--text-light)}
+.range-value{text-align:center;font-size:2rem;font-weight:800;color:var(--primary);margin:4px 0}
+select{width:100%;padding:14px 16px;border:2px solid #e0e0e0;border-radius:12px;font-size:1rem;font-family:'Inter',sans-serif;background:#fff;cursor:pointer;transition:border-color 0.3s}
+select:focus{outline:none;border-color:var(--primary)}
+.results-card{background:var(--dark);border-radius:20px;padding:40px;color:#fff;box-shadow:0 10px 40px rgba(0,0,0,0.15);position:relative;overflow:hidden}
+.results-card::before{content:'';position:absolute;top:0;right:0;width:200px;height:200px;background:radial-gradient(circle,rgba(108,92,231,0.3),transparent);border-radius:50%}
+.results-card h2{font-size:1.5rem;font-weight:700;margin-bottom:24px;position:relative}
+.result-item{background:rgba(255,255,255,0.08);border-radius:14px;padding:20px;margin-bottom:16px;position:relative;transition:transform 0.3s}
+.result-item:hover{transform:translateX(4px)}
+.result-label{font-size:0.85rem;color:rgba(255,255,255,0.6);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px}
+.result-value{font-size:2rem;font-weight:800;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.result-value.savings{font-size:2.4rem}
+.chart-container{margin-top:24px;background:rgba(255,255,255,0.05);border-radius:14px;padding:20px;position:relative}
+.chart-container h3{font-size:0.9rem;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.6);margin-bottom:16px}
+canvas{width:100%;height:200px}
+.bar-chart{display:flex;align-items:flex-end;justify-content:space-around;height:180px;padding:0 10px}
+.bar-group{display:flex;flex-direction:column;align-items:center;flex:1;margin:0 6px}
+.bar{width:100%;max-width:50px;border-radius:8px 8px 0 0;transition:height 1s ease-out;position:relative}
+.bar.current{background:var(--danger)}
+.bar.with-go2{background:var(--secondary)}
+.bar-label{font-size:0.75rem;color:rgba(255,255,255,0.5);margin-top:8px;text-align:center}
+.bar-amount{font-size:0.8rem;font-weight:700;margin-bottom:4px;color:#fff}
+.legend{display:flex;justify-content:center;gap:24px;margin-top:16px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:0.82rem;color:rgba(255,255,255,0.7)}
+.legend-dot{width:12px;height:12px;border-radius:3px}
+.cta-section{text-align:center;margin-top:48px;padding:48px;background:var(--card);border-radius:20px;box-shadow:0 10px 40px rgba(108,92,231,0.08)}
+.cta-section h2{font-size:2rem;font-weight:800;margin-bottom:12px}
+.cta-section p{color:var(--text-light);margin-bottom:24px;font-size:1.1rem}
+.btn{display:inline-block;padding:16px 40px;background:var(--gradient);color:#fff;border:none;border-radius:12px;font-size:1.1rem;font-weight:700;cursor:pointer;text-decoration:none;transition:transform 0.3s,box-shadow 0.3s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(108,92,231,0.35)}
+.print-btn{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:10px 20px;border-radius:10px;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.9rem;margin-top:16px;transition:background 0.3s}
+.print-btn:hover{background:rgba(255,255,255,0.2)}
+.stat-strip{display:flex;gap:16px;margin-top:32px;flex-wrap:wrap}
+.stat-chip{flex:1;min-width:140px;background:rgba(255,255,255,0.06);border-radius:10px;padding:14px;text-align:center}
+.stat-chip .num{font-size:1.4rem;font-weight:800;color:var(--secondary)}
+.stat-chip .lbl{font-size:0.75rem;color:rgba(255,255,255,0.5);margin-top:2px}
+@media print{.hero{padding:20px}.calculator-grid{grid-template-columns:1fr}.input-card{box-shadow:none;border:1px solid #ddd}.results-card{color:#000;background:#f5f5f5}.results-card::before{display:none}.result-value{color:var(--primary);-webkit-text-fill-color:var(--primary)}.print-btn,.cta-section{display:none}}
+</style>
+</head>
+<body>
+<div class="hero">
+<h1>AI Productivity ROI Calculator</h1>
+<p>See exactly how much your team can save with Go2's AI coaching platform. Real numbers, not guesses.</p>
+</div>
+<div class="container">
+<div class="calculator-grid">
+<div class="input-card">
+<h2>Your Team Details</h2>
+<div class="form-group">
+<label>Team Size</label>
+<div class="hint">Number of knowledge workers</div>
+<input type="range" id="teamSize" min="5" max="500" value="50" oninput="updateCalc()">
+<div class="range-value" id="teamSizeVal">50</div>
+<div class="range-labels"><span>5</span><span>250</span><span>500</span></div>
+</div>
+<div class="form-group">
+<label>Average Annual Salary</label>
+<div class="hint">Fully loaded cost per employee</div>
+<input type="range" id="avgSalary" min="40000" max="250000" value="85000" step="5000" oninput="updateCalc()">
+<div class="range-value" id="avgSalaryVal">$85,000</div>
+<div class="range-labels"><span>$40K</span><span>$145K</span><span>$250K</span></div>
+</div>
+<div class="form-group">
+<label>Industry</label>
+<select id="industry" onchange="updateCalc()">
+<option value="tech" data-waste="32">Technology</option>
+<option value="finance" data-waste="28">Financial Services</option>
+<option value="healthcare" data-waste="35">Healthcare</option>
+<option value="manufacturing" data-waste="30">Manufacturing</option>
+<option value="retail" data-waste="26">Retail</option>
+<option value="consulting" data-waste="34">Professional Services</option>
+<option value="education" data-waste="38">Education</option>
+<option value="government" data-waste="40">Government</option>
+</select>
+</div>
+<div class="form-group">
+<label>Current AI Adoption Level</label>
+<select id="aiLevel" onchange="updateCalc()">
+<option value="none" data-mult="1.0">None - No AI tools in use</option>
+<option value="basic" data-mult="0.8">Basic - Some ChatGPT usage</option>
+<option value="moderate" data-mult="0.6">Moderate - Several AI tools</option>
+<option value="advanced" data-mult="0.35">Advanced - Integrated AI workflows</option>
+</select>
+</div>
+<div class="form-group">
+<label>Annual Employee Turnover Rate</label>
+<input type="range" id="turnover" min="5" max="50" value="18" oninput="updateCalc()">
+<div class="range-value" id="turnoverVal">18%</div>
+<div class="range-labels"><span>5%</span><span>27%</span><span>50%</span></div>
+</div>
+</div>
+<div class="results-card">
+<h2>Your ROI Projection</h2>
+<div class="result-item">
+<div class="result-label">Annual Productivity Loss (Current)</div>
+<div class="result-value savings" id="currentLoss">$1,360,000</div>
+</div>
+<div class="result-item">
+<div class="result-label">Projected Annual Savings with Go2</div>
+<div class="result-value savings" id="projSavings">$816,000</div>
+</div>
+<div class="result-item">
+<div class="result-label">Go2 Annual Investment</div>
+<div class="result-value" id="go2Cost">$54,000</div>
+</div>
+<div class="result-item">
+<div class="result-label">Net ROI</div>
+<div class="result-value savings" id="netROI">1,411%</div>
+</div>
+<div class="stat-strip">
+<div class="stat-chip"><div class="num" id="hoursRecovered">0</div><div class="lbl">Hours Recovered/yr</div></div>
+<div class="stat-chip"><div class="num" id="paybackDays">0</div><div class="lbl">Payback (days)</div></div>
+<div class="stat-chip"><div class="num" id="perEmployee">$0</div><div class="lbl">Savings/Employee</div></div>
+</div>
+<div class="chart-container">
+<h3>Monthly Cost Comparison (12 months)</h3>
+<div class="bar-chart" id="barChart"></div>
+<div class="legend">
+<div class="legend-item"><div class="legend-dot" style="background:var(--danger)"></div>Without Go2</div>
+<div class="legend-item"><div class="legend-dot" style="background:var(--secondary)"></div>With Go2</div>
+</div>
+</div>
+<button class="print-btn" onclick="window.print()">Print Report</button>
+</div>
+</div>
+<div class="cta-section">
+<h2>Ready to unlock <span id="ctaSavings">$816,000</span> in savings?</h2>
+<p>Join forward-thinking teams using Go2 to make AI actually work. 95% of AI projects fail without proper adoption coaching.</p>
+<a href="https://go2.io" class="btn">Start Free Trial</a>
+</div>
+</div>
+<script>
+function formatCurrency(n){if(n>=1000000)return'$'+( n/1000000).toFixed(1)+'M';return'$'+n.toLocaleString()}
+function formatNum(n){return n.toLocaleString()}
+function animateValue(el,start,end,duration,formatter){
+  let startTime=null;
+  const step=(ts)=>{
+    if(!startTime)startTime=ts;
+    const p=Math.min((ts-startTime)/duration,1);
+    const ease=1-Math.pow(1-p,3);
+    const val=Math.floor(start+ease*(end-start));
+    el.textContent=formatter?formatter(val):val;
+    if(p<1)requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+let prevValues={};
+function updateCalc(){
+  const teamSize=parseInt(document.getElementById('teamSize').value);
+  const avgSalary=parseInt(document.getElementById('avgSalary').value);
+  const industry=document.getElementById('industry');
+  const wastePercent=parseInt(industry.options[industry.selectedIndex].dataset.waste);
+  const aiLevel=document.getElementById('aiLevel');
+  const aiMult=parseFloat(aiLevel.options[aiLevel.selectedIndex].dataset.mult);
+  const turnover=parseInt(document.getElementById('turnover').value);
+  document.getElementById('teamSizeVal').textContent=teamSize;
+  document.getElementById('avgSalaryVal').textContent='$'+avgSalary.toLocaleString();
+  document.getElementById('turnoverVal').textContent=turnover+'%';
+  const hourlyRate=avgSalary/2080;
+  const wastedHoursPerEmployee=(wastePercent/100)*2080;
+  const totalWastedHours=wastedHoursPerEmployee*teamSize;
+  const currentLoss=Math.round(totalWastedHours*hourlyRate);
+  const go2RecoveryRate=0.60*aiMult;
+  const projSavings=Math.round(currentLoss*go2RecoveryRate);
+  const go2CostPerUser=90;
+  const go2AnnualCost=teamSize*go2CostPerUser*12;
+  const netSavings=projSavings-go2AnnualCost;
+  const roi=Math.round((netSavings/go2AnnualCost)*100);
+  const hoursRecovered=Math.round(totalWastedHours*go2RecoveryRate);
+  const paybackDays=Math.max(1,Math.round((go2AnnualCost/projSavings)*365));
+  const perEmployee=Math.round(netSavings/teamSize);
+  const turnoverCost=Math.round(teamSize*(turnover/100)*avgSalary*0.5);
+  const turnoverSavings=Math.round(turnoverCost*0.30);
+  const totalSavings=projSavings+turnoverSavings;
+  const els={currentLoss,projSavings:totalSavings,go2AnnualCost,roi,hoursRecovered,paybackDays,perEmployee};
+  const dur=600;
+  animateValue(document.getElementById('currentLoss'),prevValues.currentLoss||0,currentLoss,dur,formatCurrency);
+  animateValue(document.getElementById('projSavings'),prevValues.projSavings||0,totalSavings,dur,formatCurrency);
+  document.getElementById('go2Cost').textContent=formatCurrency(go2AnnualCost);
+  animateValue(document.getElementById('netROI'),prevValues.roi||0,roi,dur,v=>v+'%');
+  animateValue(document.getElementById('hoursRecovered'),prevValues.hoursRecovered||0,hoursRecovered,dur,formatNum);
+  document.getElementById('paybackDays').textContent=paybackDays;
+  animateValue(document.getElementById('perEmployee'),prevValues.perEmployee||0,perEmployee,dur,formatCurrency);
+  document.getElementById('ctaSavings').textContent=formatCurrency(totalSavings);
+  prevValues={currentLoss,projSavings:totalSavings,go2AnnualCost,roi,hoursRecovered,paybackDays,perEmployee};
+  renderChart(currentLoss,totalSavings,go2AnnualCost);
+}
+function renderChart(loss,savings,cost){
+  const container=document.getElementById('barChart');
+  container.innerHTML='';
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthlyLoss=loss/12;
+  const monthlySavings=savings/12;
+  const monthlyCost=cost/12;
+  const monthlyWithGo2=monthlyLoss-monthlySavings+monthlyCost;
+  const maxVal=Math.max(monthlyLoss,monthlyWithGo2);
+  months.forEach((m,i)=>{
+    const group=document.createElement('div');
+    group.className='bar-group';
+    const cumRamp=Math.min(1,0.4+(i*0.06));
+    const thisLoss=monthlyLoss;
+    const thisWithGo2=monthlyLoss-(monthlySavings*cumRamp)+monthlyCost;
+    const h1=Math.max(4,(thisLoss/maxVal)*150);
+    const h2=Math.max(4,(Math.max(0,thisWithGo2)/maxVal)*150);
+    group.innerHTML=`
+      <div style="display:flex;align-items:flex-end;gap:3px;height:160px">
+        <div><div class="bar-amount">${formatCurrency(Math.round(thisLoss))}</div><div class="bar current" style="height:${h1}px"></div></div>
+        <div><div class="bar-amount">${formatCurrency(Math.round(Math.max(0,thisWithGo2)))}</div><div class="bar with-go2" style="height:${h2}px"></div></div>
+      </div>
+      <div class="bar-label">${m}</div>`;
+    container.appendChild(group);
+  });
+}
+updateCalc();
+</script>
+</body>
+</html>

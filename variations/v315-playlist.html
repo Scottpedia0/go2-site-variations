@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Your Productivity Playlist</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#121212;color:#fff;min-height:100vh}
+.app{display:grid;grid-template-columns:1fr;max-width:900px;margin:0 auto;padding:1.5rem}
+.playlist-header{display:flex;align-items:flex-end;gap:1.5rem;margin-bottom:2rem;flex-wrap:wrap}
+.cover{width:180px;height:180px;border-radius:8px;background:linear-gradient(135deg,#1db954,#191414);display:flex;align-items:center;justify-content:center;font-size:4rem;font-weight:900;color:rgba(255,255,255,0.2);flex-shrink:0;position:relative;overflow:hidden}
+.cover-waves{position:absolute;bottom:0;left:0;right:0;height:60px}
+.cover-waves div{position:absolute;bottom:0;width:6px;background:#1db954;border-radius:3px 3px 0 0;opacity:0.6}
+.playlist-info h1{font-size:clamp(1.5rem,4vw,2.5rem);font-weight:900;margin-bottom:0.3rem}
+.playlist-info .meta{color:#888;font-size:0.85rem}
+.playlist-info .meta span{color:#1db954}
+.play-btn{margin-top:1rem;width:48px;height:48px;background:#1db954;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform 0.2s}
+.play-btn:hover{transform:scale(1.08)}
+.play-btn::after{content:'';border-left:18px solid #000;border-top:10px solid transparent;border-bottom:10px solid transparent;margin-left:3px}
+.track-list{margin-top:1rem}
+.track-header{display:grid;grid-template-columns:40px 1fr 100px 60px;padding:0.5rem 1rem;border-bottom:1px solid #282828;color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em}
+.track{display:grid;grid-template-columns:40px 1fr 100px 60px;padding:0.8rem 1rem;border-radius:4px;cursor:pointer;transition:background 0.2s;align-items:center}
+.track:hover{background:#1a1a1a}
+.track.playing{background:#1a1a1a}
+.track.playing .track-title{color:#1db954}
+.track-num{color:#888;font-size:0.9rem;text-align:center}
+.track-info{display:flex;align-items:center;gap:1rem}
+.track-art{width:40px;height:40px;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700}
+.track-title{font-weight:600;font-size:0.9rem;margin-bottom:0.2rem}
+.track-artist{font-size:0.75rem;color:#888}
+.track-saved{font-size:0.8rem;color:#1db954;text-align:center}
+.track-duration{font-size:0.85rem;color:#888;text-align:right}
+.now-playing{position:fixed;bottom:0;left:0;right:0;background:#282828;padding:0.8rem 2rem;display:flex;align-items:center;justify-content:space-between;border-top:1px solid #333;transform:translateY(100%);transition:transform 0.3s;z-index:10}
+.now-playing.show{transform:translateY(0)}
+.np-info{display:flex;align-items:center;gap:0.8rem}
+.np-art{width:40px;height:40px;border-radius:4px;background:#1db954}
+.np-title{font-size:0.85rem;font-weight:600}
+.np-artist{font-size:0.7rem;color:#888}
+.np-bar{flex:1;max-width:400px;margin:0 2rem}
+.np-progress{height:4px;background:#333;border-radius:2px;overflow:hidden}
+.np-fill{height:100%;background:#1db954;width:0;transition:width 0.1s linear}
+.np-time{font-size:0.7rem;color:#888;display:flex;justify-content:space-between;margin-top:0.3rem}
+.total-savings{text-align:center;padding:2rem;margin-top:1rem;background:#1a1a1a;border-radius:8px}
+.total-savings h3{color:#1db954;font-size:1.5rem;margin-bottom:0.5rem}
+.total-savings p{color:#888;font-size:0.9rem}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="playlist-header">
+<div class="cover">
+GO2
+<div class="cover-waves" id="coverWaves"></div>
+</div>
+<div class="playlist-info">
+<div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:#888">Playlist</div>
+<h1>Your Productivity Hits</h1>
+<div class="meta">By <span>Go2</span> - 8 tracks, 2hr 47min saved daily</div>
+<div class="meta">2,147,893 monthly listeners</div>
+<button class="play-btn" onclick="playAll()"></button>
+</div>
+</div>
+
+<div class="track-list">
+<div class="track-header"><span>#</span><span>Title</span><span>Saved</span><span>Time</span></div>
+<div id="tracks"></div>
+</div>
+
+<div class="total-savings">
+<h3>Total Daily Savings: 2hr 47min</h3>
+<p>That's 13.9 hours/week, or $1,112/month per employee. Go2 costs $8/user.</p>
+</div>
+</div>
+
+<div class="now-playing" id="nowPlaying">
+<div class="np-info">
+<div class="np-art" id="npArt"></div>
+<div><div class="np-title" id="npTitle">-</div><div class="np-artist" id="npArtist">-</div></div>
+</div>
+<div class="np-bar">
+<div class="np-progress"><div class="np-fill" id="npFill"></div></div>
+<div class="np-time"><span id="npCurrent">0:00</span><span id="npTotal">0:00</span></div>
+</div>
+</div>
+
+<script>
+const tracks=[
+{title:"Stop Copy-Pasting",artist:"Auto-Documentation",saved:"3:47/day",duration:"3:47",color:"#e74c3c",insight:"Go2 auto-captures repetitive data transfers and builds automations"},
+{title:"Focus Mode Activated",artist:"Context Switch Reducer",saved:"2:12/day",duration:"2:12",color:"#3498db",insight:"Reduces context switches from 47/day to 12/day with smart batching"},
+{title:"Meeting-Free Morning",artist:"Schedule Optimizer",saved:"1:30/day",duration:"1:30",color:"#9b59b6",insight:"Identifies meetings that should be async based on actual collaboration patterns"},
+{title:"The Process Whisperer",artist:"Auto-Documentation",saved:"0:45/day",duration:"0:45",color:"#2ecc71",insight:"Every workflow documented automatically as it happens"},
+{title:"Knowledge Stays",artist:"Tribal Knowledge Capture",saved:"0:35/day",duration:"0:35",color:"#f39c12",insight:"Critical processes captured before key employees leave"},
+{title:"AI Actually Works",artist:"Context Sidecar",saved:"1:20/day",duration:"1:20",color:"#1abc9c",insight:"Feeds real work context to Claude and ChatGPT"},
+{title:"Deep Work Symphony",artist:"Flow State Guardian",saved:"0:55/day",duration:"0:55",color:"#e67e22",insight:"Holds notifications during detected flow states"},
+{title:"The Automation Drop",artist:"Workflow Optimizer",saved:"2:03/day",duration:"2:03",color:"#e91e63",insight:"Identifies 3.2 automatable tasks per employee per week"},
+];
+
+const container=document.getElementById('tracks');
+tracks.forEach((t,i)=>{
+const el=document.createElement('div');
+el.className='track';
+el.onclick=()=>playTrack(i);
+el.innerHTML=`
+<div class="track-num">${i+1}</div>
+<div class="track-info">
+<div class="track-art" style="background:${t.color}">${t.title[0]}</div>
+<div><div class="track-title">${t.title}</div><div class="track-artist">${t.artist}</div></div>
+</div>
+<div class="track-saved">${t.saved}</div>
+<div class="track-duration">${t.duration}</div>`;
+container.appendChild(el);
+});
+
+// Cover waves
+const cw=document.getElementById('coverWaves');
+for(let i=0;i<20;i++){
+const d=document.createElement('div');
+d.style.left=i*9+'px';
+d.style.height=Math.random()*40+10+'px';
+cw.appendChild(d);
+}
+
+let currentTrack=-1;
+let playInterval;
+
+function playTrack(i){
+currentTrack=i;
+const t=tracks[i];
+document.querySelectorAll('.track').forEach((el,j)=>el.classList.toggle('playing',j===i));
+const np=document.getElementById('nowPlaying');
+np.classList.add('show');
+document.getElementById('npTitle').textContent=t.title;
+document.getElementById('npArtist').textContent=t.artist+' — '+t.insight;
+document.getElementById('npArt').style.background=t.color;
+const [m,s]=t.duration.split(':').map(Number);
+const totalSec=m*60+s;
+document.getElementById('npTotal').textContent=t.duration;
+let elapsed=0;
+clearInterval(playInterval);
+playInterval=setInterval(()=>{
+elapsed++;
+const pct=(elapsed/totalSec)*100;
+document.getElementById('npFill').style.width=pct+'%';
+document.getElementById('npCurrent').textContent=Math.floor(elapsed/60)+':'+String(elapsed%60).padStart(2,'0');
+if(elapsed>=totalSec){
+clearInterval(playInterval);
+if(currentTrack<tracks.length-1)playTrack(currentTrack+1);
+}
+},200); // 5x speed for demo
+}
+
+function playAll(){playTrack(0);}
+</script>
+</body>
+</html>

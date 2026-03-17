@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meeting Cost Calculator | Go2 - Watch Money Burn</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#6C5CE7;--secondary:#00CEC9;--accent:#FD79A8;--dark:#1a1a2e;--card:#ffffff;--text:#2d3436;--text-light:#636e72;--bg:#f8f9fe;--success:#00b894;--danger:#e17055;--gradient:linear-gradient(135deg,#6C5CE7,#00CEC9)}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
+.hero{background:linear-gradient(135deg,#e17055,#FD79A8);padding:50px 20px 40px;text-align:center;color:#fff;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
+.hero h1{font-size:2.5rem;font-weight:900;margin-bottom:10px;position:relative}
+.hero p{font-size:1.1rem;opacity:0.9;max-width:550px;margin:0 auto;position:relative}
+.container{max-width:1000px;margin:0 auto;padding:40px 20px}
+.calc-grid{display:grid;grid-template-columns:1fr 1fr;gap:30px}
+@media(max-width:768px){.calc-grid{grid-template-columns:1fr}}
+.card{background:var(--card);border-radius:20px;padding:36px;box-shadow:0 8px 30px rgba(0,0,0,0.06)}
+.card h2{font-size:1.4rem;font-weight:800;margin-bottom:20px}
+.form-group{margin-bottom:20px}
+.form-group label{display:block;font-weight:600;margin-bottom:8px;font-size:0.93rem}
+.form-group input[type=range]{width:100%;-webkit-appearance:none;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--success),var(--danger));outline:none}
+.form-group input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.2);cursor:pointer;border:3px solid var(--danger)}
+.range-val{text-align:center;font-size:1.8rem;font-weight:800;color:var(--danger);margin:4px 0}
+.range-labels{display:flex;justify-content:space-between;font-size:0.82rem;color:var(--text-light)}
+select{width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:12px;font-size:1rem;font-family:'Inter',sans-serif}
+select:focus{outline:none;border-color:var(--primary)}
+.burn-display{background:var(--dark);border-radius:20px;padding:40px;color:#fff;text-align:center;position:relative;overflow:hidden}
+.burn-display::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(225,112,85,0.3),transparent 70%)}
+.fire-emoji{font-size:4rem;margin-bottom:16px;position:relative;animation:flicker 0.5s infinite alternate}
+@keyframes flicker{0%{transform:scale(1) rotate(-2deg)}100%{transform:scale(1.05) rotate(2deg)}}
+.burn-amount{font-size:3.5rem;font-weight:900;color:var(--danger);position:relative;font-variant-numeric:tabular-nums}
+.burn-label{font-size:1rem;color:rgba(255,255,255,0.6);margin-top:4px;position:relative}
+.burn-per-second{font-size:1.3rem;color:var(--accent);margin-top:12px;font-weight:700;position:relative}
+.timer-display{font-size:1.8rem;font-weight:300;color:rgba(255,255,255,0.4);margin-top:16px;font-variant-numeric:tabular-nums;position:relative}
+.timer-controls{display:flex;gap:10px;justify-content:center;margin-top:20px;position:relative}
+.timer-btn{padding:12px 28px;border-radius:12px;border:none;font-family:'Inter',sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer;transition:all 0.3s}
+.timer-btn.start{background:var(--danger);color:#fff}
+.timer-btn.start:hover{background:#d63031}
+.timer-btn.stop{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2)}
+.timer-btn.stop:hover{background:rgba(255,255,255,0.2)}
+.shocking-stats{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:30px}
+.shock-card{background:var(--card);border-radius:16px;padding:24px;text-align:center;box-shadow:0 4px 15px rgba(0,0,0,0.04);border-top:3px solid var(--danger)}
+.shock-card .val{font-size:2rem;font-weight:900;color:var(--danger);margin-bottom:4px}
+.shock-card .lab{font-size:0.82rem;color:var(--text-light)}
+.annual-section{margin-top:30px;background:var(--card);border-radius:20px;padding:36px;box-shadow:0 8px 30px rgba(0,0,0,0.06)}
+.annual-section h2{font-size:1.4rem;font-weight:800;margin-bottom:20px;text-align:center}
+.annual-bar{margin-bottom:16px}
+.annual-bar .label-row{display:flex;justify-content:space-between;margin-bottom:6px;font-size:0.9rem}
+.annual-bar .label-row .name{font-weight:600}
+.annual-bar .label-row .amount{font-weight:700;color:var(--danger)}
+.annual-bar .bar-bg{height:24px;background:#f0f0f0;border-radius:12px;overflow:hidden;position:relative}
+.annual-bar .bar-fill{height:100%;border-radius:12px;transition:width 1s ease;position:relative}
+.annual-bar .bar-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2));border-radius:12px}
+.go2-savings{margin-top:24px;padding:24px;background:linear-gradient(135deg,rgba(0,206,201,0.08),rgba(0,184,148,0.08));border-radius:16px;border:2px solid var(--secondary);text-align:center}
+.go2-savings h3{color:var(--secondary);margin-bottom:8px}
+.go2-savings .big{font-size:2.5rem;font-weight:900;color:var(--success)}
+.go2-savings p{font-size:0.9rem;color:var(--text-light);margin-top:8px}
+.cta{text-align:center;margin-top:40px;padding:40px;background:var(--card);border-radius:20px}
+.cta h2{font-size:1.8rem;font-weight:800;margin-bottom:8px}
+.cta p{color:var(--text-light);margin-bottom:20px}
+.btn{display:inline-block;padding:16px 40px;background:var(--gradient);color:#fff;border:none;border-radius:12px;font-size:1.1rem;font-weight:700;cursor:pointer;text-decoration:none;transition:all 0.3s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(108,92,231,0.35)}
+.particles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.particle{position:absolute;font-size:1.2rem;animation:rise 3s ease-out infinite;opacity:0}
+@keyframes rise{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-200px) scale(0);opacity:0}}
+</style>
+</head>
+<body>
+<div class="hero">
+<h1>Meeting Cost Calculator</h1>
+<p>Watch your money burn in real-time. Enter meeting details and start the timer.</p>
+</div>
+<div class="container">
+<div class="calc-grid">
+<div class="card">
+<h2>Meeting Setup</h2>
+<div class="form-group">
+<label>Number of Attendees</label>
+<input type="range" id="attendees" min="2" max="30" value="8" oninput="updateMeeting()">
+<div class="range-val" id="attendeesVal">8 people</div>
+<div class="range-labels"><span>2</span><span>15</span><span>30</span></div>
+</div>
+<div class="form-group">
+<label>Meeting Duration</label>
+<input type="range" id="duration" min="15" max="180" value="60" step="15" oninput="updateMeeting()">
+<div class="range-val" id="durationVal">60 min</div>
+<div class="range-labels"><span>15 min</span><span>1.5h</span><span>3h</span></div>
+</div>
+<div class="form-group">
+<label>How often does this meeting repeat?</label>
+<select id="frequency" onchange="updateMeeting()">
+<option value="1">Once (one-time)</option>
+<option value="52" selected>Weekly</option>
+<option value="26">Bi-weekly</option>
+<option value="12">Monthly</option>
+<option value="260">Daily</option>
+</select>
+</div>
+<div class="form-group">
+<label>Average Attendee Salary</label>
+<input type="range" id="salary" min="40000" max="250000" value="95000" step="5000" oninput="updateMeeting()">
+<div class="range-val" id="salaryVal">$95,000</div>
+<div class="range-labels"><span>$40K</span><span>$145K</span><span>$250K</span></div>
+</div>
+<div class="form-group">
+<label>How productive is this meeting?</label>
+<select id="productivity" onchange="updateMeeting()">
+<option value="0.3">Low - Could've been an email</option>
+<option value="0.5" selected>Medium - Some value</option>
+<option value="0.7">High - Mostly productive</option>
+<option value="0.9">Essential - Can't skip</option>
+</select>
+</div>
+</div>
+<div>
+<div class="burn-display" id="burnDisplay">
+<div class="particles" id="particles"></div>
+<div class="fire-emoji" id="fireEmoji">🔥</div>
+<div class="burn-amount" id="burnAmount">$0.00</div>
+<div class="burn-label">burned so far in this meeting</div>
+<div class="burn-per-second" id="burnRate">$0.76/second</div>
+<div class="timer-display" id="timerDisplay">00:00:00</div>
+<div class="timer-controls">
+<button class="timer-btn start" id="startBtn" onclick="toggleTimer()">Start Meeting</button>
+<button class="timer-btn stop" onclick="resetTimer()">Reset</button>
+</div>
+</div>
+<div class="shocking-stats">
+<div class="shock-card"><div class="val" id="perMeetingCost">$0</div><div class="lab">Cost per Meeting</div></div>
+<div class="shock-card"><div class="val" id="annualCost">$0</div><div class="lab">Annual Cost</div></div>
+<div class="shock-card"><div class="val" id="wastedCost">$0</div><div class="lab">Wasted Portion</div></div>
+<div class="shock-card"><div class="val" id="equivHires">0</div><div class="lab">Equivalent Hires</div></div>
+</div>
+</div>
+</div>
+<div class="annual-section">
+<h2>Where Your Meeting Budget Actually Goes</h2>
+<div id="annualBars"></div>
+<div class="go2-savings">
+<h3>With Go2 Meeting Intelligence</h3>
+<div class="big" id="go2Savings">$0</div>
+<p>Go2 identifies which meetings can be async, shortens others, and auto-generates action items. Average reduction: 40% meeting time.</p>
+</div>
+</div>
+<div class="cta">
+<h2>Stop burning money in meetings</h2>
+<p>Go2's AI meeting intelligence can save your team <span id="ctaSave">$0</span>/year.</p>
+<a href="https://go2.io" class="btn">Get Go2 Meeting Intelligence</a>
+</div>
+</div>
+<script>
+let timerRunning=false,timerInterval=null,elapsed=0,costPerSecond=0;
+function formatMoney(n){if(n>=1000000)return'$'+(n/1000000).toFixed(1)+'M';if(n>=1000)return'$'+(n/1000).toFixed(0)+'K';return'$'+n.toFixed(n<10?2:0)}
+function updateMeeting(){
+  const attendees=parseInt(document.getElementById('attendees').value);
+  const duration=parseInt(document.getElementById('duration').value);
+  const frequency=parseInt(document.getElementById('frequency').value);
+  const salary=parseInt(document.getElementById('salary').value);
+  const productivity=parseFloat(document.getElementById('productivity').value);
+  document.getElementById('attendeesVal').textContent=attendees+' people';
+  document.getElementById('durationVal').textContent=duration>=60?(duration/60).toFixed(duration%60?1:0)+' hours':duration+' min';
+  document.getElementById('salaryVal').textContent='$'+salary.toLocaleString();
+  const hourlyRate=salary/2080;
+  const meetingHours=duration/60;
+  const perMeeting=Math.round(hourlyRate*meetingHours*attendees);
+  const annual=perMeeting*frequency;
+  const wasted=Math.round(annual*(1-productivity));
+  const equivHires=Math.round(annual/salary*10)/10;
+  costPerSecond=(hourlyRate*attendees)/3600;
+  document.getElementById('perMeetingCost').textContent=formatMoney(perMeeting);
+  document.getElementById('annualCost').textContent=formatMoney(annual);
+  document.getElementById('wastedCost').textContent=formatMoney(wasted);
+  document.getElementById('equivHires').textContent=equivHires.toFixed(1);
+  document.getElementById('burnRate').textContent='$'+(costPerSecond).toFixed(2)+'/second';
+  const go2Save=Math.round(wasted*0.65);
+  document.getElementById('go2Savings').textContent=formatMoney(go2Save);
+  document.getElementById('ctaSave').textContent=formatMoney(go2Save);
+  const bars=[
+    {name:'Productive Discussion',pct:Math.round(productivity*100),color:'var(--success)',amount:Math.round(annual*productivity)},
+    {name:'Status Updates (could be async)',pct:Math.round((1-productivity)*40),color:'var(--warning)',amount:Math.round(annual*(1-productivity)*0.4)},
+    {name:'Waiting/Off-topic',pct:Math.round((1-productivity)*35),color:'var(--danger)',amount:Math.round(annual*(1-productivity)*0.35)},
+    {name:'Setup/Tech Issues',pct:Math.round((1-productivity)*25),color:'#636e72',amount:Math.round(annual*(1-productivity)*0.25)}
+  ];
+  const barsEl=document.getElementById('annualBars');barsEl.innerHTML='';
+  bars.forEach(b=>{
+    barsEl.innerHTML+=`<div class="annual-bar"><div class="label-row"><span class="name">${b.name}</span><span class="amount">${formatMoney(b.amount)}/yr</span></div><div class="bar-bg"><div class="bar-fill" style="width:${b.pct}%;background:${b.color}"></div></div></div>`;
+  });
+}
+function toggleTimer(){
+  if(timerRunning){
+    clearInterval(timerInterval);timerRunning=false;
+    document.getElementById('startBtn').textContent='Resume';
+    document.getElementById('startBtn').style.background='var(--success)';
+  }else{
+    timerRunning=true;
+    document.getElementById('startBtn').textContent='Pause';
+    document.getElementById('startBtn').style.background='var(--danger)';
+    timerInterval=setInterval(()=>{
+      elapsed++;
+      const cost=elapsed*costPerSecond;
+      document.getElementById('burnAmount').textContent='$'+cost.toFixed(2);
+      const h=Math.floor(elapsed/3600),m=Math.floor((elapsed%3600)/60),s=elapsed%60;
+      document.getElementById('timerDisplay').textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      if(elapsed%3===0)spawnParticle();
+    },1000);
+  }
+}
+function resetTimer(){
+  clearInterval(timerInterval);timerRunning=false;elapsed=0;
+  document.getElementById('burnAmount').textContent='$0.00';
+  document.getElementById('timerDisplay').textContent='00:00:00';
+  document.getElementById('startBtn').textContent='Start Meeting';
+  document.getElementById('startBtn').style.background='var(--danger)';
+}
+function spawnParticle(){
+  const p=document.createElement('div');p.className='particle';
+  p.textContent=['💸','💰','🔥','💵'][Math.floor(Math.random()*4)];
+  p.style.left=Math.random()*80+10+'%';
+  p.style.bottom='20px';
+  p.style.animationDuration=(2+Math.random()*2)+'s';
+  document.getElementById('particles').appendChild(p);
+  setTimeout(()=>p.remove(),4000);
+}
+updateMeeting();
+</script>
+</body>
+</html>

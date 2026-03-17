@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Loading...</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'SF Mono',SFMono-Regular,Menlo,monospace;background:#0a0a0a;color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem}
+.terminal{max-width:700px;width:100%;background:#111;border:1px solid #222;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+.title-bar{background:#1a1a1a;padding:0.8rem 1rem;display:flex;align-items:center;gap:0.5rem;border-bottom:1px solid #222}
+.dot{width:12px;height:12px;border-radius:50%}
+.dot-r{background:#ff5f57}.dot-y{background:#febc2e}.dot-g{background:#28c840}
+.title-bar span{color:#666;font-size:0.75rem;margin-left:0.5rem}
+.content{padding:1.5rem;min-height:400px}
+.line{margin-bottom:0.3rem;font-size:0.85rem;opacity:0;transform:translateX(-10px);transition:all 0.3s}
+.line.show{opacity:1;transform:translateX(0)}
+.line .prefix{color:#22c55e}
+.line .dim{color:#444}
+.line .highlight{color:#f59e0b}
+.line .accent{color:#60a5fa}
+.line .err{color:#ef4444}
+.line .success{color:#22c55e}
+.progress-bar{margin:1rem 0;height:6px;background:#1a1a1a;border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#22c55e,#4ade80);border-radius:3px;transition:width 0.3s;width:0}
+.pct{font-size:2rem;font-weight:800;color:#22c55e;margin:0.5rem 0}
+.result-box{margin-top:1rem;padding:1rem;background:#0a1a0a;border:1px solid #1a3a1a;border-radius:8px;opacity:0;transition:opacity 0.5s}
+.result-box.show{opacity:1}
+.result-box h3{color:#4ade80;margin-bottom:0.5rem;font-size:1rem}
+.result-box p{color:#888;font-size:0.85rem;line-height:1.6}
+.cta{display:inline-block;margin-top:1.5rem;padding:0.8rem 2rem;background:#22c55e;color:#000;font-weight:700;border-radius:6px;text-decoration:none;font-family:-apple-system,sans-serif;font-size:0.95rem;opacity:0;transition:opacity 0.5s}
+.cta.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="terminal">
+<div class="title-bar">
+<div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+<span>go2 --analyze-potential</span>
+</div>
+<div class="content" id="content">
+</div>
+</div>
+
+<script>
+const content=document.getElementById('content');
+const lines=[
+{text:'<span class="prefix">$</span> go2 --analyze-potential',delay:0},
+{text:'<span class="dim">[init]</span> Connecting to Go2 Intelligence Engine...',delay:400},
+{text:'<span class="dim">[scan]</span> Scanning enterprise AI landscape...',delay:800},
+{text:'<span class="dim">[data]</span> Loading <span class="highlight">2,147,893</span> worker profiles...',delay:1200},
+{text:'<span class="dim">[stat]</span> Current AI implementation success rate: <span class="err">5%</span>',delay:1600},
+{text:'<span class="dim">[stat]</span> Average AI spend per enterprise: <span class="highlight">$2.4M/year</span>',delay:2000},
+{text:'<span class="dim">[stat]</span> Average measurable ROI: <span class="err">$0</span>',delay:2400},
+{text:'',delay:2600,isBar:true},
+{text:'<span class="dim">[diag]</span> Diagnosing failure pattern...',delay:3200},
+{text:'<span class="dim">[root]</span> Root cause: <span class="err">AI tools lack work context</span>',delay:3600},
+{text:'<span class="dim">[root]</span> They have your data. They\'ve never seen a workflow.',delay:4000},
+{text:'<span class="dim">[root]</span> They know your org chart. Not how work actually flows.',delay:4400},
+{text:'',delay:4800},
+{text:'<span class="dim">[scan]</span> Searching for missing data layer...',delay:5200},
+{text:'<span class="dim">[scan]</span> Analyzing workflow capture solutions...',delay:5600},
+{text:'<span class="dim">[scan]</span> Cross-referencing satisfaction data...',delay:6000},
+{text:'',delay:6200,isBar2:true},
+{text:'<span class="success">[ FOUND ]</span> The missing data layer: <span class="accent">Go2</span>',delay:7000},
+{text:'',delay:7400},
+{text:'<span class="dim">[spec]</span> Captures: <span class="accent">Real workflow patterns</span> (not keystrokes)',delay:7800},
+{text:'<span class="dim">[spec]</span> Method: <span class="accent">AI coaching</span> (not surveillance)',delay:8200},
+{text:'<span class="dim">[spec]</span> Satisfaction: <span class="success">89%</span> across 2M+ workers',delay:8600},
+{text:'<span class="dim">[spec]</span> Integration: <span class="accent">Sidecars Claude, ChatGPT</span>',delay:9000},
+{text:'<span class="dim">[spec]</span> Output: <span class="accent">Auto-documentation, automation discovery, agent training</span>',delay:9400},
+{text:'',delay:9800},
+{text:'<span class="success">[ COMPLETE ]</span> Analysis finished.',delay:10200},
+{text:'<span class="prefix">$</span> <span class="dim">_</span>',delay:10600,isCursor:true},
+{text:'',delay:11000,isResult:true},
+];
+
+let bar1,bar2;
+
+lines.forEach(l=>{
+setTimeout(()=>{
+if(l.isBar){
+const div=document.createElement('div');
+div.innerHTML='<div class="progress-bar"><div class="progress-fill" id="bar1"></div></div>';
+content.appendChild(div);
+bar1=document.getElementById('bar1');
+let p=0;const iv=setInterval(()=>{p+=5;bar1.style.width=p+'%';if(p>=100)clearInterval(iv);},30);
+return;
+}
+if(l.isBar2){
+const div=document.createElement('div');
+div.innerHTML='<div class="progress-bar"><div class="progress-fill" id="bar2"></div></div>';
+content.appendChild(div);
+bar2=document.getElementById('bar2');
+let p=0;const iv=setInterval(()=>{p+=5;bar2.style.width=p+'%';if(p>=100)clearInterval(iv);},30);
+return;
+}
+if(l.isResult){
+const div=document.createElement('div');
+div.className='result-box';
+div.innerHTML='<h3>Your AI potential is being wasted.</h3><p>95% of AI implementations fail because they lack the one thing Go2 provides: real work context. Go2 captures how your team actually works, coaches them (not surveils), auto-documents processes, and feeds everything to your AI stack.</p><a href="#" class="cta">Fix it now &rarr;</a>';
+content.appendChild(div);
+setTimeout(()=>{div.classList.add('show');div.querySelector('.cta').classList.add('show');},300);
+return;
+}
+const div=document.createElement('div');
+div.className='line';
+div.innerHTML=l.text;
+content.appendChild(div);
+requestAnimationFrame(()=>div.classList.add('show'));
+if(l.isCursor){div.innerHTML='<span class="prefix">$</span> <span style="animation:blink 1s infinite">_</span>';
+const style=document.createElement('style');style.textContent='@keyframes blink{0%,50%{opacity:1}51%,100%{opacity:0}}';document.head.appendChild(style);}
+content.scrollTop=content.scrollHeight;
+},l.delay);
+});
+</script>
+</body>
+</html>

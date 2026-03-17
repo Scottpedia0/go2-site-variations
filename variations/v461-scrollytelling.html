@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The $4.4 Trillion Problem — Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0a0a0f;color:#e0e0e0;overflow-x:hidden}
+.section{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;padding:60px 20px}
+.section-content{max-width:900px;width:100%;opacity:0;transform:translateY(60px);transition:all 1.2s cubic-bezier(0.16,1,0.3,1)}
+.section-content.visible{opacity:1;transform:translateY(0)}
+.hero-section{background:radial-gradient(ellipse at 50% 50%,#1a1a2e 0%,#0a0a0f 70%);min-height:100vh}
+.hero-title{font-size:clamp(2.5rem,6vw,5rem);font-weight:900;line-height:1.05;letter-spacing:-0.03em;background:linear-gradient(135deg,#fff 0%,#a0a0ff 50%,#6366f1 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:30px}
+.hero-sub{font-size:clamp(1.1rem,2vw,1.5rem);color:#888;font-weight:300;line-height:1.6}
+.stat-section{background:#0a0a0f}
+.big-stat{font-size:clamp(4rem,12vw,10rem);font-weight:900;letter-spacing:-0.04em;opacity:0;transform:scale(0.8);transition:all 1.5s cubic-bezier(0.16,1,0.3,1)}
+.big-stat.visible{opacity:1;transform:scale(1)}
+.big-stat .number{background:linear-gradient(135deg,#f43f5e,#fb923c);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.big-stat .unit{font-size:0.3em;color:#666;display:block;margin-top:-10px}
+.stat-label{font-size:clamp(1rem,2vw,1.4rem);color:#888;margin-top:20px;font-weight:300}
+.chart-section{min-height:100vh;position:relative}
+.chart-container{width:100%;max-width:800px;margin:0 auto}
+canvas{width:100%!important;height:auto!important}
+.bar-chart{display:flex;align-items:flex-end;justify-content:center;gap:clamp(8px,2vw,20px);height:400px;padding-top:40px}
+.bar-wrapper{display:flex;flex-direction:column;align-items:center;flex:1;max-width:100px}
+.bar{width:100%;border-radius:8px 8px 0 0;transition:height 1.5s cubic-bezier(0.16,1,0.3,1);height:0;position:relative;cursor:pointer}
+.bar:hover{filter:brightness(1.3)}
+.bar.visible{height:var(--target-height)}
+.bar-label{font-size:0.7rem;color:#666;margin-top:12px;text-align:center;line-height:1.3}
+.bar-value{font-size:0.75rem;font-weight:700;color:#fff;position:absolute;top:-28px;left:50%;transform:translateX(-50%);opacity:0;transition:opacity 0.5s 1.5s}
+.bar.visible .bar-value{opacity:1}
+.donut-section .chart-container{position:relative;width:300px;height:300px}
+.donut-ring{fill:none;stroke-width:40;stroke-dasharray:0 1000;transition:stroke-dasharray 2s cubic-bezier(0.16,1,0.3,1)}
+.donut-ring.visible{stroke-dasharray:var(--dash) 1000}
+.donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.donut-center .pct{font-size:3.5rem;font-weight:900;color:#fff}
+.donut-center .label{font-size:0.9rem;color:#888}
+.line-chart-svg{width:100%;height:350px}
+.line-path{fill:none;stroke-width:3;stroke-linecap:round;stroke-dasharray:1000;stroke-dashoffset:1000;transition:stroke-dashoffset 2.5s cubic-bezier(0.16,1,0.3,1)}
+.line-path.visible{stroke-dashoffset:0}
+.area-path{opacity:0;transition:opacity 1.5s 0.5s}
+.area-path.visible{opacity:0.15}
+.annotation{font-size:0.8rem;fill:#888;opacity:0;transition:opacity 0.8s 2s}
+.annotation.visible{opacity:1}
+.cta-section{background:linear-gradient(180deg,#0a0a0f 0%,#0f0f1e 50%,#0a0a0f 100%)}
+.cta-box{text-align:center;padding:60px 40px;border-radius:24px;background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(244,63,94,0.1));border:1px solid rgba(99,102,241,0.2)}
+.cta-title{font-size:clamp(1.8rem,4vw,3rem);font-weight:800;margin-bottom:20px;background:linear-gradient(135deg,#fff,#c7d2fe);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.cta-btn{display:inline-block;padding:16px 48px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;font-size:1.1rem;font-weight:600;cursor:pointer;text-decoration:none;transition:all 0.3s;margin-top:20px}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 20px 40px rgba(99,102,241,0.3)}
+.progress-bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,#6366f1,#f43f5e);z-index:1000;transition:width 0.1s}
+.grid-lines{stroke:#1a1a2e;stroke-width:1}
+.axis-label{font-size:0.7rem;fill:#555}
+.comparison-bars{display:flex;gap:40px;justify-content:center;flex-wrap:wrap}
+.comparison-item{text-align:center}
+.comparison-item .ring-label{font-size:0.85rem;color:#aaa;margin-top:10px}
+.chapter-num{font-size:0.8rem;color:#6366f1;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:20px}
+.narrative{font-size:clamp(1.1rem,2vw,1.4rem);color:#bbb;line-height:1.8;margin-top:24px;font-weight:300}
+.highlight{color:#fff;font-weight:600}
+.highlight-red{color:#f43f5e;font-weight:700}
+.highlight-blue{color:#818cf8;font-weight:600}
+.stagger-item{opacity:0;transform:translateY(30px);transition:all 0.8s cubic-bezier(0.16,1,0.3,1)}
+.stagger-item.visible{opacity:1;transform:translateY(0)}
+.legend{display:flex;gap:20px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:0.8rem;color:#888}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progress"></div>
+
+<!-- Chapter 1: The Hook -->
+<section class="section hero-section">
+<div class="section-content" data-scroll>
+<div class="chapter-num">Chapter 01</div>
+<h1 class="hero-title">The $4.4 Trillion<br>Problem Nobody<br>Talks About</h1>
+<p class="hero-sub">Every year, the global economy hemorrhages trillions in lost productivity.<br>Most companies don't even know it's happening. This is that story.</p>
+</div>
+</section>
+
+<!-- Chapter 2: The Big Number -->
+<section class="section stat-section">
+<div class="section-content" data-scroll style="text-align:center">
+<div class="chapter-num">Chapter 02 — The Scale</div>
+<div class="big-stat" data-scroll>
+<span class="number">$4.4T</span>
+<span class="unit">lost every single year</span>
+</div>
+<p class="stat-label">That's larger than the entire GDP of Germany.</p>
+</div>
+</section>
+
+<!-- Chapter 3: Where Time Goes -->
+<section class="section chart-section">
+<div class="section-content" data-scroll>
+<div class="chapter-num">Chapter 03 — Where Does the Time Go?</div>
+<h2 style="font-size:clamp(1.5rem,3vw,2.2rem);font-weight:700;margin-bottom:10px">The Average Knowledge Worker's Day</h2>
+<p class="narrative" style="margin-bottom:40px">Only <span class="highlight-red">2.3 hours</span> of an 8-hour day is spent on meaningful, focused work.</p>
+<div class="bar-chart" data-scroll>
+<div class="bar-wrapper">
+<div class="bar" style="--target-height:280px;background:linear-gradient(180deg,#f43f5e,#e11d48)"><span class="bar-value">2.8h</span></div>
+<div class="bar-label">Meetings</div>
+</div>
+<div class="bar-wrapper">
+<div class="bar" style="--target-height:230px;background:linear-gradient(180deg,#fb923c,#ea580c)"><span class="bar-value">2.3h</span></div>
+<div class="bar-label">Email & Chat</div>
+</div>
+<div class="bar-wrapper">
+<div class="bar" style="--target-height:180px;background:linear-gradient(180deg,#818cf8,#6366f1)"><span class="bar-value">2.3h</span></div>
+<div class="bar-label">Deep Work</div>
+</div>
+<div class="bar-wrapper">
+<div class="bar" style="--target-height:80px;background:linear-gradient(180deg,#a78bfa,#7c3aed)"><span class="bar-value">0.8h</span></div>
+<div class="bar-label">Context Switching</div>
+</div>
+<div class="bar-wrapper">
+<div class="bar" style="--target-height:50px;background:linear-gradient(180deg,#94a3b8,#64748b)"><span class="bar-value">0.5h</span></div>
+<div class="bar-label">Admin</div>
+</div>
+</div>
+<div class="legend" style="margin-top:30px">
+<div class="legend-item"><div class="legend-dot" style="background:#f43f5e"></div>Overhead</div>
+<div class="legend-item"><div class="legend-dot" style="background:#6366f1"></div>Productive</div>
+</div>
+</div>
+</section>
+
+<!-- Chapter 4: AI Failure -->
+<section class="section stat-section">
+<div class="section-content" data-scroll style="text-align:center">
+<div class="chapter-num">Chapter 04 — The AI Paradox</div>
+<div class="big-stat" data-scroll>
+<span class="number">95%</span>
+<span class="unit">of AI projects fail to deliver ROI</span>
+</div>
+<p class="stat-label">Source: MIT Sloan Management Review</p>
+<p class="narrative" style="max-width:600px;margin:30px auto 0">Companies are spending billions on AI tools that <span class="highlight">never get adopted</span>. The technology exists. The implementation doesn't.</p>
+</div>
+</section>
+
+<!-- Chapter 5: The Trend -->
+<section class="section chart-section">
+<div class="section-content" data-scroll>
+<div class="chapter-num">Chapter 05 — Getting Worse</div>
+<h2 style="font-size:clamp(1.5rem,3vw,2.2rem);font-weight:700;margin-bottom:10px">Productivity Tools ≠ Productivity</h2>
+<p class="narrative" style="margin-bottom:40px">Despite 300% more tools, actual output has <span class="highlight-red">flatlined since 2015</span>.</p>
+<svg class="line-chart-svg" viewBox="0 0 800 350" data-scroll>
+<!-- Grid -->
+<line x1="60" y1="30" x2="60" y2="300" class="grid-lines"/>
+<line x1="60" y1="300" x2="760" y2="300" class="grid-lines"/>
+<line x1="60" y1="232" x2="760" y2="232" class="grid-lines" stroke-dasharray="4"/>
+<line x1="60" y1="165" x2="760" y2="165" class="grid-lines" stroke-dasharray="4"/>
+<line x1="60" y1="97" x2="760" y2="97" class="grid-lines" stroke-dasharray="4"/>
+<line x1="60" y1="30" x2="760" y2="30" class="grid-lines" stroke-dasharray="4"/>
+<!-- Year labels -->
+<text x="60" y="320" class="axis-label" text-anchor="middle">2015</text>
+<text x="200" y="320" class="axis-label" text-anchor="middle">2017</text>
+<text x="340" y="320" class="axis-label" text-anchor="middle">2019</text>
+<text x="480" y="320" class="axis-label" text-anchor="middle">2021</text>
+<text x="620" y="320" class="axis-label" text-anchor="middle">2023</text>
+<text x="760" y="320" class="axis-label" text-anchor="middle">2025</text>
+<!-- Tools adopted line (going up) -->
+<path class="area-path" d="M60,240 L200,210 L340,160 L480,110 L620,70 L760,40 L760,300 L60,300 Z" fill="#f43f5e"/>
+<path class="line-path" d="M60,240 L200,210 L340,160 L480,110 L620,70 L760,40" stroke="#f43f5e"/>
+<!-- Productivity line (flat) -->
+<path class="area-path" d="M60,200 L200,195 L340,198 L480,192 L620,195 L760,190 L760,300 L60,300 Z" fill="#6366f1"/>
+<path class="line-path" d="M60,200 L200,195 L340,198 L480,192 L620,195 L760,190" stroke="#6366f1"/>
+<!-- Annotations -->
+<text class="annotation" x="760" y="35" text-anchor="end" fill="#f43f5e" font-weight="600">Tools Adopted</text>
+<text class="annotation" x="760" y="185" text-anchor="end" fill="#818cf8" font-weight="600">Actual Output</text>
+</svg>
+</div>
+</section>
+
+<!-- Chapter 6: Donut -->
+<section class="section chart-section donut-section">
+<div class="section-content" data-scroll style="text-align:center">
+<div class="chapter-num">Chapter 06 — The Waste</div>
+<h2 style="font-size:clamp(1.5rem,3vw,2.2rem);font-weight:700;margin-bottom:40px">How Companies Allocate Technology Budgets</h2>
+<div class="comparison-bars">
+<div class="comparison-item">
+<div class="chart-container" style="display:inline-block">
+<svg viewBox="0 0 200 200" width="200" height="200">
+<circle cx="100" cy="100" r="70" fill="none" stroke="#1a1a2e" stroke-width="30"/>
+<circle cx="100" cy="100" r="70" class="donut-ring" data-scroll style="--dash:352;stroke:#f43f5e" transform="rotate(-90 100 100)"/>
+<circle cx="100" cy="100" r="70" class="donut-ring" data-scroll style="--dash:88;stroke:#6366f1;stroke-dashoffset:352" transform="rotate(-90 100 100)"/>
+</svg>
+<div class="donut-center"><div class="pct">80%</div><div class="label">on tools</div></div>
+</div>
+<div class="ring-label">Buying Software</div>
+</div>
+<div class="comparison-item">
+<div class="chart-container" style="display:inline-block">
+<svg viewBox="0 0 200 200" width="200" height="200">
+<circle cx="100" cy="100" r="70" fill="none" stroke="#1a1a2e" stroke-width="30"/>
+<circle cx="100" cy="100" r="70" class="donut-ring" data-scroll style="--dash:88;stroke:#10b981" transform="rotate(-90 100 100)"/>
+</svg>
+<div class="donut-center"><div class="pct">20%</div><div class="label">on adoption</div></div>
+</div>
+<div class="ring-label">Training & Change Mgmt</div>
+</div>
+</div>
+<p class="narrative" style="max-width:550px;margin:30px auto 0">The ratio should be <span class="highlight">inverted</span>. Tools are commodities. <span class="highlight-blue">Behavior change</span> is the bottleneck.</p>
+</div>
+</section>
+
+<!-- Chapter 7: Industry Comparison -->
+<section class="section chart-section">
+<div class="section-content" data-scroll>
+<div class="chapter-num">Chapter 07 — By Industry</div>
+<h2 style="font-size:clamp(1.5rem,3vw,2.2rem);font-weight:700;margin-bottom:10px">Productivity Loss by Sector</h2>
+<p class="narrative" style="margin-bottom:40px">No industry is immune. <span class="highlight-red">Professional services</span> bleeds the most per employee.</p>
+<div style="max-width:700px;margin:0 auto">
+<div class="stagger-item" data-scroll style="margin-bottom:16px">
+<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#ccc;font-size:0.9rem">Professional Services</span><span style="color:#f43f5e;font-weight:700">$38,400/employee/yr</span></div>
+<div style="height:32px;background:#1a1a2e;border-radius:8px;overflow:hidden"><div class="progress-fill" style="width:0;height:100%;background:linear-gradient(90deg,#f43f5e,#fb923c);border-radius:8px;transition:width 1.5s cubic-bezier(0.16,1,0.3,1)" data-width="95%"></div></div>
+</div>
+<div class="stagger-item" data-scroll style="margin-bottom:16px;transition-delay:0.1s">
+<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#ccc;font-size:0.9rem">Technology</span><span style="color:#fb923c;font-weight:700">$34,200/employee/yr</span></div>
+<div style="height:32px;background:#1a1a2e;border-radius:8px;overflow:hidden"><div class="progress-fill" style="width:0;height:100%;background:linear-gradient(90deg,#fb923c,#fbbf24);border-radius:8px;transition:width 1.5s cubic-bezier(0.16,1,0.3,1) 0.1s" data-width="85%"></div></div>
+</div>
+<div class="stagger-item" data-scroll style="margin-bottom:16px;transition-delay:0.2s">
+<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#ccc;font-size:0.9rem">Financial Services</span><span style="color:#fbbf24;font-weight:700">$31,800/employee/yr</span></div>
+<div style="height:32px;background:#1a1a2e;border-radius:8px;overflow:hidden"><div class="progress-fill" style="width:0;height:100%;background:linear-gradient(90deg,#fbbf24,#a3e635);border-radius:8px;transition:width 1.5s cubic-bezier(0.16,1,0.3,1) 0.2s" data-width="79%"></div></div>
+</div>
+<div class="stagger-item" data-scroll style="margin-bottom:16px;transition-delay:0.3s">
+<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#ccc;font-size:0.9rem">Healthcare</span><span style="color:#a3e635;font-weight:700">$28,100/employee/yr</span></div>
+<div style="height:32px;background:#1a1a2e;border-radius:8px;overflow:hidden"><div class="progress-fill" style="width:0;height:100%;background:linear-gradient(90deg,#a3e635,#34d399);border-radius:8px;transition:width 1.5s cubic-bezier(0.16,1,0.3,1) 0.3s" data-width="70%"></div></div>
+</div>
+<div class="stagger-item" data-scroll style="margin-bottom:16px;transition-delay:0.4s">
+<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#ccc;font-size:0.9rem">Manufacturing</span><span style="color:#34d399;font-weight:700">$22,600/employee/yr</span></div>
+<div style="height:32px;background:#1a1a2e;border-radius:8px;overflow:hidden"><div class="progress-fill" style="width:0;height:100%;background:linear-gradient(90deg,#34d399,#6366f1);border-radius:8px;transition:width 1.5s cubic-bezier(0.16,1,0.3,1) 0.4s" data-width="56%"></div></div>
+</div>
+<div class="stagger-item" data-scroll style="margin-bottom:16px;transition-delay:0.5s">
+<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#ccc;font-size:0.9rem">Retail</span><span style="color:#6366f1;font-weight:700">$18,900/employee/yr</span></div>
+<div style="height:32px;background:#1a1a2e;border-radius:8px;overflow:hidden"><div class="progress-fill" style="width:0;height:100%;background:linear-gradient(90deg,#6366f1,#818cf8);border-radius:8px;transition:width 1.5s cubic-bezier(0.16,1,0.3,1) 0.5s" data-width="47%"></div></div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- Chapter 8: The Solution -->
+<section class="section stat-section">
+<div class="section-content" data-scroll style="text-align:center">
+<div class="chapter-num">Chapter 08 — A Different Approach</div>
+<h2 style="font-size:clamp(1.5rem,3vw,2.2rem);font-weight:700;margin-bottom:20px">What if the problem isn't the tools?</h2>
+<p class="narrative" style="max-width:600px;margin:0 auto">What if the problem is that <span class="highlight">nobody is coaching teams</span> on how to actually work better?<br><br>Not monitoring. Not surveilling.<br><span class="highlight-blue">Coaching.</span></p>
+</div>
+</section>
+
+<!-- Chapter 9: Go2 Impact -->
+<section class="section chart-section">
+<div class="section-content" data-scroll>
+<div class="chapter-num">Chapter 09 — The Go2 Effect</div>
+<h2 style="font-size:clamp(1.5rem,3vw,2.2rem);font-weight:700;margin-bottom:10px">Before & After Go2</h2>
+<p class="narrative" style="margin-bottom:40px">Average results from early adopters over <span class="highlight">90 days</span>.</p>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:30px;max-width:700px;margin:0 auto">
+<div class="stagger-item" data-scroll style="text-align:center;padding:30px;background:rgba(99,102,241,0.08);border-radius:16px;border:1px solid rgba(99,102,241,0.15)">
+<div style="font-size:2.8rem;font-weight:900;color:#10b981">+37%</div>
+<div style="font-size:0.9rem;color:#888;margin-top:8px">Deep Work Time</div>
+</div>
+<div class="stagger-item" data-scroll style="text-align:center;padding:30px;background:rgba(99,102,241,0.08);border-radius:16px;border:1px solid rgba(99,102,241,0.15);transition-delay:0.15s">
+<div style="font-size:2.8rem;font-weight:900;color:#6366f1">-42%</div>
+<div style="font-size:0.9rem;color:#888;margin-top:8px">Meeting Overhead</div>
+</div>
+<div class="stagger-item" data-scroll style="text-align:center;padding:30px;background:rgba(99,102,241,0.08);border-radius:16px;border:1px solid rgba(99,102,241,0.15);transition-delay:0.3s">
+<div style="font-size:2.8rem;font-weight:900;color:#f43f5e">$2.1M</div>
+<div style="font-size:0.9rem;color:#888;margin-top:8px">Avg Annual Savings (100-person team)</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- Chapter 10: CTA -->
+<section class="section cta-section">
+<div class="section-content" data-scroll>
+<div class="cta-box">
+<div class="chapter-num">Chapter 10 — Your Move</div>
+<h2 class="cta-title">Stop Losing $38,400<br>Per Employee Per Year</h2>
+<p style="color:#888;font-size:1.1rem;max-width:500px;margin:0 auto">Go2 is AI productivity coaching that actually works. Not another dashboard. Not surveillance. Real behavioral change.</p>
+<a href="#" class="cta-btn">Get Early Access</a>
+</div>
+</div>
+</section>
+
+<script>
+// Progress bar
+window.addEventListener('scroll',()=>{
+const h=document.documentElement.scrollHeight-window.innerHeight;
+const p=(window.scrollY/h)*100;
+document.getElementById('progress').style.width=p+'%';
+});
+
+// Intersection Observer for scroll-triggered animations
+const observer=new IntersectionObserver((entries)=>{
+entries.forEach(entry=>{
+if(entry.isIntersecting){
+entry.target.classList.add('visible');
+// Handle bar charts
+entry.target.querySelectorAll('.bar').forEach(bar=>bar.classList.add('visible'));
+// Handle donut rings
+entry.target.querySelectorAll('.donut-ring').forEach(ring=>ring.classList.add('visible'));
+// Handle line paths
+entry.target.querySelectorAll('.line-path').forEach(path=>path.classList.add('visible'));
+entry.target.querySelectorAll('.area-path').forEach(path=>path.classList.add('visible'));
+entry.target.querySelectorAll('.annotation').forEach(a=>a.classList.add('visible'));
+// Handle stagger items
+entry.target.querySelectorAll('.stagger-item').forEach(item=>item.classList.add('visible'));
+// Handle big stats
+entry.target.querySelectorAll('.big-stat').forEach(stat=>stat.classList.add('visible'));
+// Handle progress fills
+entry.target.querySelectorAll('.progress-fill').forEach(fill=>{
+fill.style.width=fill.dataset.width;
+});
+}
+});
+},{threshold:0.2,rootMargin:'0px 0px -50px 0px'});
+
+document.querySelectorAll('[data-scroll]').forEach(el=>observer.observe(el));
+</script>
+</body>
+</html>

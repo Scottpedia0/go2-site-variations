@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Your AI Fortune</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:radial-gradient(ellipse at center,#1a0a2e,#0a0a0a);color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+h1{font-size:clamp(1.5rem,4vw,2.5rem);font-weight:800;text-align:center;margin-bottom:0.5rem}
+h1 span{color:#f59e0b}
+.sub{color:#666;margin-bottom:2rem;text-align:center}
+.cookie-container{perspective:600px;cursor:pointer;margin-bottom:2rem;position:relative}
+.cookie{width:160px;height:100px;position:relative;transition:transform 0.6s}
+.cookie.crack{animation:crack 0.6s ease forwards}
+.cookie-half{width:160px;height:50px;border-radius:50%;position:absolute;overflow:hidden;transition:all 0.6s}
+.cookie-top{top:0;background:linear-gradient(135deg,#d4a017,#b8860b);transform-origin:bottom center}
+.cookie-bot{bottom:0;background:linear-gradient(135deg,#b8860b,#8b6914);transform-origin:top center}
+.crack .cookie-top{transform:rotateX(-30deg) translateY(-20px);opacity:0.7}
+.crack .cookie-bot{transform:rotateX(30deg) translateY(20px);opacity:0.7}
+.fortune-slip{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:250px;background:#fffef0;color:#333;padding:1rem;font-size:0.85rem;line-height:1.5;text-align:center;border-radius:4px;opacity:0;transition:opacity 0.5s 0.3s;box-shadow:0 4px 20px rgba(0,0,0,0.5);font-style:italic}
+.fortune-slip.show{opacity:1}
+.fortune-insight{display:block;margin-top:0.8rem;padding-top:0.8rem;border-top:1px dashed #ccc;font-style:normal;font-weight:600;color:#8b6914;font-size:0.8rem}
+.lucky{display:block;margin-top:0.5rem;font-size:0.7rem;color:#999;font-style:normal}
+.instructions{font-size:0.9rem;color:#f59e0b;animation:pulse 2s infinite;margin-bottom:1rem}
+@keyframes pulse{0%,100%{opacity:0.5}50%{opacity:1}}
+.counter{font-size:0.8rem;color:#444;margin-top:1rem}
+.history{max-width:500px;width:90vw;margin-top:2rem}
+.history h3{font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;color:#555;margin-bottom:0.5rem}
+.history-item{padding:0.6rem;background:rgba(255,255,255,0.03);border-radius:6px;margin-bottom:0.5rem;font-size:0.8rem;color:#888;border-left:2px solid #f59e0b30}
+.sparkle{position:fixed;pointer-events:none;z-index:100}
+</style>
+</head>
+<body>
+<h1>Your <span>AI Fortune</span></h1>
+<p class="sub">Crack the cookie. Discover your company's AI destiny.</p>
+
+<p class="instructions" id="instructions">Click the cookie</p>
+
+<div class="cookie-container" id="cookieContainer" onclick="crackCookie()">
+<div class="cookie" id="cookie">
+<div class="cookie-half cookie-top"></div>
+<div class="cookie-half cookie-bot"></div>
+</div>
+<div class="fortune-slip" id="slip"></div>
+</div>
+
+<div class="counter" id="counter"></div>
+
+<div class="history" id="history" style="display:none">
+<h3>Previous Fortunes</h3>
+<div id="historyList"></div>
+</div>
+
+<script>
+const fortunes=[
+{text:"Your AI tools are powerful. But without work context, they're just expensive autocomplete.",insight:"Go2 captures the context your AI needs.",lucky:"2M+"},
+{text:"A manager who watches screens sees activity. A coach who understands workflows sees opportunity.",insight:"89% satisfaction. Coaching, not surveillance.",lucky:"89%"},
+{text:"The documentation you need was in someone's head. They left last Friday.",insight:"Go2 auto-documents processes before knowledge walks out the door.",lucky:"Auto"},
+{text:"You will spend $200K on AI this year. 95% chance it disappoints.",insight:"Go2 is the missing data layer that makes AI actually work.",lucky:"5%"},
+{text:"Your competitor's AI agent knows their workflows. Yours is still guessing.",insight:"Go2 trains AI agents on real work patterns from 2M+ workers.",lucky:"Real"},
+{text:"Context switching costs your team 14 hours per week. Per person.",insight:"Go2 identifies and reduces context switching automatically.",lucky:"14hr"},
+{text:"The process that takes 23 minutes could take 4. Nobody's documented it yet.",insight:"Go2 captures and optimizes workflows you didn't know existed.",lucky:"4min"},
+{text:"Your AI implementation will succeed if — and only if — it understands how work happens.",insight:"That's literally all Go2 does. And it works.",lucky:"100%"},
+{text:"Somewhere in your company, someone does the same task 47 times a week manually.",insight:"Go2 finds automations hiding in your daily workflows.",lucky:"47x"},
+{text:"ChatGPT can write poetry about your company. It cannot explain how your team onboards clients.",insight:"Go2 sidecars Claude and ChatGPT with real work context.",lucky:"Sidecar"},
+{text:"Your best employee's workflow is a competitive advantage. It's undocumented.",insight:"Go2 captures tribal knowledge automatically. No interviews needed.",lucky:"Tribal"},
+{text:"In the time it took to read this fortune, a Go2 user saved 3 minutes.",insight:"Pays for itself before lunch. Every day.",lucky:"Lunch"},
+];
+
+let cracked=false;
+let fortuneIndex=0;
+let historyItems=[];
+
+function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
+shuffle(fortunes);
+
+function crackCookie(){
+if(cracked){resetCookie();return;}
+cracked=true;
+const cookie=document.getElementById('cookie');
+const slip=document.getElementById('slip');
+const f=fortunes[fortuneIndex%fortunes.length];
+cookie.classList.add('crack');
+slip.innerHTML=`"${f.text}"<span class="fortune-insight">${f.insight}</span><span class="lucky">Lucky number: ${f.lucky}</span>`;
+setTimeout(()=>slip.classList.add('show'),300);
+historyItems.unshift(f.text);
+fortuneIndex++;
+document.getElementById('instructions').textContent='Click again for another fortune';
+updateHistory();
+spawnSparkles();
+}
+
+function resetCookie(){
+cracked=false;
+const cookie=document.getElementById('cookie');
+const slip=document.getElementById('slip');
+cookie.classList.remove('crack');
+slip.classList.remove('show');
+}
+
+function updateHistory(){
+if(historyItems.length<2)return;
+const hist=document.getElementById('history');
+const list=document.getElementById('historyList');
+hist.style.display='block';
+list.innerHTML=historyItems.slice(1,6).map(t=>`<div class="history-item">"${t}"</div>`).join('');
+document.getElementById('counter').textContent=`${fortuneIndex} fortune${fortuneIndex>1?'s':''} cracked`;
+}
+
+function spawnSparkles(){
+for(let i=0;i<12;i++){
+const s=document.createElement('div');
+s.className='sparkle';
+s.style.cssText=`left:${50+Math.random()*40-20}%;top:${50+Math.random()*20-10}%;width:4px;height:4px;background:#f59e0b;border-radius:50%;`;
+document.body.appendChild(s);
+const dx=(Math.random()-0.5)*200;
+const dy=(Math.random()-0.5)*200;
+s.animate([
+{transform:'translate(0,0) scale(1)',opacity:1},
+{transform:`translate(${dx}px,${dy}px) scale(0)`,opacity:0}
+],{duration:800,easing:'ease-out'});
+setTimeout(()=>s.remove(),800);
+}
+}
+</script>
+</body>
+</html>

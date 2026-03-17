@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Productivity Weather Forecast</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden}
+.weather-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;transition:background 1s}
+.weather-bg.sunny{background:linear-gradient(180deg,#1e88e5 0%,#64b5f6 50%,#e3f2fd 100%)}
+.weather-bg.cloudy{background:linear-gradient(180deg,#546e7a 0%,#78909c 50%,#b0bec5 100%)}
+.weather-bg.stormy{background:linear-gradient(180deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%)}
+.weather-bg.foggy{background:linear-gradient(180deg,#90a4ae 0%,#b0bec5 50%,#cfd8dc 100%)}
+.content{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:2rem;min-height:100vh}
+.header{text-align:center;padding:3rem 0 2rem}
+.channel-badge{display:inline-block;background:rgba(255,255,255,.15);backdrop-filter:blur(10px);padding:.4rem 1.2rem;border-radius:20px;font-size:.75rem;text-transform:uppercase;letter-spacing:.2em;color:rgba(255,255,255,.8);margin-bottom:1rem;border:1px solid rgba(255,255,255,.1)}
+h1{font-size:clamp(2rem,5vw,3rem);font-weight:900;color:#fff;text-shadow:0 2px 20px rgba(0,0,0,.2);margin-bottom:.5rem}
+.dateline{color:rgba(255,255,255,.7);font-size:.9rem}
+.forecast-selector{display:flex;gap:.5rem;justify-content:center;margin:2rem 0;flex-wrap:wrap}
+.forecast-btn{padding:.6rem 1.5rem;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);backdrop-filter:blur(10px);color:#fff;border-radius:25px;cursor:pointer;font-family:'Inter',sans-serif;font-size:.85rem;font-weight:600;transition:all .3s}
+.forecast-btn:hover,.forecast-btn.active{background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.4)}
+.current-conditions{background:rgba(255,255,255,.1);backdrop-filter:blur(20px);border-radius:24px;padding:2.5rem;margin-bottom:2rem;border:1px solid rgba(255,255,255,.1)}
+.temp-display{display:flex;align-items:center;justify-content:center;gap:1.5rem;margin-bottom:1.5rem}
+.weather-icon{font-size:5rem;line-height:1}
+.temp-text{text-align:left}
+.temp-num{font-size:4rem;font-weight:900;color:#fff;line-height:1}
+.temp-label{font-size:1rem;color:rgba(255,255,255,.7)}
+.condition-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
+@media(max-width:700px){.condition-grid{grid-template-columns:repeat(2,1fr)}}
+.condition-card{background:rgba(255,255,255,.08);border-radius:12px;padding:1rem;text-align:center}
+.condition-value{font-size:1.5rem;font-weight:800;color:#fff;margin-bottom:.3rem}
+.condition-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.5)}
+.five-day{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:2rem}
+@media(max-width:600px){.five-day{grid-template-columns:repeat(3,1fr)}}
+.day-card{background:rgba(255,255,255,.08);backdrop-filter:blur(10px);border-radius:16px;padding:1.5rem 1rem;text-align:center;border:1px solid rgba(255,255,255,.05);transition:transform .3s}
+.day-card:hover{transform:translateY(-4px)}
+.day-name{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.5);margin-bottom:.5rem}
+.day-icon{font-size:2.5rem;margin-bottom:.5rem}
+.day-high{font-size:1.2rem;font-weight:800;color:#fff}
+.day-low{font-size:.85rem;color:rgba(255,255,255,.4)}
+.day-desc{font-size:.7rem;color:rgba(255,255,255,.6);margin-top:.5rem;line-height:1.3}
+.advisory{background:rgba(255,200,0,.15);backdrop-filter:blur(10px);border:1px solid rgba(255,200,0,.3);border-radius:16px;padding:1.5rem;margin-bottom:2rem}
+.advisory-title{font-weight:800;color:#ffd54f;font-size:.9rem;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem}
+.advisory-text{color:rgba(255,255,255,.8);font-size:.9rem;line-height:1.6}
+.go2-forecast{background:rgba(76,175,80,.15);backdrop-filter:blur(10px);border:1px solid rgba(76,175,80,.3);border-radius:16px;padding:2rem;margin-bottom:2rem;text-align:center}
+.go2-title{font-weight:800;color:#81c784;font-size:1.2rem;margin-bottom:1rem}
+.go2-desc{color:rgba(255,255,255,.8);font-size:1rem;line-height:1.7;max-width:600px;margin:0 auto 1.5rem}
+.cta-link{display:inline-block;padding:1rem 2.5rem;background:#fff;color:#1a1a2e;font-weight:800;text-decoration:none;border-radius:50px;font-size:1rem;transition:all .3s}
+.cta-link:hover{transform:scale(1.05);box-shadow:0 8px 30px rgba(255,255,255,.2)}
+.ticker{position:fixed;bottom:0;left:0;width:100%;background:rgba(0,0,0,.6);backdrop-filter:blur(10px);padding:.8rem 0;z-index:10;overflow:hidden}
+.ticker-inner{display:flex;gap:3rem;animation:scroll 40s linear infinite;white-space:nowrap}
+@keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.ticker-item{font-size:.8rem;color:rgba(255,255,255,.7);display:flex;align-items:center;gap:.5rem}
+.ticker-item .up{color:#4caf50}
+.ticker-item .down{color:#f44336}
+.clouds{position:fixed;top:0;left:0;width:200%;height:100%;pointer-events:none;z-index:0}
+.cloud{position:absolute;background:rgba(255,255,255,.08);border-radius:50%;filter:blur(40px)}
+</style>
+</head>
+<body>
+<div class="weather-bg stormy" id="weatherBg"></div>
+<div class="clouds">
+<div class="cloud" style="width:300px;height:150px;top:10%;left:10%;animation:drift 30s linear infinite"></div>
+<div class="cloud" style="width:400px;height:200px;top:30%;left:50%;animation:drift 45s linear infinite reverse"></div>
+<div class="cloud" style="width:250px;height:120px;top:60%;left:30%;animation:drift 35s linear infinite"></div>
+</div>
+<style>@keyframes drift{0%{transform:translateX(0)}100%{transform:translateX(-400px)}}</style>
+
+<div class="content">
+<div class="header">
+<div class="channel-badge">Go2 Weather Network</div>
+<h1>Productivity Weather Forecast</h1>
+<div class="dateline" id="dateline"></div>
+</div>
+
+<div class="forecast-selector">
+<button class="forecast-btn active" onclick="setWeather('no-tools','stormy',this)">Without Go2</button>
+<button class="forecast-btn" onclick="setWeather('with-go2','sunny',this)">With Go2</button>
+</div>
+
+<div class="current-conditions">
+<div class="temp-display">
+<div class="weather-icon" id="mainIcon">⛈️</div>
+<div class="temp-text">
+<div class="temp-num" id="mainTemp">32°</div>
+<div class="temp-label" id="mainLabel">Productivity Index — Severely Impaired</div>
+</div>
+</div>
+<div class="condition-grid">
+<div class="condition-card">
+<div class="condition-value" id="visibility">Low</div>
+<div class="condition-label">Visibility into work</div>
+</div>
+<div class="condition-card">
+<div class="condition-value" id="wind">88 mph</div>
+<div class="condition-label">Tool sprawl wind speed</div>
+</div>
+<div class="condition-card">
+<div class="condition-value" id="humidity">95%</div>
+<div class="condition-label">AI failure rate</div>
+</div>
+<div class="condition-card">
+<div class="condition-value" id="pressure">$4.4T</div>
+<div class="condition-label">Global pressure (losses)</div>
+</div>
+</div>
+</div>
+
+<div class="advisory" id="advisory">
+<div class="advisory-title">⚠️ SEVERE PRODUCTIVITY WARNING</div>
+<div class="advisory-text">The National Workforce Intelligence Service has issued a severe productivity warning for organizations operating without AI coaching. Expect heavy context switching, scattered knowledge storms, and near-zero visibility into actual work patterns. Take shelter in data-driven decisions.</div>
+</div>
+
+<div class="five-day" id="fiveDay"></div>
+
+<div class="go2-forecast">
+<div class="go2-title">Extended Forecast with Go2</div>
+<div class="go2-desc">Organizations that implement Go2's AI coaching platform report clearing skies within 30 days. Productivity visibility improves to 100%, context switching storms reduce by 40%, and knowledge retention reaches all-time highs.</div>
+<a href="https://go2.io" class="cta-link">Clear Your Forecast →</a>
+</div>
+</div>
+
+<div class="ticker">
+<div class="ticker-inner" id="ticker"></div>
+</div>
+
+<script>
+const today=new Date();
+document.getElementById('dateline').textContent=today.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+' — Live Forecast';
+
+const forecasts={
+'no-tools':{
+icon:'⛈️',temp:'32°',label:'Productivity Index — Severely Impaired',
+visibility:'Low',wind:'88 mph',humidity:'95%',pressure:'$4.4T',
+advisory:{title:'⚠️ SEVERE PRODUCTIVITY WARNING',text:'The National Workforce Intelligence Service has issued a severe productivity warning for organizations operating without AI coaching. Expect heavy context switching, scattered knowledge storms, and near-zero visibility into actual work patterns. Take shelter in data-driven decisions.',color:'rgba(255,200,0,.15)',border:'rgba(255,200,0,.3)',titleColor:'#ffd54f'},
+days:[
+{name:'Mon',icon:'🌧️',high:'28°',low:'Chaos',desc:'Heavy meeting storms, zero deep work windows'},
+{name:'Tue',icon:'⛈️',high:'25°',low:'Worse',desc:'Context switching tornado, 23min recovery per switch'},
+{name:'Wed',icon:'🌫️',high:'30°',low:'Foggy',desc:'Knowledge fog — who knows what? Nobody knows.'},
+{name:'Thu',icon:'🌧️',high:'27°',low:'Drain',desc:'Tool sprawl flooding — 88 apps, none connected'},
+{name:'Fri',icon:'💨',high:'22°',low:'Burnout',desc:'Productivity theater winds — looking busy, accomplishing little'}
+]
+},
+'with-go2':{
+icon:'☀️',temp:'92°',label:'Productivity Index — Thriving',
+visibility:'Crystal',wind:'5 mph',humidity:'5%',pressure:'Stable',
+advisory:{title:'✅ ALL CLEAR — OPTIMAL CONDITIONS',text:'Go2 AI coaching has cleared all productivity hazards. Team visibility is at maximum, context switching is managed, knowledge is captured and accessible. Expect sustained high-performance conditions through the quarter.',color:'rgba(76,175,80,.15)',border:'rgba(76,175,80,.3)',titleColor:'#81c784'},
+days:[
+{name:'Mon',icon:'☀️',high:'90°',low:'Strong',desc:'AI coaching identifies 3 workflow improvements'},
+{name:'Tue',icon:'🌤️',high:'88°',low:'Growing',desc:'Auto-documented processes save 2hrs/person'},
+{name:'Wed',icon:'☀️',high:'94°',low:'Peak',desc:'Knowledge base 100% current, zero search friction'},
+{name:'Thu',icon:'🌤️',high:'91°',low:'Steady',desc:'Context switching down 40%, deep work up 60%'},
+{name:'Fri',icon:'☀️',high:'95°',low:'Record',desc:'Team ships 2x output — visible proof in dashboard'}
+]
+}
+};
+
+function setWeather(mode,bg,btn){
+document.querySelectorAll('.forecast-btn').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+document.getElementById('weatherBg').className='weather-bg '+bg;
+const f=forecasts[mode];
+document.getElementById('mainIcon').textContent=f.icon;
+document.getElementById('mainTemp').textContent=f.temp;
+document.getElementById('mainLabel').textContent=f.label;
+document.getElementById('visibility').textContent=f.visibility;
+document.getElementById('wind').textContent=f.wind;
+document.getElementById('humidity').textContent=f.humidity;
+document.getElementById('pressure').textContent=f.pressure;
+const adv=document.getElementById('advisory');
+adv.style.background=f.advisory.color;
+adv.style.borderColor=f.advisory.border;
+adv.innerHTML=`<div class="advisory-title" style="color:${f.advisory.titleColor}">${f.advisory.title}</div><div class="advisory-text">${f.advisory.text}</div>`;
+const fd=document.getElementById('fiveDay');
+fd.innerHTML='';
+f.days.forEach(d=>{
+fd.innerHTML+=`<div class="day-card"><div class="day-name">${d.name}</div><div class="day-icon">${d.icon}</div><div class="day-high">${d.high}</div><div class="day-low">${d.low}</div><div class="day-desc">${d.desc}</div></div>`;
+});
+}
+
+// Initialize
+setWeather('no-tools','stormy',document.querySelector('.forecast-btn'));
+
+// Ticker
+const tickerItems=[
+'CONTEXT SWITCHING <span class="down">▼ 23min</span> recovery per interruption',
+'MEETING WASTE <span class="down">▼ $25K</span>/employee/year in unnecessary meetings',
+'KNOWLEDGE LOSS <span class="down">▼ 70%</span> of role knowledge walks out the door',
+'AI ADOPTION <span class="down">▼ 95%</span> of AI projects fail — MIT Research',
+'TOOL SPRAWL <span class="down">▼ 88</span> average SaaS apps per company',
+'GO2 ROI <span class="up">▲ 340%</span> average first-year return',
+'DEEP WORK <span class="up">▲ 60%</span> increase with Go2 coaching',
+'EMPLOYEE ENGAGEMENT <span class="up">▲ 23%</span> higher with coaching vs surveillance',
+'GLOBAL LOSSES <span class="down">▼ $4.4T</span> in annual productivity waste',
+'TURNOVER <span class="up">▲ 31%</span> lower with AI coaching platforms',
+];
+const ticker=document.getElementById('ticker');
+const doubled=[...tickerItems,...tickerItems];
+ticker.innerHTML=doubled.map(t=>`<span class="ticker-item">${t}</span>`).join('');
+</script>
+</body>
+</html>

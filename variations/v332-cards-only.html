@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The Deck</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+body{font-family:'Inter',sans-serif;background:#0f0f14;color:#fff;overflow:hidden;height:100vh;display:flex;align-items:center;justify-content:center}
+.deck-container{position:relative;width:100%;height:100vh;display:flex;align-items:center;justify-content:center;perspective:1200px}
+.card{position:absolute;width:min(520px,85vw);height:min(680px,80vh);border-radius:24px;padding:48px;display:flex;flex-direction:column;justify-content:center;cursor:grab;user-select:none;transition:transform .6s cubic-bezier(.4,0,.2,1),opacity .4s;will-change:transform;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.card.active{z-index:10;transform:scale(1) rotate(0deg)}
+.card.prev{z-index:5;transform:translateX(-120%) scale(.85) rotate(-6deg);opacity:.5}
+.card.next{z-index:5;transform:translateX(120%) scale(.85) rotate(6deg);opacity:.5}
+.card.hidden{z-index:0;opacity:0;transform:scale(.7)}
+.card.dragging{transition:none;cursor:grabbing}
+/* Card styles */
+.card-1{background:linear-gradient(135deg,#1a1a2e,#16213e)}
+.card-2{background:linear-gradient(135deg,#0d1b2a,#1b263b)}
+.card-3{background:linear-gradient(135deg,#1a0a2e,#2d1b69)}
+.card-4{background:linear-gradient(135deg,#0a1628,#1a3a5c)}
+.card-5{background:linear-gradient(135deg,#1a2e1a,#2d5a2d)}
+.card-6{background:linear-gradient(135deg,#2e1a1a,#5a2d2d)}
+.card-7{background:linear-gradient(135deg,#1a1a1a,#2d2d2d)}
+.card-8{background:linear-gradient(135deg,#2e2a1a,#5a4d2d)}
+.card-9{background:linear-gradient(135deg,#0a2828,#1a5c5c)}
+.card-10{background:linear-gradient(135deg,#1a0a28,#4a1a6e)}
+.card-11{background:linear-gradient(135deg,#0f172a,#334155)}
+.card-12{background:linear-gradient(135deg,#6366f1,#8b5cf6)}
+.card .kicker{font-size:.65rem;text-transform:uppercase;letter-spacing:4px;opacity:.5;margin-bottom:24px}
+.card .number{font-size:.75rem;opacity:.3;position:absolute;top:24px;right:32px}
+.card h2{font-size:clamp(1.8rem,4vw,2.5rem);font-weight:800;line-height:1.15;margin-bottom:20px}
+.card p{font-size:1rem;line-height:1.8;opacity:.65;margin-bottom:16px}
+.card .big-stat{font-size:clamp(3rem,8vw,5rem);font-weight:900;line-height:1;margin-bottom:12px}
+.card .stat-label{font-size:.8rem;text-transform:uppercase;letter-spacing:2px;opacity:.4}
+.card .highlight{color:#6366f1}
+.card .highlight-green{color:#22c55e}
+.card .highlight-red{color:#ef4444}
+.card .highlight-amber{color:#f59e0b}
+.card-list{list-style:none;padding:0}
+.card-list li{padding:12px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:.95rem;display:flex;gap:12px;align-items:center}
+.card-list li .dot{width:8px;height:8px;border-radius:50%;background:#6366f1;flex-shrink:0}
+.tag{display:inline-block;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:4px 12px;font-size:.75rem;margin:4px}
+/* Navigation */
+.nav-controls{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);z-index:100;display:flex;gap:16px;align-items:center}
+.nav-btn{width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .3s}
+.nav-btn:hover{background:rgba(255,255,255,.15)}
+.progress-dots{display:flex;gap:6px}
+.progress-dots .dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.15);transition:all .3s;cursor:pointer}
+.progress-dots .dot.active{background:#6366f1;transform:scale(1.3)}
+/* Swipe hint */
+.swipe-hint{position:fixed;top:24px;left:50%;transform:translateX(-50%);z-index:100;font-size:.75rem;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:2px}
+/* Logo */
+.logo-fixed{position:fixed;top:24px;left:32px;font-size:1.5rem;font-weight:900;z-index:100;letter-spacing:-1px}
+</style>
+</head>
+<body>
+
+<div class="logo-fixed">Go2</div>
+<div class="swipe-hint">Swipe or use arrows</div>
+
+<div class="deck-container" id="deck">
+
+<div class="card card-1" data-index="0">
+<div class="number">01/12</div>
+<div class="kicker">Work Intelligence</div>
+<h2>Go2 sees how work<br><span class="highlight">actually happens.</span></h2>
+<p>Not how managers think. Not how surveys say. How it actually, measurably, provably happens.</p>
+</div>
+
+<div class="card card-2" data-index="1">
+<div class="number">02/12</div>
+<div class="kicker">The Problem</div>
+<div class="big-stat highlight-red">95%</div>
+<div class="stat-label">Of AI implementations fail</div>
+<p style="margin-top:20px">Because AI is blind to real work. It runs on fiction: self-reported data, outdated SOPs, org chart fantasies.</p>
+</div>
+
+<div class="card card-3" data-index="2">
+<div class="number">03/12</div>
+<div class="kicker">Ground Truth</div>
+<h2>What if AI could <span class="highlight">see</span>?</h2>
+<p>Go2 captures real workflows — app usage, process flows, behavioral patterns. This ground truth is the missing piece that makes AI work.</p>
+</div>
+
+<div class="card card-4" data-index="3">
+<div class="number">04/12</div>
+<div class="kicker">AI Coaching</div>
+<h2>A personal consultant for <span class="highlight">every</span> worker</h2>
+<p>AI-powered coaching based on real behavioral data. Not generic advice — insights tailored to how each person actually works.</p>
+</div>
+
+<div class="card card-5" data-index="4">
+<div class="number">05/12</div>
+<div class="kicker">Auto-Documentation</div>
+<h2>SOPs that <span class="highlight-green">write themselves</span></h2>
+<p>Go2 watches processes happen and generates living documentation. When work changes, docs update automatically. Never stale.</p>
+</div>
+
+<div class="card card-6" data-index="5">
+<div class="number">06/12</div>
+<div class="kicker">Automation Discovery</div>
+<h2>Find the millions hiding in <span class="highlight-amber">repetitive work</span></h2>
+<p>Pattern recognition across 2M+ workers identifies automation opportunities your team doesn't even notice.</p>
+</div>
+
+<div class="card card-7" data-index="6">
+<div class="number">07/12</div>
+<div class="kicker">Agent Training</div>
+<h2>Train AI on <span class="highlight">your</span> actual processes</h2>
+<p>Feed real behavioral data to Claude & ChatGPT sidecars. Your AI agents finally understand your specific business.</p>
+<div style="margin-top:16px">
+<span class="tag">Claude Sidecar</span>
+<span class="tag">ChatGPT Sidecar</span>
+</div>
+</div>
+
+<div class="card card-8" data-index="7">
+<div class="number">08/12</div>
+<div class="kicker">Not Surveillance</div>
+<h2>Coaching, not <span class="highlight-red">monitoring</span></h2>
+<p>Competitors surveil. Employees hate them. Go2 coaches — and employees love it. 89% satisfaction in a category known for zero trust.</p>
+<div class="big-stat highlight-green" style="margin-top:16px">89%</div>
+<div class="stat-label">Employee Satisfaction</div>
+</div>
+
+<div class="card card-9" data-index="8">
+<div class="number">09/12</div>
+<div class="kicker">Traction</div>
+<div class="big-stat">$60M+</div>
+<div class="stat-label">Enterprise Revenue</div>
+<p style="margin-top:20px">The market has spoken. Over 2 million workers. Fortune 500 clients. Real enterprise scale.</p>
+</div>
+
+<div class="card card-10" data-index="9">
+<div class="number">10/12</div>
+<div class="kicker">Scale</div>
+<div class="big-stat">2M+</div>
+<div class="stat-label">Workers Coached</div>
+<p style="margin-top:20px">Every worker generates behavioral intelligence that makes the platform smarter for everyone.</p>
+</div>
+
+<div class="card card-11" data-index="10">
+<div class="number">11/12</div>
+<div class="kicker">What You Get</div>
+<h2>The complete stack</h2>
+<ul class="card-list">
+<li><span class="dot"></span>Real workflow capture</li>
+<li><span class="dot"></span>AI-powered personal coaching</li>
+<li><span class="dot"></span>Auto-generated living documentation</li>
+<li><span class="dot"></span>Automation opportunity discovery</li>
+<li><span class="dot"></span>AI agent training with Claude & GPT</li>
+<li><span class="dot"></span>Privacy-first, employee-owned data</li>
+</ul>
+</div>
+
+<div class="card card-12" data-index="11">
+<div class="number">12/12</div>
+<div class="kicker">Your Move</div>
+<h2>Stop guessing.<br>Start seeing.</h2>
+<p>Join 2M+ workers powered by Go2.</p>
+<a href="#" style="display:inline-block;background:#fff;color:#6366f1;padding:16px 40px;border-radius:14px;text-decoration:none;font-weight:700;margin-top:16px;font-size:1rem">Get Started Free</a>
+</div>
+
+</div>
+
+<div class="nav-controls">
+<button class="nav-btn" id="prevBtn">&larr;</button>
+<div class="progress-dots" id="dots"></div>
+<button class="nav-btn" id="nextBtn">&rarr;</button>
+</div>
+
+<script>
+const cards=document.querySelectorAll('.card');
+const total=cards.length;
+let current=0;
+const dotsEl=document.getElementById('dots');
+
+// Create dots
+for(let i=0;i<total;i++){const d=document.createElement('div');d.className='dot'+(i===0?' active':'');d.onclick=()=>goTo(i);dotsEl.appendChild(d)}
+
+function updateCards(){
+  cards.forEach((c,i)=>{
+    c.className='card card-'+(i+1);
+    if(i===current)c.classList.add('active');
+    else if(i===current-1)c.classList.add('prev');
+    else if(i===current+1)c.classList.add('next');
+    else c.classList.add('hidden');
+  });
+  document.querySelectorAll('.progress-dots .dot').forEach((d,i)=>d.classList.toggle('active',i===current));
+}
+
+function goTo(i){current=Math.max(0,Math.min(total-1,i));updateCards()}
+function next(){goTo(current+1)}
+function prev(){goTo(current-1)}
+
+document.getElementById('nextBtn').onclick=next;
+document.getElementById('prevBtn').onclick=prev;
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')next();if(e.key==='ArrowLeft')prev()});
+
+// Swipe
+let startX=0,dragging=false,dragCard=null,dx=0;
+document.addEventListener('pointerdown',e=>{startX=e.clientX;dragging=true;dragCard=cards[current];dragCard.classList.add('dragging')});
+document.addEventListener('pointermove',e=>{if(!dragging)return;dx=e.clientX-startX;dragCard.style.transform=`translateX(${dx}px) rotate(${dx*.02}deg) scale(1)`});
+document.addEventListener('pointerup',()=>{if(!dragging)return;dragging=false;if(dragCard)dragCard.classList.remove('dragging');dragCard.style.transform='';if(Math.abs(dx)>80){if(dx<0)next();else prev()}dx=0});
+
+updateCards();
+</script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Productivity Horoscope by Role</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0d0b1a;color:#e8e0f0;min-height:100vh;overflow-x:hidden}
+.stars-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0}
+.star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%}
+.content{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:3rem 2rem}
+.header{text-align:center;margin-bottom:3rem}
+.zodiac-ring{font-size:2rem;letter-spacing:.5em;margin-bottom:1rem;opacity:.3}
+h1{font-family:'Playfair Display',serif;font-size:clamp(2rem,6vw,3.5rem);font-weight:900;background:linear-gradient(135deg,#c084fc,#818cf8,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.5rem}
+.subtitle{color:#8b7faa;font-size:1rem;font-style:italic;font-family:'Playfair Display',serif}
+.role-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:1rem;margin:2rem 0}
+.role-btn{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:1.2rem;text-align:center;cursor:pointer;transition:all .3s}
+.role-btn:hover{background:rgba(255,255,255,.1);border-color:rgba(192,132,252,.3);transform:translateY(-2px)}
+.role-btn.active{background:rgba(192,132,252,.15);border-color:#c084fc}
+.role-icon{font-size:2rem;margin-bottom:.5rem}
+.role-name{font-size:.8rem;font-weight:600;color:#c8bfdf}
+.horoscope-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:2.5rem;margin:2rem 0;opacity:0;transform:translateY(20px);transition:all .6s ease}
+.horoscope-card.visible{opacity:1;transform:translateY(0)}
+.horo-header{display:flex;align-items:center;gap:1.5rem;margin-bottom:1.5rem}
+.horo-symbol{font-size:3.5rem;width:80px;height:80px;display:flex;align-items:center;justify-content:center;background:rgba(192,132,252,.1);border-radius:50%;border:2px solid rgba(192,132,252,.2)}
+.horo-title{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900}
+.horo-date{font-size:.8rem;color:#8b7faa}
+.horo-body{line-height:1.8;color:#c8bfdf;margin-bottom:1.5rem;font-size:1.05rem}
+.horo-body strong{color:#e8e0f0}
+.horo-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:1.5rem 0}
+@media(max-width:500px){.horo-stats{grid-template-columns:1fr}}
+.horo-stat{text-align:center;padding:1rem;background:rgba(255,255,255,.03);border-radius:12px}
+.stat-bar{height:6px;background:rgba(255,255,255,.1);border-radius:3px;margin:8px 0;overflow:hidden}
+.stat-fill{height:100%;border-radius:3px;transition:width 1s ease}
+.stat-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:#8b7faa}
+.stat-value{font-size:1.2rem;font-weight:800;margin-top:.3rem}
+.lucky-section{display:flex;gap:1.5rem;flex-wrap:wrap;margin:1.5rem 0;padding:1.5rem;background:rgba(255,255,255,.03);border-radius:12px}
+.lucky-item{flex:1;min-width:120px}
+.lucky-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.2em;color:#8b7faa;margin-bottom:.3rem}
+.lucky-value{font-size:.95rem;font-weight:600}
+.advice{font-family:'Playfair Display',serif;font-style:italic;font-size:1.15rem;text-align:center;padding:1.5rem;border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08);margin:1.5rem 0;line-height:1.6;color:#c084fc}
+.go2-alignment{text-align:center;padding:2rem;margin-top:1rem}
+.go2-alignment-title{font-size:.75rem;text-transform:uppercase;letter-spacing:.2em;color:#8b7faa;margin-bottom:1rem}
+.alignment-meter{display:flex;gap:4px;justify-content:center;margin-bottom:1rem}
+.alignment-dot{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.1);transition:all .5s}
+.alignment-dot.filled{background:linear-gradient(135deg,#c084fc,#22d3ee)}
+.cta-section{text-align:center;padding:3rem 0}
+.cta-btn{display:inline-block;padding:1rem 2.5rem;background:linear-gradient(135deg,#c084fc,#818cf8);color:#fff;font-weight:800;text-decoration:none;border-radius:50px;font-size:1rem;transition:all .3s;border:none;cursor:pointer;font-family:'Inter',sans-serif}
+.cta-btn:hover{transform:scale(1.05);box-shadow:0 0 40px rgba(192,132,252,.3)}
+.cta-sub{color:#8b7faa;font-size:.85rem;margin-top:1rem}
+</style>
+</head>
+<body>
+<div class="stars-bg" id="starsBg"></div>
+<div class="content">
+<div class="header">
+<div class="zodiac-ring">✦ ✧ ✦ ✧ ✦ ✧ ✦</div>
+<h1>Your Productivity Horoscope</h1>
+<p class="subtitle">What the workplace stars have aligned for your role</p>
+</div>
+
+<div class="role-grid" id="roleGrid"></div>
+<div class="horoscope-card" id="horoscopeCard"></div>
+
+<div class="cta-section">
+<a href="https://go2.io" class="cta-btn">Align Your Team's Stars →</a>
+<p class="cta-sub">Go2 reads your work patterns, not your palm. AI coaching backed by data, not divination.</p>
+</div>
+</div>
+
+<script>
+const roles=[
+{icon:'👩‍💼',name:'Manager',symbol:'♈',reading:'The stars reveal a crushing weight of status updates, 1:1s, and cross-team coordination that consumes <strong>68% of your week</strong>. Your natural leadership energy is being drained by "work about work." This quarter, the alignment of context switching and meeting overload creates a perfect storm of burnout. But there is hope — <strong>AI coaching can surface the patterns you cannot see</strong>, giving you back 10+ hours per week. The universe (and research) says managers who adopt workforce intelligence tools see a 40% reduction in administrative overhead.',stats:[{label:'Meeting Overload',value:'92%',fill:92,color:'#ef4444'},{label:'Deep Work Time',value:'12%',fill:12,color:'#f59e0b'},{label:'Burnout Risk',value:'High',fill:85,color:'#ef4444'}],lucky:{tool:'Go2 Dashboard',day:'Tuesday',number:'10 hrs recovered',avoid:'Another spreadsheet tracker'},advice:'The best managers do not track more — they understand more. Let AI handle the pattern recognition while you handle the people.'},
+{icon:'👨‍💻',name:'Developer',symbol:'♊',reading:'Mercury is in retrograde and so is your sprint velocity. The developer stars show <strong>23 minutes lost per context switch</strong>, with an average of 50+ interruptions per day. Your creative coding energy peaks between 10am-12pm, but meetings are scattered across your calendar like asteroids. <strong>Deep work blocks are your superpower</strong> — but only 28% of your day allows them. Go2 identifies these patterns automatically, showing your team lead exactly when and how flow state is being disrupted.',stats:[{label:'Context Switching',value:'Severe',fill:88,color:'#ef4444'},{label:'Flow State Access',value:'28%',fill:28,color:'#f59e0b'},{label:'Code Quality Risk',value:'Rising',fill:65,color:'#f59e0b'}],lucky:{tool:'Focus mode alerts',day:'Wednesday',number:'23 min saved per switch',avoid:'Slack during deep work'},advice:'The code that matters most is written in uninterrupted silence. Protect your flow state like the precious resource it is.'},
+{icon:'📊',name:'Executive',symbol:'♌',reading:'The executive constellation reveals a paradox: you have <strong>more data than ever but less clarity</strong>. Your teams report green dashboards while reality tells a different story. <strong>$4.4 trillion</strong> in global productivity losses hide behind optimistic status reports. The stars align for leaders who embrace workforce intelligence — not to surveil, but to truly understand. Go2 gives you the X-ray vision executives need: where does work actually happen, what slows it down, and how to fix it.',stats:[{label:'Data Overload',value:'Critical',fill:95,color:'#ef4444'},{label:'Decision Confidence',value:'42%',fill:42,color:'#f59e0b'},{label:'ROI Visibility',value:'Low',fill:20,color:'#ef4444'}],lucky:{tool:'Go2 Executive View',day:'Monday',number:'340% ROI potential',avoid:'Vanity metrics'},advice:'True leadership is not about watching your team work — it is about understanding how work works, and clearing the path.'},
+{icon:'🎨',name:'Designer',symbol:'♎',reading:'Venus governs your creative output, but she is being blocked by <strong>revision cycles without clear context</strong>. Designers lose an average of 6 hours per week to rework caused by miscommunication — not lack of skill. Your aesthetic intuition is sharp, but the feedback loops are broken. <strong>Go2 auto-documents design decisions and their rationale</strong>, creating a living record that prevents the "why did we change this?" conversations that drain your creative energy.',stats:[{label:'Rework Waste',value:'6 hrs/wk',fill:75,color:'#f59e0b'},{label:'Creative Flow',value:'35%',fill:35,color:'#f59e0b'},{label:'Feedback Clarity',value:'Low',fill:25,color:'#ef4444'}],lucky:{tool:'Decision documentation',day:'Thursday',number:'6 hrs reclaimed',avoid:'Undefined feedback rounds'},advice:'Every pixel you push twice is a pixel wasted. Document the decisions, not just the designs.'},
+{icon:'📈',name:'Sales Rep',symbol:'♐',reading:'Jupiter expands your pipeline but <strong>administrative tasks shrink your selling time</strong>. The average rep spends only 34% of their time actually selling — the rest disappears into CRM updates, internal meetings, and searching for collateral. The stars see a future where <strong>AI auto-captures your client interactions</strong>, logs key outcomes, and surfaces coaching on what top performers do differently. That future is Go2.',stats:[{label:'Selling Time',value:'34%',fill:34,color:'#f59e0b'},{label:'Admin Burden',value:'Heavy',fill:78,color:'#ef4444'},{label:'Quota Risk',value:'Moderate',fill:55,color:'#f59e0b'}],lucky:{tool:'Auto activity logging',day:'Friday',number:'34% → 60% selling time',avoid:'Manual CRM entry'},advice:'The stars favor those who spend time with customers, not spreadsheets. Automate the busywork.'},
+{icon:'🤝',name:'HR / People',symbol:'♓',reading:'Neptune reveals a tidal wave of employee experience challenges. <strong>42% of employees are actively job searching</strong>, and your retention programs are built on gut feel, not data. The workplace stars show that companies using AI coaching (not surveillance) see <strong>31% lower turnover</strong>. Go2 helps you understand the invisible friction that drives people away — before they update their LinkedIn headline.',stats:[{label:'Retention Risk',value:'High',fill:82,color:'#ef4444'},{label:'Engagement Visibility',value:'Low',fill:22,color:'#ef4444'},{label:'Culture Health',value:'Unknown',fill:40,color:'#f59e0b'}],lucky:{tool:'Engagement analytics',day:'Tuesday',number:'31% turnover reduction',avoid:'Annual surveys as only signal'},advice:'People do not leave bad companies — they leave environments where their friction goes unheard.'},
+];
+
+const grid=document.getElementById('roleGrid');
+roles.forEach((r,i)=>{
+const btn=document.createElement('div');
+btn.className='role-btn';
+btn.innerHTML=`<div class="role-icon">${r.icon}</div><div class="role-name">${r.name}</div>`;
+btn.onclick=()=>showHoroscope(i,btn);
+grid.appendChild(btn);
+});
+
+function showHoroscope(idx,btn){
+document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+const r=roles[idx];
+const card=document.getElementById('horoscopeCard');
+card.classList.remove('visible');
+setTimeout(()=>{
+card.innerHTML=`
+<div class="horo-header">
+<div class="horo-symbol">${r.icon}</div>
+<div><div class="horo-title">${r.symbol} The ${r.name}</div><div class="horo-date">Q1 2026 Reading</div></div>
+</div>
+<div class="horo-body">${r.reading}</div>
+<div class="horo-stats">${r.stats.map(s=>`
+<div class="horo-stat">
+<div class="stat-label">${s.label}</div>
+<div class="stat-bar"><div class="stat-fill" style="width:0%;background:${s.color}"></div></div>
+<div class="stat-value">${s.value}</div>
+</div>`).join('')}</div>
+<div class="lucky-section">
+<div class="lucky-item"><div class="lucky-label">Lucky Tool</div><div class="lucky-value">${r.lucky.tool}</div></div>
+<div class="lucky-item"><div class="lucky-label">Lucky Day</div><div class="lucky-value">${r.lucky.day}</div></div>
+<div class="lucky-item"><div class="lucky-label">Lucky Number</div><div class="lucky-value">${r.lucky.number}</div></div>
+<div class="lucky-item"><div class="lucky-label">Avoid</div><div class="lucky-value">${r.lucky.avoid}</div></div>
+</div>
+<div class="advice">"${r.advice}"</div>
+<div class="go2-alignment">
+<div class="go2-alignment-title">Go2 Alignment Score</div>
+<div class="alignment-meter">${Array.from({length:10},(_, j)=>`<div class="alignment-dot${j<7?' filled':''}"></div>`).join('')}</div>
+<div style="font-size:.85rem;color:#c084fc">7/10 — Strong alignment. Go2 was built for this.</div>
+</div>`;
+card.classList.add('visible');
+setTimeout(()=>{
+card.querySelectorAll('.stat-fill').forEach((f,i)=>{
+f.style.width=r.stats[i].fill+'%';
+});
+},100);
+},300);
+}
+
+// Stars
+const bg=document.getElementById('starsBg');
+for(let i=0;i<200;i++){
+const star=document.createElement('div');
+star.className='star';
+star.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;width:${1+Math.random()*2}px;height:${1+Math.random()*2}px;opacity:${.2+Math.random()*.6};animation:twinkle ${2+Math.random()*4}s ease-in-out infinite;animation-delay:${-Math.random()*4}s`;
+bg.appendChild(star);
+}
+const style=document.createElement('style');
+style.textContent='@keyframes twinkle{0%,100%{opacity:.2}50%{opacity:.8}}';
+document.head.appendChild(style);
+
+// Auto-select first role
+showHoroscope(0,document.querySelector('.role-btn'));
+</script>
+</body>
+</html>

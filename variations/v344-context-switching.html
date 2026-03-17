@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>47 Context Switches Per Day | Go2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0f;color:#e0e0e0;overflow-x:hidden}
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem}
+.hero h1{font-size:clamp(2rem,5vw,3.8rem);font-weight:800;background:linear-gradient(135deg,#ec4899,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:1rem}
+.hero p{font-size:1.3rem;color:#94a3b8;max-width:650px;margin-bottom:2rem}
+.brain-viz{width:300px;height:300px;margin:2rem auto;position:relative}
+.brain-svg{width:100%;height:100%}
+.fragment{position:absolute;border-radius:50%;opacity:.6;transition:all 1s}
+.counter-section{text-align:center;padding:3rem 2rem}
+.switch-counter{font-size:6rem;font-weight:800;color:#ec4899;font-variant-numeric:tabular-nums}
+.counter-label{color:#94a3b8;font-size:1.2rem}
+.sim-section{max-width:900px;margin:2rem auto;padding:2rem}
+.sim-section h2{text-align:center;font-size:2rem;font-weight:700;margin-bottom:.5rem}
+.sim-sub{text-align:center;color:#94a3b8;margin-bottom:2rem}
+.sim-controls{display:flex;justify-content:center;gap:1rem;margin-bottom:2rem}
+.sim-btn{padding:.6rem 1.5rem;border-radius:8px;border:1px solid #333;background:transparent;color:#94a3b8;cursor:pointer;font-size:.9rem;transition:all .3s}
+.sim-btn.active{border-color:#ec4899;background:rgba(236,72,153,.15);color:#ec4899}
+.timeline-vis{position:relative;height:120px;background:#1e293b;border-radius:12px;overflow:hidden;margin:1rem 0}
+.tl-block{position:absolute;top:10px;height:100px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:600;color:white;transition:all .8s}
+.tl-legend{display:flex;gap:1.5rem;justify-content:center;margin:1rem 0;flex-wrap:wrap}
+.tl-legend-item{display:flex;align-items:center;gap:.4rem;font-size:.8rem;color:#94a3b8}
+.tl-legend-dot{width:10px;height:10px;border-radius:3px}
+.cost-section{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem;max-width:1000px;margin:4rem auto;padding:0 2rem}
+.cost-card{padding:1.5rem;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);text-align:center}
+.cost-card .icon{font-size:2.5rem;margin-bottom:.8rem}
+.cost-card h3{color:#e0e0e0;font-size:1.1rem;margin-bottom:.5rem}
+.cost-card .val{font-size:2rem;font-weight:800;color:#ec4899}
+.cost-card p{color:#94a3b8;font-size:.85rem;margin-top:.3rem}
+.coaching-demo{max-width:800px;margin:4rem auto;padding:2rem}
+.coaching-demo h2{text-align:center;font-size:2rem;font-weight:700;margin-bottom:2rem}
+.notif{padding:1rem 1.5rem;margin:.8rem 0;border-radius:12px;display:flex;gap:1rem;align-items:flex-start;animation:slideIn .5s;cursor:pointer;transition:all .3s}
+.notif:hover{transform:translateX(5px)}
+@keyframes slideIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+.notif.alert{background:rgba(236,72,153,.08);border:1px solid rgba(236,72,153,.2)}
+.notif.coach{background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.2)}
+.notif.result{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2)}
+.notif-icon{font-size:1.5rem;flex-shrink:0}
+.notif-body h4{font-size:.95rem;margin-bottom:.3rem}
+.notif.alert h4{color:#ec4899}
+.notif.coach h4{color:#60a5fa}
+.notif.result h4{color:#22c55e}
+.notif-body p{color:#94a3b8;font-size:.85rem;line-height:1.5}
+.progress-section{max-width:900px;margin:4rem auto;padding:2rem}
+.progress-section h2{text-align:center;font-size:2rem;font-weight:700;margin-bottom:2rem}
+.week-progress{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
+.week-card{padding:1.5rem;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);text-align:center}
+.week-card h4{color:#94a3b8;font-size:.85rem;margin-bottom:.8rem}
+.week-card .metric{font-size:2rem;font-weight:800}
+.week-card .sub{font-size:.8rem;color:#94a3b8;margin-top:.3rem}
+.w1 .metric{color:#ef4444}
+.w2 .metric{color:#f59e0b}
+.w3 .metric{color:#60a5fa}
+.w4 .metric{color:#22c55e}
+.science{max-width:800px;margin:4rem auto;padding:2rem}
+.science h2{text-align:center;font-size:2rem;font-weight:700;margin-bottom:2rem}
+.science-fact{padding:1.2rem 1.5rem;margin:.8rem 0;background:rgba(255,255,255,.03);border-radius:10px;border-left:3px solid #a78bfa;display:flex;gap:1rem;align-items:flex-start}
+.science-fact .num{font-size:1.5rem;font-weight:800;color:#a78bfa;flex-shrink:0;width:60px}
+.science-fact p{color:#94a3b8;font-size:.95rem;line-height:1.5}
+.science-fact strong{color:#e0e0e0}
+.cta-section{text-align:center;padding:6rem 2rem}
+.cta-section h2{font-size:2.5rem;font-weight:800;margin-bottom:1rem;background:linear-gradient(135deg,#60a5fa,#22c55e);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.cta-section p{color:#94a3b8;font-size:1.2rem;margin-bottom:2rem}
+.cta-btn{display:inline-block;padding:1rem 3rem;background:linear-gradient(135deg,#60a5fa,#a78bfa);color:white;font-size:1.2rem;font-weight:700;border-radius:12px;text-decoration:none;transition:all .3s}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 10px 40px rgba(96,165,250,.3)}
+@media(max-width:768px){.week-progress{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="hero">
+<h1>47 Context Switches Per Day</h1>
+<p>Every time you switch tasks, your brain pays a cognitive tax. It takes 23 minutes to regain deep focus. You're losing 40% of your productive capacity to switching alone.</p>
+<div class="brain-viz" id="brainViz">
+<svg class="brain-svg" viewBox="0 0 200 200">
+<ellipse cx="100" cy="95" rx="70" ry="80" fill="none" stroke="#333" stroke-width="2"/>
+<path d="M100 15 Q60 40 65 95 Q60 150 100 175" fill="none" stroke="#333" stroke-width="1.5"/>
+<path d="M35 60 Q70 75 80 95" fill="none" stroke="#333" stroke-width="1"/>
+<path d="M165 60 Q130 75 120 95" fill="none" stroke="#333" stroke-width="1"/>
+<path d="M45 130 Q75 115 90 95" fill="none" stroke="#333" stroke-width="1"/>
+<path d="M155 130 Q125 115 110 95" fill="none" stroke="#333" stroke-width="1"/>
+</svg>
+</div>
+<p style="font-size:.9rem;color:#666" id="brainLabel">Click to simulate context switching</p>
+<button onclick="fragmentBrain()" style="padding:.6rem 1.5rem;border-radius:8px;border:1px solid #ec4899;background:rgba(236,72,153,.15);color:#ec4899;cursor:pointer;font-size:.9rem">Simulate Switch</button>
+</div>
+
+<div class="counter-section">
+<div>Since you opened this page, the average worker has made:</div>
+<div class="switch-counter" id="switchCount">0</div>
+<div class="counter-label">context switches</div>
+</div>
+
+<div class="sim-section">
+<h2>A Day in Two Timelines</h2>
+<p class="sim-sub">Compare a typical day with and without Go2's focus coaching</p>
+<div class="sim-controls">
+<button class="sim-btn active" onclick="showTimeline('before')">Without Go2</button>
+<button class="sim-btn" onclick="showTimeline('after')">With Go2</button>
+</div>
+<div class="timeline-vis" id="timelineVis"></div>
+<div class="tl-legend">
+<div class="tl-legend-item"><div class="tl-legend-dot" style="background:#60a5fa"></div>Deep work</div>
+<div class="tl-legend-item"><div class="tl-legend-dot" style="background:#f59e0b"></div>Meetings</div>
+<div class="tl-legend-item"><div class="tl-legend-dot" style="background:#ec4899"></div>Context switch</div>
+<div class="tl-legend-item"><div class="tl-legend-dot" style="background:#8b5cf6"></div>Email/Slack</div>
+<div class="tl-legend-item"><div class="tl-legend-dot" style="background:#ef4444"></div>Recovery time</div>
+</div>
+<div id="timelineStats" style="text-align:center;color:#94a3b8;font-size:.95rem;margin-top:1rem"></div>
+</div>
+
+<div style="padding:2rem">
+<h2 style="text-align:center;font-size:2rem;font-weight:700;margin-bottom:1rem">The Hidden Cost</h2>
+<div class="cost-section">
+<div class="cost-card"><div class="icon">🧠</div><h3>Cognitive Tax</h3><div class="val">23 min</div><p>Time to regain deep focus after each switch</p></div>
+<div class="cost-card"><div class="icon">📉</div><h3>Quality Drop</h3><div class="val">50%</div><p>More errors when multitasking vs. single-tasking</p></div>
+<div class="cost-card"><div class="icon">😫</div><h3>Stress Increase</h3><div class="val">2.8x</div><p>Cortisol levels during heavy switching days</p></div>
+<div class="cost-card"><div class="icon">💰</div><h3>Annual Cost</h3><div class="val">$15K</div><p>Lost productivity per employee per year</p></div>
+</div>
+</div>
+
+<div class="coaching-demo">
+<h2>Go2 Focus Coaching in Action</h2>
+<div class="notif alert"><div class="notif-icon">⚠️</div><div class="notif-body"><h4>Pattern Detected: 12 switches before noon</h4><p>You've switched between Slack, Jira, and your IDE 12 times this morning. Your deepest focus block was only 8 minutes. This is 3x your team's average.</p></div></div>
+<div class="notif coach"><div class="notif-icon">💡</div><div class="notif-body"><h4>Coaching: Try the "communication batch" technique</h4><p>Your top performers check Slack at 9am, 12pm, and 4pm — not continuously. Try batching your communication windows. Go2 can auto-set your Slack status during focus blocks.</p></div></div>
+<div class="notif coach"><div class="notif-icon">📊</div><div class="notif-body"><h4>Insight: Your best work happens 2-4pm</h4><p>Analyzing your last 30 days: your highest-quality output (measured by commit quality, document depth, and error rate) happens between 2-4pm. But you have meetings scheduled in that slot 4 out of 5 days.</p></div></div>
+<div class="notif result"><div class="notif-icon">✅</div><div class="notif-body"><h4>Progress: Week 3 — down to 28 switches/day</h4><p>You've reduced context switches by 40% since starting Go2 coaching. Your focus blocks have grown from 8 minutes to 45 minutes average. Quality metrics are up 22%.</p></div></div>
+</div>
+
+<div class="progress-section">
+<h2>Typical Progress with Go2 Coaching</h2>
+<div class="week-progress">
+<div class="week-card w1"><h4>Week 1</h4><div class="metric">47</div><div class="sub">switches/day</div><div class="sub" style="margin-top:.5rem">Baseline measurement</div></div>
+<div class="week-card w2"><h4>Week 2</h4><div class="metric">35</div><div class="sub">switches/day</div><div class="sub" style="margin-top:.5rem">-26% with awareness</div></div>
+<div class="week-card w3"><h4>Week 4</h4><div class="metric">22</div><div class="sub">switches/day</div><div class="sub" style="margin-top:.5rem">-53% with batching</div></div>
+<div class="week-card w4"><h4>Week 8</h4><div class="metric">15</div><div class="sub">switches/day</div><div class="sub" style="margin-top:.5rem">-68% new habits</div></div>
+</div>
+</div>
+
+<div class="science">
+<h2>The Science Behind Context Switching</h2>
+<div class="science-fact"><div class="num">23m</div><p><strong>It takes 23 minutes and 15 seconds</strong> to return to full focus after an interruption. (University of California, Irvine — Gloria Mark)</p></div>
+<div class="science-fact"><div class="num">40%</div><p><strong>Multitasking reduces productivity by 40%</strong>, equivalent to the cognitive impact of losing a full night's sleep. (American Psychological Association)</p></div>
+<div class="science-fact"><div class="num">50%</div><p><strong>Error rates increase by 50%</strong> when workers are frequently interrupted during cognitively demanding tasks. (Journal of Experimental Psychology)</p></div>
+<div class="science-fact"><div class="num">2.5h</div><p><strong>The average knowledge worker gets 2.5 hours</strong> of truly productive work per 8-hour day — the rest is lost to switching, recovery, and fragmented attention.</p></div>
+<div class="science-fact"><div class="num">$997B</div><p><strong>Context switching costs the US economy $997 billion annually</strong> in lost productivity across knowledge work industries.</p></div>
+</div>
+
+<div class="cta-section">
+<h2>Stop Fragmenting Your Team's Focus</h2>
+<p>Go2 coaching builds better work habits. No surveillance — just awareness and guidance.</p>
+<a href="https://go2.io" class="cta-btn">Reclaim Your Focus &rarr;</a>
+</div>
+
+<script>
+let fragments=[];
+function fragmentBrain(){
+    const viz=document.getElementById('brainViz');
+    const colors=['#ec4899','#f59e0b','#8b5cf6','#ef4444','#60a5fa'];
+    const f=document.createElement('div');
+    f.className='fragment';
+    f.style.width=Math.random()*30+10+'px';
+    f.style.height=f.style.width;
+    f.style.background=colors[Math.floor(Math.random()*colors.length)];
+    f.style.left=Math.random()*200+50+'px';
+    f.style.top=Math.random()*200+50+'px';
+    viz.appendChild(f);
+    fragments.push(f);
+    if(fragments.length>20){const old=fragments.shift();old.remove();}
+    document.getElementById('brainLabel').textContent=`${fragments.length} fragments — focus is shattered`;
+}
+
+let elapsed=0;
+setInterval(()=>{elapsed++;const switches=Math.floor(elapsed/12.5);document.getElementById('switchCount').textContent=switches;},1000);
+
+const beforeBlocks=[
+{l:0,w:3,c:'#60a5fa',t:'Code'},{l:3,w:1,c:'#ec4899',t:''},{l:4,w:2,c:'#8b5cf6',t:'Slack'},{l:6,w:1,c:'#ec4899',t:''},{l:7,w:4,c:'#f59e0b',t:'Meeting'},{l:11,w:1,c:'#ec4899',t:''},{l:12,w:2,c:'#60a5fa',t:'Code'},{l:14,w:1,c:'#ec4899',t:''},{l:15,w:2,c:'#8b5cf6',t:'Email'},{l:17,w:1,c:'#ec4899',t:''},{l:18,w:3,c:'#f59e0b',t:'Meeting'},{l:21,w:1,c:'#ec4899',t:''},{l:22,w:2,c:'#ef4444',t:'Recovery'},{l:24,w:2,c:'#60a5fa',t:'Code'},{l:26,w:1,c:'#ec4899',t:''},{l:27,w:3,c:'#8b5cf6',t:'Slack'},{l:30,w:2,c:'#ef4444',t:'Recovery'},{l:32,w:4,c:'#f59e0b',t:'Meeting'},{l:36,w:1,c:'#ec4899',t:''},{l:37,w:3,c:'#60a5fa',t:'Code'}
+];
+const afterBlocks=[
+{l:0,w:10,c:'#60a5fa',t:'Deep Work'},{l:10,w:2,c:'#8b5cf6',t:'Comms'},{l:12,w:6,c:'#f59e0b',t:'Meetings'},{l:18,w:2,c:'#8b5cf6',t:'Comms'},{l:20,w:10,c:'#60a5fa',t:'Deep Work'},{l:30,w:2,c:'#8b5cf6',t:'Comms'},{l:32,w:4,c:'#f59e0b',t:'Meeting'},{l:36,w:4,c:'#60a5fa',t:'Deep Work'}
+];
+function showTimeline(mode){
+    document.querySelectorAll('.sim-btn').forEach(b=>b.classList.remove('active'));
+    event.target.classList.add('active');
+    const vis=document.getElementById('timelineVis');
+    vis.innerHTML='';
+    const blocks=mode==='before'?beforeBlocks:afterBlocks;
+    const total=40;
+    blocks.forEach(b=>{
+        const el=document.createElement('div');
+        el.className='tl-block';
+        el.style.left=(b.l/total*100)+'%';
+        el.style.width=(b.w/total*100)+'%';
+        el.style.background=b.c;
+        el.textContent=b.t;
+        vis.appendChild(el);
+    });
+    const stats=document.getElementById('timelineStats');
+    if(mode==='before') stats.textContent='47 switches | 2.5h deep work | 1.5h recovery time | Largest focus block: 18 min';
+    else stats.textContent='6 switches | 6h deep work | 0h recovery time | Largest focus block: 2.5 hours';
+}
+showTimeline('before');
+</script>
+</body>
+</html>

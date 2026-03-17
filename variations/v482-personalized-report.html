@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Personalized Productivity Report (v482)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a12;--surface:#12121e;--surface2:#1a1a2e;--border:#252540;--accent:#7c3aed;--accent-light:#a78bfa;--green:#10b981;--yellow:#f59e0b;--red:#ef4444;--blue:#3b82f6;--text:#e2e8f0;--muted:#94a3b8;--white:#fff}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.6}
+
+/* Intake form */
+.intake{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;position:relative}
+.intake::before{content:'';position:absolute;top:20%;left:50%;width:600px;height:600px;background:radial-gradient(circle,rgba(124,58,237,.1),transparent);transform:translateX(-50%);border-radius:50%;pointer-events:none}
+.intake-card{max-width:540px;width:100%;position:relative;z-index:1}
+.intake-card h1{font-size:2.2rem;font-weight:800;text-align:center;margin-bottom:.5rem}
+.intake-card h1 span{background:linear-gradient(135deg,var(--accent),#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.intake-sub{text-align:center;color:var(--muted);margin-bottom:2.5rem;font-size:1rem}
+.form-group{margin-bottom:1.25rem}
+.form-group label{display:block;font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:.4rem}
+.form-group input,.form-group select{width:100%;padding:.75rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:.9rem;font-family:inherit;outline:none;transition:border .2s}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent)}
+.form-group select option{background:var(--surface);color:var(--text)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.generate-btn{width:100%;padding:1rem;background:linear-gradient(135deg,var(--accent),#ec4899);color:#fff;border:none;border-radius:10px;font-size:1.05rem;font-weight:700;cursor:pointer;transition:all .3s;font-family:inherit;margin-top:1rem}
+.generate-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(124,58,237,.4)}
+.form-note{text-align:center;font-size:.75rem;color:var(--muted);margin-top:1rem}
+
+/* Loading */
+.loading-screen{display:none;position:fixed;inset:0;background:var(--bg);z-index:100;flex-direction:column;align-items:center;justify-content:center}
+.loading-screen.show{display:flex}
+.loading-steps{max-width:400px;width:100%}
+.loading-step{display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem;opacity:.3;transition:opacity .5s}
+.loading-step.active{opacity:1}
+.loading-step.done{opacity:.6}
+.loading-step .check{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0;transition:all .3s}
+.loading-step.active .check{border-color:var(--accent);color:var(--accent);animation:spin 1s linear infinite}
+.loading-step.done .check{border-color:var(--green);background:var(--green);color:#fff}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.loading-step span{font-size:.9rem;color:var(--text)}
+.loading-progress{width:100%;height:3px;background:var(--surface);border-radius:3px;margin-top:1rem;overflow:hidden}
+.loading-bar{height:100%;background:linear-gradient(90deg,var(--accent),#ec4899);width:0;transition:width .5s}
+
+/* Report */
+.report{display:none;max-width:900px;margin:0 auto;padding:2rem}
+.report.show{display:block}
+.report-header{text-align:center;padding:3rem 0;border-bottom:1px solid var(--border);margin-bottom:3rem}
+.report-logo{font-size:1.2rem;font-weight:700;color:var(--accent-light);margin-bottom:1rem}
+.report-header h1{font-size:2rem;font-weight:800;margin-bottom:.5rem;color:var(--white)}
+.report-header h1 .company-name{color:var(--accent-light)}
+.report-header p{color:var(--muted);font-size:.95rem}
+.report-date{font-size:.75rem;color:var(--muted);margin-top:.5rem}
+
+/* Score section */
+.score-section{display:grid;grid-template-columns:280px 1fr;gap:2rem;margin-bottom:3rem;align-items:center}
+.score-circle{width:200px;height:200px;border-radius:50%;background:conic-gradient(var(--accent) 0deg,var(--accent) var(--score-deg),var(--surface2) var(--score-deg));display:flex;align-items:center;justify-content:center;margin:0 auto;position:relative}
+.score-circle::before{content:'';position:absolute;inset:15px;background:var(--bg);border-radius:50%}
+.score-inner{position:relative;text-align:center}
+.score-num{font-size:3rem;font-weight:800;color:var(--white)}
+.score-label{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.score-details h3{font-size:1.3rem;font-weight:700;color:var(--white);margin-bottom:.75rem}
+.score-details p{color:var(--muted);line-height:1.6;margin-bottom:1rem}
+.score-bar-row{display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem}
+.score-bar-label{font-size:.8rem;width:120px;color:var(--text)}
+.score-bar-track{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.score-bar-fill{height:100%;border-radius:4px;transition:width 1.5s ease-out}
+
+/* Stats grid */
+.report-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-bottom:3rem}
+.report-stat{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.5rem;text-align:center}
+.report-stat .val{font-size:2rem;font-weight:800;color:var(--white);line-height:1}
+.report-stat .label{font-size:.75rem;color:var(--muted);margin-top:.5rem;text-transform:uppercase;letter-spacing:.05em}
+.report-stat .context{font-size:.7rem;color:var(--accent-light);margin-top:.4rem}
+
+/* Sections */
+.report-section{margin-bottom:3rem}
+.report-section h2{font-size:1.4rem;font-weight:700;color:var(--white);margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem}
+.report-section .section-sub{color:var(--muted);font-size:.9rem;margin-bottom:1.5rem}
+
+/* Findings */
+.finding{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1rem;border-left:3px solid var(--accent)}
+.finding h4{font-size:.95rem;font-weight:600;color:var(--white);margin-bottom:.3rem}
+.finding p{font-size:.85rem;color:var(--muted);line-height:1.5}
+.finding .impact{display:inline-block;font-size:.7rem;padding:.2rem .5rem;border-radius:4px;margin-top:.5rem;font-weight:600}
+.finding .impact.high{background:rgba(16,185,129,.15);color:var(--green)}
+.finding .impact.med{background:rgba(245,158,11,.15);color:var(--yellow)}
+
+/* Comparison table */
+.comp-table{width:100%;border-collapse:collapse;font-size:.85rem}
+.comp-table th{text-align:left;padding:.75rem 1rem;background:var(--surface);color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--border)}
+.comp-table td{padding:.75rem 1rem;border-bottom:1px solid rgba(255,255,255,.03)}
+.comp-table .metric-name{color:var(--text);font-weight:500}
+.comp-table .your-val{color:var(--white);font-weight:700}
+.comp-table .ind-val{color:var(--muted)}
+.comp-table .diff{font-weight:600;font-size:.8rem}
+.comp-table .diff.positive{color:var(--green)}
+.comp-table .diff.negative{color:var(--red)}
+
+/* Roadmap */
+.roadmap-item{display:grid;grid-template-columns:60px 1fr;gap:1rem;margin-bottom:1.5rem}
+.roadmap-phase{text-align:center}
+.roadmap-phase .week{font-size:1.5rem;font-weight:800;color:var(--accent-light)}
+.roadmap-phase .wlabel{font-size:.65rem;color:var(--muted);text-transform:uppercase}
+.roadmap-content{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem}
+.roadmap-content h4{font-size:.9rem;font-weight:600;color:var(--white);margin-bottom:.3rem}
+.roadmap-content p{font-size:.8rem;color:var(--muted);line-height:1.4}
+.roadmap-content .expected{font-size:.75rem;color:var(--green);margin-top:.4rem;font-weight:500}
+
+/* CTA */
+.report-cta{text-align:center;padding:3rem;background:linear-gradient(135deg,rgba(124,58,237,.1),rgba(236,72,153,.1));border-radius:16px;border:1px solid rgba(124,58,237,.2);margin:3rem 0}
+.report-cta h2{font-size:1.6rem;font-weight:800;color:var(--white);margin-bottom:.5rem}
+.report-cta p{color:var(--muted);margin-bottom:1.5rem;max-width:500px;margin-left:auto;margin-right:auto}
+.report-cta a{display:inline-block;padding:1rem 2.5rem;background:linear-gradient(135deg,var(--accent),#ec4899);color:#fff;border-radius:10px;text-decoration:none;font-weight:700;font-size:1rem;transition:all .3s}
+.report-cta a:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(124,58,237,.4)}
+
+.report-footer{text-align:center;padding:2rem 0;border-top:1px solid var(--border);color:var(--muted);font-size:.8rem}
+
+@media(max-width:768px){
+.score-section{grid-template-columns:1fr}
+.report-stats{grid-template-columns:1fr}
+.form-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- Intake Form -->
+<div class="intake" id="intake">
+  <div class="intake-card">
+    <h1>Your Free <span>Productivity Analysis</span></h1>
+    <p class="intake-sub">Enter your company details below. Go2's AI will generate a comprehensive productivity report in under 30 seconds.</p>
+
+    <div class="form-group">
+      <label>Company Name</label>
+      <input type="text" id="companyName" placeholder="e.g., Acme Corp" value="">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Industry</label>
+        <select id="industry">
+          <option value="saas">SaaS / Software</option>
+          <option value="fintech">Fintech</option>
+          <option value="ecommerce">E-Commerce</option>
+          <option value="healthcare">Healthcare</option>
+          <option value="agency">Agency / Services</option>
+          <option value="manufacturing">Manufacturing</option>
+          <option value="education">Education</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Team Size</label>
+        <select id="teamSize">
+          <option value="10">1–10</option>
+          <option value="25">11–25</option>
+          <option value="50" selected>26–50</option>
+          <option value="100">51–100</option>
+          <option value="250">101–250</option>
+          <option value="500">250+</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Biggest Challenge</label>
+        <select id="challenge">
+          <option value="meetings">Too many meetings</option>
+          <option value="visibility">Lack of visibility</option>
+          <option value="burnout">Team burnout</option>
+          <option value="onboarding">Slow onboarding</option>
+          <option value="remote">Remote coordination</option>
+          <option value="turnover">High turnover</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Avg. Meetings Per Day</label>
+        <select id="meetings">
+          <option value="2">1–2</option>
+          <option value="4" selected>3–5</option>
+          <option value="7">6–8</option>
+          <option value="10">9+</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Your Work Email</label>
+      <input type="email" id="email" placeholder="you@company.com">
+    </div>
+    <button class="generate-btn" onclick="generateReport()">Generate My Free Report →</button>
+    <p class="form-note">Takes ~30 seconds. No credit card. Report is yours to keep.</p>
+  </div>
+</div>
+
+<!-- Loading -->
+<div class="loading-screen" id="loading">
+  <h2 style="margin-bottom:2rem;font-size:1.2rem;color:var(--white)">Analyzing <span id="loadingCompany" style="color:var(--accent-light)">your company</span>...</h2>
+  <div class="loading-steps">
+    <div class="loading-step" id="ls1"><div class="check">↻</div><span>Pulling industry benchmarks...</span></div>
+    <div class="loading-step" id="ls2"><div class="check">↻</div><span>Calculating productivity gaps...</span></div>
+    <div class="loading-step" id="ls3"><div class="check">↻</div><span>Analyzing meeting overhead...</span></div>
+    <div class="loading-step" id="ls4"><div class="check">↻</div><span>Generating AI recommendations...</span></div>
+    <div class="loading-step" id="ls5"><div class="check">↻</div><span>Building your personalized report...</span></div>
+    <div class="loading-progress"><div class="loading-bar" id="loadingBar"></div></div>
+  </div>
+</div>
+
+<!-- Report -->
+<div class="report" id="report">
+  <!-- filled by JS -->
+</div>
+
+<script>
+const industryData={
+  saas:{name:'SaaS / Software',avgScore:62,meetingOverhead:34,focusTime:3.2,turnoverCost:185000,rampDays:28,burnoutRate:41},
+  fintech:{name:'Fintech',avgScore:58,meetingOverhead:38,focusTime:2.8,turnoverCost:210000,rampDays:35,burnoutRate:47},
+  ecommerce:{name:'E-Commerce',avgScore:65,meetingOverhead:28,focusTime:3.5,turnoverCost:145000,rampDays:21,burnoutRate:38},
+  healthcare:{name:'Healthcare',avgScore:55,meetingOverhead:42,focusTime:2.4,turnoverCost:195000,rampDays:42,burnoutRate:52},
+  agency:{name:'Agency / Services',avgScore:60,meetingOverhead:36,focusTime:3.0,turnoverCost:120000,rampDays:25,burnoutRate:44},
+  manufacturing:{name:'Manufacturing',avgScore:57,meetingOverhead:30,focusTime:2.9,turnoverCost:155000,rampDays:32,burnoutRate:35},
+  education:{name:'Education',avgScore:53,meetingOverhead:40,focusTime:2.6,turnoverCost:95000,rampDays:30,burnoutRate:48}
+};
+const challengeInsights={
+  meetings:{title:'Meeting Overload',finding:'Your team likely spends 60%+ of the week in synchronous communication.',rec:'Go2 can auto-identify meetings that should be async and suggest cancellations.'},
+  visibility:{title:'Visibility Gap',finding:'Without real-time productivity data, managers make decisions based on gut feeling.',rec:'Go2 provides live dashboards showing exactly where time goes — no surveillance, just intelligence.'},
+  burnout:{title:'Burnout Risk',finding:'Teams without workload balancing see 2.3x higher burnout rates.',rec:'Go2 detects early burnout signals and suggests workload redistribution before it\'s too late.'},
+  onboarding:{title:'Slow Ramp-Up',finding:'Every extra week of onboarding costs $2,800 per new hire in lost productivity.',rec:'Go2 auto-generates onboarding playbooks from your top performers\' patterns.'},
+  remote:{title:'Remote Coordination',finding:'Remote teams lose 4.2 hours/week per person to coordination overhead.',rec:'Go2 identifies timezone overlaps, async opportunities, and optimal meeting windows.'},
+  turnover:{title:'Retention Crisis',finding:'Replacing an employee costs 33-200% of their salary. Prevention is 10x cheaper.',rec:'Go2 spots disengagement patterns 6-8 weeks before voluntary departures.'}
+};
+
+let companyName,industry,teamSize,challenge,meetings;
+
+function generateReport(){
+  companyName=document.getElementById('companyName').value||'Your Company';
+  industry=document.getElementById('industry').value;
+  teamSize=parseInt(document.getElementById('teamSize').value);
+  challenge=document.getElementById('challenge').value;
+  meetings=parseInt(document.getElementById('meetings').value);
+
+  document.getElementById('loadingCompany').textContent=companyName;
+  document.getElementById('intake').style.display='none';
+  document.getElementById('loading').classList.add('show');
+
+  const steps=['ls1','ls2','ls3','ls4','ls5'];
+  const bar=document.getElementById('loadingBar');
+  steps.forEach((s,i)=>{
+    setTimeout(()=>{
+      if(i>0)document.getElementById(steps[i-1]).classList.remove('active'),document.getElementById(steps[i-1]).classList.add('done'),document.getElementById(steps[i-1]).querySelector('.check').textContent='✓';
+      document.getElementById(s).classList.add('active');
+      bar.style.width=((i+1)/steps.length*100)+'%';
+    },(i+1)*1200);
+  });
+  setTimeout(()=>{
+    document.getElementById('ls5').classList.remove('active');
+    document.getElementById('ls5').classList.add('done');
+    document.getElementById('ls5').querySelector('.check').textContent='✓';
+  },6500);
+  setTimeout(showReport,7000);
+}
+
+function showReport(){
+  document.getElementById('loading').classList.remove('show');
+  const r=document.getElementById('report');
+  r.classList.add('show');
+
+  const ind=industryData[industry];
+  const ch=challengeInsights[challenge];
+  const score=Math.min(95,ind.avgScore+Math.floor(Math.random()*15)+5);
+  const meetingHoursWeek=meetings*5*0.75;
+  const focusLost=meetingHoursWeek*teamSize;
+  const costPerHour=65;
+  const annualWaste=Math.round(focusLost*52*costPerHour);
+  const go2Savings=Math.round(annualWaste*0.35);
+  const turnoverSavings=Math.round(ind.turnoverCost*teamSize*0.05*0.6);
+
+  r.innerHTML=`
+    <div class="report-header">
+      <div class="report-logo">Go2 Productivity Intelligence</div>
+      <h1>Productivity Analysis: <span class="company-name">${companyName}</span></h1>
+      <p>A comprehensive AI-powered analysis of your team's productivity potential</p>
+      <div class="report-date">Generated March 17, 2026 · ${ind.name} · ${teamSize} employees</div>
+    </div>
+
+    <div class="score-section">
+      <div class="score-circle" style="--score-deg:${score*3.6}deg">
+        <div class="score-inner">
+          <div class="score-num">${score}</div>
+          <div class="score-label">Potential Score</div>
+        </div>
+      </div>
+      <div class="score-details">
+        <h3>${companyName}'s Productivity Potential</h3>
+        <p>Based on your industry (${ind.name}), team size (${teamSize}), and reported challenges, we estimate ${companyName} is operating at <strong>${Math.round(score*0.65)}%</strong> of its productivity potential. The average in your industry is ${ind.avgScore}%.</p>
+        <div class="score-bar-row"><div class="score-bar-label">Focus Time</div><div class="score-bar-track"><div class="score-bar-fill" style="width:${Math.min(85,ind.focusTime*20)}%;background:var(--accent)"></div></div></div>
+        <div class="score-bar-row"><div class="score-bar-label">Collaboration</div><div class="score-bar-track"><div class="score-bar-fill" style="width:${70+Math.random()*15}%;background:var(--blue)"></div></div></div>
+        <div class="score-bar-row"><div class="score-bar-label">Automation</div><div class="score-bar-track"><div class="score-bar-fill" style="width:${35+Math.random()*20}%;background:var(--yellow)"></div></div></div>
+        <div class="score-bar-row"><div class="score-bar-label">Well-being</div><div class="score-bar-track"><div class="score-bar-fill" style="width:${100-ind.burnoutRate}%;background:var(--green)"></div></div></div>
+      </div>
+    </div>
+
+    <div class="report-stats">
+      <div class="report-stat"><div class="val">$${(annualWaste/1000000).toFixed(1)}M</div><div class="label">Annual Productivity Loss</div><div class="context">Based on ${meetingHoursWeek.toFixed(0)}h meetings/week × ${teamSize} people</div></div>
+      <div class="report-stat"><div class="val">${focusLost.toFixed(0)}h</div><div class="label">Focus Hours Lost / Week</div><div class="context">${ind.meetingOverhead}% of time in meetings (industry: ${ind.meetingOverhead}%)</div></div>
+      <div class="report-stat"><div class="val">$${(go2Savings/1000).toFixed(0)}K</div><div class="label">Recoverable with Go2</div><div class="context">35% recovery rate based on similar ${ind.name} companies</div></div>
+    </div>
+
+    <div class="report-section">
+      <h2>🔍 Key Findings for ${companyName}</h2>
+      <p class="section-sub">Based on your inputs and ${ind.name} industry data</p>
+
+      <div class="finding">
+        <h4>${ch.title}</h4>
+        <p>${ch.finding} For a team of ${teamSize}, this translates to roughly ${Math.round(teamSize*4.2)} hours per week of lost deep work.</p>
+        <div class="impact high">High Impact · Est. $${(annualWaste*0.15/1000).toFixed(0)}K/year recoverable</div>
+      </div>
+      <div class="finding">
+        <h4>Meeting Tax: ${meetingHoursWeek.toFixed(0)} Hours/Week Per Person</h4>
+        <p>With ${meetings} meetings per day, your team spends ~${meetingHoursWeek.toFixed(0)} hours weekly in synchronous meetings. Industry data suggests 40% of these could be async. That's ${Math.round(meetingHoursWeek*0.4*teamSize)} hours/week back to ${companyName}.</p>
+        <div class="impact high">High Impact · ${Math.round(meetingHoursWeek*0.4*teamSize)} hours/week recoverable</div>
+      </div>
+      <div class="finding">
+        <h4>Onboarding Velocity Below Benchmark</h4>
+        <p>${ind.name} companies average ${ind.rampDays} days to full productivity for new hires. Without structured playbooks, ${companyName} likely adds 8-12 extra days per hire. At ${teamSize} people with ~15% annual hiring, that's significant.</p>
+        <div class="impact med">Medium Impact · ${ind.rampDays} day benchmark</div>
+      </div>
+      <div class="finding">
+        <h4>Burnout Risk: ${ind.burnoutRate}% Industry Average</h4>
+        <p>${ind.name} has a ${ind.burnoutRate}% burnout rate. Each burned-out employee costs $${(ind.turnoverCost/1000).toFixed(0)}K to replace. For ${companyName}, preventing just ${Math.ceil(teamSize*0.05)} cases saves $${(turnoverSavings/1000).toFixed(0)}K annually.</p>
+        <div class="impact high">High Impact · Early detection saves $${(turnoverSavings/1000).toFixed(0)}K/year</div>
+      </div>
+    </div>
+
+    <div class="report-section">
+      <h2>📊 ${companyName} vs. Industry Benchmarks</h2>
+      <p class="section-sub">How you compare to other ${ind.name} companies of similar size</p>
+      <table class="comp-table">
+        <thead><tr><th>Metric</th><th>Estimated (${companyName})</th><th>Industry Avg</th><th>With Go2</th></tr></thead>
+        <tbody>
+          <tr><td class="metric-name">Daily Focus Time</td><td class="your-val">${(ind.focusTime*0.8).toFixed(1)}h</td><td class="ind-val">${ind.focusTime}h</td><td><span class="diff positive">+${(ind.focusTime*0.4).toFixed(1)}h</span></td></tr>
+          <tr><td class="metric-name">Meeting Overhead</td><td class="your-val">${ind.meetingOverhead+8}%</td><td class="ind-val">${ind.meetingOverhead}%</td><td><span class="diff positive">-${Math.round(ind.meetingOverhead*0.35)}%</span></td></tr>
+          <tr><td class="metric-name">New Hire Ramp Time</td><td class="your-val">${ind.rampDays+10} days</td><td class="ind-val">${ind.rampDays} days</td><td><span class="diff positive">-${Math.round(ind.rampDays*0.4)} days</span></td></tr>
+          <tr><td class="metric-name">Team Burnout Risk</td><td class="your-val">${ind.burnoutRate+5}%</td><td class="ind-val">${ind.burnoutRate}%</td><td><span class="diff positive">-${Math.round(ind.burnoutRate*0.4)}%</span></td></tr>
+          <tr><td class="metric-name">Cost Per Turnover</td><td class="your-val">$${(ind.turnoverCost/1000).toFixed(0)}K</td><td class="ind-val">$${(ind.turnoverCost/1000).toFixed(0)}K</td><td><span class="diff positive">60% prevented</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="report-section">
+      <h2>🗺️ Your 90-Day Transformation Roadmap</h2>
+      <p class="section-sub">What ${companyName} can expect after deploying Go2</p>
+
+      <div class="roadmap-item">
+        <div class="roadmap-phase"><div class="week">1</div><div class="wlabel">Week</div></div>
+        <div class="roadmap-content">
+          <h4>Connect & Discover</h4>
+          <p>Connect Go2 to Slack, calendar, and project tools. AI begins learning ${companyName}'s work patterns. Zero disruption to your team.</p>
+          <div class="expected">Expected: Full visibility dashboard live within 48 hours</div>
+        </div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-phase"><div class="week">2-4</div><div class="wlabel">Weeks</div></div>
+        <div class="roadmap-content">
+          <h4>First Insights & Quick Wins</h4>
+          <p>AI identifies the biggest time drains. First meeting cancellations recommended. Focus blocks auto-scheduled. ${companyName} starts seeing ${Math.round(focusLost*0.15)} hours/week recovered.</p>
+          <div class="expected">Expected: +12% focus time, 3-5 meetings eliminated/week</div>
+        </div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-phase"><div class="week">5-8</div><div class="wlabel">Weeks</div></div>
+        <div class="roadmap-content">
+          <h4>Deep Optimization</h4>
+          <p>Burnout detection active. Onboarding playbooks generated. Team velocity benchmarks established. ${companyName}'s AI model fully trained on your patterns.</p>
+          <div class="expected">Expected: +25% team velocity, burnout early warnings active</div>
+        </div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-phase"><div class="week">9-12</div><div class="wlabel">Weeks</div></div>
+        <div class="roadmap-content">
+          <h4>Full Transformation</h4>
+          <p>Autonomous scheduling, predictive analytics, and continuous optimization running. ${companyName} operating at ${score}% productivity potential. ROI fully realized.</p>
+          <div class="expected">Expected: $${(go2Savings/12/1000*3).toFixed(0)}K saved in first quarter alone</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="report-cta">
+      <h2>Ready to Transform ${companyName}?</h2>
+      <p>This report scratches the surface. The real Go2 connects to your actual tools and delivers personalized insights within 48 hours.</p>
+      <a href="#start">Start Your Free 14-Day Trial →</a>
+    </div>
+
+    <div class="report-footer">
+      <p>Generated by Go2 Productivity Intelligence · go2.io · This report is personalized for ${companyName}</p>
+    </div>
+  `;
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>
