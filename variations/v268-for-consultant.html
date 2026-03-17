@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The Management Consultant View</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#fefefe;--surface:#f8f7f4;--card:#ffffff;--border:#e0ddd5;--text:#1a1a1a;--muted:#6b6560;--accent:#c41e3a;--accent2:#a0182e;--navy:#1a2744;--gold:#b8860b;--serif:'Georgia','Times New Roman',serif}
+body{font-family:var(--serif);background:var(--bg);color:var(--text);overflow-x:hidden}
+
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(254,254,254,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 40px;display:flex;justify-content:space-between;align-items:center}
+.nav-logo{font-size:18px;font-weight:700;color:var(--accent);font-family:-apple-system,sans-serif}
+.nav-logo span{color:var(--muted);font-weight:300;font-size:13px;margin-left:8px}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:12px;margin-left:24px;font-family:-apple-system,sans-serif;letter-spacing:0.5px;text-transform:uppercase;transition:color 0.2s}
+.nav-links a:hover{color:var(--accent)}
+
+.hero{min-height:100vh;display:flex;align-items:center;padding:120px 60px;position:relative;background:linear-gradient(180deg,var(--bg) 0%,var(--surface) 100%)}
+.hero-content{max-width:700px}
+.hero-pub{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);font-family:-apple-system,sans-serif;font-weight:600;margin-bottom:20px}
+.hero h1{font-size:clamp(32px,4.5vw,52px);font-weight:400;line-height:1.25;margin-bottom:24px;color:var(--navy)}
+.hero h1 strong{font-weight:700}
+.hero h1 em{font-style:italic;color:var(--accent)}
+.hero-lead{font-size:20px;color:var(--muted);line-height:1.8;margin-bottom:36px}
+.btn{padding:12px 28px;font-size:14px;font-weight:600;border:none;cursor:pointer;transition:all 0.2s;text-decoration:none;display:inline-block;font-family:-apple-system,sans-serif}
+.btn-accent{background:var(--accent);color:white;border:1px solid var(--accent)}
+.btn-accent:hover{background:var(--accent2)}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border);margin-left:12px}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+
+.sec-header{padding:80px 40px 20px;max-width:900px;margin:0 auto}
+.sec-label{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);font-family:-apple-system,sans-serif;font-weight:600;margin-bottom:8px}
+.sec-title{font-size:32px;font-weight:400;margin-bottom:12px;color:var(--navy)}
+.sec-title strong{font-weight:700}
+.sec-desc{color:var(--muted);font-size:16px;max-width:640px;line-height:1.8}
+
+/* Cost Comparison */
+.cost-section{padding:20px 40px 80px;max-width:900px;margin:0 auto}
+.cost-table{width:100%;border-collapse:collapse;margin-top:32px;font-size:14px}
+.cost-table th{text-align:left;padding:14px 16px;border-bottom:2px solid var(--navy);color:var(--navy);font-family:-apple-system,sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;font-weight:600}
+.cost-table td{padding:14px 16px;border-bottom:1px solid var(--border)}
+.cost-table tr:hover td{background:rgba(196,30,58,0.02)}
+.cost-table .go2-col{color:var(--accent);font-weight:700}
+.cost-table .highlight-row{background:rgba(196,30,58,0.04)}
+.cost-table .highlight-row td{font-weight:700}
+
+/* Methodology Comparison */
+.method-section{padding:80px 40px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.method-inner{max-width:1100px;margin:0 auto}
+.method-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:40px}
+.method-col{background:var(--card);border:1px solid var(--border);padding:36px}
+.method-col h3{font-size:18px;font-weight:700;margin-bottom:8px;font-family:-apple-system,sans-serif}
+.method-col.traditional h3{color:var(--muted)}
+.method-col.go2 h3{color:var(--accent)}
+.method-col .method-sub{font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:20px;font-family:-apple-system,sans-serif}
+.method-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.05);font-size:14px}
+.method-row span:first-child{color:var(--muted);font-family:-apple-system,sans-serif;font-size:13px}
+.method-row span:last-child{font-weight:700}
+.method-col.go2 .method-row span:last-child{color:var(--accent)}
+
+/* Deliverable Comparison */
+.deliv-section{padding:80px 40px;max-width:1100px;margin:0 auto}
+.deliv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:40px}
+.deliv-card{background:var(--card);border:1px solid var(--border);padding:28px;transition:all 0.3s}
+.deliv-card:hover{transform:translateY(-4px);box-shadow:0 8px 30px rgba(0,0,0,0.06)}
+.deliv-card .deliv-type{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--accent);font-family:-apple-system,sans-serif;font-weight:600;margin-bottom:12px}
+.deliv-card h3{font-size:16px;font-weight:700;margin-bottom:8px;font-family:-apple-system,sans-serif}
+.deliv-card p{font-size:13px;color:var(--muted);line-height:1.7;font-family:-apple-system,sans-serif;margin-bottom:16px}
+.deliv-compare{font-size:12px;font-family:-apple-system,sans-serif}
+.deliv-compare .compare-row{display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid var(--border)}
+.deliv-compare .compare-row span:last-child{font-weight:600}
+
+/* Diagnostic Frameworks */
+.diag-section{padding:80px 40px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.diag-inner{max-width:1000px;margin:0 auto}
+.diag-framework{background:var(--card);border:1px solid var(--border);margin-top:32px;margin-bottom:16px;overflow:hidden;cursor:pointer;transition:all 0.3s}
+.diag-framework:hover{border-color:var(--accent)}
+.diag-header{display:flex;align-items:center;padding:20px 24px;gap:16px}
+.diag-num{font-size:28px;font-weight:700;color:rgba(196,30,58,0.15);font-family:-apple-system,sans-serif}
+.diag-info{flex:1}
+.diag-title{font-size:16px;font-weight:700;font-family:-apple-system,sans-serif}
+.diag-sub{font-size:12px;color:var(--muted);font-family:-apple-system,sans-serif}
+.diag-vs{font-size:12px;color:var(--accent);font-family:-apple-system,sans-serif;font-weight:600}
+.diag-detail{padding:0 24px 20px;display:none;border-top:1px solid var(--border);padding-top:16px}
+.diag-detail.open{display:block}
+.diag-detail p{font-size:14px;color:var(--muted);line-height:1.8;margin-bottom:12px;font-family:-apple-system,sans-serif}
+
+/* Quote */
+.quote-section{padding:100px 40px;max-width:800px;margin:0 auto;text-align:center}
+.big-quote{font-size:28px;font-style:italic;line-height:1.6;color:var(--navy);margin-bottom:24px}
+.big-quote em{font-style:normal;color:var(--accent);font-weight:700}
+.quote-attr{font-size:14px;color:var(--muted);font-family:-apple-system,sans-serif}
+
+/* Use Case Cards */
+.use-section{padding:80px 40px;max-width:1100px;margin:0 auto}
+.use-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:40px}
+.use-card{background:var(--card);border:1px solid var(--border);padding:28px;transition:all 0.3s}
+.use-card:hover{border-color:var(--accent)}
+.use-card h3{font-size:16px;font-weight:700;margin-bottom:8px;font-family:-apple-system,sans-serif}
+.use-card p{font-size:13px;color:var(--muted);line-height:1.7;font-family:-apple-system,sans-serif;margin-bottom:12px}
+.use-result{font-size:13px;font-family:-apple-system,sans-serif;padding:8px 12px;background:rgba(196,30,58,0.04);border-left:3px solid var(--accent)}
+.use-result strong{color:var(--accent)}
+
+/* CTA */
+.cta{padding:120px 40px;text-align:center;background:var(--surface);border-top:1px solid var(--border)}
+.cta h2{font-size:36px;font-weight:400;margin-bottom:16px;color:var(--navy)}
+.cta h2 strong{font-weight:700}
+.cta p{font-size:16px;color:var(--muted);max-width:560px;margin:0 auto 32px;line-height:1.8}
+
+footer{padding:40px;text-align:center;font-size:12px;color:var(--muted);font-family:-apple-system,sans-serif;border-top:1px solid var(--border)}
+
+@media(max-width:900px){
+.method-grid,.use-grid{grid-template-columns:1fr}
+.deliv-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">GO2 <span>Strategy & Operations</span></div>
+  <div class="nav-links">
+    <a href="#cost">Cost Analysis</a>
+    <a href="#method">Methodology</a>
+    <a href="#deliverables">Deliverables</a>
+    <a href="#frameworks">Frameworks</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-pub">Harvard Business Review | Perspective</div>
+    <h1>Replace your <strong>$2M engagement</strong> with <em>$20K/year</em>.</h1>
+    <p class="hero-lead">Management consulting delivers a static PDF and walks away. Go2 delivers continuous operational intelligence, auto-updated processes, and AI-driven optimization. Permanently. For 1% of the cost.</p>
+    <a class="btn btn-accent" href="#cost">See the Math</a>
+    <a class="btn btn-outline" href="#method">Compare Methodologies</a>
+  </div>
+</section>
+
+<div class="sec-header" id="cost">
+  <div class="sec-label">The Economics</div>
+  <div class="sec-title">The <strong>consulting math</strong> doesn't work anymore.</div>
+  <div class="sec-desc">A typical operational excellence engagement costs $1.5-3M and takes 6-12 months. Here's what Go2 delivers for $20K/year.</div>
+</div>
+
+<div class="cost-section">
+  <table class="cost-table">
+    <thead>
+      <tr><th>Component</th><th>Top-3 Firm</th><th>Boutique</th><th class="go2-col">Go2</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Process Discovery & Mapping</td><td>$400K (8 weeks)</td><td>$150K (6 weeks)</td><td class="go2-col">Included (1 week, auto)</td></tr>
+      <tr><td>Current State Assessment</td><td>$300K (6 weeks)</td><td>$120K (4 weeks)</td><td class="go2-col">Included (continuous)</td></tr>
+      <tr><td>Bottleneck Analysis</td><td>$200K (4 weeks)</td><td>$80K (3 weeks)</td><td class="go2-col">Included (real-time)</td></tr>
+      <tr><td>Automation Opportunity ID</td><td>$250K (4 weeks)</td><td>$100K (3 weeks)</td><td class="go2-col">Included (continuous)</td></tr>
+      <tr><td>Recommendation Report</td><td>$200K (3 weeks)</td><td>$80K (2 weeks)</td><td class="go2-col">Auto-generated (live)</td></tr>
+      <tr><td>Implementation Support</td><td>$500K+ (6-12 mo)</td><td>$200K (3-6 mo)</td><td class="go2-col">Included (AI-driven)</td></tr>
+      <tr><td>Ongoing Monitoring</td><td>$300K/yr retainer</td><td>$120K/yr retainer</td><td class="go2-col">Included (always-on)</td></tr>
+      <tr class="highlight-row"><td>Total Year 1</td><td>$2.15M</td><td>$850K</td><td class="go2-col">$20K</td></tr>
+      <tr class="highlight-row"><td>Total 3-Year</td><td>$2.75M</td><td>$1.1M</td><td class="go2-col">$60K</td></tr>
+      <tr class="highlight-row"><td>Time to First Insight</td><td>4-6 weeks</td><td>2-3 weeks</td><td class="go2-col">48 hours</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<section class="method-section" id="method">
+  <div class="method-inner">
+    <div class="sec-label">Methodology Comparison</div>
+    <div class="sec-title">Two <strong>fundamentally different</strong> approaches.</div>
+    <div class="sec-desc" style="margin-bottom:0">Traditional consulting relies on interviews, surveys, and analyst judgment. Go2 observes actual work patterns at scale.</div>
+
+    <div class="method-grid">
+      <div class="method-col traditional">
+        <h3>Traditional Consulting</h3>
+        <div class="method-sub">McKinsey / BCG / Bain Approach</div>
+        <div class="method-row"><span>Data collection</span><span>Interviews & surveys</span></div>
+        <div class="method-row"><span>Sample size</span><span>50-100 interviews</span></div>
+        <div class="method-row"><span>Accuracy</span><span>Directionally correct</span></div>
+        <div class="method-row"><span>Bias</span><span>Significant (self-reported)</span></div>
+        <div class="method-row"><span>Update frequency</span><span>Never (static report)</span></div>
+        <div class="method-row"><span>Coverage</span><span>Sampled departments</span></div>
+        <div class="method-row"><span>Implementation</span><span>Recommendations only</span></div>
+        <div class="method-row"><span>Knowledge transfer</span><span>PDF + offsite</span></div>
+        <div class="method-row"><span>Shelf life</span><span>6 months (then stale)</span></div>
+        <div class="method-row"><span>Consultant bias</span><span>Incentivized to extend</span></div>
+      </div>
+      <div class="method-col go2">
+        <h3>Go2 Operational Intelligence</h3>
+        <div class="method-sub">AI-Powered Approach</div>
+        <div class="method-row"><span>Data collection</span><span>Automated observation</span></div>
+        <div class="method-row"><span>Sample size</span><span>Every employee, every process</span></div>
+        <div class="method-row"><span>Accuracy</span><span>Exact (observed, not reported)</span></div>
+        <div class="method-row"><span>Bias</span><span>None (behavioral data)</span></div>
+        <div class="method-row"><span>Update frequency</span><span>Real-time, continuous</span></div>
+        <div class="method-row"><span>Coverage</span><span>100% of organization</span></div>
+        <div class="method-row"><span>Implementation</span><span>AI-driven automation</span></div>
+        <div class="method-row"><span>Knowledge transfer</span><span>Embedded in workflows</span></div>
+        <div class="method-row"><span>Shelf life</span><span>Perpetual (self-updating)</span></div>
+        <div class="method-row"><span>Vendor bias</span><span>Success-aligned pricing</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="quote-section">
+  <div class="big-quote">"The dirty secret of management consulting is that 70% of recommendations are <em>never implemented</em>. Go2 doesn't make recommendations. It implements."</div>
+  <div class="quote-attr">Internal analysis, 2,400+ consulting engagements reviewed</div>
+</section>
+
+<div class="sec-header" id="deliverables">
+  <div class="sec-label">Deliverables</div>
+  <div class="sec-title">Everything a consultant delivers. <strong>Plus more.</strong></div>
+</div>
+
+<div class="cost-section">
+  <div class="deliv-grid">
+    <div class="deliv-card">
+      <div class="deliv-type">Diagnostic</div>
+      <h3>Process Map & Current State</h3>
+      <p>Complete process map of every workflow in your organization. Auto-generated, auto-updated, always current.</p>
+      <div class="deliv-compare">
+        <div class="compare-row"><span>Consultant</span><span>8 weeks, $400K</span></div>
+        <div class="compare-row"><span style="color:var(--accent)">Go2</span><span style="color:var(--accent)">1 week, included</span></div>
+      </div>
+    </div>
+    <div class="deliv-card">
+      <div class="deliv-type">Analysis</div>
+      <h3>Bottleneck & Root Cause</h3>
+      <p>Every bottleneck identified with root cause analysis and prioritized recommendations. Updated in real-time as operations change.</p>
+      <div class="deliv-compare">
+        <div class="compare-row"><span>Consultant</span><span>4 weeks, $200K</span></div>
+        <div class="compare-row"><span style="color:var(--accent)">Go2</span><span style="color:var(--accent)">Continuous, included</span></div>
+      </div>
+    </div>
+    <div class="deliv-card">
+      <div class="deliv-type">Strategy</div>
+      <h3>Automation Roadmap</h3>
+      <p>Prioritized automation opportunities with ROI calculations, implementation plans, and dependency mapping.</p>
+      <div class="deliv-compare">
+        <div class="compare-row"><span>Consultant</span><span>4 weeks, $250K</span></div>
+        <div class="compare-row"><span style="color:var(--accent)">Go2</span><span style="color:var(--accent)">Auto-generated, included</span></div>
+      </div>
+    </div>
+    <div class="deliv-card">
+      <div class="deliv-type">Operations</div>
+      <h3>SOP Documentation</h3>
+      <p>Standard operating procedures generated from observed best practices. Auto-maintained as processes evolve.</p>
+      <div class="deliv-compare">
+        <div class="compare-row"><span>Consultant</span><span>6 weeks, $150K</span></div>
+        <div class="compare-row"><span style="color:var(--accent)">Go2</span><span style="color:var(--accent)">Auto-generated, included</span></div>
+      </div>
+    </div>
+    <div class="deliv-card">
+      <div class="deliv-type">Implementation</div>
+      <h3>Change Management</h3>
+      <p>AI coaching drives adoption naturally. No change management consultants needed. 89% employee satisfaction.</p>
+      <div class="deliv-compare">
+        <div class="compare-row"><span>Consultant</span><span>6 months, $500K+</span></div>
+        <div class="compare-row"><span style="color:var(--accent)">Go2</span><span style="color:var(--accent)">Built-in, included</span></div>
+      </div>
+    </div>
+    <div class="deliv-card">
+      <div class="deliv-type">Monitoring</div>
+      <h3>Ongoing Performance Tracking</h3>
+      <p>Real-time dashboards, trend analysis, and alerts. Not a quarterly retainer call reviewing outdated KPIs.</p>
+      <div class="deliv-compare">
+        <div class="compare-row"><span>Consultant</span><span>$300K/yr retainer</span></div>
+        <div class="compare-row"><span style="color:var(--accent)">Go2</span><span style="color:var(--accent)">Always-on, included</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="diag-section" id="frameworks">
+  <div class="diag-inner">
+    <div class="sec-label">Diagnostic Frameworks</div>
+    <div class="sec-title">Same frameworks. <strong>Better data.</strong></div>
+    <div class="sec-desc">Go2 uses the same analytical frameworks consultants do. But with complete, unbiased, real-time data instead of interview notes.</div>
+
+    <div class="diag-framework" onclick="toggleDiag(this)">
+      <div class="diag-header">
+        <div class="diag-num">01</div>
+        <div class="diag-info"><div class="diag-title">Value Stream Mapping</div><div class="diag-sub">Process efficiency analysis</div></div>
+        <div class="diag-vs">Consultant: 6 weeks | Go2: Automatic</div>
+      </div>
+      <div class="diag-detail"><p>Traditional VSM requires workshops, sticky notes, and weeks of facilitation. Go2 generates value stream maps automatically by observing actual work patterns. Every process variant is captured. Lead times, cycle times, and wait times are measured precisely, not estimated.</p></div>
+    </div>
+    <div class="diag-framework" onclick="toggleDiag(this)">
+      <div class="diag-header">
+        <div class="diag-num">02</div>
+        <div class="diag-info"><div class="diag-title">Time & Motion Study</div><div class="diag-sub">Work allocation analysis</div></div>
+        <div class="diag-vs">Consultant: 4 weeks | Go2: Real-time</div>
+      </div>
+      <div class="diag-detail"><p>Consultants shadow employees for days, introducing Hawthorne effect bias. Go2 captures time allocation passively and continuously. No behavior changes from being observed. Complete data set, not a 3-day sample. Breakdowns by tool, process, communication, and focus time.</p></div>
+    </div>
+    <div class="diag-framework" onclick="toggleDiag(this)">
+      <div class="diag-header">
+        <div class="diag-num">03</div>
+        <div class="diag-info"><div class="diag-title">Organizational Network Analysis</div><div class="diag-sub">Collaboration & communication patterns</div></div>
+        <div class="diag-vs">Consultant: 3 weeks | Go2: Continuous</div>
+      </div>
+      <div class="diag-detail"><p>Consultants use surveys to map informal networks. Response rates are 40-60%. Go2 maps actual collaboration patterns from work data. Identifies bottleneck individuals, isolated teams, and communication silos. Updated daily, not once per engagement.</p></div>
+    </div>
+    <div class="diag-framework" onclick="toggleDiag(this)">
+      <div class="diag-header">
+        <div class="diag-num">04</div>
+        <div class="diag-info"><div class="diag-title">Capability Maturity Assessment</div><div class="diag-sub">Process maturity scoring</div></div>
+        <div class="diag-vs">Consultant: 4 weeks | Go2: Auto-scored</div>
+      </div>
+      <div class="diag-detail"><p>CMMI assessments require trained assessors and weeks of evaluation. Go2 auto-scores process maturity based on standardization, documentation, measurement, and optimization criteria. Tracks maturity progression over time. Identifies quick wins for maturity improvement.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="use-section">
+  <div class="sec-label">Case Studies</div>
+  <div class="sec-title"><strong>Consulting replacements</strong> in practice.</div>
+
+  <div class="use-grid">
+    <div class="use-card">
+      <h3>Mid-Market SaaS Company (400 employees)</h3>
+      <p>Planned a $1.2M McKinsey engagement for operational excellence. Deployed Go2 instead for a 2-week pilot. Cancelled the engagement.</p>
+      <div class="use-result"><strong>Result:</strong> Saved $1.18M. Got continuous insights instead of a static report. Found 34 automation opportunities McKinsey's scope wouldn't have covered.</div>
+    </div>
+    <div class="use-card">
+      <h3>PE-Backed Services Firm (1,200 employees)</h3>
+      <p>Had completed 3 consulting engagements in 2 years ($4.5M total). Recommendations were mostly unimplemented. Switched to Go2.</p>
+      <div class="use-result"><strong>Result:</strong> 94% of Go2 recommendations implemented (vs 28% from consultants). $3.2M annual savings identified and captured within 6 months.</div>
+    </div>
+    <div class="use-card">
+      <h3>Healthcare Organization (800 employees)</h3>
+      <p>Needed compliance process documentation for HIPAA audit. Consulting quote: $600K for manual documentation. Chose Go2.</p>
+      <div class="use-result"><strong>Result:</strong> Complete process documentation in 3 weeks (auto-generated). Passed audit. Ongoing auto-maintenance of SOPs. Saved $580K.</div>
+    </div>
+    <div class="use-card">
+      <h3>Manufacturing Company (2,000 employees)</h3>
+      <p>Bain recommended a $2.5M transformation program. Go2 pilot revealed the transformation was addressing the wrong bottlenecks.</p>
+      <div class="use-result"><strong>Result:</strong> Redirected focus to actual bottlenecks (data-identified). Achieved transformation goals in 4 months instead of 18. Net savings: $3.8M vs original plan.</div>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="sec-label">For the Pragmatist</div>
+  <h2>The age of the <strong>$2M PDF</strong> is over.</h2>
+  <p>Continuous intelligence beats periodic advice. Every time. See what Go2 discovers in your first week. No commitment. No consultants required.</p>
+  <a class="btn btn-accent" href="#">Start Free Assessment</a>
+  <a class="btn btn-outline" href="#">Download Comparison Brief</a>
+</section>
+
+<footer>&copy; 2026 Go2. Operational intelligence, delivered continuously.</footer>
+
+<script>
+function toggleDiag(item){
+  const detail=item.querySelector('.diag-detail');
+  const isOpen=detail.classList.contains('open');
+  document.querySelectorAll('.diag-detail').forEach(d=>d.classList.remove('open'));
+  if(!isOpen)detail.classList.add('open');
+}
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth'});});
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Swipe Right on AI That Works</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f0f0f;color:#fff;font-family:'Inter',sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;overflow:hidden}
+
+.app{width:420px;height:100vh;max-height:820px;position:relative;overflow:hidden;background:#0f0f0f;border-radius:24px;display:flex;flex-direction:column}
+@media(max-width:440px){.app{width:100%;border-radius:0;max-height:100vh}}
+
+/* Status bar */
+.status-bar{padding:12px 20px 8px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.status-bar .time{font-size:14px;font-weight:600}
+.app-header{display:flex;justify-content:space-between;align-items:center;padding:4px 20px 12px;flex-shrink:0}
+.app-name{font-size:28px;font-weight:900;background:linear-gradient(135deg,#ff6b6b,#ff9f43);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header-icons{display:flex;gap:16px;font-size:20px}
+
+/* Card stack */
+.card-stack{flex:1;position:relative;padding:0 16px;overflow:hidden}
+.profile-card{position:absolute;top:0;left:16px;right:16px;bottom:0;border-radius:16px;overflow:hidden;transition:transform 0.5s cubic-bezier(0.23,1,0.32,1),opacity 0.5s;will-change:transform;cursor:grab;user-select:none}
+.profile-card.swiping-right{transform:translateX(150%) rotate(20deg);opacity:0}
+.profile-card.swiping-left{transform:translateX(-150%) rotate(-20deg);opacity:0}
+.card-bg{position:absolute;inset:0}
+.card-content{position:absolute;bottom:0;left:0;right:0;padding:24px;background:linear-gradient(transparent,rgba(0,0,0,0.9));z-index:2}
+.card-name{font-size:32px;font-weight:800}
+.card-name .age{font-weight:400;color:rgba(255,255,255,0.7)}
+.card-subtitle{font-size:14px;color:rgba(255,255,255,0.6);margin-top:4px}
+.card-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.card-tag{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px)}
+.card-counter{position:absolute;top:16px;right:16px;background:rgba(0,0,0,0.5);padding:4px 10px;border-radius:12px;font-size:12px;z-index:3}
+
+/* Swipe indicators */
+.swipe-indicator{position:absolute;top:80px;z-index:5;padding:8px 16px;border-radius:8px;font-size:24px;font-weight:900;border:3px solid;transform:rotate(-20deg);opacity:0;transition:opacity 0.2s}
+.swipe-indicator.like{right:30px;color:#27c93f;border-color:#27c93f}
+.swipe-indicator.nope{left:30px;color:#ff5f56;border-color:#ff5f56;transform:rotate(20deg)}
+
+/* Bottom buttons */
+.action-buttons{display:flex;justify-content:center;gap:16px;padding:16px;flex-shrink:0}
+.action-btn{border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.action-btn:hover{transform:scale(1.1)}
+.btn-nope{width:52px;height:52px;background:#1a1a2e;border:2px solid #ff5f56;font-size:22px}
+.btn-super{width:40px;height:40px;background:#1a1a2e;border:2px solid #00d4ff;font-size:16px}
+.btn-like{width:52px;height:52px;background:#1a1a2e;border:2px solid #27c93f;font-size:22px}
+.btn-info{width:40px;height:40px;background:#1a1a2e;border:2px solid #7b61ff;font-size:16px}
+
+/* Match overlay */
+#match-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.95);z-index:100;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px}
+#match-overlay.show{display:flex}
+.match-title{font-size:48px;font-weight:900;background:linear-gradient(135deg,#ff6b6b,#ffd93d,#27c93f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:matchPulse 1s ease infinite}
+@keyframes matchPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.match-subtitle{font-size:16px;color:#888;margin:12px 0 24px}
+.match-profiles{display:flex;gap:24px;margin:20px 0 32px}
+.match-avatar{width:80px;height:80px;border-radius:50%;border:3px solid #ff6b6b}
+.match-btn{padding:12px 32px;border-radius:24px;border:none;font-weight:700;font-size:15px;cursor:pointer;margin:6px}
+.match-btn.primary{background:linear-gradient(135deg,#ff6b6b,#ff9f43);color:#fff}
+.match-btn.secondary{background:transparent;border:1px solid #555;color:#fff}
+
+/* Calculator overlay */
+#calc-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.95);z-index:100;display:none;flex-direction:column;padding:24px;overflow-y:auto}
+#calc-overlay.show{display:flex}
+.calc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.calc-header h2{font-size:22px;font-weight:800}
+.calc-close{background:none;border:none;color:#fff;font-size:24px;cursor:pointer}
+.calc-question{margin-bottom:20px}
+.calc-question label{display:block;font-size:14px;color:#aaa;margin-bottom:8px}
+.calc-question input,.calc-question select{width:100%;padding:12px;border-radius:8px;border:1px solid #333;background:#1a1a1a;color:#fff;font-size:16px;font-family:inherit}
+.calc-result{background:linear-gradient(135deg,rgba(39,201,63,0.1),rgba(0,212,255,0.1));border:1px solid rgba(39,201,63,0.3);border-radius:12px;padding:20px;text-align:center;margin-top:20px}
+.calc-pct{font-size:64px;font-weight:900;background:linear-gradient(135deg,#27c93f,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="status-bar">
+    <span class="time" id="clock">9:41</span>
+    <span style="font-size:12px;color:#888">&#128246; &#128267; &#128268;</span>
+  </div>
+  <div class="app-header">
+    <span class="app-name">WorkMatch</span>
+    <div class="header-icons">
+      <span style="cursor:pointer" onclick="showCalc()">&#128200;</span>
+      <span>&#128276;</span>
+    </div>
+  </div>
+
+  <div class="card-stack" id="cardStack"></div>
+
+  <div class="action-buttons">
+    <button class="action-btn btn-nope" onclick="swipe('left')">&#10007;</button>
+    <button class="action-btn btn-super" onclick="swipe('right')">&#9733;</button>
+    <button class="action-btn btn-like" onclick="swipe('right')">&#10084;</button>
+    <button class="action-btn btn-info" onclick="showCalc()">&#128200;</button>
+  </div>
+
+  <!-- Match overlay -->
+  <div id="match-overlay">
+    <div class="match-title">It's a Match!</div>
+    <div class="match-subtitle">You and Go2 have liked each other</div>
+    <div class="match-profiles">
+      <div class="match-avatar" style="background:linear-gradient(135deg,#333,#555);display:flex;align-items:center;justify-content:center;font-size:32px">&#127970;</div>
+      <div class="match-avatar" style="background:linear-gradient(135deg,#00d4ff,#7b61ff);display:flex;align-items:center;justify-content:center;font-size:32px">G2</div>
+    </div>
+    <p style="color:#888;font-size:14px;max-width:280px;margin-bottom:24px">Go2 wants to learn how your team works and coach them to be 41% more productive. No strings attached (14-day free trial).</p>
+    <button class="match-btn primary" onclick="window.open('https://go2.io','_blank')">Start Free Trial</button>
+    <button class="match-btn secondary" onclick="document.getElementById('match-overlay').classList.remove('show')">Keep Swiping</button>
+  </div>
+
+  <!-- Calculator overlay -->
+  <div id="calc-overlay">
+    <div class="calc-header">
+      <h2>&#128150; Match Calculator</h2>
+      <button class="calc-close" onclick="document.getElementById('calc-overlay').classList.remove('show')">&times;</button>
+    </div>
+    <p style="color:#888;font-size:14px;margin-bottom:20px">Answer a few questions to see your compatibility with Go2</p>
+    <div class="calc-question">
+      <label>How many employees does your company have?</label>
+      <select id="q1" onchange="calcMatch()">
+        <option value="0">Select...</option>
+        <option value="70">1-10</option>
+        <option value="85">11-50</option>
+        <option value="95">51-200</option>
+        <option value="90">201-500</option>
+        <option value="80">500+</option>
+      </select>
+    </div>
+    <div class="calc-question">
+      <label>How much have you spent on AI tools that didn't deliver?</label>
+      <select id="q2" onchange="calcMatch()">
+        <option value="0">Select...</option>
+        <option value="60">Nothing yet</option>
+        <option value="80">Under $50K</option>
+        <option value="95">$50K - $200K</option>
+        <option value="99">Over $200K</option>
+      </select>
+    </div>
+    <div class="calc-question">
+      <label>Do you have repetitive processes that should be automated?</label>
+      <select id="q3" onchange="calcMatch()">
+        <option value="0">Select...</option>
+        <option value="60">Maybe a few</option>
+        <option value="85">Definitely several</option>
+        <option value="99">Our team does nothing BUT repetitive work</option>
+      </select>
+    </div>
+    <div class="calc-question">
+      <label>How do you feel about "AI monitoring" tools?</label>
+      <select id="q4" onchange="calcMatch()">
+        <option value="0">Select...</option>
+        <option value="95">Hate them — we want coaching, not surveillance</option>
+        <option value="80">Open to it if it's truly helpful</option>
+        <option value="60">We already use one and it's... fine</option>
+      </select>
+    </div>
+    <div class="calc-result" id="calc-result" style="display:none">
+      <div class="calc-pct" id="calc-pct">0%</div>
+      <div style="font-weight:700;font-size:18px;margin:8px 0;color:#fff" id="calc-label">Calculating...</div>
+      <p style="font-size:14px;color:#aaa" id="calc-desc"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+const profiles=[
+  {
+    name:'Go2',age:'Est. 2024',subtitle:'San Francisco, CA | 3 miles away',
+    bg:'linear-gradient(135deg,#00d4ff,#7b61ff)',icon:'G2',
+    tags:['AI Coaching','Process Capture','Agent Deployment','Privacy-First','Actually Works'],
+    bio:'About Me'
+  },
+  {
+    name:'Go2',age:'The Platform',subtitle:'Captures how work actually happens',
+    bg:'linear-gradient(135deg,#0a1628,#1a0a2e)',icon:'&#128064;',
+    tags:['Desktop Agent','Real-Time','Non-Invasive','SOC 2','GDPR Compliant'],
+    detail:'I watch how your team works — not what they type. I capture the workflow patterns, the app transitions, the process rhythms. And I do it without keylogging, screenshots, or content capture. Privacy is my love language.'
+  },
+  {
+    name:'Go2',age:'Coaching',subtitle:'89% of people accept my advice',
+    bg:'linear-gradient(135deg,#7b61ff,#a78bfa)',icon:'&#129504;',
+    tags:['Focus Tips','Break Reminders','Pattern Recognition','Personalized','Not Pushy'],
+    detail:'I give real-time tips that actually help. "You context-switched 8 times in 12 min" isn\'t judgment — it\'s awareness. And when 89% of people voluntarily take my advice? That\'s chemistry.'
+  },
+  {
+    name:'Go2',age:'Automation',subtitle:'I turn your best workers into AI agents',
+    bg:'linear-gradient(135deg,#ff9f43,#ffd93d)',icon:'&#129302;',
+    tags:['Shadow Mode','99.7% Accuracy','Edge Cases','Tribal Knowledge','Real Data'],
+    detail:'After watching your team work, I can deploy AI agents that replicate their exact process — including the workarounds nobody documented. Your invoice processor does 14 steps? My agent does all 14. Including the one where NetSuite crashes at 50 line items.'
+  },
+  {
+    name:'Go2',age:'Results',subtitle:'138x average ROI. Not a typo.',
+    bg:'linear-gradient(135deg,#27c93f,#4ecdc4)',icon:'&#128200;',
+    tags:['$652K Savings','342 hrs/mo','67% Less Errors','41% Productivity','Real ROI'],
+    detail:'I don\'t promise "transformation." I deliver measurable results: $652K annualized savings at our average customer. 342 hours saved per month. 67% fewer errors. And I cost $4,700/month. Do the math — it\'s not complicated.'
+  },
+  {
+    name:'Go2',age:'Looking For...',subtitle:'My ideal match',
+    bg:'linear-gradient(135deg,#ff6b6b,#ff9f43)',icon:'&#128150;',
+    tags:['50-500 Employees','Process-Heavy','AI-Curious','Not Surveillance','Results-Driven'],
+    detail:'I\'m looking for companies tired of AI that doesn\'t work. Companies with real processes, real workers, and a real desire to stop guessing and start knowing. If you\'ve been burned by consultants, chatbots, or "AI-powered" tools that were just if-then rules... I\'m here for you.'
+  },
+  {
+    name:'Go2',age:'Deal Breakers',subtitle:'Things I absolutely will not do',
+    bg:'linear-gradient(135deg,#1a1a2e,#2a2a4e)',icon:'&#128683;',
+    tags:['No Keylogging','No Screenshots','No Surveillance','No BS Metrics','No Consultants'],
+    detail:'I will NEVER log your keystrokes. I will NEVER take screenshots. I will NEVER be used as a "productivity surveillance" tool. I will NEVER generate fake ROI numbers. And I will NEVER make you hire a consultant to figure out how to use me. Those are my hard boundaries.'
+  },
+];
+
+let currentIdx=0;
+const stack=document.getElementById('cardStack');
+
+function renderCards(){
+  stack.innerHTML='';
+  const remaining=profiles.slice(currentIdx);
+  // Render up to 3 cards (back to front)
+  const toShow=remaining.slice(0,3).reverse();
+  toShow.forEach((p,i)=>{
+    const realIdx=currentIdx+toShow.length-1-i;
+    const card=document.createElement('div');
+    card.className='profile-card';
+    const zIdx=10+i;
+    const scale=1-((toShow.length-1-i)*0.03);
+    const translateY=(toShow.length-1-i)*8;
+    card.style.zIndex=zIdx;
+    card.style.transform=`scale(${scale}) translateY(${translateY}px)`;
+
+    card.innerHTML=`
+      <div class="card-bg" style="background:${p.bg};display:flex;align-items:center;justify-content:center;font-size:120px;opacity:0.3">${p.icon}</div>
+      <div class="card-counter">${realIdx+1}/${profiles.length}</div>
+      <div class="swipe-indicator like">LIKE</div>
+      <div class="swipe-indicator nope">NOPE</div>
+      <div class="card-content">
+        <div class="card-name">${p.name} <span class="age">${p.age}</span></div>
+        <div class="card-subtitle">${p.subtitle}</div>
+        ${p.detail?`<p style="font-size:14px;color:rgba(255,255,255,0.7);margin-top:12px;line-height:1.6">${p.detail}</p>`:''}
+        <div class="card-tags">${p.tags.map(t=>`<span class="card-tag">${t}</span>`).join('')}</div>
+      </div>
+    `;
+
+    // Touch/drag handling for top card
+    if(i===toShow.length-1){
+      let startX=0,currentX=0,dragging=false;
+      const onStart=(x)=>{startX=x;dragging=true;card.style.transition='none'};
+      const onMove=(x)=>{
+        if(!dragging)return;
+        currentX=x-startX;
+        const rotate=currentX*0.1;
+        card.style.transform=`translateX(${currentX}px) rotate(${rotate}deg)`;
+        const likeEl=card.querySelector('.like');
+        const nopeEl=card.querySelector('.nope');
+        likeEl.style.opacity=Math.min(1,currentX/100);
+        nopeEl.style.opacity=Math.min(1,-currentX/100);
+      };
+      const onEnd=()=>{
+        if(!dragging)return;
+        dragging=false;
+        card.style.transition='transform 0.5s, opacity 0.5s';
+        if(currentX>100)swipe('right');
+        else if(currentX<-100)swipe('left');
+        else{card.style.transform='scale(1)';card.querySelector('.like').style.opacity=0;card.querySelector('.nope').style.opacity=0}
+      };
+      card.addEventListener('mousedown',e=>onStart(e.clientX));
+      card.addEventListener('mousemove',e=>onMove(e.clientX));
+      card.addEventListener('mouseup',onEnd);
+      card.addEventListener('mouseleave',onEnd);
+      card.addEventListener('touchstart',e=>onStart(e.touches[0].clientX));
+      card.addEventListener('touchmove',e=>onMove(e.touches[0].clientX));
+      card.addEventListener('touchend',onEnd);
+    }
+
+    stack.appendChild(card);
+  });
+
+  if(remaining.length===0){
+    stack.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:24px">
+      <div style="font-size:48px;margin-bottom:16px">&#128149;</div>
+      <h2 style="font-size:22px;margin-bottom:8px">You've seen all of Go2!</h2>
+      <p style="color:#888;font-size:14px">Ready to match? Start your free trial at go2.io</p>
+      <button class="match-btn primary" style="margin-top:20px" onclick="window.open('https://go2.io','_blank')">Start Free Trial</button>
+      <button class="match-btn secondary" style="margin-top:8px" onclick="currentIdx=0;renderCards()">See profiles again</button>
+    </div>`;
+  }
+}
+
+function swipe(dir){
+  const cards=stack.querySelectorAll('.profile-card');
+  if(!cards.length)return;
+  const topCard=cards[cards.length-1];
+  topCard.classList.add(dir==='right'?'swiping-right':'swiping-left');
+
+  // Show match on last like
+  if(dir==='right'&&currentIdx===profiles.length-1){
+    setTimeout(()=>document.getElementById('match-overlay').classList.add('show'),500);
+  }
+
+  setTimeout(()=>{
+    currentIdx++;
+    renderCards();
+  },400);
+}
+
+function showCalc(){
+  document.getElementById('calc-overlay').classList.add('show');
+}
+
+function calcMatch(){
+  const vals=[
+    parseInt(document.getElementById('q1').value),
+    parseInt(document.getElementById('q2').value),
+    parseInt(document.getElementById('q3').value),
+    parseInt(document.getElementById('q4').value),
+  ];
+  if(vals.some(v=>v===0)){
+    document.getElementById('calc-result').style.display='none';
+    return;
+  }
+  const avg=Math.round(vals.reduce((a,b)=>a+b)/vals.length);
+  document.getElementById('calc-result').style.display='block';
+  document.getElementById('calc-pct').textContent=avg+'%';
+  let label='',desc='';
+  if(avg>=90){label='Perfect Match! &#128150;';desc='You and Go2 are made for each other. Your company has the exact profile where Go2 delivers maximum impact.';}
+  else if(avg>=75){label='Strong Match! &#128155;';desc='You\'re highly compatible. Go2 can deliver significant value for your organization.';}
+  else if(avg>=60){label='Good Potential &#128156;';desc='There\'s real potential here. Start with a free trial and see how Go2 fits your workflow.';}
+  else{label='Worth Exploring &#128153;';desc='Even if you\'re not the typical Go2 customer, the free trial costs nothing and the coaching insights alone are worth it.';}
+  document.getElementById('calc-label').innerHTML=label;
+  document.getElementById('calc-desc').textContent=desc;
+}
+
+// Clock
+function updateClock(){
+  const now=new Date();
+  document.getElementById('clock').textContent=now.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+}
+updateClock();setInterval(updateClock,60000);
+
+renderCards();
+</script>
+</body>
+</html>

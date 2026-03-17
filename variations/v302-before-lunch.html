@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Pays for Itself Before Lunch</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'SF Mono',SFMono-Regular,Menlo,monospace;background:#0a0a0a;color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem}
+h1{font-family:-apple-system,sans-serif;font-size:clamp(1.5rem,4vw,2.5rem);font-weight:800;text-align:center;margin-bottom:3rem;line-height:1.3}
+h1 span{color:#34c759}
+.clock-container{position:relative;width:min(400px,90vw);height:min(400px,90vw);margin-bottom:2rem}
+.clock-face{width:100%;height:100%;border-radius:50%;border:3px solid #333;position:relative;background:radial-gradient(circle,#1a1a1a,#0a0a0a)}
+.hour-mark{position:absolute;width:2px;height:15px;background:#555;top:10px;left:50%;transform-origin:bottom center}
+.hour-label{position:absolute;font-size:0.9rem;color:#888;transform:translate(-50%,-50%)}
+.hand{position:absolute;bottom:50%;left:50%;transform-origin:bottom center;border-radius:3px}
+.hand-hour{width:4px;height:25%;background:#fff;margin-left:-2px}
+.hand-minute{width:3px;height:35%;background:#34c759;margin-left:-1.5px}
+.hand-dot{position:absolute;width:12px;height:12px;background:#34c759;border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5}
+.counter{text-align:center;margin-top:1rem}
+.time-display{font-size:clamp(2rem,6vw,4rem);font-weight:700;color:#34c759;letter-spacing:0.05em}
+.savings{font-size:clamp(1.5rem,5vw,3rem);font-weight:800;margin:0.5rem 0;transition:color 0.3s}
+.label{color:#666;font-size:0.9rem;margin-bottom:0.5rem}
+.cost-line{color:#888;font-size:1rem;margin-top:1.5rem;text-align:center;opacity:0;transition:opacity 0.5s}
+.cost-line.show{opacity:1}
+.milestone{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:clamp(1.5rem,4vw,2.5rem);font-weight:900;color:#34c759;opacity:0;pointer-events:none;z-index:10;text-align:center;text-shadow:0 0 40px rgba(52,199,89,0.5)}
+.milestone.flash{animation:flash 1.5s ease forwards}
+@keyframes flash{0%{opacity:0;transform:translate(-50%,-50%) scale(0.8)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}40%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0}}
+.controls{margin-top:2rem;display:flex;gap:1rem}
+button{padding:0.8rem 2rem;border:2px solid #34c759;background:transparent;color:#34c759;font-family:inherit;font-size:1rem;border-radius:8px;cursor:pointer;transition:all 0.3s}
+button:hover{background:#34c759;color:#000}
+.breakdown{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;max-width:800px;margin-top:2rem;width:100%}
+.breakdown-item{padding:1rem;background:#111;border-radius:8px;border:1px solid #222}
+.breakdown-item .amt{color:#34c759;font-size:1.3rem;font-weight:700}
+.breakdown-item .desc{color:#888;font-size:0.85rem;margin-top:0.3rem}
+</style>
+</head>
+<body>
+<h1>Go2 pays for itself <span>before lunch</span>.</h1>
+
+<div class="clock-container">
+<div class="clock-face" id="clock">
+<div class="hand-dot"></div>
+<div class="hand hand-hour" id="hourHand"></div>
+<div class="hand hand-minute" id="minHand"></div>
+</div>
+</div>
+
+<div class="counter">
+<div class="label">TIME</div>
+<div class="time-display" id="timeDisplay">9:00 AM</div>
+<div class="label" style="margin-top:1rem">SAVINGS ACCUMULATED</div>
+<div class="savings" id="savings">$0.00</div>
+<div class="cost-line" id="costLine">Go2 monthly cost: <strong>$8/user</strong></div>
+</div>
+
+<div class="controls">
+<button id="startBtn" onclick="startClock()">Start the Clock</button>
+<button onclick="location.reload()">Reset</button>
+</div>
+
+<div class="breakdown" id="breakdown" style="display:none">
+<div class="breakdown-item"><div class="amt">$2.40/hr</div><div class="desc">Context switching reduction</div></div>
+<div class="breakdown-item"><div class="amt">$1.80/hr</div><div class="desc">Auto-documentation savings</div></div>
+<div class="breakdown-item"><div class="amt">$1.20/hr</div><div class="desc">Process optimization</div></div>
+<div class="breakdown-item"><div class="amt">$0.60/hr</div><div class="desc">AI coaching efficiency</div></div>
+</div>
+
+<div class="milestone" id="milestone"></div>
+
+<script>
+const clock=document.getElementById('clock');
+const hourHand=document.getElementById('hourHand');
+const minHand=document.getElementById('minHand');
+const timeDisplay=document.getElementById('timeDisplay');
+const savingsEl=document.getElementById('savings');
+const costLine=document.getElementById('costLine');
+const milestone=document.getElementById('milestone');
+const breakdown=document.getElementById('breakdown');
+
+// Add hour marks and labels
+for(let i=0;i<12;i++){
+const mark=document.createElement('div');
+mark.className='hour-mark';
+mark.style.transform=`translateX(-50%) rotate(${i*30}deg)`;
+mark.style.transformOrigin=`center ${clock.offsetWidth/2-10}px`;
+clock.appendChild(mark);
+}
+const hours=[12,1,2,3,4,5,6,7,8,9,10,11];
+const r=42;
+hours.forEach((h,i)=>{
+const lbl=document.createElement('div');
+lbl.className='hour-label';
+const angle=(i*30-90)*Math.PI/180;
+lbl.style.left=`${50+r*Math.cos(angle)}%`;
+lbl.style.top=`${50+r*Math.sin(angle)}%`;
+lbl.textContent=h;
+clock.appendChild(lbl);
+});
+
+const savingsPerMinute=6/60; // ~$6/hr savings per employee
+const monthlyCost=8;
+let running=false;
+let simMinutes=0;
+const startHour=9;
+let milestones=[
+{at:monthlyCost/savingsPerMinute,text:'MONTHLY COST RECOVERED'},
+{at:60,text:'$6 saved in first hour'},
+{at:120,text:'$12 saved halfway to lunch'},
+{at:180,text:'LUNCH TIME: $18 saved'}
+];
+let shownMilestones=new Set();
+
+function updateClock(totalMinutes){
+const hours=startHour+Math.floor(totalMinutes/60);
+const mins=Math.floor(totalMinutes%60);
+const h12=hours>12?hours-12:hours;
+const ampm=hours>=12?'PM':'AM';
+timeDisplay.textContent=`${h12}:${String(mins).padStart(2,'0')} ${ampm}`;
+const hourAngle=((hours%12)+mins/60)*30;
+const minAngle=mins*6;
+hourHand.style.transform=`translateX(-50%) rotate(${hourAngle}deg)`;
+minHand.style.transform=`translateX(-50%) rotate(${minAngle}deg)`;
+const saved=totalMinutes*savingsPerMinute;
+savingsEl.textContent='$'+saved.toFixed(2);
+if(saved>=monthlyCost){
+savingsEl.style.color='#34c759';
+costLine.classList.add('show');
+}
+milestones.forEach(m=>{
+if(totalMinutes>=m.at&&!shownMilestones.has(m.text)){
+shownMilestones.add(m.text);
+showMilestone(m.text);
+}
+});
+}
+
+function showMilestone(text){
+milestone.textContent=text;
+milestone.className='milestone flash';
+setTimeout(()=>milestone.className='milestone',1500);
+}
+
+function startClock(){
+if(running)return;
+running=true;
+document.getElementById('startBtn').textContent='Running...';
+breakdown.style.display='grid';
+const interval=setInterval(()=>{
+simMinutes+=1;
+updateClock(simMinutes);
+if(simMinutes>=180){clearInterval(interval);document.getElementById('startBtn').textContent='Done!';}
+},50);
+}
+
+updateClock(0);
+</script>
+</body>
+</html>

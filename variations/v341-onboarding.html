@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cut Onboarding Time by 70% | Go2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0f;color:#e0e0e0;overflow-x:hidden}
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;position:relative}
+.hero h1{font-size:clamp(2rem,5vw,4rem);font-weight:800;background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:1rem}
+.hero p{font-size:1.3rem;color:#94a3b8;max-width:600px;margin-bottom:2rem}
+.timeline-section{padding:4rem 2rem;max-width:1200px;margin:0 auto}
+.timeline-toggle{display:flex;justify-content:center;gap:1rem;margin-bottom:3rem}
+.toggle-btn{padding:1rem 2rem;border-radius:12px;border:2px solid #333;background:transparent;color:#e0e0e0;font-size:1.1rem;cursor:pointer;transition:all .3s}
+.toggle-btn.active{border-color:#60a5fa;background:rgba(96,165,250,.15);color:#60a5fa}
+.toggle-btn:hover{border-color:#60a5fa}
+.timeline-container{position:relative}
+.timeline-line{position:absolute;left:50%;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,#60a5fa,#a78bfa);transform:translateX(-50%)}
+.week{display:flex;align-items:flex-start;margin-bottom:2rem;opacity:0;transform:translateY(30px);transition:all .6s}
+.week.visible{opacity:1;transform:translateY(0)}
+.week:nth-child(even){flex-direction:row-reverse}
+.week-content{width:45%;padding:1.5rem;background:rgba(255,255,255,.05);border-radius:16px;border:1px solid rgba(255,255,255,.1);position:relative}
+.week-content h3{color:#60a5fa;margin-bottom:.5rem;font-size:1.2rem}
+.week-content p{color:#94a3b8;font-size:.95rem;line-height:1.6}
+.week-dot{width:20px;height:20px;background:#60a5fa;border-radius:50%;position:absolute;left:50%;transform:translateX(-50%);z-index:2;box-shadow:0 0 20px rgba(96,165,250,.5)}
+.week-number{width:10%;text-align:center;font-size:1.5rem;font-weight:700;color:#60a5fa;padding-top:1rem}
+.spacer{width:45%}
+.comparison{display:grid;grid-template-columns:1fr 1fr;gap:2rem;max-width:1000px;margin:3rem auto;padding:0 2rem}
+.comp-card{padding:2rem;border-radius:16px;border:1px solid rgba(255,255,255,.1)}
+.comp-card.before{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.3)}
+.comp-card.after{background:rgba(96,165,250,.08);border-color:rgba(96,165,250,.3)}
+.comp-card h3{font-size:1.4rem;margin-bottom:1rem}
+.comp-card.before h3{color:#ef4444}
+.comp-card.after h3{color:#60a5fa}
+.stat-bar{display:flex;align-items:center;margin:.8rem 0;gap:1rem}
+.stat-label{width:140px;font-size:.9rem;color:#94a3b8}
+.stat-fill{height:28px;border-radius:8px;display:flex;align-items:center;padding:0 10px;font-size:.85rem;font-weight:600;transition:width 1.5s ease}
+.before .stat-fill{background:linear-gradient(90deg,#ef4444,#f87171);color:white}
+.after .stat-fill{background:linear-gradient(90deg,#60a5fa,#a78bfa);color:white}
+.day-sim{max-width:900px;margin:3rem auto;padding:2rem}
+.day-sim h2{text-align:center;margin-bottom:2rem;font-size:1.8rem;color:#e0e0e0}
+.day-slider{width:100%;margin:1rem 0;-webkit-appearance:none;height:8px;background:#1e293b;border-radius:4px;outline:none}
+.day-slider::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;background:#60a5fa;border-radius:50%;cursor:pointer;box-shadow:0 0 15px rgba(96,165,250,.5)}
+.day-label{text-align:center;font-size:1.2rem;color:#60a5fa;margin-bottom:1rem}
+.day-activities{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem}
+.activity-card{padding:1.2rem;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
+.activity-card h4{font-size:.95rem;margin-bottom:.5rem}
+.activity-card.traditional h4{color:#f87171}
+.activity-card.go2 h4{color:#60a5fa}
+.activity-card p{font-size:.85rem;color:#94a3b8;line-height:1.5}
+.activity-card .tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.75rem;margin-top:.5rem}
+.activity-card.traditional .tag{background:rgba(239,68,68,.15);color:#f87171}
+.activity-card.go2 .tag{background:rgba(96,165,250,.15);color:#60a5fa}
+.cost-calc{max-width:800px;margin:4rem auto;padding:2rem;background:rgba(255,255,255,.03);border-radius:20px;border:1px solid rgba(255,255,255,.1)}
+.cost-calc h2{text-align:center;margin-bottom:2rem;font-size:1.8rem}
+.calc-row{display:flex;align-items:center;justify-content:space-between;padding:1rem 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.calc-row label{font-size:1rem;color:#94a3b8}
+.calc-row input{width:120px;padding:.5rem;background:#1e293b;border:1px solid #333;border-radius:8px;color:#e0e0e0;font-size:1rem;text-align:center}
+.calc-result{text-align:center;padding:2rem;margin-top:1.5rem;background:rgba(96,165,250,.1);border-radius:12px}
+.calc-result .big{font-size:2.5rem;font-weight:800;color:#60a5fa}
+.calc-result p{color:#94a3b8;margin-top:.5rem}
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;max-width:1100px;margin:4rem auto;padding:0 2rem}
+.feature{padding:1.5rem;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);transition:all .3s}
+.feature:hover{border-color:rgba(96,165,250,.3);transform:translateY(-3px)}
+.feature .icon{font-size:2rem;margin-bottom:1rem}
+.feature h3{color:#e0e0e0;margin-bottom:.5rem}
+.feature p{color:#94a3b8;font-size:.9rem;line-height:1.5}
+.cta-section{text-align:center;padding:6rem 2rem;background:linear-gradient(to bottom,transparent,rgba(96,165,250,.05))}
+.cta-section h2{font-size:2.5rem;font-weight:800;margin-bottom:1rem}
+.cta-section p{color:#94a3b8;font-size:1.2rem;margin-bottom:2rem}
+.cta-btn{display:inline-block;padding:1rem 3rem;background:linear-gradient(135deg,#60a5fa,#a78bfa);color:white;font-size:1.2rem;font-weight:700;border-radius:12px;text-decoration:none;transition:all .3s}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 10px 40px rgba(96,165,250,.3)}
+.section-title{text-align:center;font-size:2rem;font-weight:700;margin-bottom:.5rem}
+.section-sub{text-align:center;color:#94a3b8;font-size:1.1rem;margin-bottom:3rem}
+@media(max-width:768px){.comparison,.day-activities{grid-template-columns:1fr}.timeline-line{left:20px}.week,.week:nth-child(even){flex-direction:column}.week-content,.spacer{width:100%}.spacer{display:none}.week-number{width:100%;text-align:left;padding-left:50px}}
+</style>
+</head>
+<body>
+<div class="hero">
+<h1>Cut Onboarding Time by 70%</h1>
+<p>Your new hires spend 6 weeks fumbling through tribal knowledge and outdated wikis. Go2 gets them productive in under 2 weeks.</p>
+<div style="display:flex;gap:2rem;flex-wrap:wrap;justify-content:center">
+<div style="text-align:center">
+<div style="font-size:3rem;font-weight:800;color:#ef4444">42 days</div>
+<div style="color:#94a3b8">Traditional onboarding</div>
+</div>
+<div style="font-size:3rem;color:#333;align-self:center">&rarr;</div>
+<div style="text-align:center">
+<div style="font-size:3rem;font-weight:800;color:#60a5fa">12 days</div>
+<div style="color:#94a3b8">With Go2</div>
+</div>
+</div>
+</div>
+
+<div class="day-sim">
+<h2 class="section-title">Day-by-Day: New Hire Experience</h2>
+<p class="section-sub">Drag the slider to see what happens each day</p>
+<div class="day-label">Day <span id="dayNum">1</span></div>
+<input type="range" class="day-slider" id="daySlider" min="1" max="14" value="1">
+<div class="day-activities">
+<div class="activity-card traditional">
+<h4>Without Go2</h4>
+<p id="tradActivity">Day 1: Paperwork, IT setup, meet HR. Assigned a "buddy" who's too busy to help. Given a link to a 200-page wiki that hasn't been updated in 8 months.</p>
+<span class="tag" id="tradTag">Wasted: 6 hours</span>
+</div>
+<div class="activity-card go2">
+<h4>With Go2</h4>
+<p id="go2Activity">Day 1: Automated setup complete before arrival. Go2 generates a personalized onboarding path based on role, team, and tools. Interactive training docs are auto-generated from how the team actually works.</p>
+<span class="tag" id="go2Tag">Productive: 4 hours</span>
+</div>
+</div>
+</div>
+
+<div style="padding:4rem 2rem">
+<h2 class="section-title">The Real Cost of Slow Onboarding</h2>
+<p class="section-sub">Every extra week costs more than you think</p>
+<div class="comparison">
+<div class="comp-card before">
+<h3>Traditional (6 weeks)</h3>
+<div class="stat-bar"><span class="stat-label">Time to first task</span><div class="stat-fill" style="width:80%">5 days</div></div>
+<div class="stat-bar"><span class="stat-label">Time to autonomy</span><div class="stat-fill" style="width:100%">42 days</div></div>
+<div class="stat-bar"><span class="stat-label">Manager time</span><div class="stat-fill" style="width:60%">40 hrs</div></div>
+<div class="stat-bar"><span class="stat-label">Buddy burden</span><div class="stat-fill" style="width:70%">60 hrs</div></div>
+<div class="stat-bar"><span class="stat-label">Wrong-way work</span><div class="stat-fill" style="width:50%">30 hrs</div></div>
+</div>
+<div class="comp-card after">
+<h3>With Go2 (2 weeks)</h3>
+<div class="stat-bar"><span class="stat-label">Time to first task</span><div class="stat-fill" style="width:20%">1 day</div></div>
+<div class="stat-bar"><span class="stat-label">Time to autonomy</span><div class="stat-fill" style="width:30%">12 days</div></div>
+<div class="stat-bar"><span class="stat-label">Manager time</span><div class="stat-fill" style="width:20%">10 hrs</div></div>
+<div class="stat-bar"><span class="stat-label">Buddy burden</span><div class="stat-fill" style="width:15%">8 hrs</div></div>
+<div class="stat-bar"><span class="stat-label">Wrong-way work</span><div class="stat-fill" style="width:10%">3 hrs</div></div>
+</div>
+</div>
+</div>
+
+<div class="cost-calc">
+<h2>Calculate Your Onboarding Cost</h2>
+<div class="calc-row"><label>New hires per year</label><input type="number" id="hires" value="12"></div>
+<div class="calc-row"><label>Average salary ($/yr)</label><input type="number" id="salary" value="85000"></div>
+<div class="calc-row"><label>Current onboarding (weeks)</label><input type="number" id="weeks" value="6"></div>
+<div class="calc-row"><label>Manager hourly rate ($)</label><input type="number" id="mgrRate" value="75"></div>
+<div class="calc-result">
+<div class="big" id="savings">$0</div>
+<p>Annual savings with Go2's 70% faster onboarding</p>
+<div style="margin-top:1rem;font-size:.9rem;color:#94a3b8" id="breakdown"></div>
+</div>
+</div>
+
+<div style="padding:4rem 2rem">
+<h2 class="section-title">How Go2 Transforms Onboarding</h2>
+<p class="section-sub">From tribal knowledge to institutional intelligence</p>
+<div class="features">
+<div class="feature"><div class="icon">📋</div><h3>Auto-Generated Training Docs</h3><p>Go2 watches how your team actually works and generates step-by-step training materials. Always up-to-date because they come from real workflows, not a wiki someone forgot about.</p></div>
+<div class="feature"><div class="icon">🎯</div><h3>Personalized Learning Paths</h3><p>Each new hire gets a custom onboarding path based on their role, experience level, and the specific tools and processes they need to master.</p></div>
+<div class="feature"><div class="icon">🤖</div><h3>AI Coaching for New Hires</h3><p>Real-time guidance as they work. "Here's how Sarah (your team's top performer) handles this task." Not a chatbot — contextual coaching embedded in their workflow.</p></div>
+<div class="feature"><div class="icon">📊</div><h3>Progress Tracking</h3><p>Managers see exactly where each new hire is in their learning journey. No more guessing if they're "getting it" — see actual competency metrics.</p></div>
+<div class="feature"><div class="icon">🔄</div><h3>Living Process Docs</h3><p>When your team changes how they do something, Go2 detects the drift and updates the training docs automatically. New hires always learn the current way.</p></div>
+<div class="feature"><div class="icon">⚡</div><h3>Instant Expert Access</h3><p>Go2 knows who on your team is the expert at what. New hires get connected to the right person for the right question, reducing buddy burden by 85%.</p></div>
+</div>
+</div>
+
+<div class="cta-section">
+<h2>Stop Losing Months to Onboarding</h2>
+<p>Every new hire should be productive in days, not months.</p>
+<a href="https://go2.io" class="cta-btn">Start Free &rarr;</a>
+</div>
+
+<script>
+const dayData = {
+1: {trad:"Day 1: Paperwork, IT setup, meet HR. Assigned a 'buddy' who's too busy to help. Given a link to a 200-page wiki that hasn't been updated in 8 months.",go2:"Day 1: Automated setup complete before arrival. Go2 generates a personalized onboarding path based on role, team, and tools. Interactive training docs are auto-generated from how the team actually works.",tTag:"Wasted: 6 hours",gTag:"Productive: 4 hours"},
+2: {trad:"Day 2: Trying to get VPN access. Password resets. Reading wiki pages that contradict each other. Buddy cancelled their 1:1.",go2:"Day 2: Go2 walks them through their first real task with contextual guidance. Shows exactly how their teammates handle similar work. First meaningful contribution by lunch.",tTag:"Wasted: 7 hours",gTag:"Productive: 6 hours"},
+3: {trad:"Day 3: Sat in 4 meetings they didn't understand. Took notes but doesn't know what matters. Started a task the wrong way because docs were outdated.",go2:"Day 3: Completing tasks independently with Go2 coaching. AI notices they're about to make a common mistake and gently redirects. Confidence building fast.",tTag:"Wasted: 5 hours",gTag:"Productive: 7 hours"},
+4: {trad:"Day 4: Finally got dev environment working (3 tries). Realized the setup guide is for the old architecture. Asked 6 people the same question.",go2:"Day 4: Go2 auto-generated a 'how we actually deploy' guide from observed team behavior. New hire deploys first change to staging. Manager gets a progress update automatically.",tTag:"Wasted: 8 hours",gTag:"Productive: 7.5 hours"},
+5: {trad:"Day 5: End of week 1. Can login to most tools. Doesn't understand the codebase, the deployment process, or who to ask for what. Feeling overwhelmed.",go2:"Day 5: End of week 1. Already completed 3 real tasks. Understands team workflows because Go2 showed them. Knows who the experts are. Feeling confident.",tTag:"Wasted: 5 hours",gTag:"Productive: 8 hours"},
+6: {trad:"Week 2: Starting to figure out who knows what. Still making mistakes because processes differ from docs. Got negative feedback on first PR — didn't know team conventions.",go2:"Week 2: Operating at 60% capacity. Go2 coaching fills in gaps as they arise. Auto-generated code review checklist matches team standards. Zero convention violations.",tTag:"Wasted: 4 hrs/day",gTag:"Productive: 7 hrs/day"},
+7: {trad:"Week 2, Day 2: Discovered a process that 'everyone knows' but nobody documented. Spent half a day doing something manually that has an automation. Nobody told them.",go2:"Week 2, Day 2: Go2 proactively suggests automations the team uses. 'Hey, your teammates use this shortcut for that task.' New hire is already faster than some veterans at specific tasks.",tTag:"Wasted: 4 hours",gTag:"Productive: 7.5 hours"},
+8: {trad:"Week 2, Day 3: Getting more comfortable but still asking lots of questions. Team is getting mildly annoyed. Buddy relationship is awkward.",go2:"Week 2, Day 3: Go2 answers 90% of questions before they need to ask anyone. Team barely notices there's a new hire because they're already self-sufficient.",tTag:"Interrupted: 3 teammates",gTag:"Team interrupts: 0"},
+9: {trad:"Week 3: Can do basic tasks independently. Complex work still needs heavy guidance. Hasn't touched 40% of the tools they'll eventually need.",go2:"Week 2, Day 4: Tackling complex tasks with coaching support. Go2 progressively reduces guidance as competency grows. Manager reviews progress dashboard — ahead of schedule.",tTag:"Capacity: 35%",gTag:"Capacity: 70%"},
+10: {trad:"Week 3-4: Slowly building confidence. Made an expensive mistake because they didn't know about an undocumented dependency. Team spent 4 hours fixing it.",go2:"Day 10: Effectively autonomous for role-specific work. Go2 coaching now focuses on optimization, not basics. Already suggesting process improvements based on fresh-eyes perspective.",tTag:"Capacity: 45%",gTag:"Capacity: 80%"},
+11: {trad:"Week 4-5: Getting better but still not autonomous. Manager spending 5+ hours/week on oversight. Starting to wonder if this hire was the right choice.",go2:"Day 11: Contributing to team knowledge base. Go2 captures their fresh-eyes observations about unclear processes. They're making the team better, not just catching up.",tTag:"Capacity: 55%",gTag:"Capacity: 85%"},
+12: {trad:"Week 5: Starting to hit stride on familiar tasks. Still struggles with edge cases. Has developed some bad habits from learning in isolation.",go2:"Day 12: Fully onboarded. Operating at team-level capacity for their experience level. Go2 shifts to ongoing coaching mode — same as the rest of the team.",tTag:"Capacity: 65%",gTag:"Capacity: 90%"},
+13: {trad:"Week 5-6: Nearly autonomous but with gaps. Some tasks still require checking with teammates. Confidence is fragile — one bad day can set them back.",go2:"Day 13: Already mentoring the next new hire. Go2's auto-generated onboarding docs include their improvements. Onboarding gets better every cycle.",tTag:"Capacity: 75%",gTag:"Capacity: 92%"},
+14: {trad:"Week 6: Finally 'onboarded' but everyone knows they won't be truly effective for another month. Total cost: $15K-$25K in lost productivity, manager time, and team disruption.",go2:"Day 14: Two weeks in, fully productive. Total onboarding cost: 70% less than traditional. Manager time: 10 hours total. Team disruption: near zero. Ready for their next challenge.",tTag:"Capacity: 80%",gTag:"Capacity: 95%"}
+};
+const slider = document.getElementById('daySlider');
+slider.addEventListener('input', function() {
+    const day = this.value;
+    document.getElementById('dayNum').textContent = day;
+    const d = dayData[day];
+    document.getElementById('tradActivity').textContent = d.trad;
+    document.getElementById('go2Activity').textContent = d.go2;
+    document.getElementById('tradTag').textContent = d.tTag;
+    document.getElementById('go2Tag').textContent = d.gTag;
+});
+
+function calcSavings() {
+    const hires = parseInt(document.getElementById('hires').value) || 0;
+    const salary = parseInt(document.getElementById('salary').value) || 0;
+    const weeks = parseInt(document.getElementById('weeks').value) || 0;
+    const mgrRate = parseInt(document.getElementById('mgrRate').value) || 0;
+    const weeklyPay = salary / 52;
+    const savedWeeks = weeks * 0.7;
+    const prodSavings = hires * weeklyPay * savedWeeks * 0.5;
+    const mgrSavings = hires * mgrRate * savedWeeks * 8;
+    const total = Math.round(prodSavings + mgrSavings);
+    document.getElementById('savings').textContent = '$' + total.toLocaleString();
+    document.getElementById('breakdown').textContent = `Productivity gains: $${Math.round(prodSavings).toLocaleString()} | Manager time saved: $${Math.round(mgrSavings).toLocaleString()}`;
+}
+document.querySelectorAll('.cost-calc input').forEach(i => i.addEventListener('input', calcSavings));
+calcSavings();
+
+const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, {threshold: 0.1});
+document.querySelectorAll('.week').forEach(w => observer.observe(w));
+</script>
+</body>
+</html>

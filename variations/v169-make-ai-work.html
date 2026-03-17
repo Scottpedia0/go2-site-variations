@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Make Your AI Actually Work</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@300;400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0f1419;
+    --surface: #161b22;
+    --surface-2: #1c2128;
+    --surface-3: #21262d;
+    --border: rgba(255,255,255,0.06);
+    --blue: #2f81f7;
+    --blue-dim: #1f6feb;
+    --blue-glow: rgba(47,129,247,0.12);
+    --amber: #f0883e;
+    --amber-glow: rgba(240,136,62,0.1);
+    --green: #3fb950;
+    --green-glow: rgba(63,185,80,0.1);
+    --red: #f85149;
+    --text: #e6edf3;
+    --text-dim: #8b949e;
+    --text-muted: #484f58;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* === NAV === */
+  .nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 16px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(15,20,25,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .nav-logo span { color: var(--blue); }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+  }
+
+  .nav-link {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .nav-link:hover { color: var(--text); }
+
+  .nav-cta {
+    padding: 8px 20px;
+    background: var(--blue);
+    color: white;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .nav-cta:hover { background: var(--blue-dim); }
+
+  /* === HERO === */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: 120px 40px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-glow {
+    position: absolute;
+    top: -200px; left: 50%;
+    transform: translateX(-50%);
+    width: 1000px; height: 600px;
+    background: radial-gradient(ellipse, var(--blue-glow) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  @media (max-width: 900px) {
+    .hero-inner { grid-template-columns: 1fr; gap: 48px; }
+  }
+
+  .hero-text .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    background: rgba(248,81,73,0.1);
+    border: 1px solid rgba(248,81,73,0.2);
+    color: var(--red);
+    font-family: 'Fira Code', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-radius: 6px;
+    margin-bottom: 24px;
+  }
+
+  .hero-text h1 {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(2.2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 24px;
+  }
+
+  .hero-text h1 .money {
+    color: var(--amber);
+  }
+
+  .hero-text h1 .fix {
+    background: linear-gradient(135deg, var(--blue), var(--green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-text p {
+    font-size: 1.15rem;
+    color: var(--text-dim);
+    line-height: 1.7;
+    margin-bottom: 36px;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn-blue {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 28px;
+    background: var(--blue);
+    color: white;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s;
+  }
+
+  .btn-blue:hover { box-shadow: 0 8px 30px rgba(47,129,247,0.3); transform: translateY(-2px); }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 28px;
+    background: transparent;
+    color: var(--text);
+    font-weight: 600;
+    font-size: 0.95rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s;
+  }
+
+  .btn-ghost:hover { border-color: var(--blue); color: var(--blue); }
+
+  /* HERO RIGHT: TERMINAL */
+  .hero-terminal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+  }
+
+  .term-bar {
+    padding: 12px 16px;
+    background: var(--surface-2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .term-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot-red { background: #f85149; }
+  .dot-amber { background: #f0883e; }
+  .dot-green { background: #3fb950; }
+
+  .term-title {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-left: 8px;
+  }
+
+  .term-body {
+    padding: 24px;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.8rem;
+    line-height: 2;
+  }
+
+  .term-line { margin-bottom: 4px; }
+  .term-prompt { color: var(--green); }
+  .term-cmd { color: var(--text); }
+  .term-output { color: var(--text-dim); }
+  .term-error { color: var(--red); }
+  .term-success { color: var(--green); }
+  .term-highlight { color: var(--blue); }
+  .term-warn { color: var(--amber); }
+
+  /* === PROBLEM SECTION === */
+  .problem {
+    padding: 120px 40px;
+    border-top: 1px solid var(--border);
+  }
+
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  .section-tag {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 12px;
+  }
+
+  .tag-red { color: var(--red); }
+  .tag-blue { color: var(--blue); }
+  .tag-green { color: var(--green); }
+  .tag-amber { color: var(--amber); }
+
+  .section-heading {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(2rem, 4.5vw, 3rem);
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 16px;
+    line-height: 1.2;
+  }
+
+  .section-sub {
+    font-size: 1.05rem;
+    color: var(--text-dim);
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto 64px;
+    line-height: 1.7;
+  }
+
+  .graveyard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+  }
+
+  .grave {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .grave::after {
+    content: 'FAILED';
+    position: absolute;
+    top: 16px; right: 16px;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    color: var(--red);
+    opacity: 0.4;
+  }
+
+  .grave-icon { font-size: 2rem; margin-bottom: 16px; display: block; opacity: 0.6; }
+
+  .grave h3 {
+    font-family: 'Sora', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .grave p {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .grave .cost {
+    margin-top: 12px;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.75rem;
+    color: var(--red);
+  }
+
+  /* === WHY SECTION === */
+  .why-section {
+    padding: 140px 40px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .why-content {
+    max-width: 700px;
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .why-equation {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin: 48px 0;
+    flex-wrap: wrap;
+  }
+
+  .why-box {
+    padding: 16px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .why-bad {
+    background: rgba(248,81,73,0.08);
+    border: 1px solid rgba(248,81,73,0.15);
+    color: var(--red);
+  }
+
+  .why-good {
+    background: rgba(63,185,80,0.08);
+    border: 1px solid rgba(63,185,80,0.15);
+    color: var(--green);
+  }
+
+  .why-op {
+    font-size: 1.3rem;
+    color: var(--text-muted);
+  }
+
+  .why-text {
+    font-size: 1.2rem;
+    color: var(--text-dim);
+    line-height: 1.8;
+    margin-top: 32px;
+  }
+
+  .why-text strong { color: var(--text); }
+  .why-text em { color: var(--blue); font-style: normal; font-weight: 600; }
+
+  /* === SOLUTION === */
+  .solution {
+    padding: 140px 40px;
+  }
+
+  .solution-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    max-width: 1000px;
+    margin: 60px auto 0;
+  }
+
+  @media (max-width: 768px) {
+    .solution-grid { grid-template-columns: 1fr; }
+  }
+
+  .sol-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 36px 28px;
+    position: relative;
+    transition: all 0.3s;
+  }
+
+  .sol-card:hover {
+    border-color: var(--blue);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+  }
+
+  .sol-card-tag {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--blue);
+    margin-bottom: 16px;
+  }
+
+  .sol-card h3 {
+    font-family: 'Sora', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  .sol-card p {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  .sol-card .sol-stat {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 16px;
+  }
+
+  .sol-stat-item {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+  }
+
+  .stat-green { background: var(--green-glow); color: var(--green); }
+  .stat-blue { background: var(--blue-glow); color: var(--blue); }
+  .stat-amber { background: var(--amber-glow); color: var(--amber); }
+
+  /* === BEFORE AFTER === */
+  .before-after {
+    padding: 140px 40px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ba-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    max-width: 1000px;
+    margin: 60px auto 0;
+  }
+
+  @media (max-width: 768px) {
+    .ba-grid { grid-template-columns: 1fr; }
+  }
+
+  .ba-column {
+    border-radius: 16px;
+    padding: 40px 32px;
+  }
+
+  .ba-before {
+    background: rgba(248,81,73,0.04);
+    border: 1px solid rgba(248,81,73,0.1);
+  }
+
+  .ba-after {
+    background: rgba(63,185,80,0.04);
+    border: 1px solid rgba(63,185,80,0.1);
+  }
+
+  .ba-column-label {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+
+  .ba-before .ba-column-label { color: var(--red); }
+  .ba-after .ba-column-label { color: var(--green); }
+
+  .ba-item {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .ba-item:last-child { border-bottom: none; }
+  .ba-before .ba-item { color: var(--text-dim); }
+  .ba-after .ba-item { color: var(--text); }
+
+  /* === INTEGRATIONS === */
+  .integrations {
+    padding: 100px 40px;
+  }
+
+  .int-flow {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    max-width: 900px;
+    margin: 48px auto 0;
+  }
+
+  .int-chip {
+    padding: 8px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    transition: all 0.2s;
+  }
+
+  .int-chip:hover { border-color: var(--blue); color: var(--text); }
+
+  .int-chip.ai {
+    border-color: rgba(47,129,247,0.3);
+    background: var(--blue-glow);
+    color: var(--blue);
+  }
+
+  /* === WAZE === */
+  .waze {
+    padding: 140px 40px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .waze-container { max-width: 700px; margin: 0 auto; }
+
+  .waze-text {
+    font-size: 1.15rem;
+    color: var(--text-dim);
+    line-height: 1.8;
+    margin-top: 40px;
+  }
+
+  .waze-text strong { color: var(--text); }
+  .waze-text em { color: var(--blue); font-style: normal; font-weight: 600; }
+
+  /* === PROOF === */
+  .proof {
+    padding: 100px 40px;
+  }
+
+  .proof-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    max-width: 1000px;
+    margin: 48px auto 0;
+  }
+
+  @media (max-width: 768px) {
+    .proof-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .proof-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 16px;
+    text-align: center;
+  }
+
+  .proof-num {
+    font-family: 'Sora', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .proof-num.blue { color: var(--blue); }
+  .proof-num.green { color: var(--green); }
+  .proof-num.amber { color: var(--amber); }
+
+  .proof-label {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: 'Fira Code', monospace;
+  }
+
+  /* === CTA === */
+  .cta-section {
+    padding: 160px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cta-section::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 800px; height: 400px;
+    background: radial-gradient(ellipse, var(--blue-glow) 0%, transparent 70%);
+  }
+
+  .cta-inner {
+    position: relative;
+    z-index: 2;
+    max-width: 650px;
+    margin: 0 auto;
+  }
+
+  .cta-heading {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    margin-bottom: 24px;
+    line-height: 1.2;
+  }
+
+  .cta-heading span {
+    background: linear-gradient(135deg, var(--blue), var(--green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .cta-sub {
+    font-size: 1.1rem;
+    color: var(--text-dim);
+    margin-bottom: 40px;
+    line-height: 1.7;
+  }
+
+  .cta-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* === FOOTER === */
+  footer {
+    padding: 48px 40px;
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+  }
+
+  footer a { color: var(--text-dim); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="/" class="nav-logo">Go2<span>.</span></a>
+  <div class="nav-links">
+    <a href="#solution" class="nav-link">How it works</a>
+    <a href="#proof" class="nav-link">Results</a>
+    <a href="#cta" class="nav-cta">Make AI Actually Work</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-inner">
+    <div class="hero-text">
+      <div class="tag">The $50K problem</div>
+      <h1>You spent <span class="money">$50K on AI tools</span> nobody uses.<br>Go2 <span class="fix">makes them actually work</span>.</h1>
+      <p>ChatGPT, Copilot, custom agents — they're powerful. But without context about YOUR company, they're just expensive autocomplete. Go2 is the missing context layer.</p>
+      <div class="hero-actions">
+        <a href="#cta" class="btn-blue">Make AI Actually Work &rarr;</a>
+        <a href="#problem" class="btn-ghost">See why AI fails</a>
+      </div>
+    </div>
+    <div class="hero-terminal">
+      <div class="term-bar">
+        <span class="term-dot dot-red"></span>
+        <span class="term-dot dot-amber"></span>
+        <span class="term-dot dot-green"></span>
+        <span class="term-title">ai-implementation-status</span>
+      </div>
+      <div class="term-body">
+        <div class="term-line"><span class="term-prompt">$</span> <span class="term-cmd">ai audit --company acme-corp</span></div>
+        <div class="term-line"><span class="term-output">Scanning AI tools deployed...</span></div>
+        <div class="term-line">&nbsp;</div>
+        <div class="term-line"><span class="term-highlight">ChatGPT Enterprise</span> <span class="term-error">12% adoption after 6 months</span></div>
+        <div class="term-line"><span class="term-highlight">GitHub Copilot</span> <span class="term-warn">Used by 3 of 40 engineers</span></div>
+        <div class="term-line"><span class="term-highlight">Custom AI Agent</span> <span class="term-error">Hallucinating on company data</span></div>
+        <div class="term-line"><span class="term-highlight">McKinsey Engagement</span> <span class="term-error">$800K, report gathering dust</span></div>
+        <div class="term-line">&nbsp;</div>
+        <div class="term-line"><span class="term-error">ROOT CAUSE: No workflow context. AI doesn't know how you work.</span></div>
+        <div class="term-line">&nbsp;</div>
+        <div class="term-line"><span class="term-prompt">$</span> <span class="term-cmd">go2 init --connect-all</span></div>
+        <div class="term-line"><span class="term-success">Connecting to 40+ tools... capturing workflows...</span></div>
+        <div class="term-line"><span class="term-success">Context layer active. AI tools now have company intelligence.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section class="problem" id="problem">
+  <div class="container">
+    <p class="section-tag tag-red">The AI Graveyard</p>
+    <h2 class="section-heading">Sound familiar?</h2>
+    <p class="section-sub">Every company is spending on AI. Almost none are getting value. Here's what $50K+ buys you without context.</p>
+    <div class="graveyard">
+      <div class="grave">
+        <span class="grave-icon">🤖</span>
+        <h3>ChatGPT Enterprise</h3>
+        <p>Team used it for a month. Generic answers that needed heavy editing. Now gathering dust alongside the ping-pong table.</p>
+        <p class="cost">$20/user/mo x 200 employees = $48K/yr wasted</p>
+      </div>
+      <div class="grave">
+        <span class="grave-icon">💻</span>
+        <h3>GitHub Copilot</h3>
+        <p>Autocompletes generic code. Doesn't know your architecture, your APIs, your patterns. Devs end up rewriting 70% of suggestions.</p>
+        <p class="cost">$19/user/mo x 50 devs = $11.4K/yr, marginal ROI</p>
+      </div>
+      <div class="grave">
+        <span class="grave-icon">🏢</span>
+        <h3>McKinsey AI Strategy</h3>
+        <p>6-month engagement. Beautiful deck. Zero implementation. They documented processes via interviews — surface-level at best.</p>
+        <p class="cost">$500K-$3M, one-time, already outdated</p>
+      </div>
+      <div class="grave">
+        <span class="grave-icon">🔧</span>
+        <h3>Custom AI Agent</h3>
+        <p>Built by your best engineers. Worked in the demo. Hallucinated in production. Didn't know your actual processes.</p>
+        <p class="cost">$200K dev cost + 6 months of eng time</p>
+      </div>
+      <div class="grave">
+        <span class="grave-icon">📊</span>
+        <h3>AI Training Program</h3>
+        <p>Brought in trainers. Made a Slack channel. Assigned champions. Adoption peaked at 15% and fell to 4%.</p>
+        <p class="cost">$30K training + 200 hours of lost productivity</p>
+      </div>
+      <div class="grave">
+        <span class="grave-icon">⚙️</span>
+        <h3>RPA / Automation</h3>
+        <p>Automated theoretical workflows that don't match reality. 60% of bots broke within 3 months as processes drifted.</p>
+        <p class="cost">$150K platform + $80K/yr maintenance</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY -->
+<section class="why-section">
+  <div class="why-content">
+    <p class="section-tag tag-amber">The Root Cause</p>
+    <h2 class="section-heading">It was never the AI's fault.</h2>
+    <div class="why-equation">
+      <div class="why-box why-bad">GPT-4, Claude, Copilot</div>
+      <span class="why-op">+</span>
+      <div class="why-box why-bad">Zero company context</div>
+      <span class="why-op">=</span>
+      <div class="why-box why-bad">Expensive autocomplete</div>
+    </div>
+    <div class="why-equation">
+      <div class="why-box why-good">Any AI model</div>
+      <span class="why-op">+</span>
+      <div class="why-box why-good">Go2 context layer</div>
+      <span class="why-op">=</span>
+      <div class="why-box why-good">AI that actually works</div>
+    </div>
+    <p class="why-text">
+      Your AI tools aren't broken. They're <strong>blind</strong>. They don't know your processes, your edge cases, your customer quirks, your team's shortcuts. <em>Go2 gives them eyes.</em>
+    </p>
+  </div>
+</section>
+
+<!-- SOLUTION -->
+<section class="solution" id="solution">
+  <div class="container">
+    <p class="section-tag tag-blue">The Context Layer</p>
+    <h2 class="section-heading">Go2 captures how work actually happens.</h2>
+    <p class="section-sub">Then feeds that intelligence to every AI tool in your stack.</p>
+    <div class="solution-grid">
+      <div class="sol-card">
+        <p class="sol-card-tag">Capture</p>
+        <h3>Cowork.ai Desktop Agent</h3>
+        <p>Observes how your team works across 40+ tools. Slack, Teams, Zoom, Gmail, CRM, project management. Not surveillance — workflow intelligence.</p>
+        <div class="sol-stat">
+          <span class="sol-stat-item stat-green">40+ integrations</span>
+          <span class="sol-stat-item stat-blue">Privacy-first</span>
+        </div>
+      </div>
+      <div class="sol-card">
+        <p class="sol-card-tag">Coach</p>
+        <h3>AI Coaching via Slack & Teams</h3>
+        <p>Workers get a personal AI coach that knows their role and their processes. Context-aware guidance, not generic tips. Workers love it.</p>
+        <div class="sol-stat">
+          <span class="sol-stat-item stat-green">89% satisfaction</span>
+          <span class="sol-stat-item stat-amber">23% productivity gain</span>
+        </div>
+      </div>
+      <div class="sol-card">
+        <p class="sol-card-tag">Document</p>
+        <h3>Auto-Generated SOPs</h3>
+        <p>Living process documentation written from observed workflows. Always current. No more stale wikis or tribal knowledge trapped in people's heads.</p>
+        <div class="sol-stat">
+          <span class="sol-stat-item stat-blue">60% faster onboarding</span>
+        </div>
+      </div>
+      <div class="sol-card">
+        <p class="sol-card-tag">Enhance</p>
+        <h3>Context for Every AI Tool</h3>
+        <p>Open-source skills that plug into Claude, ChatGPT, OpenAI. Your company's processes, edge cases, and patterns — injected directly into the AI tools you already pay for.</p>
+        <div class="sol-stat">
+          <span class="sol-stat-item stat-green">Sidecars Claude, ChatGPT, OpenAI</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BEFORE AFTER -->
+<section class="before-after">
+  <div class="container">
+    <p class="section-tag tag-green">The Transformation</p>
+    <h2 class="section-heading">Before Go2 vs. After Go2</h2>
+    <div class="ba-grid">
+      <div class="ba-column ba-before">
+        <p class="ba-column-label">Before Go2</p>
+        <div class="ba-item">ChatGPT gives generic answers that need heavy editing</div>
+        <div class="ba-item">New hires take 3-6 months to ramp up</div>
+        <div class="ba-item">Processes live in people's heads (tribal knowledge)</div>
+        <div class="ba-item">Automations break because they model theoretical workflows</div>
+        <div class="ba-item">AI agents hallucinate on company-specific questions</div>
+        <div class="ba-item">$50K+ on AI tools, 12% adoption rate</div>
+        <div class="ba-item">McKinsey report: $800K, outdated in 3 months</div>
+      </div>
+      <div class="ba-column ba-after">
+        <p class="ba-column-label">After Go2</p>
+        <div class="ba-item">ChatGPT answers with YOUR processes, YOUR context</div>
+        <div class="ba-item">New hires productive in weeks (60% faster onboarding)</div>
+        <div class="ba-item">Processes auto-documented, always current</div>
+        <div class="ba-item">Automations built from how work ACTUALLY happens</div>
+        <div class="ba-item">AI agents trained on real company workflows</div>
+        <div class="ba-item">Same AI tools, 23% productivity gain, 89% satisfaction</div>
+        <div class="ba-item">Living documentation: $4,200/employee/yr ROI</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INTEGRATIONS -->
+<section class="integrations">
+  <div class="container">
+    <p class="section-tag tag-blue">Connects to everything</p>
+    <h2 class="section-heading" style="text-align:center;">Works with the tools you already have.</h2>
+    <p class="section-sub">Go2 doesn't replace anything. It makes everything better.</p>
+    <div class="int-flow">
+      <span class="int-chip ai">Claude</span>
+      <span class="int-chip ai">ChatGPT</span>
+      <span class="int-chip ai">OpenAI API</span>
+      <span class="int-chip ai">GitHub Copilot</span>
+      <span class="int-chip">Slack</span>
+      <span class="int-chip">Microsoft Teams</span>
+      <span class="int-chip">Zoom</span>
+      <span class="int-chip">Gmail</span>
+      <span class="int-chip">Outlook</span>
+      <span class="int-chip">Salesforce</span>
+      <span class="int-chip">HubSpot</span>
+      <span class="int-chip">Jira</span>
+      <span class="int-chip">Asana</span>
+      <span class="int-chip">Notion</span>
+      <span class="int-chip">Confluence</span>
+      <span class="int-chip">GitHub</span>
+      <span class="int-chip">Linear</span>
+      <span class="int-chip">Figma</span>
+      <span class="int-chip">Monday.com</span>
+      <span class="int-chip">Zendesk</span>
+      <span class="int-chip">Google Drive</span>
+      <span class="int-chip">+ 20 more</span>
+    </div>
+  </div>
+</section>
+
+<!-- WAZE -->
+<section class="waze">
+  <div class="waze-container">
+    <p class="section-tag tag-blue">The Network Effect</p>
+    <h2 class="section-heading">The Waze for work.</h2>
+    <p class="waze-text">
+      Waze works because <strong>millions of drivers share data</strong>, and routes optimize for everyone. Go2 works the same way: <strong>thousands of workers share workflow patterns</strong>, and AI optimizes for every team. One company's breakthrough becomes <em>training data for the entire network</em>. The more companies join, the smarter everyone's AI gets.
+    </p>
+  </div>
+</section>
+
+<!-- PROOF -->
+<section class="proof" id="proof">
+  <div class="container">
+    <p class="section-tag tag-green">The Numbers</p>
+    <h2 class="section-heading">Real results. Real companies.</h2>
+    <div class="proof-grid">
+      <div class="proof-card">
+        <div class="proof-num blue">47K</div>
+        <div class="proof-label">Workers</div>
+      </div>
+      <div class="proof-card">
+        <div class="proof-num green">23%</div>
+        <div class="proof-label">Productivity</div>
+      </div>
+      <div class="proof-card">
+        <div class="proof-num amber">89%</div>
+        <div class="proof-label">Satisfaction</div>
+      </div>
+      <div class="proof-card">
+        <div class="proof-num green">60%</div>
+        <div class="proof-label">Faster onboard</div>
+      </div>
+      <div class="proof-card">
+        <div class="proof-num blue">$4.2K</div>
+        <div class="proof-label">ROI/employee/yr</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section" id="cta">
+  <div class="cta-inner">
+    <h2 class="cta-heading">Stop buying AI tools.<br>Start making them <span>actually work</span>.</h2>
+    <p class="cta-sub">You don't need another AI vendor. You need the context layer that makes every AI tool in your stack 10x more valuable. Go2 is that layer.</p>
+    <div class="cta-actions">
+      <a href="#" class="btn-blue">Make AI Actually Work &rarr;</a>
+      <a href="#" class="btn-ghost">See It In Action</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2. The missing context layer for AI. &nbsp;|&nbsp; <a href="/trust.html">Trust & Security</a> &nbsp;|&nbsp; <a href="/pricing.html">Pricing</a></p>
+</footer>
+
+</body>
+</html>

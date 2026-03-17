@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 for Manufacturing | go2.io</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a2e;--border:#2a2a3e;--primary:#14b8a6;--primary-glow:#14b8a633;--accent:#f59e0b;--text:#e2e8f0;--text-dim:#94a3b8;--success:#22c55e;--warning:#eab308;--danger:#ef4444}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.6}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 0;background:var(--bg)cc;backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+nav .container{display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:22px;font-weight:800;color:var(--text);text-decoration:none}.logo span{color:var(--primary)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:none;transition:all .2s}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{filter:brightness(1.1);transform:translateY(-1px);box-shadow:0 8px 30px var(--primary-glow)}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{border-color:var(--primary)}
+.hero{min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 50%,var(--primary-glow),transparent 50%),radial-gradient(circle at 70% 50%,#f59e0b22,transparent 50%);animation:g 8s ease-in-out infinite alternate}
+@keyframes g{0%{transform:translate(0,0)}100%{transform:translate(-5%,3%)}}
+.hero-content{position:relative;z-index:1;max-width:700px}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:100px;font-size:13px;color:var(--primary);margin-bottom:24px}
+.badge::before{content:'';width:8px;height:8px;background:var(--primary);border-radius:50%;animation:p 2s infinite}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.4}}
+.hero h1{font-size:clamp(36px,5vw,60px);font-weight:800;line-height:1.1;margin-bottom:20px;background:linear-gradient(135deg,#fff,var(--primary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:18px;color:var(--text-dim);margin-bottom:32px;max-width:560px}
+.hero-stats{display:flex;gap:32px;margin-top:40px;flex-wrap:wrap}
+.hero-stat .num{font-size:32px;font-weight:800;color:var(--primary)}.hero-stat .label{font-size:13px;color:var(--text-dim)}
+section{padding:100px 0}.section-label{font-size:13px;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px}
+.section-title{font-size:clamp(28px,3.5vw,42px);font-weight:800;margin-bottom:16px}
+.section-desc{font-size:16px;color:var(--text-dim);max-width:600px;margin-bottom:48px}
+
+/* Production Dashboard */
+.prod-dash{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px}
+.prod-lines{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:20px 0}
+.prod-line{background:var(--surface2);border-radius:16px;padding:20px;cursor:pointer;transition:all .3s;border:1px solid transparent}
+.prod-line:hover,.prod-line.active{border-color:var(--primary)}
+.prod-line h4{font-size:14px;margin-bottom:12px;display:flex;justify-content:space-between}
+.prod-line h4 .status{font-size:11px;padding:3px 8px;border-radius:4px;font-weight:700}
+.prod-line h4 .status.running{background:#22c55e22;color:var(--success)}
+.prod-line h4 .status.slow{background:#eab30822;color:var(--warning)}
+.prod-line h4 .status.down{background:#ef444422;color:var(--danger)}
+.prod-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pm{text-align:center;padding:8px;background:var(--bg);border-radius:8px}
+.pm .pmv{font-size:18px;font-weight:800}.pm .pml{font-size:10px;color:var(--text-dim)}
+.prod-bar{margin-top:12px;height:8px;background:var(--bg);border-radius:4px;overflow:hidden}
+.prod-bar .fill{height:100%;border-radius:4px}
+
+/* Downtime Analysis */
+.downtime-chart{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px}
+.dt-bars{display:flex;gap:16px;align-items:end;height:200px;margin:24px 0}
+.dt-bar-group{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.dt-bar{width:100%;border-radius:8px 8px 0 0;transition:all .3s;cursor:pointer;position:relative}
+.dt-bar:hover{opacity:.8}
+.dt-label{font-size:11px;color:var(--text-dim);text-align:center;margin-top:4px}
+.dt-val{font-size:12px;font-weight:700;text-align:center}
+
+/* SOP Generator */
+.sop-demo{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px}
+.sop-select{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0}
+.sop-select button{padding:10px 20px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;cursor:pointer;transition:all .2s}
+.sop-select button:hover,.sop-select button.active{border-color:var(--primary);background:var(--primary-glow)}
+.sop-output{margin-top:20px;padding:24px;background:var(--surface2);border-radius:16px;display:none;font-size:13px;line-height:1.8}
+.sop-output.active{display:block}
+.sop-step{padding:12px;margin:8px 0;background:var(--bg);border-radius:8px;display:grid;grid-template-columns:auto 1fr;gap:12px}
+.sop-step .sop-num{width:28px;height:28px;background:var(--primary-glow);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--primary)}
+
+/* QC */
+.qc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+.qc-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;transition:all .3s}
+.qc-card:hover{border-color:var(--primary)}
+.qc-card .qc-icon{font-size:28px;margin-bottom:12px}
+.qc-card h4{font-size:15px;margin-bottom:8px}
+.qc-card p{font-size:13px;color:var(--text-dim)}
+.qc-card .qc-stat{margin-top:12px;font-size:13px;font-weight:700;color:var(--success)}
+
+/* Coaching */
+.coaching-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:24px}
+.coaching-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px}
+.coaching-card .scenario{font-size:13px;color:var(--accent);margin-bottom:8px;font-weight:600}
+.coaching-card .situation{font-size:14px;margin-bottom:16px;color:var(--text-dim)}
+.coaching-card .ai-response{background:var(--surface2);border-left:3px solid var(--primary);padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;line-height:1.6}
+.coaching-card .ai-response strong{color:var(--primary)}
+
+/* ROI */
+.roi-calc{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px;display:grid;grid-template-columns:1fr 1fr;gap:40px}
+@media(max-width:768px){.roi-calc{grid-template-columns:1fr}}
+.roi-inputs label{display:block;font-size:13px;color:var(--text-dim);margin-bottom:6px;margin-top:16px}.roi-inputs label:first-child{margin-top:0}
+.roi-inputs input[type=range]{width:100%;accent-color:var(--primary)}.roi-inputs .val{font-size:20px;font-weight:700;color:var(--primary)}
+.roi-results{background:var(--surface2);border-radius:16px;padding:28px}
+.roi-results h3{font-size:18px;margin-bottom:24px}
+.roi-row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}.roi-row:last-child{border:none}
+.roi-row .rl{color:var(--text-dim);font-size:14px}.roi-row .rv{font-weight:700;font-size:16px}
+.roi-total{margin-top:16px;padding:16px;background:var(--primary-glow);border-radius:12px;text-align:center}
+.roi-total .amount{font-size:36px;font-weight:800;color:var(--primary)}.roi-total .period{font-size:13px;color:var(--text-dim)}
+footer{padding:60px 0;border-top:1px solid var(--border);text-align:center}footer p{color:var(--text-dim);font-size:14px}footer a{color:var(--primary);text-decoration:none}
+</style>
+</head>
+<body>
+<nav><div class="container"><a href="#" class="logo">Go<span>2</span></a><button class="btn btn-primary" style="padding:10px 20px;font-size:13px">Get Demo</button></div></nav>
+
+<section class="hero">
+<div class="container"><div class="hero-content">
+<div class="badge">Built for Manufacturing</div>
+<h1>Your production floor logs 14% unplanned downtime. AI can cut it to 3%.</h1>
+<p>Go2 captures how your operations team actually manages quality, maintenance, and compliance -- then automates documentation, optimizes workflows, and coaches operators in real-time.</p>
+<div style="display:flex;gap:12px;flex-wrap:wrap">
+<button class="btn btn-primary" onclick="document.getElementById('production').scrollIntoView({behavior:'smooth'})">See Production Dashboard</button>
+<button class="btn btn-secondary" onclick="document.getElementById('sop').scrollIntoView({behavior:'smooth'})">SOP Auto-Generator</button>
+</div>
+<div class="hero-stats">
+<div class="hero-stat"><div class="num">78%</div><div class="label">Less unplanned downtime</div></div>
+<div class="hero-stat"><div class="num">$42K</div><div class="label">Monthly savings (avg plant)</div></div>
+<div class="hero-stat"><div class="num">99.2%</div><div class="label">Quality compliance rate</div></div>
+</div>
+</div></div>
+</section>
+
+<section id="production">
+<div class="container">
+<div class="section-label">Production Monitoring</div>
+<div class="section-title">Real-time production line insights</div>
+<div class="prod-dash">
+<div class="prod-lines">
+<div class="prod-line active">
+<h4>Line A - Assembly <span class="status running">Running</span></h4>
+<div class="prod-metrics">
+<div class="pm"><div class="pmv" style="color:var(--success)">94%</div><div class="pml">OEE</div></div>
+<div class="pm"><div class="pmv">142</div><div class="pml">Units/Hr</div></div>
+<div class="pm"><div class="pmv" style="color:var(--success)">0.3%</div><div class="pml">Defect Rate</div></div>
+</div>
+<div class="prod-bar"><div class="fill" style="width:94%;background:var(--success)"></div></div>
+</div>
+<div class="prod-line">
+<h4>Line B - Welding <span class="status slow">Slow</span></h4>
+<div class="prod-metrics">
+<div class="pm"><div class="pmv" style="color:var(--warning)">71%</div><div class="pml">OEE</div></div>
+<div class="pm"><div class="pmv">88</div><div class="pml">Units/Hr</div></div>
+<div class="pm"><div class="pmv" style="color:var(--warning)">1.8%</div><div class="pml">Defect Rate</div></div>
+</div>
+<div class="prod-bar"><div class="fill" style="width:71%;background:var(--warning)"></div></div>
+</div>
+<div class="prod-line">
+<h4>Line C - Finishing <span class="status running">Running</span></h4>
+<div class="prod-metrics">
+<div class="pm"><div class="pmv" style="color:var(--success)">88%</div><div class="pml">OEE</div></div>
+<div class="pm"><div class="pmv">210</div><div class="pml">Units/Hr</div></div>
+<div class="pm"><div class="pmv" style="color:var(--success)">0.5%</div><div class="pml">Defect Rate</div></div>
+</div>
+<div class="prod-bar"><div class="fill" style="width:88%;background:var(--success)"></div></div>
+</div>
+<div class="prod-line">
+<h4>Line D - Packaging <span class="status down">Down</span></h4>
+<div class="prod-metrics">
+<div class="pm"><div class="pmv" style="color:var(--danger)">0%</div><div class="pml">OEE</div></div>
+<div class="pm"><div class="pmv">0</div><div class="pml">Units/Hr</div></div>
+<div class="pm"><div class="pmv">--</div><div class="pml">Defect Rate</div></div>
+</div>
+<div class="prod-bar"><div class="fill" style="width:0%;background:var(--danger)"></div></div>
+</div>
+</div>
+<div style="padding:16px;background:var(--surface2);border-radius:12px;border-left:3px solid var(--primary)">
+<strong style="color:var(--primary)">Go2 Alert:</strong> <span style="color:var(--text-dim)">Line B welding speed is 23% below target. Root cause: wire feed tension drifting (pattern matches previous maintenance event on 2/14). Recommend maintenance check during next break (12:30). Line D packaging conveyor down -- maintenance dispatched, ETA 35 min. Staging buffer has 45 min capacity. No production impact yet.</span>
+</div>
+</div>
+</div>
+</section>
+
+<section style="background:var(--surface)">
+<div class="container">
+<div class="section-label">Downtime Analysis</div>
+<div class="section-title">What's actually causing your downtime</div>
+<div class="downtime-chart">
+<p style="color:var(--text-dim);margin-bottom:8px">Monthly unplanned downtime by category (hours)</p>
+<div class="dt-bars">
+<div class="dt-bar-group"><div class="dt-bar" style="height:85%;background:linear-gradient(180deg,var(--danger),#991b1b)"></div><div class="dt-val" style="color:var(--danger)">34hr</div><div class="dt-label">Equipment<br>Failure</div></div>
+<div class="dt-bar-group"><div class="dt-bar" style="height:60%;background:linear-gradient(180deg,var(--warning),#a16207)"></div><div class="dt-val" style="color:var(--warning)">24hr</div><div class="dt-label">Changeover<br>Delays</div></div>
+<div class="dt-bar-group"><div class="dt-bar" style="height:45%;background:linear-gradient(180deg,var(--accent),#c2410c)"></div><div class="dt-val" style="color:var(--accent)">18hr</div><div class="dt-label">Material<br>Shortage</div></div>
+<div class="dt-bar-group"><div class="dt-bar" style="height:35%;background:linear-gradient(180deg,var(--primary),#0d9488)"></div><div class="dt-val" style="color:var(--primary)">14hr</div><div class="dt-label">Quality<br>Hold</div></div>
+<div class="dt-bar-group"><div class="dt-bar" style="height:25%;background:linear-gradient(180deg,#8b5cf6,#6d28d9)"></div><div class="dt-val" style="color:#8b5cf6">10hr</div><div class="dt-label">Staffing<br>Gap</div></div>
+<div class="dt-bar-group"><div class="dt-bar" style="height:15%;background:linear-gradient(180deg,#64748b,#475569)"></div><div class="dt-val">6hr</div><div class="dt-label">Other</div></div>
+</div>
+<div style="padding:16px;background:var(--surface2);border-radius:12px;border-left:3px solid var(--primary);margin-top:16px">
+<strong style="color:var(--primary)">Go2 Analysis:</strong> <span style="color:var(--text-dim)">Equipment failure is your #1 downtime source (34 hrs/month). 78% of these failures showed warning signs 2-4 days before. Implementing Go2's predictive maintenance alerts would have prevented 26 of those 34 hours. Changeover delays: Line B changeovers average 47 min vs best practice of 28 min. Coaching opportunity identified.</span>
+</div>
+</div>
+</div>
+</section>
+
+<section id="sop">
+<div class="container">
+<div class="section-label">SOP Auto-Generation</div>
+<div class="section-title">SOPs written from actual observed workflows</div>
+<div class="section-desc">Go2 watches how your best operators actually perform tasks, then generates accurate SOPs automatically.</div>
+<div class="sop-demo">
+<div class="sop-select">
+<button class="active" onclick="showSOP(0,this)">Line Changeover</button>
+<button onclick="showSOP(1,this)">Quality Inspection</button>
+<button onclick="showSOP(2,this)">Safety Lockout/Tagout</button>
+</div>
+<div class="sop-output active" id="sopOutput"></div>
+</div>
+</div>
+</section>
+
+<section style="background:var(--surface)">
+<div class="container">
+<div class="section-label">Quality Control</div>
+<div class="section-title">Quality documentation that writes itself</div>
+<div class="qc-grid">
+<div class="qc-card"><div class="qc-icon">&#128269;</div><h4>Inspection Documentation</h4><p>Every inspection auto-documented with results, measurements, photos, and corrective actions. Fully traceable.</p><div class="qc-stat">Documentation time: 90% reduction</div></div>
+<div class="qc-card"><div class="qc-icon">&#128202;</div><h4>SPC Charts Auto-Updated</h4><p>Statistical process control charts updated in real-time. Trend violations flagged before they become defects.</p><div class="qc-stat">Catches drift 4x faster than manual</div></div>
+<div class="qc-card"><div class="qc-icon">&#128203;</div><h4>Non-Conformance Reports</h4><p>NCRs auto-generated with root cause analysis templates, corrective action tracking, and closure verification.</p><div class="qc-stat">NCR completion time: 2 hrs (was 8 hrs)</div></div>
+<div class="qc-card"><div class="qc-icon">&#9989;</div><h4>Compliance Reporting</h4><p>ISO 9001, AS9100, IATF 16949 documentation auto-compiled from actual processes. Always audit-ready.</p><div class="qc-stat">Audit prep: 1 day (was 2 weeks)</div></div>
+</div>
+</div>
+</section>
+
+<section>
+<div class="container">
+<div class="section-label">Real-Time Coaching</div>
+<div class="section-title">Coaching for operators and supervisors</div>
+<div class="coaching-grid">
+<div class="coaching-card">
+<div class="scenario">Maintenance -- Predictive Alert</div>
+<div class="situation">Vibration sensor on Line B motor showing increasing amplitude over past 3 shifts.</div>
+<div class="ai-response"><strong>Go2 Coach:</strong> Motor #B-14 vibration trending up 23% over 72 hours. Pattern matches bearing wear (last replacement: 8 months ago, avg lifecycle: 10 months). Schedule replacement during planned downtime this weekend. Parts in stock (Bin C-42). If this fails mid-run, estimated cost: $12,000 + 6 hrs downtime. Preventive replacement cost: $340 + 45 min.</div>
+</div>
+<div class="coaching-card">
+<div class="scenario">Quality -- Process Drift</div>
+<div class="situation">Dimensional measurements on Part #7721 trending toward upper spec limit.</div>
+<div class="ai-response"><strong>Go2 Coach:</strong> Part #7721 dimension X is at 12.48mm (spec: 12.50 +/- 0.05). Trending upward for past 40 units. Tool wear likely -- last tool change: 1,200 cycles ago (recommended: 1,000). Adjust offset by -0.02mm now and schedule tool change at next break. Similar drift pattern caused 12 rejects last month.</div>
+</div>
+<div class="coaching-card">
+<div class="scenario">Changeover -- Time Optimization</div>
+<div class="situation">Operator starting changeover on Line A. Last changeover took 47 minutes.</div>
+<div class="ai-response"><strong>Go2 Coach:</strong> Your last changeover was 47 min. Best performer (Mike S.) averages 28 min on this line. Key differences: (1) Mike pre-stages tools before stopping the line (saves 8 min), (2) He runs the first-article check while the line warms up (saves 6 min), (3) He uses the quick-release fixtures on station 3 (saves 5 min). Want me to walk through Mike's sequence?</div>
+</div>
+<div class="coaching-card">
+<div class="scenario">Safety -- Compliance Gap</div>
+<div class="situation">New operator approaching a machine lockout procedure for the first time.</div>
+<div class="ai-response"><strong>Go2 Coach:</strong> First-time LOTO procedure for this operator. Walking through steps: (1) Notify affected employees, (2) Shut down machine using normal stop procedure, (3) Isolate energy sources -- this machine has electrical AND pneumatic (both must be isolated), (4) Apply lock and tag at both disconnect and air valve. Verification: attempt restart to confirm zero energy state. Do NOT skip the pneumatic isolation -- this was the root cause of the 2024 near-miss incident.</div>
+</div>
+</div>
+</div>
+</section>
+
+<section id="roi" style="background:var(--surface)">
+<div class="container">
+<div class="section-label">ROI Calculator</div>
+<div class="section-title">Calculate your plant's savings</div>
+<div class="roi-calc">
+<div class="roi-inputs">
+<label>Production lines <span class="val" id="v1">4</span></label>
+<input type="range" id="s1" min="1" max="20" value="4" oninput="calcROI()">
+<label>Operators per shift <span class="val" id="v2">24</span></label>
+<input type="range" id="s2" min="5" max="200" value="24" oninput="calcROI()">
+<label>Monthly revenue <span class="val" id="v3">$1.2M</span></label>
+<input type="range" id="s3" min="100000" max="20000000" step="100000" value="1200000" oninput="calcROI()">
+<label>Current downtime % <span class="val" id="v4">14%</span></label>
+<input type="range" id="s4" min="2" max="30" value="14" oninput="calcROI()">
+</div>
+<div class="roi-results">
+<h3>Monthly Impact</h3>
+<div class="roi-row"><span class="rl">Downtime reduction</span><span class="rv" id="r1">--</span></div>
+<div class="roi-row"><span class="rl">Quality improvement</span><span class="rv" id="r2">--</span></div>
+<div class="roi-row"><span class="rl">Documentation automation</span><span class="rv" id="r3">--</span></div>
+<div class="roi-row"><span class="rl">Changeover optimization</span><span class="rv" id="r4">--</span></div>
+<div class="roi-total"><div class="amount" id="roiTotal">--</div><div class="period">estimated monthly savings</div></div>
+</div>
+</div>
+</div>
+</section>
+
+<footer><div class="container"><p><a href="#">Go2</a> -- AI-powered manufacturing optimization. <a href="#">Get a demo</a></p></div></footer>
+
+<script>
+const sops=[
+[{n:1,t:'Pre-stage next product tooling and materials at workstation (while current run completes)'},{n:2,t:'Complete last unit of current run. Verify count matches work order.'},{n:3,t:'Initiate line stop. Press E-Stop on stations 1-4 sequentially.'},{n:4,t:'Remove current product fixtures from stations 1, 2, and 3 (quick-release: quarter-turn counter-clockwise)'},{n:5,t:'Install new product fixtures. Verify alignment pins seated. Torque to 25 Nm.'},{n:6,t:'Load new program from HMI: Menu > Programs > [Part Number] > Load. Verify version matches work order.'},{n:7,t:'Adjust conveyor guides to new product width. Use gauge block C for spacing.'},{n:8,t:'Run first article while line warms up (2 min warmup concurrent with inspection).'},{n:9,t:'Measure first article: 3 critical dimensions per inspection plan. Record on quality form.'},{n:10,t:'If PASS: begin production run. If FAIL: adjust and re-run first article.'}],
+[{n:1,t:'Retrieve inspection plan for current part number from quality station.'},{n:2,t:'Verify measurement tools are calibrated (check cal sticker date).'},{n:3,t:'Pull sample per plan: 5 units from each lot, or 1 per 50 units for continuous run.'},{n:4,t:'Measure Dimension A (length): Record in SPC chart. Accept range: 12.50 +/- 0.05mm.'},{n:5,t:'Measure Dimension B (width): Record in SPC chart. Accept range: 8.20 +/- 0.03mm.'},{n:6,t:'Visual inspection: surface finish, burrs, discoloration. Reference defect photo guide.'},{n:7,t:'Functional check: fit test with mating part (gauge #F-12).'},{n:8,t:'Record results in quality system. If ANY dimension out of spec: HOLD lot, notify supervisor, initiate NCR.'}],
+[{n:1,t:'STOP: Notify all affected employees that LOTO procedure is beginning.'},{n:2,t:'Identify ALL energy sources: Electrical (480V), Pneumatic (90 PSI), Hydraulic (if applicable).'},{n:3,t:'Shut down machine using NORMAL stop procedure. Do NOT use E-Stop for LOTO.'},{n:4,t:'Disconnect electrical: Main disconnect switch to OFF position.'},{n:5,t:'Isolate pneumatic: Close air supply valve. Bleed residual pressure (verify gauge reads 0).'},{n:6,t:'Apply YOUR personal lock to EACH energy isolation device. Attach completed tag.'},{n:7,t:'VERIFY zero energy: Attempt to restart machine at control panel. Machine must NOT respond.'},{n:8,t:'Verify pneumatic: Check gauge still reads 0. Actuate any air cylinders to confirm no movement.'},{n:9,t:'Perform maintenance work. Keep lock and tag in place at all times.'},{n:10,t:'When complete: Remove tools, replace guards, remove locks (YOUR lock only), restore energy in reverse order.'}]
+];
+function showSOP(i,btn){
+document.querySelectorAll('.sop-select button').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+const titles=['SOP: Line Changeover Procedure (Auto-Generated from Best Performer)','SOP: In-Process Quality Inspection','SOP: Lockout/Tagout (LOTO) Procedure'];
+document.getElementById('sopOutput').innerHTML=`<h4 style="margin-bottom:16px">${titles[i]}</h4><p style="color:var(--text-dim);margin-bottom:16px;font-size:12px">Generated by Go2 from observed workflows. Last updated: ${new Date().toLocaleDateString()}. Target time: ${i===0?'28 min':i===1?'12 min':'15 min'}</p>`+sops[i].map(s=>`<div class="sop-step"><div class="sop-num">${s.n}</div><div>${s.t}</div></div>`).join('');
+document.getElementById('sopOutput').classList.add('active');
+}
+showSOP(0,document.querySelector('.sop-select button'));
+
+function calcROI(){
+const lines=+document.getElementById('s1').value;
+const ops=+document.getElementById('s2').value;
+const rev=+document.getElementById('s3').value;
+const dt=+document.getElementById('s4').value;
+document.getElementById('v1').textContent=lines;
+document.getElementById('v2').textContent=ops;
+document.getElementById('v3').textContent='$'+(rev/1000000).toFixed(1)+'M';
+document.getElementById('v4').textContent=dt+'%';
+const dtSave=Math.round(rev*(dt/100)*0.78);
+const qualSave=Math.round(rev*0.015*0.6);
+const docSave=Math.round(ops*8*0.4*35*4.33);
+const coSave=Math.round(lines*0.4*2*22*rev/(lines*720));
+document.getElementById('r1').textContent='$'+dtSave.toLocaleString();
+document.getElementById('r2').textContent='$'+qualSave.toLocaleString();
+document.getElementById('r3').textContent='$'+docSave.toLocaleString();
+document.getElementById('r4').textContent='$'+coSave.toLocaleString();
+document.getElementById('roiTotal').textContent='$'+(dtSave+qualSave+docSave+coSave).toLocaleString();
+}
+calcROI();
+</script>
+</body>
+</html>

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Switch to Go2 | Migration Guide</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--card:#12121a;--border:#1e1e2e;--accent:#6366f1;--accent2:#ec4899;--green:#10b981;--red:#ef4444;--orange:#f59e0b;--text:#e2e8f0;--muted:#64748b}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.6}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+.hero{min-height:70vh;display:flex;align-items:center;justify-content:center;text-align:center;position:relative;padding:80px 0}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(99,102,241,0.08),transparent 60%)}
+.hero-content{position:relative;z-index:1}
+.hero h1{font-size:clamp(2.5rem,6vw,4rem);font-weight:800;line-height:1.1;margin-bottom:24px}
+.gradient{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:1.15rem;color:var(--muted);max-width:640px;margin:0 auto 40px}
+
+.section{padding:80px 0}
+.section-title{font-size:2rem;font-weight:800;text-align:center;margin-bottom:16px}
+.section-sub{text-align:center;color:var(--muted);font-size:1rem;margin-bottom:60px;max-width:600px;margin-left:auto;margin-right:auto}
+
+/* Tool Selector */
+.selector{padding:40px 0 60px}
+.selector-label{text-align:center;font-size:1.2rem;font-weight:700;margin-bottom:24px}
+.selector-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;max-width:800px;margin:0 auto}
+.selector-card{padding:20px 16px;border-radius:16px;background:var(--card);border:2px solid var(--border);text-align:center;cursor:pointer;transition:all 0.3s}
+.selector-card:hover{border-color:var(--accent)}
+.selector-card.active{border-color:var(--accent);background:rgba(99,102,241,0.08)}
+.selector-icon{font-size:1.5rem;margin-bottom:8px}
+.selector-name{font-weight:600;font-size:0.85rem}
+.selector-type{font-size:0.7rem;color:var(--muted);margin-top:2px}
+
+/* Migration Content */
+.migration-content{max-width:900px;margin:0 auto}
+.migration-panel{display:none}
+.migration-panel.active{display:block}
+
+/* What Changes / What Doesn't */
+.changes-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:60px}
+.changes-card{padding:32px;border-radius:20px}
+.changes-keeps{background:rgba(16,185,129,0.04);border:1px solid rgba(16,185,129,0.12)}
+.changes-new{background:rgba(99,102,241,0.04);border:1px solid rgba(99,102,241,0.15)}
+.changes-title{font-size:1.2rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.changes-keeps .changes-title{color:var(--green)}
+.changes-new .changes-title{color:var(--accent)}
+.changes-list{list-style:none;padding:0}
+.changes-list li{padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.9rem;display:flex;gap:10px;align-items:flex-start}
+.changes-list li:last-child{border-bottom:none}
+
+/* Timeline Steps */
+.timeline{margin-bottom:60px}
+.timeline-header{text-align:center;margin-bottom:32px}
+.timeline-header h3{font-size:1.5rem;font-weight:700}
+.timeline-header p{color:var(--muted);font-size:0.9rem}
+.tl-steps{position:relative;padding-left:40px}
+.tl-steps::before{content:'';position:absolute;left:15px;top:0;bottom:0;width:2px;background:linear-gradient(180deg,var(--accent),var(--green))}
+.tl-step{position:relative;margin-bottom:32px;padding:24px;background:var(--card);border:1px solid var(--border);border-radius:16px;transition:border-color 0.3s}
+.tl-step:hover{border-color:var(--accent)}
+.tl-dot{position:absolute;left:-33px;top:28px;width:16px;height:16px;border-radius:50%;background:var(--accent);border:3px solid var(--bg)}
+.tl-step-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.tl-step-title{font-weight:700;font-size:1rem}
+.tl-step-time{font-size:0.75rem;padding:4px 12px;border-radius:20px;background:rgba(99,102,241,0.1);color:var(--accent);font-weight:600}
+.tl-step-desc{font-size:0.9rem;color:var(--muted)}
+.tl-step-detail{margin-top:12px;padding:12px;border-radius:10px;background:rgba(255,255,255,0.02);font-size:0.82rem;color:var(--muted)}
+
+/* Gains Card */
+.gains{margin-bottom:60px}
+.gains-card{background:linear-gradient(135deg,rgba(16,185,129,0.06),rgba(99,102,241,0.06));border:1px solid rgba(16,185,129,0.2);border-radius:20px;padding:40px}
+.gains-title{font-size:1.5rem;font-weight:700;margin-bottom:24px;text-align:center;color:var(--green)}
+.gains-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.gain-item{text-align:center;padding:20px}
+.gain-icon{font-size:2rem;margin-bottom:8px}
+.gain-name{font-weight:700;font-size:0.95rem;margin-bottom:4px}
+.gain-desc{font-size:0.8rem;color:var(--muted)}
+
+/* FAQ */
+.faq{margin-bottom:60px}
+.faq-title{font-size:1.5rem;font-weight:700;margin-bottom:24px;text-align:center}
+.faq-item{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;overflow:hidden}
+.faq-q{padding:16px 24px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:0.95rem}
+.faq-q:hover{background:rgba(255,255,255,0.02)}
+.faq-toggle{color:var(--muted);font-size:1.2rem;transition:transform 0.3s}
+.faq-a{max-height:0;overflow:hidden;transition:max-height 0.3s ease}
+.faq-a-inner{padding:0 24px 16px;font-size:0.9rem;color:var(--muted);line-height:1.7}
+
+/* CTA */
+.cta-card{max-width:700px;margin:0 auto;background:var(--card);border:1px solid rgba(99,102,241,0.2);border-radius:24px;padding:48px;text-align:center}
+.cta-card h2{font-size:1.8rem;font-weight:800;margin-bottom:12px}
+.cta-card p{color:var(--muted);margin-bottom:24px}
+.btn{display:inline-block;padding:14px 40px;border-radius:50px;font-weight:700;font-size:1rem;transition:all 0.3s;border:none;cursor:pointer}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(99,102,241,0.3)}
+
+@media(max-width:768px){
+.selector-grid{grid-template-columns:repeat(3,1fr)}
+.changes-grid,.gains-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<section class="hero">
+<div class="hero-content">
+<h1>Switch to <span class="gradient">Go2</span><br>in Days, Not Months</h1>
+<p>Select your current tool below. We'll show you exactly what the migration looks like, step by step. No disruption. No data loss. Just transformation.</p>
+</div>
+</section>
+
+<section class="selector">
+<div class="container">
+<div class="selector-label">I'm currently using...</div>
+<div class="selector-grid">
+<div class="selector-card active" onclick="selectTool('hubstaff',this)"><div class="selector-icon">📸</div><div class="selector-name">Hubstaff</div><div class="selector-type">Time Tracking</div></div>
+<div class="selector-card" onclick="selectTool('timedoctor',this)"><div class="selector-icon">⏱</div><div class="selector-name">Time Doctor</div><div class="selector-type">Surveillance</div></div>
+<div class="selector-card" onclick="selectTool('teramind',this)"><div class="selector-icon">🛡</div><div class="selector-name">Teramind</div><div class="selector-type">DLP / Security</div></div>
+<div class="selector-card" onclick="selectTool('activtrak',this)"><div class="selector-icon">📊</div><div class="selector-name">ActivTrak</div><div class="selector-type">Analytics</div></div>
+<div class="selector-card" onclick="selectTool('nothing',this)"><div class="selector-icon">🤷</div><div class="selector-name">Nothing</div><div class="selector-type">No tool yet</div></div>
+<div class="selector-card" onclick="selectTool('other',this)"><div class="selector-icon">🔧</div><div class="selector-name">Other</div><div class="selector-type">Something else</div></div>
+</div>
+</div>
+</section>
+
+<section class="section">
+<div class="container">
+<div class="migration-content" id="migrationContent">
+<!-- Content populated by JS -->
+</div>
+</div>
+</section>
+
+<script>
+const migrations={
+hubstaff:{
+name:'Hubstaff',
+transition:'5 days',
+keeps:[
+{icon:'📋',text:'Time tracking data — Go2 captures work patterns automatically (no manual tracking needed)'},
+{icon:'📊',text:'Team visibility — Go2 provides richer intelligence dashboards'},
+{icon:'💳',text:'Payroll insights — work pattern data integrates with your payroll system'},
+{icon:'👥',text:'Team structure — import your org structure in one click'}
+],
+gains:[
+{icon:'🤖',text:'AI coaching — every employee gets a personal productivity coach'},
+{icon:'⚡',text:'Automation — Go2 finds and builds automations from Day 1'},
+{icon:'📝',text:'Auto-documentation — SOPs write themselves'},
+{icon:'🧠',text:'Agent training — AI agents learn from your best performers'},
+{icon:'🔗',text:'AI sidecar — ChatGPT/Claude get your company context'},
+{icon:'😊',text:'Employee trust — no more screenshots or activity policing'}
+],
+steps:[
+{title:'Export Hubstaff Data',time:'Day 1',desc:'Download your historical data from Hubstaff (optional — Go2 learns from live workflows, not old screenshots).',detail:'Go2 doesn\'t need Hubstaff\'s data. But if you want historical reference, export it before canceling.'},
+{title:'Deploy Go2',time:'Day 1',desc:'Install Go2 across your team. Takes minutes per person. Zero configuration needed.',detail:'Go2 uses a lightweight desktop agent. No browser extensions. No screen recording. Employees barely notice it.'},
+{title:'Parallel Run (Optional)',time:'Day 2-3',desc:'Run both tools simultaneously. Compare insights. Let employees experience the difference.',detail:'Most teams see the value immediately. Employees prefer Go2 within hours — coaching vs surveillance is a no-brainer.'},
+{title:'Decommission Hubstaff',time:'Day 3-4',desc:'Turn off Hubstaff. Cancel subscription. Notify employees that surveillance is ending.',detail:'Pro tip: Make a company announcement. "We\'re replacing monitoring with coaching." Watch employee morale spike.'},
+{title:'Full Intelligence Mode',time:'Day 5+',desc:'Go2 is fully operational. AI coaching active. Automations building. Documentation generating.',detail:'By week 2, Go2 will have identified your top automation opportunities and started coaching employees on best practices.'}
+],
+faqs:[
+{q:'Will we lose our time tracking data?',a:'You can export all Hubstaff data before switching. However, Go2 captures work patterns automatically — you won\'t need historical screenshot data.'},
+{q:'How will employees react?',a:'Overwhelmingly positive. Employees celebrate the end of screenshot surveillance. 89% satisfaction rate with Go2.'},
+{q:'What about payroll/invoicing?',a:'Go2 captures work patterns that integrate with your payroll system. For invoicing, Go2\'s auto-documentation provides richer project tracking than time logs.'},
+{q:'Is there a contract commitment?',a:'No. Go2 is month-to-month. Try it risk-free.'}
+]
+},
+timedoctor:{
+name:'Time Doctor',
+transition:'5 days',
+keeps:[
+{icon:'⏰',text:'Time awareness — Go2 provides intelligent time insights without surveillance'},
+{icon:'📊',text:'Productivity insights — Go2 delivers AI-driven intelligence, not activity percentages'},
+{icon:'👥',text:'Team structure — import directly'},
+{icon:'📋',text:'Project tracking — Go2 auto-tracks work across projects'}
+],
+gains:[
+{icon:'🤖',text:'AI coaching instead of pop-up warnings'},
+{icon:'⚡',text:'Automation discovery — eliminate repetitive work'},
+{icon:'📝',text:'Auto-documentation — living SOPs'},
+{icon:'🧠',text:'AI agent training from workflows'},
+{icon:'🔗',text:'ChatGPT/Claude with company context'},
+{icon:'😌',text:'No more "Are you still working?" pop-ups'}
+],
+steps:[
+{title:'Prepare Your Team',time:'Day 1',desc:'Announce the switch. Emphasize the shift from surveillance to coaching.',detail:'Frame it as an investment in employees, not a change in monitoring. Watch the relief.'},
+{title:'Deploy Go2',time:'Day 1',desc:'Lightweight install. No invasive permissions. Employees feel the difference immediately.',detail:'Unlike Time Doctor, Go2 doesn\'t ask for screenshot permission or webcam access. That alone changes the dynamic.'},
+{title:'Side-by-Side (Optional)',time:'Day 2-3',desc:'Run both briefly to compare. Most teams skip this — the improvement is obvious.',detail:'Time Doctor shows activity %. Go2 shows "you can save 3 hours this week by automating X." Night and day.'},
+{title:'Remove Time Doctor',time:'Day 3-4',desc:'Uninstall Time Doctor. Cancel subscription. Employees breathe easier.',detail:'Removing Time Doctor is often celebrated. Some companies make it an event.'},
+{title:'AI Coaching Active',time:'Day 5+',desc:'Go2 is coaching, automating, and documenting. Transformation begins.',detail:'Within 2 weeks, expect first automation deployments and measurable productivity improvements.'}
+],
+faqs:[
+{q:'Will productivity drop without surveillance?',a:'The opposite. Studies show surveillance decreases productivity by 5-15%. Go2\'s coaching increases it by 15-32%. You\'ll see gains, not losses.'},
+{q:'What about the "distraction alerts"?',a:'Go2 doesn\'t punish distraction — it eliminates the root cause. When work is more efficient and engaging, distraction naturally decreases.'},
+{q:'My team is remote. Won\'t they slack off?',a:'Surveillance doesn\'t prevent slacking — it just hides it. Go2 makes work more engaging and efficient. Motivated employees don\'t slack.'},
+{q:'What\'s the ROI timeline?',a:'Most teams see positive ROI within 30 days through automation savings alone. AI coaching benefits compound over months.'}
+]
+},
+teramind:{
+name:'Teramind',
+transition:'Depends on DLP needs',
+keeps:[
+{icon:'🔒',text:'If you need DLP — keep Teramind for security. Add Go2 for productivity.'},
+{icon:'📊',text:'Compliance data — Teramind handles compliance; Go2 handles transformation'},
+{icon:'👥',text:'Team structure — import to Go2'},
+{icon:'📋',text:'Activity data — Go2 learns from live workflows'}
+],
+gains:[
+{icon:'🤖',text:'AI coaching layer on top of your security stack'},
+{icon:'⚡',text:'Automation that Teramind never offers'},
+{icon:'📝',text:'Living documentation instead of forensic logs'},
+{icon:'🧠',text:'AI agents trained from your best performers'},
+{icon:'🔗',text:'AI sidecar for ChatGPT/Claude'},
+{icon:'✨',text:'Productivity transformation + security = complete solution'}
+],
+steps:[
+{title:'Assess Your Needs',time:'Day 1',desc:'Determine if you need Teramind for DLP/compliance. If yes, keep it. Add Go2 for productivity.',detail:'Go2 and Teramind solve different problems. Many companies run both — Teramind for security, Go2 for transformation.'},
+{title:'Deploy Go2 Alongside',time:'Day 1-2',desc:'Install Go2 for your team. It complements Teramind without conflict.',detail:'Go2\'s lightweight agent works independently of Teramind. No interference, no overlap on functionality.'},
+{title:'Differentiate Roles',time:'Day 2-3',desc:'Communicate to employees: Teramind = security policy. Go2 = your AI coach.',detail:'Employees understand security tools. Pairing with Go2 shows you value their growth, not just their compliance.'},
+{title:'Optimize Stack',time:'Week 2+',desc:'Review if Teramind\'s monitoring is still needed at current levels. Go2 reduces risk through empowerment.',detail:'Many companies reduce Teramind scope after Go2 deployment. Empowered, coached employees pose less insider threat.'},
+{title:'Full Transformation',time:'Month 1+',desc:'Go2 is coaching and automating. Evaluate reducing Teramind to DLP-only if full monitoring is no longer needed.',detail:'The goal: security where needed, empowerment everywhere else.'}
+],
+faqs:[
+{q:'Can Go2 replace Teramind?',a:'For DLP and insider threat detection, no. Those are Teramind\'s strengths. For productivity, coaching, and automation, absolutely. Many companies run both.'},
+{q:'Will they conflict?',a:'No. They operate independently. Different agents, different purposes. Zero interference.'},
+{q:'Do I need both?',a:'If you have strict DLP/compliance requirements, yes. If Teramind was primarily for productivity monitoring, Go2 replaces that entirely (and better).'},
+{q:'What about cost?',a:'Go2 is $15/user/mo. If you can reduce Teramind licenses (e.g., DLP-only tier), the total cost may be similar or less.'}
+]
+},
+activtrak:{
+name:'ActivTrak',
+transition:'3 days',
+keeps:[
+{icon:'📊',text:'Analytics insights — Go2 provides deeper, AI-driven intelligence'},
+{icon:'📈',text:'Productivity trends — Go2 adds coaching to act on the trends'},
+{icon:'👥',text:'Team structure — import seamlessly'},
+{icon:'🏷',text:'App categorization — Go2 understands context, not just categories'}
+],
+gains:[
+{icon:'🤖',text:'AI coaching that ACTS on analytics (not just displays them)'},
+{icon:'⚡',text:'Automation discovery — ActivTrak shows problems, Go2 fixes them'},
+{icon:'📝',text:'Auto-documentation — something ActivTrak never offered'},
+{icon:'🧠',text:'AI agent training from workflows'},
+{icon:'🔗',text:'ChatGPT/Claude sidecar'},
+{icon:'📈',text:'Continuous optimization that gets smarter every day'}
+],
+steps:[
+{title:'Export ActivTrak Data',time:'Day 1',desc:'Download historical analytics if desired. Go2 builds its own intelligence from live workflows.',detail:'ActivTrak\'s historical data is interesting but not necessary. Go2 learns from real-time patterns.'},
+{title:'Deploy Go2',time:'Day 1',desc:'Quick install. Go2 starts learning immediately. Employees see coaching within 48 hours.',detail:'The biggest difference employees notice: Go2 gives suggestions, not just scores.'},
+{title:'Compare Intelligence',time:'Day 2',desc:'See Go2\'s AI-driven insights alongside ActivTrak\'s dashboards. Notice the difference: reports vs action.',detail:'ActivTrak: "Team spent 4 hours on data entry." Go2: "I can automate 80% of that data entry. Want me to?"'},
+{title:'Decommission ActivTrak',time:'Day 3',desc:'Cancel ActivTrak. Go2 provides everything ActivTrak does, plus coaching, automation, and agents.',detail:'This is the easiest migration. Go2 is a strict superset of ActivTrak\'s functionality.'},
+{title:'Transformation Begins',time:'Day 4+',desc:'Automations deploy. Coaching activates. Documentation generates. Welcome to workforce intelligence.',detail:'The shift from "looking at dashboards" to "AI doing the optimization for you" is transformative.'}
+],
+faqs:[
+{q:'Does Go2 have dashboards like ActivTrak?',a:'Yes, and more. Go2 includes all the analytics ActivTrak provides, plus AI coaching, automation, documentation, and agent training. It\'s a superset.'},
+{q:'What about ActivTrak\'s burnout detection?',a:'Go2 includes burnout detection AND proactive coaching to prevent it. ActivTrak tells you someone\'s burning out. Go2 helps fix it.'},
+{q:'Is the pricing similar?',a:'ActivTrak is ~$10/user/mo. Go2 is $15/user/mo. For $5 more, you get AI coaching, automation, documentation, and agents. 10x the value.'},
+{q:'Can I migrate my categories?',a:'Go2 learns categories automatically from workflow patterns. No manual setup needed.'}
+]
+},
+nothing:{
+name:'No Current Tool',
+transition:'Same day',
+keeps:[
+{icon:'🎉',text:'A clean slate — no bad habits from surveillance tools'},
+{icon:'💡',text:'Employee trust — they\'ve never been monitored, so Go2 feels natural'},
+{icon:'🚀',text:'First-mover advantage — AI coaching from Day 1'},
+{icon:'✨',text:'Culture — you can set the right tone from the start'}
+],
+gains:[
+{icon:'🤖',text:'AI coaching for every employee, immediately'},
+{icon:'⚡',text:'Automation discovery from Day 1'},
+{icon:'📝',text:'Auto-documentation — capture knowledge before it\'s lost'},
+{icon:'🧠',text:'AI agent training from your best workflows'},
+{icon:'🔗',text:'ChatGPT/Claude with your company context'},
+{icon:'📈',text:'Measurable productivity improvement within weeks'}
+],
+steps:[
+{title:'Sign Up & Deploy',time:'Day 1',desc:'Create your Go2 account. Deploy to your team in minutes.',detail:'Lightweight install. No invasive permissions. Employees see it as a helpful AI assistant, not monitoring.'},
+{title:'Go2 Starts Learning',time:'Day 1-2',desc:'Go2 observes workflow patterns and begins building intelligence.',detail:'Within 48 hours, Go2 identifies top automation opportunities and starts suggesting improvements.'},
+{title:'First Coaching',time:'Day 2-3',desc:'Employees receive their first AI coaching suggestions. The "aha moment."',detail:'The first time Go2 says "I noticed you do X every day — want me to automate it?" employees become believers.'},
+{title:'Automations Deploy',time:'Week 1-2',desc:'First automations go live. Time savings begin immediately.',detail:'Typical first-week automation: email templates, data entry, report generation, file organization.'},
+{title:'Continuous Growth',time:'Week 3+',desc:'Go2 keeps finding new optimizations. Documentation builds. Agents train. Intelligence compounds.',detail:'Every week is better than the last. Go2\'s AI gets smarter as it learns your company\'s unique patterns.'}
+],
+faqs:[
+{q:'Is this monitoring software?',a:'No. Go2 is AI coaching + automation + documentation. It doesn\'t take screenshots, log keystrokes, or surveil employees. It helps them work better.'},
+{q:'Will employees resist it?',a:'89% satisfaction rate. Employees love having an AI coach that helps them work smarter. Position it as an investment in THEM.'},
+{q:'What\'s the minimum team size?',a:'Go2 works for teams of any size. The AI coaching is valuable even for 5-person teams. The automation and agent training benefits scale with size.'},
+{q:'How quickly will we see ROI?',a:'Most teams see positive ROI within 30 days through automation savings alone. Full transformation takes 2-3 months.'}
+]
+},
+other:{
+name:'Another Tool',
+transition:'3-5 days',
+keeps:[
+{icon:'📊',text:'Whatever analytics you had — Go2 provides richer, AI-driven intelligence'},
+{icon:'👥',text:'Team structure — imports easily'},
+{icon:'📋',text:'Existing processes — Go2 captures and enhances them'},
+{icon:'🧠',text:'Domain knowledge — Go2 builds on what your team already knows'}
+],
+gains:[
+{icon:'🤖',text:'AI coaching no other tool offers'},
+{icon:'⚡',text:'Automation discovery and deployment'},
+{icon:'📝',text:'Auto-documentation and living SOPs'},
+{icon:'🧠',text:'AI agent training from workflows'},
+{icon:'🔗',text:'ChatGPT/Claude sidecar integration'},
+{icon:'📈',text:'340% average ROI'}
+],
+steps:[
+{title:'Contact Our Migration Team',time:'Day 1',desc:'Tell us what you\'re using. We\'ll create a custom migration plan.',detail:'Our team has migrated thousands of companies from every tool on the market. We know the gotchas.'},
+{title:'Deploy Go2',time:'Day 1-2',desc:'Quick install alongside your current tool.',detail:'Go2 works independently. No conflicts with existing tools.'},
+{title:'Parallel Evaluation',time:'Day 2-4',desc:'Compare Go2\'s intelligence with your current tool. See the difference.',detail:'Most teams are shocked by the gap. AI coaching + automation changes everything.'},
+{title:'Transition',time:'Day 3-5',desc:'Decommission old tool. Go2 takes over fully.',detail:'We provide migration support throughout. No team is left stranded.'},
+{title:'Transformation',time:'Week 1+',desc:'Welcome to workforce intelligence. Coaching, automation, documentation, agents.',detail:'Your team will wonder how they ever worked without it.'}
+],
+faqs:[
+{q:'Can you migrate from ANY tool?',a:'Yes. We\'ve migrated teams from every major workforce tool. Contact us for a custom plan.'},
+{q:'What if my tool isn\'t listed?',a:'Our migration team handles custom migrations. Same timeline, same support.'},
+{q:'Is there overlap with my current tool?',a:'Go2 replaces monitoring, analytics, and basic productivity tools entirely. If you use a specialized tool (like DLP), you may keep it alongside Go2.'},
+{q:'What does migration support include?',a:'Dedicated migration specialist, data export guidance, deployment support, team training, and 30-day check-in.'}
+]
+}
+};
+
+function selectTool(key,el){
+document.querySelectorAll('.selector-card').forEach(c=>c.classList.remove('active'));
+el.classList.add('active');
+renderMigration(key);
+}
+
+function renderMigration(key){
+const m=migrations[key];
+const c=document.getElementById('migrationContent');
+c.innerHTML=`
+<div style="text-align:center;margin-bottom:48px">
+<h2 style="font-size:2rem;font-weight:800;margin-bottom:8px">Switch from ${m.name} to Go2</h2>
+<p style="color:var(--muted);font-size:1rem">Estimated transition time: <strong style="color:var(--green)">${m.transition}</strong></p>
+</div>
+<div class="changes-grid">
+<div class="changes-card changes-keeps">
+<div class="changes-title"><span>✅</span> What You Keep</div>
+<ul class="changes-list">${m.keeps.map(k=>`<li><span>${k.icon}</span>${k.text}</li>`).join('')}</ul>
+</div>
+<div class="changes-card changes-new">
+<div class="changes-title"><span>🆕</span> What You Gain</div>
+<ul class="changes-list">${m.gains.map(g=>`<li><span>${g.icon}</span>${g.text}</li>`).join('')}</ul>
+</div>
+</div>
+<div class="timeline">
+<div class="timeline-header"><h3>Step-by-Step Migration Plan</h3><p>Each step is designed to be low-risk and reversible.</p></div>
+<div class="tl-steps">
+${m.steps.map(s=>`<div class="tl-step"><div class="tl-dot"></div><div class="tl-step-header"><div class="tl-step-title">${s.title}</div><div class="tl-step-time">${s.time}</div></div><div class="tl-step-desc">${s.desc}</div><div class="tl-step-detail">${s.detail}</div></div>`).join('')}
+</div>
+</div>
+<div class="gains">
+<div class="gains-card">
+<div class="gains-title">What You Get with Go2</div>
+<div class="gains-grid">
+<div class="gain-item"><div class="gain-icon">🤖</div><div class="gain-name">AI Coaching</div><div class="gain-desc">Every employee gets personalized, real-time coaching</div></div>
+<div class="gain-item"><div class="gain-icon">⚡</div><div class="gain-name">Automation</div><div class="gain-desc">Repetitive tasks found and automated automatically</div></div>
+<div class="gain-item"><div class="gain-icon">📝</div><div class="gain-name">Documentation</div><div class="gain-desc">SOPs and processes write and update themselves</div></div>
+<div class="gain-item"><div class="gain-icon">🧠</div><div class="gain-name">AI Agents</div><div class="gain-desc">Train agents from your best performers' workflows</div></div>
+<div class="gain-item"><div class="gain-icon">🔗</div><div class="gain-name">AI Sidecar</div><div class="gain-desc">ChatGPT/Claude with your company's real context</div></div>
+<div class="gain-item"><div class="gain-icon">📈</div><div class="gain-name">340% ROI</div><div class="gain-desc">Average return on investment across 2M+ workers</div></div>
+</div>
+</div>
+</div>
+<div class="faq">
+<div class="faq-title">Common Questions About Switching</div>
+${m.faqs.map(f=>`<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">${f.q}<span class="faq-toggle">+</span></div><div class="faq-a"><div class="faq-a-inner">${f.a}</div></div></div>`).join('')}
+</div>
+<div class="cta-card">
+<h2>Ready to Make the Switch?</h2>
+<p>Free migration support. No risk. Month-to-month. 89% satisfaction.</p>
+<button class="btn btn-primary">Start Migration from ${m.name}</button>
+<p style="margin-top:12px;font-size:0.8rem;color:var(--muted)">Or <a href="mailto:hello@go2.io" style="color:var(--accent)">talk to our migration team</a> first.</p>
+</div>
+`;
+}
+
+function toggleFaq(el){
+const a=el.nextElementSibling;
+const toggle=el.querySelector('.faq-toggle');
+const isOpen=a.style.maxHeight&&a.style.maxHeight!=='0px';
+document.querySelectorAll('.faq-a').forEach(f=>f.style.maxHeight='0px');
+document.querySelectorAll('.faq-toggle').forEach(t=>t.textContent='+');
+if(!isOpen){a.style.maxHeight=a.scrollHeight+'px';toggle.textContent='-'}
+}
+
+renderMigration('hubstaff');
+</script>
+</body>
+</html>

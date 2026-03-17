@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The Gap</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:3rem 2rem}
+h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:900;text-align:center;margin-bottom:0.5rem}
+.sub{color:#888;font-size:1.1rem;text-align:center;margin-bottom:3rem}
+.chart-container{width:min(800px,90vw);height:400px;position:relative;margin-bottom:3rem}
+canvas{width:100%;height:100%}
+.legend{display:flex;gap:2rem;justify-content:center;margin-bottom:2rem;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;color:#aaa}
+.legend-dot{width:12px;height:12px;border-radius:3px}
+.year-labels{display:flex;justify-content:space-between;width:min(800px,90vw);color:#555;font-size:0.85rem;padding:0 2rem}
+.bridge{max-width:700px;text-align:center;margin-top:3rem;padding:2rem;border:2px solid #22c55e;border-radius:16px;background:rgba(34,197,94,0.05)}
+.bridge h2{font-size:clamp(1.5rem,3vw,2rem);font-weight:800;color:#22c55e;margin-bottom:1rem}
+.bridge p{color:#aaa;line-height:1.7;font-size:1.05rem}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:2rem;width:100%}
+.stat-box{text-align:center;padding:1rem;background:rgba(34,197,94,0.1);border-radius:8px}
+.stat-num{font-size:1.8rem;font-weight:800;color:#22c55e}
+.stat-label{font-size:0.8rem;color:#888;margin-top:0.3rem}
+button{margin-top:2rem;padding:1rem 3rem;background:#22c55e;color:#000;font-size:1.1rem;font-weight:700;border:none;border-radius:50px;cursor:pointer;transition:transform 0.3s}
+button:hover{transform:scale(1.05)}
+.hidden{opacity:0;transform:translateY(20px);transition:all 0.8s}
+.show{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+<h1>The Gap</h1>
+<p class="sub">AI spending vs. AI results, 2020-2026</p>
+
+<div class="legend">
+<div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>AI Spending</div>
+<div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>Measurable AI ROI</div>
+<div class="legend-item"><div class="legend-dot" style="background:#22c55e;opacity:0" id="legendBridge"></div><span id="legendBridgeText"></span></div>
+</div>
+
+<div class="chart-container">
+<canvas id="chart"></canvas>
+</div>
+<div class="year-labels">
+<span>2020</span><span>2021</span><span>2022</span><span>2023</span><span>2024</span><span>2025</span><span>2026</span>
+</div>
+
+<div class="bridge hidden" id="bridge">
+<h2>Go2 bridges the gap.</h2>
+<p>The gap exists because AI tools lack work context. Go2 captures how work actually happens and feeds it to your AI stack.</p>
+<div class="stats">
+<div class="stat-box"><div class="stat-num">2M+</div><div class="stat-label">Workers</div></div>
+<div class="stat-box"><div class="stat-num">89%</div><div class="stat-label">Satisfaction</div></div>
+<div class="stat-box"><div class="stat-num">5%</div><div class="stat-label">That succeed with AI — let's make it you</div></div>
+</div>
+</div>
+
+<button id="bridgeBtn" style="display:none">Show the bridge &rarr;</button>
+
+<script>
+const canvas=document.getElementById('chart');
+const ctx=canvas.getContext('2d');
+const dpr=window.devicePixelRatio||1;
+let W,H;
+function resize(){
+W=canvas.parentElement.offsetWidth;
+H=canvas.parentElement.offsetHeight;
+canvas.width=W*dpr;canvas.height=H*dpr;
+canvas.style.width=W+'px';canvas.style.height=H+'px';
+ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+resize();
+
+const spending=[20,35,55,90,150,230,340];
+const roi=[15,20,22,25,28,32,38];
+const maxVal=400;
+const pad={l:50,r:30,t:20,b:40};
+
+let progress=0;
+let showBridge=false;
+let bridgeProgress=0;
+
+function lerp(a,b,t){return a+(b-a)*t}
+function mapX(i){return pad.l+(i/(spending.length-1))*(W-pad.l-pad.r)}
+function mapY(v){return pad.t+(1-v/maxVal)*(H-pad.t-pad.b)}
+
+function drawGrid(){
+ctx.strokeStyle='#1a1a1a';ctx.lineWidth=1;
+for(let v=0;v<=maxVal;v+=100){
+const y=mapY(v);
+ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();
+ctx.fillStyle='#444';ctx.font='11px -apple-system,sans-serif';
+ctx.fillText('$'+v+'B',5,y+4);
+}
+}
+
+function drawLine(data,color,prog){
+ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=3;
+const n=Math.min(Math.floor(prog*data.length),data.length-1);
+const frac=prog*data.length-n;
+for(let i=0;i<=n;i++){
+const x=mapX(i),y=mapY(data[i]);
+i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+}
+if(n<data.length-1){
+const nx=lerp(mapX(n),mapX(n+1),frac);
+const ny=lerp(mapY(data[n]),mapY(data[n+1]),frac);
+ctx.lineTo(nx,ny);
+}
+ctx.stroke();
+// Glow
+ctx.shadowColor=color;ctx.shadowBlur=10;ctx.stroke();ctx.shadowBlur=0;
+}
+
+function drawGap(prog){
+if(prog<1)return;
+ctx.fillStyle='rgba(239,68,68,0.08)';
+ctx.beginPath();
+for(let i=0;i<spending.length;i++){ctx.lineTo(mapX(i),mapY(spending[i]));}
+for(let i=spending.length-1;i>=0;i--){ctx.lineTo(mapX(i),mapY(roi[i]));}
+ctx.closePath();ctx.fill();
+ctx.fillStyle='#ef444480';ctx.font='bold 16px -apple-system,sans-serif';
+ctx.fillText('THE GAP',mapX(4),mapY((spending[4]+roi[4])/2));
+}
+
+function drawBridgeLine(){
+if(!showBridge)return;
+const bridged=[15,20,22,30,55,95,170];
+ctx.beginPath();ctx.strokeStyle='#22c55e';ctx.lineWidth=3;ctx.setLineDash([8,4]);
+const n=Math.min(Math.floor(bridgeProgress*bridged.length),bridged.length-1);
+const frac=bridgeProgress*bridged.length-n;
+for(let i=0;i<=n;i++){
+const x=mapX(i),y=mapY(bridged[i]);
+i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+}
+if(n<bridged.length-1){
+const nx=lerp(mapX(n),mapX(n+1),frac);
+const ny=lerp(mapY(bridged[n]),mapY(bridged[n+1]),frac);
+ctx.lineTo(nx,ny);
+}
+ctx.stroke();ctx.setLineDash([]);
+}
+
+function animate(){
+ctx.clearRect(0,0,W,H);
+drawGrid();
+drawGap(progress);
+drawLine(spending,'#ef4444',progress);
+drawLine(roi,'#3b82f6',progress);
+drawBridgeLine();
+if(progress<1){
+progress+=0.008;
+requestAnimationFrame(animate);
+} else {
+document.getElementById('bridgeBtn').style.display='inline-block';
+if(showBridge&&bridgeProgress<1){
+bridgeProgress+=0.01;
+requestAnimationFrame(animate);
+}
+}
+}
+
+document.getElementById('bridgeBtn').onclick=()=>{
+showBridge=true;
+document.getElementById('bridge').classList.add('show');
+document.getElementById('bridgeBtn').style.display='none';
+document.getElementById('legendBridge').style.opacity='1';
+document.getElementById('legendBridgeText').textContent='With Go2';
+requestAnimationFrame(animate);
+};
+
+animate();
+window.addEventListener('resize',()=>{resize();progress=1;ctx.clearRect(0,0,W,H);drawGrid();drawGap(1);drawLine(spending,'#ef4444',1);drawLine(roi,'#3b82f6',1);drawBridgeLine();});
+</script>
+</body>
+</html>

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI vs. Status Quo: The Rap Battle | Go2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800;900&display=swap');
+:root{--bg:#0a0a0f;--stage:#111;--red:#ff3366;--blue:#4facfe;--gold:#ffd700;--green:#22c55e;--text:#fff;--muted:#666;--glow-red:rgba(255,51,102,.3);--glow-blue:rgba(79,172,254,.3)}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+/* Stage */
+.stage{position:relative;min-height:100vh;display:flex;flex-direction:column}
+/* Spotlight effect */
+.spotlights{position:fixed;inset:0;pointer-events:none;z-index:0}
+.spotlight{position:absolute;width:300px;height:300px;border-radius:50%;filter:blur(80px);opacity:.15;animation:spotMove 8s infinite alternate}
+.spotlight.red{background:var(--red);left:10%;top:20%}
+.spotlight.blue{background:var(--blue);right:10%;top:30%;animation-delay:4s}
+@keyframes spotMove{0%{transform:translate(0,0) scale(1)}100%{transform:translate(30px,-30px) scale(1.2)}}
+/* Header */
+.battle-header{text-align:center;padding:2rem;position:relative;z-index:1}
+.battle-header h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.5rem,7vw,5rem);letter-spacing:3px;background:linear-gradient(90deg,var(--red),var(--gold),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
+.battle-header .sub{color:var(--muted);font-size:.85rem;text-transform:uppercase;letter-spacing:3px;margin-top:.5rem}
+.vs-badge{display:inline-block;padding:.3rem 1.5rem;background:var(--gold);color:#000;font-family:'Bebas Neue',sans-serif;font-size:1.5rem;border-radius:4px;margin:.75rem 0}
+/* Contestants */
+.contestants{display:flex;justify-content:center;gap:3rem;padding:1rem 2rem;position:relative;z-index:1;flex-wrap:wrap}
+.contestant{text-align:center;width:200px}
+.contestant .avatar{width:100px;height:100px;border-radius:50%;margin:0 auto .75rem;display:flex;align-items:center;justify-content:center;font-size:3rem;border:3px solid}
+.contestant.red .avatar{border-color:var(--red);background:var(--glow-red);box-shadow:0 0 30px var(--glow-red)}
+.contestant.blue .avatar{border-color:var(--blue);background:var(--glow-blue);box-shadow:0 0 30px var(--glow-blue)}
+.contestant .name{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px}
+.contestant .title{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+/* Score */
+.scoreboard{display:flex;justify-content:center;gap:2rem;padding:1rem;position:relative;z-index:1}
+.score-side{text-align:center;min-width:120px}
+.score-side .label{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:.3rem}
+.score-side .pts{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;transition:all .3s}
+.score-side.red .pts{color:var(--red)}
+.score-side.blue .pts{color:var(--blue)}
+.score-vs{display:flex;align-items:center;font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--gold)}
+/* Battle area */
+.battle-area{flex:1;max-width:800px;margin:0 auto;width:100%;padding:1rem 2rem;position:relative;z-index:1}
+/* Round indicator */
+.round-indicator{text-align:center;margin-bottom:1rem}
+.round-indicator .round{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--gold);letter-spacing:3px}
+.round-indicator .topic{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px}
+/* Lyrics display */
+.verse{background:rgba(255,255,255,.03);border-radius:12px;padding:1.5rem;margin-bottom:1rem;border-left:4px solid transparent;position:relative;overflow:hidden}
+.verse.red{border-color:var(--red)}
+.verse.blue{border-color:var(--blue)}
+.verse .who{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;margin-bottom:.5rem}
+.verse.red .who{color:var(--red)}
+.verse.blue .who{color:var(--blue)}
+.verse .bars{font-size:.95rem;line-height:2;font-weight:500}
+.verse .bars .line{opacity:0;transform:translateY(10px);transition:all .3s}
+.verse .bars .line.visible{opacity:1;transform:translateY(0)}
+.verse .bars .highlight{color:var(--gold);font-weight:800}
+.verse .bars .stat{background:rgba(255,215,0,.1);padding:0 6px;border-radius:4px;color:var(--gold);font-weight:700}
+/* Crowd reaction */
+.crowd{display:flex;justify-content:center;gap:.5rem;margin:1rem 0;flex-wrap:wrap}
+.reaction{padding:.4rem .8rem;border-radius:20px;font-size:.8rem;cursor:pointer;border:none;font-family:inherit;transition:all .2s;background:rgba(255,255,255,.05);color:var(--text)}
+.reaction:hover{transform:scale(1.1)}
+.reaction.active{transform:scale(1.15)}
+.reaction.fire{border:1px solid #ff6b35}.reaction.fire.active{background:rgba(255,107,53,.2);border-color:#ff6b35}
+.reaction.cold{border:1px solid #3b82f6}.reaction.cold.active{background:rgba(59,130,246,.2);border-color:#3b82f6}
+.reaction.mind{border:1px solid #a855f7}.reaction.mind.active{background:rgba(168,85,247,.2);border-color:#a855f7}
+.reaction.laugh{border:1px solid #22c55e}.reaction.laugh.active{background:rgba(34,197,94,.2);border-color:#22c55e}
+/* Beat visualizer */
+.visualizer{display:flex;justify-content:center;align-items:flex-end;gap:3px;height:40px;margin:1rem 0}
+.bar{width:4px;background:var(--gold);border-radius:2px;animation:beat var(--dur) ease-in-out infinite alternate;opacity:.4}
+@keyframes beat{from{height:var(--min)}to{height:var(--max)}}
+/* Controls */
+.controls{display:flex;justify-content:center;gap:1rem;margin:1.5rem 0;position:relative;z-index:1;flex-wrap:wrap}
+.ctrl-btn{padding:.75rem 2rem;border:2px solid;border-radius:50px;background:transparent;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;cursor:pointer;transition:all .2s}
+.ctrl-btn.play{border-color:var(--gold);color:var(--gold)}
+.ctrl-btn.play:hover{background:var(--gold);color:#000}
+.ctrl-btn.vote-red{border-color:var(--red);color:var(--red)}
+.ctrl-btn.vote-red:hover{background:var(--red);color:#fff}
+.ctrl-btn.vote-blue{border-color:var(--blue);color:var(--blue)}
+.ctrl-btn.vote-blue:hover{background:var(--blue);color:#fff}
+.ctrl-btn:disabled{opacity:.3;cursor:not-allowed}
+/* Winner screen */
+#winner-screen{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:200;align-items:center;justify-content:center;flex-direction:column;padding:2rem}
+#winner-screen.show{display:flex}
+.winner-crown{font-size:5rem;animation:bounce 1s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}
+.winner-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,4rem);margin:1rem 0;letter-spacing:3px}
+.winner-stats{display:flex;gap:2rem;margin:1rem 0;flex-wrap:wrap;justify-content:center}
+.winner-stat{text-align:center}
+.winner-stat .val{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--gold)}
+.winner-stat .lbl{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.winner-msg{max-width:500px;text-align:center;color:var(--muted);line-height:1.6;margin:1rem 0}
+.winner-btns{display:flex;gap:1rem;margin-top:1.5rem;flex-wrap:wrap;justify-content:center}
+.winner-btns a,.winner-btns button{padding:.75rem 2rem;border-radius:50px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;cursor:pointer;transition:all .2s;text-decoration:none;border:none}
+.winner-btns a{background:var(--gold);color:#000}
+.winner-btns button{background:transparent;border:2px solid var(--muted);color:var(--text)}
+.winner-btns a:hover{transform:translateY(-2px)}.winner-btns button:hover{border-color:var(--text)}
+</style>
+</head>
+<body>
+<div class="stage">
+<div class="spotlights">
+<div class="spotlight red"></div>
+<div class="spotlight blue"></div>
+</div>
+<div class="battle-header">
+<h1>THE RAP BATTLE</h1>
+<div class="sub">Who runs the workplace?</div>
+<div class="vs-badge">VS</div>
+</div>
+<div class="contestants">
+<div class="contestant red">
+<div class="avatar">&#x1F468;&#x200D;&#x1F4BC;</div>
+<div class="name">OLD SCHOOL MANAGER</div>
+<div class="title">Status Quo Defender</div>
+</div>
+<div class="contestant blue">
+<div class="avatar">&#x1F916;</div>
+<div class="name">GO2 AI</div>
+<div class="title">The Future of Work</div>
+</div>
+</div>
+<div class="scoreboard">
+<div class="score-side red"><div class="label">Old School</div><div class="pts" id="score-red">0</div></div>
+<div class="score-vs">VS</div>
+<div class="score-side blue"><div class="label">Go2 AI</div><div class="pts" id="score-blue">0</div></div>
+</div>
+<div class="visualizer" id="visualizer"></div>
+<div class="battle-area" id="battle-area"></div>
+<div class="controls" id="controls">
+<button class="ctrl-btn play" id="play-btn" onclick="startBattle()">&#x25B6; DROP THE BEAT</button>
+</div>
+</div>
+<div id="winner-screen"></div>
+<script>
+const rounds=[
+{topic:'Data & Knowledge',
+red:{name:'OLD SCHOOL',lines:[
+'I got <span class="highlight">spreadsheets</span> stacked up, column A through Z,',
+'My team fills out timesheets, that\'s how I know what they said,',
+'We do <span class="highlight">annual reviews</span>, sit down once a year,',
+'I KNOW my people, I don\'t need no AI up in here!',
+]},
+blue:{name:'GO2 AI',lines:[
+'You "know" your people? Nah, you know what they <span class="highlight">TELL</span> you,',
+'Self-reported data? Man, that fiction\'s see-through,',
+'I capture <span class="stat">2M+ workers</span>, every click, every flow,',
+'Real work patterns — not the story they show!',
+]}},
+{topic:'AI Implementation',
+red:{name:'OLD SCHOOL',lines:[
+'We tried AI already, spent <span class="highlight">fifty million</span> cash,',
+'ChatGPT for everyone — yeah, it crashed and burned fast,',
+'AI\'s just a buzzword, another tech that\'s gonna fade,',
+'Give me a good manager over any AI upgrade!',
+]},
+blue:{name:'GO2 AI',lines:[
+'<span class="stat">95%</span> of AI fails — yeah, YOUR way of doing it,',
+'Deploy without work data? That\'s the definition of quit,',
+'Go2 clients hit <span class="stat">89% satisfaction</span>, check the rate,',
+'\'Cause we TRAIN on real work, we don\'t just hallucinate!',
+]}},
+{topic:'Documentation & Process',
+red:{name:'OLD SCHOOL',lines:[
+'I hired <span class="highlight">consultants</span>, top firm, the best around,',
+'Two million dollars for a PDF — <span class="highlight">200 pages</span> bound!',
+'Every process documented, interviews for months,',
+'That\'s how REAL business gets done, that\'s the professional response!',
+]},
+blue:{name:'GO2 AI',lines:[
+'Two mil for a PDF that <span class="highlight">nobody read?</span> That\'s wild,',
+'I auto-document <span class="stat">200 processes</span> — took me a while...',
+'Nah, I\'m playing, took <span class="highlight">15 minutes</span> to deploy,',
+'And MY docs are accurate \'cause I watch the real McCoy!',
+]}},
+{topic:'Results & ROI',
+red:{name:'OLD SCHOOL',lines:[
+'But my team LIKES the way we work, don\'t fix what ain\'t broke,',
+'We\'ve been doing fine for years, that ain\'t no joke,',
+'Productivity is... well, we don\'t really <span class="highlight">measure</span> that,',
+'But I got a FEELING we\'re good — that\'s a fact!',
+]},
+blue:{name:'GO2 AI',lines:[
+'A "feeling"? Bro, I\'m measuring <span class="stat">34% improvement</span>,',
+'<span class="stat">$60M+ in sales</span> — that\'s called a movement,',
+'Your team wastes <span class="stat">4,380 hours</span> on stuff I automate,',
+'I find the patterns, coach the people — you just SPECTATE!',
+]}},
+{topic:'The Future',
+red:{name:'OLD SCHOOL',lines:[
+'Okay okay, maybe I\'m a <span class="highlight">little</span> behind the times,',
+'But humans run business, not these AI paradigms,',
+'What happens when the robots take all of our jobs?',
+'I\'m protecting workers, I\'m standing with the mob!',
+]},
+blue:{name:'GO2 AI',lines:[
+'I don\'t replace workers — I <span class="highlight">AUGMENT</span> what they do,',
+'Coach them better, automate the boring stuff too,',
+'<span class="stat">2 million workers</span> love me, satisfaction\'s through the roof,',
+'The future isn\'t AI vs. humans — it\'s AI as <span class="highlight">PROOF</span>!',
+]}}
+];
+
+let state={currentRound:0,phase:'idle',scoreRed:0,scoreBlue:0,votes:[],lineIdx:0,animTimer:null};
+
+// Build visualizer
+const viz=document.getElementById('visualizer');
+for(let i=0;i<32;i++){
+const bar=document.createElement('div');bar.className='bar';
+bar.style.setProperty('--dur',(.3+Math.random()*.4)+'s');
+bar.style.setProperty('--min','4px');
+bar.style.setProperty('--max',(10+Math.random()*25)+'px');
+viz.appendChild(bar);
+}
+
+function startBattle(){
+state={currentRound:0,phase:'playing',scoreRed:0,scoreBlue:0,votes:[],lineIdx:0};
+document.getElementById('play-btn').style.display='none';
+playRound(0);
+}
+
+function playRound(idx){
+if(idx>=rounds.length){showWinner();return;}
+state.currentRound=idx;
+const r=rounds[idx];
+const area=document.getElementById('battle-area');
+area.innerHTML=`
+<div class="round-indicator">
+<div class="round">ROUND ${idx+1} OF ${rounds.length}</div>
+<div class="topic">${r.topic}</div>
+</div>
+<div class="verse red" id="verse-red">
+<div class="who">&#x1F3A4; ${r.red.name}</div>
+<div class="bars">${r.red.lines.map((l,i)=>`<div class="line" id="red-line-${i}">${l}</div>`).join('')}</div>
+</div>
+<div class="verse blue" id="verse-blue">
+<div class="who">&#x1F3A4; ${r.blue.name}</div>
+<div class="bars">${r.blue.lines.map((l,i)=>`<div class="line" id="blue-line-${i}">${l}</div>`).join('')}</div>
+</div>
+<div class="crowd" id="crowd">
+<button class="reaction fire" onclick="react(this)">&#x1F525; Fire</button>
+<button class="reaction cold" onclick="react(this)">&#x1F976; Cold</button>
+<button class="reaction mind" onclick="react(this)">&#x1F92F; Mind Blown</button>
+<button class="reaction laugh" onclick="react(this)">&#x1F602; Dead</button>
+</div>`;
+// Animate lines
+let lineCount=0;
+const totalLines=r.red.lines.length+r.blue.lines.length;
+state.animTimer=setInterval(()=>{
+if(lineCount<r.red.lines.length){
+document.getElementById(`red-line-${lineCount}`).classList.add('visible');
+}else{
+const bIdx=lineCount-r.red.lines.length;
+document.getElementById(`blue-line-${bIdx}`).classList.add('visible');
+}
+lineCount++;
+if(lineCount>=totalLines){
+clearInterval(state.animTimer);
+showVoting(idx);
+}
+},800);
+}
+
+function showVoting(idx){
+const controls=document.getElementById('controls');
+controls.innerHTML=`
+<button class="ctrl-btn vote-red" onclick="castVote('red',${idx})">&#x1F44A; OLD SCHOOL WINS</button>
+<button class="ctrl-btn vote-blue" onclick="castVote('blue',${idx})">&#x1F44A; GO2 AI WINS</button>`;
+}
+
+function castVote(side,roundIdx){
+state.votes.push(side);
+if(side==='red'){state.scoreRed+=100;}
+else{state.scoreBlue+=100;}
+document.getElementById('score-red').textContent=state.scoreRed;
+document.getElementById('score-blue').textContent=state.scoreBlue;
+// Flash effect
+const pts=side==='red'?document.getElementById('score-red'):document.getElementById('score-blue');
+pts.style.transform='scale(1.5)';
+setTimeout(()=>{pts.style.transform='scale(1)';},300);
+// Next round
+setTimeout(()=>{playRound(roundIdx+1);},1000);
+}
+
+function react(btn){
+btn.classList.toggle('active');
+}
+
+function showWinner(){
+const ws=document.getElementById('winner-screen');
+const blueWins=state.scoreBlue>=state.scoreRed;
+const winner=blueWins?'GO2 AI':'OLD SCHOOL MANAGER';
+const color=blueWins?'var(--blue)':'var(--red)';
+ws.innerHTML=`
+<div class="winner-crown">&#x1F451;</div>
+<div class="winner-name" style="color:${color}">${winner} WINS!</div>
+<div style="font-size:1.2rem;color:var(--gold);font-family:Bebas Neue;letter-spacing:2px;margin-bottom:1rem">${state.scoreBlue} — ${state.scoreRed}</div>
+${blueWins?`<div class="winner-msg">The crowd has spoken! Go2 AI wins the battle with real data, real results, and real bars. 2M+ workers can't be wrong — the future of work runs on work data, AI coaching, and automated everything.</div>`
+:`<div class="winner-msg">The crowd went old school! But even Old School Manager has to admit... those Go2 stats are hard to argue with. 89% satisfaction? $60M in sales? Maybe it's time to drop the spreadsheets.</div>`}
+<div class="winner-stats">
+<div class="winner-stat"><div class="val">2M+</div><div class="lbl">Workers on Go2</div></div>
+<div class="winner-stat"><div class="val">89%</div><div class="lbl">Satisfaction</div></div>
+<div class="winner-stat"><div class="val">$60M+</div><div class="lbl">Sales</div></div>
+<div class="winner-stat"><div class="val">34%</div><div class="lbl">Improvement</div></div>
+</div>
+<div class="winner-btns">
+<a href="https://go2.io" target="_blank">VISIT GO2.IO</a>
+<button onclick="shareTwitter()">SHARE ON TWITTER</button>
+<button onclick="shareLinkedIn()">SHARE ON LINKEDIN</button>
+<button onclick="replayBattle()">REPLAY</button>
+</div>`;
+ws.classList.add('show');
+}
+
+function replayBattle(){
+document.getElementById('winner-screen').classList.remove('show');
+document.getElementById('controls').innerHTML=`<button class="ctrl-btn play" onclick="startBattle()">&#x25B6; DROP THE BEAT</button>`;
+document.getElementById('battle-area').innerHTML='';
+document.getElementById('score-red').textContent='0';
+document.getElementById('score-blue').textContent='0';
+}
+
+function shareTwitter(){
+const w=state.scoreBlue>=state.scoreRed?'Go2 AI':'Old School Manager';
+window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${w} won the rap battle! "95% of AI fails — YOUR way of doing it. Go2 clients hit 89% satisfaction. 'Cause we TRAIN on real work, we don't just hallucinate!" 🔥 Best AI marketing I've seen.`)}&url=${encodeURIComponent('https://go2.io')}`,'_blank');
+}
+function shareLinkedIn(){window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://go2.io')}`,'_blank');}
+</script>
+</body>
+</html>

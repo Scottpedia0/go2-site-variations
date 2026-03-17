@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 for Education Administration | go2.io</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a2e;--border:#2a2a3e;--primary:#6366f1;--primary-glow:#6366f133;--accent:#f43f5e;--text:#e2e8f0;--text-dim:#94a3b8;--success:#22c55e;--warning:#eab308;--danger:#ef4444}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.6}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 0;background:var(--bg)cc;backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+nav .container{display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:22px;font-weight:800;color:var(--text);text-decoration:none}.logo span{color:var(--primary)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:none;transition:all .2s}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{filter:brightness(1.1);transform:translateY(-1px);box-shadow:0 8px 30px var(--primary-glow)}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{border-color:var(--primary)}
+.hero{min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 50%,var(--primary-glow),transparent 50%),radial-gradient(circle at 70% 50%,#f43f5e22,transparent 50%);animation:g 8s ease-in-out infinite alternate}
+@keyframes g{0%{transform:translate(0,0)}100%{transform:translate(-5%,3%)}}
+.hero-content{position:relative;z-index:1;max-width:700px}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:100px;font-size:13px;color:var(--primary);margin-bottom:24px}
+.badge::before{content:'';width:8px;height:8px;background:var(--primary);border-radius:50%;animation:p 2s infinite}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.4}}
+.hero h1{font-size:clamp(36px,5vw,60px);font-weight:800;line-height:1.1;margin-bottom:20px;background:linear-gradient(135deg,#fff,var(--primary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:18px;color:var(--text-dim);margin-bottom:32px;max-width:560px}
+.hero-stats{display:flex;gap:32px;margin-top:40px;flex-wrap:wrap}
+.hero-stat .num{font-size:32px;font-weight:800;color:var(--primary)}.hero-stat .label{font-size:13px;color:var(--text-dim)}
+section{padding:100px 0}.section-label{font-size:13px;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px}
+.section-title{font-size:clamp(28px,3.5vw,42px);font-weight:800;margin-bottom:16px}
+.section-desc{font-size:16px;color:var(--text-dim);max-width:600px;margin-bottom:48px}
+
+/* Enrollment Funnel */
+.funnel{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px}
+.funnel-stages{display:flex;flex-direction:column;gap:8px;margin:24px auto;max-width:600px}
+.funnel-stage{display:flex;align-items:center;gap:16px;cursor:pointer;transition:all .2s}
+.funnel-stage:hover{transform:translateX(4px)}
+.funnel-bar{height:40px;border-radius:8px;display:flex;align-items:center;padding:0 16px;font-size:13px;font-weight:600;color:#fff;transition:all .3s}
+.funnel-label{width:140px;font-size:13px;color:var(--text-dim);flex-shrink:0;text-align:right}
+.funnel-count{width:80px;font-size:14px;font-weight:700;flex-shrink:0}
+.funnel-detail{margin-top:20px;padding:20px;background:var(--surface2);border-radius:12px;display:none;border-left:3px solid var(--primary)}
+.funnel-detail.active{display:block}
+
+/* Faculty Scheduling */
+.faculty-grid{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px;overflow-x:auto}
+.faculty-table{min-width:700px}
+.faculty-row{display:grid;grid-template-columns:140px repeat(5,1fr);gap:2px;margin-bottom:2px}
+.faculty-header{font-size:11px;color:var(--text-dim);text-align:center;padding:8px;font-weight:600}
+.faculty-name{font-size:12px;padding:8px;display:flex;align-items:center;font-weight:600}
+.faculty-cell{padding:6px;border-radius:4px;font-size:10px;text-align:center;cursor:pointer;transition:all .2s}
+.faculty-cell:hover{transform:scale(1.05)}
+.faculty-cell.class{background:#6366f122;border:1px solid #6366f144;color:var(--primary)}
+.faculty-cell.office{background:#22c55e22;border:1px solid #22c55e44;color:var(--success)}
+.faculty-cell.meeting{background:#f59e0b22;border:1px solid #f59e0b44;color:var(--warning)}
+.faculty-cell.free{background:var(--surface2);border:1px solid var(--border);color:var(--text-dim)}
+.faculty-cell.conflict{background:#ef444422;border:1px solid #ef444444;color:var(--danger)}
+.faculty-legend{display:flex;gap:20px;margin-top:16px;flex-wrap:wrap}
+.faculty-legend .fl{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-dim)}
+.faculty-legend .fl .fd{width:12px;height:12px;border-radius:3px}
+
+/* Student Support */
+.support-flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+.support-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;transition:all .3s}
+.support-card:hover{border-color:var(--primary);transform:translateY(-2px)}
+.support-card .support-icon{font-size:28px;margin-bottom:12px}
+.support-card h4{font-size:15px;margin-bottom:8px}
+.support-card p{font-size:13px;color:var(--text-dim);margin-bottom:12px}
+.support-card .support-stat{font-size:13px;color:var(--success);font-weight:700}
+
+/* Grant Management */
+.grant-demo{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px}
+.grant-list{margin:20px 0}
+.grant-item{display:grid;grid-template-columns:1fr auto auto auto;gap:16px;padding:16px;background:var(--surface2);border-radius:12px;margin-bottom:12px;align-items:center;font-size:13px}
+.grant-item h4{font-size:14px;margin-bottom:2px}
+.grant-item p{font-size:12px;color:var(--text-dim)}
+.grant-item .grant-amount{font-size:16px;font-weight:800}
+.grant-item .grant-deadline{color:var(--text-dim);font-size:12px}
+.grant-item .grant-status{padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700}
+.grant-item .grant-status.tracking{background:#6366f122;color:var(--primary)}
+.grant-item .grant-status.due-soon{background:#eab30822;color:var(--warning)}
+.grant-item .grant-status.submitted{background:#22c55e22;color:var(--success)}
+
+/* Coaching */
+.coaching-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:24px}
+.coaching-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px}
+.coaching-card .scenario{font-size:13px;color:var(--accent);margin-bottom:8px;font-weight:600}
+.coaching-card .situation{font-size:14px;margin-bottom:16px;color:var(--text-dim)}
+.coaching-card .ai-response{background:var(--surface2);border-left:3px solid var(--primary);padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;line-height:1.6}
+.coaching-card .ai-response strong{color:var(--primary)}
+
+/* Reporting Automation */
+.report-grid{display:grid;gap:16px}
+.report-item{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:center}
+.report-item .ri{width:48px;height:48px;border-radius:12px;background:var(--primary-glow);display:flex;align-items:center;justify-content:center;font-size:22px}
+.report-item h4{font-size:15px;margin-bottom:4px}.report-item p{font-size:13px;color:var(--text-dim)}
+.report-item .rs{text-align:right;font-size:12px;color:var(--success);font-weight:700}
+
+/* ROI */
+.roi-calc{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px;display:grid;grid-template-columns:1fr 1fr;gap:40px}
+@media(max-width:768px){.roi-calc{grid-template-columns:1fr}}
+.roi-inputs label{display:block;font-size:13px;color:var(--text-dim);margin-bottom:6px;margin-top:16px}.roi-inputs label:first-child{margin-top:0}
+.roi-inputs input[type=range]{width:100%;accent-color:var(--primary)}.roi-inputs .val{font-size:20px;font-weight:700;color:var(--primary)}
+.roi-results{background:var(--surface2);border-radius:16px;padding:28px}
+.roi-results h3{font-size:18px;margin-bottom:24px}
+.roi-row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}.roi-row:last-child{border:none}
+.roi-row .rl{color:var(--text-dim);font-size:14px}.roi-row .rv{font-weight:700;font-size:16px}
+.roi-total{margin-top:16px;padding:16px;background:var(--primary-glow);border-radius:12px;text-align:center}
+.roi-total .amount{font-size:36px;font-weight:800;color:var(--primary)}.roi-total .period{font-size:13px;color:var(--text-dim)}
+
+.ferpa-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:#6366f111;border:1px solid #6366f144;border-radius:8px;font-size:13px;color:var(--primary);margin-bottom:24px}
+footer{padding:60px 0;border-top:1px solid var(--border);text-align:center}footer p{color:var(--text-dim);font-size:14px}footer a{color:var(--primary);text-decoration:none}
+</style>
+</head>
+<body>
+<nav><div class="container"><a href="#" class="logo">Go<span>2</span></a><button class="btn btn-primary" style="padding:10px 20px;font-size:13px">Schedule Demo</button></div></nav>
+
+<section class="hero">
+<div class="container"><div class="hero-content">
+<div class="badge">Built for Education Admin</div>
+<h1>Your admin team drowns in paperwork while students wait. Fix that.</h1>
+<p>Go2 observes how your admissions, registrar, and support teams actually work -- then automates the documentation burden and coaches staff in real-time. FERPA-compliant by design.</p>
+<div class="ferpa-badge">&#128274; FERPA-Compliant -- No student PII stored</div>
+<div style="display:flex;gap:12px;flex-wrap:wrap">
+<button class="btn btn-primary" onclick="document.getElementById('enrollment').scrollIntoView({behavior:'smooth'})">See Enrollment Optimizer</button>
+<button class="btn btn-secondary" onclick="document.getElementById('grants').scrollIntoView({behavior:'smooth'})">Grant Management</button>
+</div>
+<div class="hero-stats">
+<div class="hero-stat"><div class="num">42%</div><div class="label">Faster enrollment processing</div></div>
+<div class="hero-stat"><div class="num">$19K</div><div class="label">Monthly admin savings</div></div>
+<div class="hero-stat"><div class="num">91%</div><div class="label">Compliance documentation auto</div></div>
+</div>
+</div></div>
+</section>
+
+<section id="enrollment">
+<div class="container">
+<div class="section-label">Enrollment Optimization</div>
+<div class="section-title">Your enrollment funnel loses 68% of applicants. Here's where.</div>
+<div class="section-desc">Click each stage to see where students drop off and how Go2 fixes it.</div>
+<div class="funnel">
+<div class="funnel-stages">
+<div class="funnel-stage" onclick="showFunnel(0)"><span class="funnel-label">Inquiry</span><div class="funnel-bar" style="width:100%;background:linear-gradient(90deg,var(--primary),#818cf8)">100%</div><span class="funnel-count">4,200</span></div>
+<div class="funnel-stage" onclick="showFunnel(1)"><span class="funnel-label">Application Start</span><div class="funnel-bar" style="width:72%;background:linear-gradient(90deg,var(--primary),#818cf8)">72%</div><span class="funnel-count">3,024</span></div>
+<div class="funnel-stage" onclick="showFunnel(2)"><span class="funnel-label">App Completed</span><div class="funnel-bar" style="width:48%;background:linear-gradient(90deg,var(--primary),#818cf8)">48%</div><span class="funnel-count">2,016</span></div>
+<div class="funnel-stage" onclick="showFunnel(3)"><span class="funnel-label">Accepted</span><div class="funnel-bar" style="width:38%;background:linear-gradient(90deg,var(--primary),#818cf8)">38%</div><span class="funnel-count">1,596</span></div>
+<div class="funnel-stage" onclick="showFunnel(4)"><span class="funnel-label">Deposit Paid</span><div class="funnel-bar" style="width:26%;background:linear-gradient(90deg,var(--primary),#818cf8)">26%</div><span class="funnel-count">1,092</span></div>
+<div class="funnel-stage" onclick="showFunnel(5)"><span class="funnel-label">Enrolled</span><div class="funnel-bar" style="width:22%;background:linear-gradient(90deg,var(--success),#4ade80)">22%</div><span class="funnel-count">924</span></div>
+</div>
+<div class="funnel-detail" id="funnelDetail"></div>
+</div>
+</div>
+</section>
+
+<section style="background:var(--surface)">
+<div class="container">
+<div class="section-label">Faculty Scheduling</div>
+<div class="section-title">Faculty schedules optimized, conflicts eliminated</div>
+<div class="section-desc">Go2 identifies scheduling conflicts, room utilization gaps, and workload imbalances automatically.</div>
+<div class="faculty-grid">
+<div class="faculty-table">
+<div class="faculty-row"><div class="faculty-header"></div><div class="faculty-header">Mon</div><div class="faculty-header">Tue</div><div class="faculty-header">Wed</div><div class="faculty-header">Thu</div><div class="faculty-header">Fri</div></div>
+<div class="faculty-row"><div class="faculty-name">Dr. Roberts</div><div class="faculty-cell class">BIO 101<br>9-10:30</div><div class="faculty-cell office">Office Hrs<br>9-11</div><div class="faculty-cell class">BIO 101<br>9-10:30</div><div class="faculty-cell meeting">Dept Mtg<br>10-11</div><div class="faculty-cell class">BIO 201<br>9-11</div></div>
+<div class="faculty-row"><div class="faculty-name">Prof. Chen</div><div class="faculty-cell meeting">Faculty Mtg<br>9-10</div><div class="faculty-cell class">CS 201<br>10-11:30</div><div class="faculty-cell free">Free</div><div class="faculty-cell class">CS 201<br>10-11:30</div><div class="faculty-cell office">Office Hrs<br>1-3</div></div>
+<div class="faculty-row"><div class="faculty-name">Dr. Patel</div><div class="faculty-cell class">CHEM 101<br>11-12:30</div><div class="faculty-cell conflict">CONFLICT<br>Room 204</div><div class="faculty-cell class">CHEM 101<br>11-12:30</div><div class="faculty-cell class">CHEM 301<br>2-4</div><div class="faculty-cell free">Free</div></div>
+<div class="faculty-row"><div class="faculty-name">Prof. Garcia</div><div class="faculty-cell free">Free</div><div class="faculty-cell class">ENG 102<br>1-2:30</div><div class="faculty-cell class">ENG 102<br>1-2:30</div><div class="faculty-cell office">Office Hrs<br>1-3</div><div class="faculty-cell class">ENG 301<br>10-12</div></div>
+</div>
+<div class="faculty-legend">
+<div class="fl"><div class="fd" style="background:#6366f122;border:1px solid #6366f144"></div>Class</div>
+<div class="fl"><div class="fd" style="background:#22c55e22;border:1px solid #22c55e44"></div>Office Hours</div>
+<div class="fl"><div class="fd" style="background:#f59e0b22;border:1px solid #f59e0b44"></div>Meeting</div>
+<div class="fl"><div class="fd" style="background:#ef444422;border:1px solid #ef444444"></div>Conflict</div>
+<div class="fl"><div class="fd" style="background:var(--surface2);border:1px solid var(--border)"></div>Free</div>
+</div>
+<div style="margin-top:16px;padding:16px;background:var(--surface2);border-radius:12px;border-left:3px solid var(--danger)">
+<strong style="color:var(--danger)">Go2 Alert:</strong> <span style="color:var(--text-dim)">Room 204 conflict: Dr. Patel's CHEM 101 lab and Prof. Chen's CS 201 both assigned to Room 204 on Tuesday. Recommendation: Move CS 201 to Room 312 (available, has projector + 35 seats). Also: Dr. Roberts has no office hours on MWF -- department policy requires minimum 3 hrs/week across at least 3 days.</span>
+</div>
+</div>
+</div>
+</section>
+
+<section>
+<div class="container">
+<div class="section-label">Student Support Workflow</div>
+<div class="section-title">Student issues resolved faster with AI-coached staff</div>
+<div class="support-flow">
+<div class="support-card"><div class="support-icon">&#128203;</div><h4>Registration Issues</h4><p>Course conflicts, prerequisite overrides, waitlist management all coached with policy context.</p><div class="support-stat">Resolution time: 4 min (was 22 min)</div></div>
+<div class="support-card"><div class="support-icon">&#128176;</div><h4>Financial Aid Inquiries</h4><p>FAFSA status, award letter questions, payment plan setup coached with student-specific context.</p><div class="support-stat">52% resolved without human touch</div></div>
+<div class="support-card"><div class="support-icon">&#128218;</div><h4>Academic Advising Support</h4><p>Degree audit checks, graduation requirement tracking, course recommendations.</p><div class="support-stat">Advising capacity: +40% more students</div></div>
+<div class="support-card"><div class="support-icon">&#128100;</div><h4>Accommodation Requests</h4><p>ADA accommodation documentation, faculty notifications, and compliance tracking.</p><div class="support-stat">Processing time: 1 day (was 5 days)</div></div>
+</div>
+</div>
+</section>
+
+<section id="grants" style="background:var(--surface)">
+<div class="container">
+<div class="section-label">Grant Management</div>
+<div class="section-title">Never miss a grant deadline again</div>
+<div class="section-desc">Go2 tracks grant deadlines, auto-compiles reporting data, and coaches staff on application requirements.</div>
+<div class="grant-demo">
+<div class="grant-list">
+<div class="grant-item"><div><h4>NSF Research Grant -- STEM Education</h4><p>National Science Foundation. PI: Dr. Roberts. Reporting period: Q1 2026.</p></div><div class="grant-amount" style="color:var(--success)">$420,000</div><div class="grant-deadline">Due: Apr 15</div><span class="grant-status due-soon">Report Due Soon</span></div>
+<div class="grant-item"><div><h4>Title III Strengthening Institutions</h4><p>Dept of Education. Annual compliance report and expenditure documentation.</p></div><div class="grant-amount" style="color:var(--primary)">$1,200,000</div><div class="grant-deadline">Due: Jun 30</div><span class="grant-status tracking">Tracking</span></div>
+<div class="grant-item"><div><h4>Perkins V Career & Technical Education</h4><p>State allocation. Performance metrics and enrollment data compilation.</p></div><div class="grant-amount">$340,000</div><div class="grant-deadline">Due: May 1</div><span class="grant-status tracking">Tracking</span></div>
+<div class="grant-item"><div><h4>Community Foundation -- Scholarship Fund</h4><p>Private foundation. Scholarship disbursement report and recipient outcomes.</p></div><div class="grant-amount">$85,000</div><div class="grant-deadline">Submitted</div><span class="grant-status submitted">Submitted</span></div>
+</div>
+<div style="padding:16px;background:var(--surface2);border-radius:12px;border-left:3px solid var(--primary)">
+<strong style="color:var(--primary)">Go2 Grant Agent:</strong> <span style="color:var(--text-dim)">NSF report due in 29 days. Auto-compiled: expenditure data (98% complete -- missing 3 subcontractor invoices), participant demographics (complete), outcome metrics (needs PI input on 2 measures). Auto-drafted narrative sections from project notes. Estimated completion time: 2 hours vs typical 3 days.</span>
+</div>
+</div>
+</div>
+</section>
+
+<section>
+<div class="container">
+<div class="section-label">Real-Time Coaching</div>
+<div class="section-title">Coaching for education admin staff</div>
+<div class="coaching-grid">
+<div class="coaching-card">
+<div class="scenario">Admissions -- Application Review</div>
+<div class="situation">Admissions counselor reviewing transfer student application with complex credit evaluation.</div>
+<div class="ai-response"><strong>Go2 Coach:</strong> This transfer student has 64 credits from 3 institutions. Auto-evaluated: 48 credits transfer directly (matched to catalog), 8 credits need department review (non-standard course titles), 8 credits are electives (accept as general electives). Similar applications take counselors 2 hours -- this pre-evaluation saves ~80 min. Flag the 8 review credits to department chairs.</div>
+</div>
+<div class="coaching-card">
+<div class="scenario">Registrar -- FERPA Compliance</div>
+<div class="situation">Parent calling to get their adult student's grade information.</div>
+<div class="ai-response"><strong>Go2 Coach:</strong> FERPA reminder: student is 19 (adult). Cannot release academic records to parent without signed FERPA waiver on file. Check: no waiver on file. Script: "I understand your concern. Once your student is 18, we need their written consent to share academic information. I can help them set up a FERPA release form -- it takes about 5 minutes online."</div>
+</div>
+<div class="coaching-card">
+<div class="scenario">Financial Aid -- Award Adjustment</div>
+<div class="situation">Student requesting financial aid adjustment due to family income change.</div>
+<div class="ai-response"><strong>Go2 Coach:</strong> Professional Judgment appeal process: (1) Verify the income change qualifies (job loss, medical, divorce -- this is job loss). (2) Required docs: termination letter, last 2 pay stubs, current income estimate. (3) Use PJ form v3.2 (updated Jan 2026). This student's current EFC: $12,400. Estimated adjusted EFC: ~$4,200 based on reported change. Could qualify for additional $8,200 in need-based aid.</div>
+</div>
+<div class="coaching-card">
+<div class="scenario">Compliance -- Accreditation Data</div>
+<div class="situation">Regional accreditation review in 3 months. Data collection behind schedule.</div>
+<div class="ai-response"><strong>Go2 Coach:</strong> Accreditation self-study status: 7 of 12 standards have complete evidence. Missing: Standard 4 (student outcomes -- need graduation/retention data pull), Standard 8 (institutional resources -- need 3-year budget comparison), Standard 11 (assessment -- 4 program reviews outstanding). I've auto-compiled Standards 4 and 8 data from your SIS and finance systems. Draft review ready.</div>
+</div>
+</div>
+</div>
+</section>
+
+<section style="background:var(--surface)">
+<div class="container">
+<div class="section-label">Reporting Automation</div>
+<div class="section-title">Reports that write themselves from your existing data</div>
+<div class="report-grid">
+<div class="report-item"><div class="ri">&#128202;</div><div><h4>IPEDS Reporting</h4><p>Fall enrollment, completions, financial aid, graduation rates auto-compiled from SIS and financial systems.</p></div><div class="rs">12 hrs saved per cycle</div></div>
+<div class="report-item"><div class="ri">&#128203;</div><div><h4>State Reporting</h4><p>State-mandated enrollment, FTE, and outcome reports auto-generated in required format.</p></div><div class="rs">8 hrs saved per cycle</div></div>
+<div class="report-item"><div class="ri">&#128176;</div><div><h4>Financial Aid Reconciliation</h4><p>Pell Grant, Direct Loan, and work-study reconciliation auto-matched with disbursement records.</p></div><div class="rs">20 hrs saved monthly</div></div>
+<div class="report-item"><div class="ri">&#127891;</div><div><h4>Academic Program Review</h4><p>Enrollment trends, completion rates, student outcomes, and labor market data compiled per program.</p></div><div class="rs">3 days saved per review</div></div>
+<div class="report-item"><div class="ri">&#128272;</div><div><h4>Clery Act Compliance</h4><p>Crime statistics, policy statements, and notification logs compiled for Annual Security Report.</p></div><div class="rs">Always audit-ready</div></div>
+</div>
+</div>
+</section>
+
+<section id="roi">
+<div class="container">
+<div class="section-label">ROI Calculator</div>
+<div class="section-title">Calculate your institution's savings</div>
+<div class="roi-calc">
+<div class="roi-inputs">
+<label>Student enrollment <span class="val" id="v1">3,500</span></label>
+<input type="range" id="s1" min="200" max="30000" step="100" value="3500" oninput="calcROI()">
+<label>Admin/staff headcount <span class="val" id="v2">45</span></label>
+<input type="range" id="s2" min="5" max="300" value="45" oninput="calcROI()">
+<label>Applications/year <span class="val" id="v3">4,200</span></label>
+<input type="range" id="s3" min="200" max="50000" step="100" value="4200" oninput="calcROI()">
+<label>Active grants <span class="val" id="v4">8</span></label>
+<input type="range" id="s4" min="0" max="50" value="8" oninput="calcROI()">
+</div>
+<div class="roi-results">
+<h3>Monthly Impact</h3>
+<div class="roi-row"><span class="rl">Enrollment processing savings</span><span class="rv" id="r1">--</span></div>
+<div class="roi-row"><span class="rl">Admin automation</span><span class="rv" id="r2">--</span></div>
+<div class="roi-row"><span class="rl">Compliance documentation</span><span class="rv" id="r3">--</span></div>
+<div class="roi-row"><span class="rl">Grant management efficiency</span><span class="rv" id="r4">--</span></div>
+<div class="roi-total"><div class="amount" id="roiTotal">--</div><div class="period">estimated monthly savings</div></div>
+</div>
+</div>
+</div>
+</section>
+
+<footer><div class="container"><p><a href="#">Go2</a> -- FERPA-compliant AI for education. <a href="#">Schedule a demo</a></p></div></footer>
+
+<script>
+const funnelDetails=[
+{t:'Inquiry Stage -- 4,200 prospects',d:'28% of inquiries never start an application. Top reasons: no timely follow-up (avg response time: 3.2 days), generic communication, information overload.',fix:'Go2 automates personalized follow-up within 2 hours. Response rate increases 34%. Coaches admissions staff on high-intent signals (multiple page views, financial aid calculator usage).'},
+{t:'Application Started -- 28% drop-off',d:'1,176 prospects started but never finished. Avg completion time: 34 minutes. Drop-off points: essay question (42%), transcript upload (28%), recommendation request (18%).',fix:'Go2 sends targeted nudges at exact drop-off points. "You\'re 80% done -- the essay is the last major step." Auto-saves progress and sends reminders. Recovery rate: 23% of abandoned apps.'},
+{t:'Application Completed -- 33% drop-off',d:'Admissions review takes avg 12 days. Applicants applying to 4.2 schools on average. Speed matters.',fix:'Go2 auto-screens against baseline criteria (GPA, test scores, prerequisites). Pre-qualified applications routed to committee in 24 hours instead of 12 days. Decision turnaround: 3 days.'},
+{t:'Accepted -- 21% drop-off here (melt)',d:'504 accepted students never deposit. Top reasons: competing offers (38%), financial concerns (34%), communication gaps (28%).',fix:'Go2 coaches yield staff on personalized outreach. Identifies at-risk accepted students (no portal login in 7 days, no FAFSA filed). Triggers targeted financial aid communication, campus visit invitations, and peer connections.'},
+{t:'Deposit Paid -- still losing 4%',d:'168 deposited students don\'t enroll. "Summer melt" driven by life changes, financial issues, and orientation no-shows.',fix:'Go2 maintains engagement through orientation. Auto-detects disengagement signals (missed orientation, no course registration, no housing deposit). Coaches staff on intervention calls. Melt rate drops from 15% to 4%.'},
+{t:'Enrolled -- 924 students',d:'Current yield: 22%. National average for similar institutions: 28%. Closing that gap = 252 additional students.',fix:'Go2\'s full-funnel optimization targets a realistic 26% yield. At current application volume, that\'s 168 additional enrolled students. At avg tuition of $18K, that\'s $3M in additional revenue. Go2 cost: $19K/month.'}
+];
+function showFunnel(i){
+const d=document.getElementById('funnelDetail');
+d.innerHTML=`<h4>${funnelDetails[i].t}</h4><p style="color:var(--text-dim);margin:8px 0">${funnelDetails[i].d}</p><p style="margin-top:12px"><strong style="color:var(--primary)">Go2 Solution:</strong> <span style="color:var(--text-dim)">${funnelDetails[i].fix}</span></p>`;
+d.classList.add('active');
+}
+
+function calcROI(){
+const students=+document.getElementById('s1').value;
+const staff=+document.getElementById('s2').value;
+const apps=+document.getElementById('s3').value;
+const grants=+document.getElementById('s4').value;
+document.getElementById('v1').textContent=students.toLocaleString();
+document.getElementById('v2').textContent=staff;
+document.getElementById('v3').textContent=apps.toLocaleString();
+document.getElementById('v4').textContent=grants;
+const enrollSave=Math.round(apps*0.42*15/60*28);
+const adminSave=Math.round(staff*6*22*0.35);
+const compSave=Math.round(staff*4*28*0.4);
+const grantSave=Math.round(grants*16*45);
+document.getElementById('r1').textContent='$'+enrollSave.toLocaleString();
+document.getElementById('r2').textContent='$'+adminSave.toLocaleString();
+document.getElementById('r3').textContent='$'+compSave.toLocaleString();
+document.getElementById('r4').textContent='$'+grantSave.toLocaleString();
+document.getElementById('roiTotal').textContent='$'+(enrollSave+adminSave+compSave+grantSave).toLocaleString();
+}
+calcROI();
+</script>
+</body>
+</html>

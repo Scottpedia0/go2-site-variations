@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Waze for Work (v173)</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#0a0c10;--surface:#10131a;--surface2:#171c28;--waze-blue:#33ccff;--waze-purple:#a855f7;
+--waze-green:#22c55e;--waze-orange:#f97316;--road:#1e293b;
+--white:#f1f5f9;--muted:#64748b;--platinum:#94a3b8;
+}
+body{font-family:'Inter','Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--white);overflow-x:hidden;line-height:1.7}
+a{color:var(--waze-blue);text-decoration:none}
+
+/* ROAD PATTERN BG */
+.road-bg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.road-line{position:absolute;width:2px;background:rgba(51,204,255,.03);animation:roadScroll 8s linear infinite}
+.road-line:nth-child(1){left:10%;height:100px;top:-100px;animation-delay:0s}
+.road-line:nth-child(2){left:30%;height:80px;top:-80px;animation-delay:1.5s}
+.road-line:nth-child(3){left:50%;height:120px;top:-120px;animation-delay:3s}
+.road-line:nth-child(4){left:70%;height:90px;top:-90px;animation-delay:4.5s}
+.road-line:nth-child(5){left:90%;height:110px;top:-110px;animation-delay:6s}
+@keyframes roadScroll{0%{transform:translateY(-100px)}100%{transform:translateY(calc(100vh + 200px))}}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:1.25rem 2rem;display:flex;justify-content:space-between;align-items:center;background:rgba(10,12,16,.9);backdrop-filter:blur(20px);border-bottom:1px solid rgba(51,204,255,.06)}
+.logo{font-size:1.4rem;font-weight:700}.logo span{color:var(--waze-blue)}
+.nav-tag{font-size:.65rem;text-transform:uppercase;letter-spacing:.15em;color:var(--waze-blue);background:rgba(51,204,255,.08);padding:.25rem .75rem;border-radius:20px;border:1px solid rgba(51,204,255,.15)}
+.nav-cta{padding:.6rem 1.5rem;background:var(--waze-blue);color:#000;border:none;border-radius:6px;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .3s}
+.nav-cta:hover{box-shadow:0 0 30px rgba(51,204,255,.35)}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:8rem 2rem 6rem;position:relative;z-index:1}
+.hero::before{content:'';position:absolute;top:10%;left:50%;transform:translateX(-50%);width:900px;height:900px;background:radial-gradient(circle,rgba(51,204,255,.04),rgba(168,85,247,.02),transparent 70%);pointer-events:none}
+
+.hero h1{font-size:clamp(2.4rem,6vw,4.5rem);font-weight:800;line-height:1.1;max-width:850px;margin-bottom:1.5rem;letter-spacing:-.03em}
+.hero h1 .blue{color:var(--waze-blue)}
+.hero h1 .purple{color:var(--waze-purple)}
+.hero-sub{font-size:clamp(1.05rem,2vw,1.3rem);color:var(--platinum);max-width:620px;margin-bottom:3rem;line-height:1.8}
+.hero-sub strong{color:var(--white)}
+.hero-ctas{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.9rem 2rem;border-radius:8px;font-size:.95rem;font-weight:600;cursor:pointer;border:none;transition:all .3s}
+.btn-blue{background:var(--waze-blue);color:#000}
+.btn-blue:hover{box-shadow:0 8px 40px rgba(51,204,255,.3);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--platinum);border:1px solid rgba(255,255,255,.1)}
+.btn-ghost:hover{border-color:var(--waze-blue);color:var(--waze-blue)}
+
+/* COMPARISON TABLE */
+.comparison{padding:6rem 2rem;position:relative;z-index:1}
+.comparison .container{max-width:1000px;margin:0 auto}
+.section-label{text-transform:uppercase;letter-spacing:.2em;font-size:.7rem;color:var(--waze-blue);margin-bottom:.75rem;font-weight:600}
+h2{font-size:clamp(1.7rem,4vw,2.6rem);font-weight:700;margin-bottom:1rem;letter-spacing:-.02em}
+.lead{color:var(--platinum);font-size:1.05rem;max-width:600px;margin-bottom:3rem;line-height:1.7}
+
+.compare-table{width:100%;border-collapse:collapse;margin:2rem 0}
+.compare-table th{text-align:left;padding:1rem 1.5rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);border-bottom:2px solid rgba(255,255,255,.06)}
+.compare-table th:nth-child(2){color:var(--waze-blue)}
+.compare-table th:nth-child(3){color:var(--waze-purple)}
+.compare-table td{padding:1.25rem 1.5rem;border-bottom:1px solid rgba(255,255,255,.03);font-size:.9rem;color:var(--platinum);vertical-align:top}
+.compare-table td:first-child{font-weight:600;color:var(--white);width:200px}
+.compare-table tr:hover td{background:rgba(255,255,255,.01)}
+.compare-table .waze-col{background:rgba(51,204,255,.02)}
+.compare-table .go2-col{background:rgba(168,85,247,.02)}
+
+/* SIDE BY SIDE VISUAL */
+.sidebyside{padding:6rem 2rem;background:var(--surface);position:relative;z-index:1}
+.sidebyside .container{max-width:1100px;margin:0 auto}
+.sbs-grid{display:grid;grid-template-columns:1fr 60px 1fr;gap:0;margin:3rem 0;align-items:start}
+@media(max-width:768px){.sbs-grid{grid-template-columns:1fr;gap:2rem}.sbs-divider{display:none}}
+
+.sbs-card{background:var(--bg);border-radius:16px;padding:2.5rem;border:1px solid rgba(255,255,255,.04);overflow:hidden;position:relative}
+.sbs-card.waze{border-top:3px solid var(--waze-blue)}
+.sbs-card.go2{border-top:3px solid var(--waze-purple)}
+.sbs-card .sbs-header{display:flex;align-items:center;gap:.75rem;margin-bottom:2rem}
+.sbs-card .sbs-logo{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:800}
+.sbs-card.waze .sbs-logo{background:rgba(51,204,255,.1);color:var(--waze-blue)}
+.sbs-card.go2 .sbs-logo{background:rgba(168,85,247,.1);color:var(--waze-purple)}
+.sbs-card .sbs-name{font-size:1.2rem;font-weight:700}
+.sbs-card .sbs-tagline{font-size:.8rem;color:var(--muted)}
+
+.sbs-divider{display:flex;align-items:center;justify-content:center;position:relative}
+.sbs-divider::before{content:'';position:absolute;top:0;bottom:0;left:50%;width:1px;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.06),transparent)}
+.sbs-equals{width:40px;height:40px;border-radius:50%;background:var(--surface2);border:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:1rem;color:var(--muted);z-index:1}
+
+.sbs-steps{list-style:none;display:grid;gap:1.25rem}
+.sbs-step{display:flex;gap:1rem;align-items:flex-start}
+.sbs-step-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0}
+.sbs-card.waze .sbs-step-num{background:rgba(51,204,255,.1);color:var(--waze-blue)}
+.sbs-card.go2 .sbs-step-num{background:rgba(168,85,247,.1);color:var(--waze-purple)}
+.sbs-step h4{font-size:.9rem;font-weight:600;margin-bottom:.25rem}
+.sbs-step p{color:var(--muted);font-size:.8rem;line-height:1.5}
+
+/* NETWORK EFFECTS */
+.network{padding:6rem 2rem;position:relative;z-index:1}
+.network .container{max-width:900px;margin:0 auto}
+.net-visual{margin:3rem 0;text-align:center}
+.net-rings{position:relative;width:300px;height:300px;margin:0 auto}
+.net-ring{position:absolute;border-radius:50%;border:1px solid;display:flex;align-items:center;justify-content:center;animation:ringPulse 4s ease infinite}
+.net-ring:nth-child(1){inset:0;border-color:rgba(168,85,247,.3);animation-delay:0s}
+.net-ring:nth-child(2){inset:30px;border-color:rgba(168,85,247,.4);animation-delay:.5s}
+.net-ring:nth-child(3){inset:60px;border-color:rgba(168,85,247,.5);animation-delay:1s}
+.net-ring:nth-child(4){inset:90px;border-color:rgba(168,85,247,.6);animation-delay:1.5s}
+.net-ring:nth-child(5){inset:115px;background:rgba(168,85,247,.08);border-color:var(--waze-purple)}
+@keyframes ringPulse{0%,100%{opacity:1}50%{opacity:.5}}
+.net-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:.8rem;color:var(--waze-purple);font-weight:700;text-align:center;z-index:2}
+
+.net-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin:3rem 0}
+@media(max-width:768px){.net-grid{grid-template-columns:1fr}}
+.net-card{background:var(--surface);border:1px solid rgba(255,255,255,.04);border-radius:12px;padding:1.75rem;text-align:center;transition:all .4s}
+.net-card:hover{border-color:rgba(168,85,247,.2);transform:translateY(-2px)}
+.net-card .net-icon{font-size:2rem;margin-bottom:.75rem}
+.net-card h3{font-size:.95rem;font-weight:700;margin-bottom:.5rem}
+.net-card p{color:var(--muted);font-size:.82rem;line-height:1.6}
+
+/* FLYWHEEL */
+.flywheel{padding:6rem 2rem;background:var(--surface);position:relative;z-index:1}
+.flywheel .container{max-width:1000px;margin:0 auto}
+.fw-stages{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin:3rem 0;position:relative}
+@media(max-width:768px){.fw-stages{grid-template-columns:1fr 1fr;gap:1.5rem}}
+.fw-stage{text-align:center;padding:2rem 1rem;position:relative}
+.fw-stage:not(:last-child)::after{content:'→';position:absolute;right:-8px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:1.2rem;z-index:2}
+@media(max-width:768px){.fw-stage:not(:last-child)::after{display:none}}
+.fw-num{width:60px;height:60px;border-radius:50%;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800}
+.fw-stage:nth-child(1) .fw-num{background:rgba(51,204,255,.1);color:var(--waze-blue);border:1px solid rgba(51,204,255,.2)}
+.fw-stage:nth-child(2) .fw-num{background:rgba(34,197,94,.1);color:var(--waze-green);border:1px solid rgba(34,197,94,.2)}
+.fw-stage:nth-child(3) .fw-num{background:rgba(168,85,247,.1);color:var(--waze-purple);border:1px solid rgba(168,85,247,.2)}
+.fw-stage:nth-child(4) .fw-num{background:rgba(249,115,22,.1);color:var(--waze-orange);border:1px solid rgba(249,115,22,.2)}
+.fw-stage h3{font-size:.95rem;font-weight:700;margin-bottom:.5rem}
+.fw-stage p{color:var(--muted);font-size:.8rem;line-height:1.5}
+.fw-loop{text-align:center;margin-top:1rem;padding:1rem;background:rgba(168,85,247,.03);border:1px dashed rgba(168,85,247,.15);border-radius:12px}
+.fw-loop p{font-size:.9rem;color:var(--waze-purple);font-weight:600}
+.fw-loop span{font-size:.8rem;color:var(--muted);font-weight:400}
+
+/* HOW WAZE WON */
+.waze-story{padding:6rem 2rem;position:relative;z-index:1}
+.waze-story .container{max-width:800px;margin:0 auto}
+.timeline{display:grid;gap:2rem;margin:2.5rem 0}
+.tl-item{display:grid;grid-template-columns:100px 1fr;gap:1.5rem;align-items:start}
+.tl-year{font-size:1.5rem;font-weight:800;color:var(--waze-blue);text-align:right;padding-top:.25rem}
+.tl-content{border-left:2px solid rgba(51,204,255,.15);padding-left:1.5rem}
+.tl-content h3{font-size:1rem;font-weight:700;margin-bottom:.4rem}
+.tl-content p{color:var(--muted);font-size:.88rem;line-height:1.6}
+
+/* RESULTS */
+.results{padding:6rem 2rem;background:var(--surface);position:relative;z-index:1}
+.results .container{max-width:1000px;margin:0 auto;text-align:center}
+.result-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;margin:2.5rem 0}
+@media(max-width:768px){.result-row{grid-template-columns:repeat(2,1fr)}}
+.result-item{padding:2rem 1rem}
+.result-num{font-size:2.8rem;font-weight:800;line-height:1;margin-bottom:.5rem;background:linear-gradient(135deg,var(--waze-blue),var(--waze-purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.result-label{color:var(--muted);font-size:.82rem}
+
+/* PRIVACY BANNER */
+.privacy-banner{padding:3rem 2rem;position:relative;z-index:1}
+.privacy-banner .container{max-width:800px;margin:0 auto;background:var(--surface);border:1px solid rgba(255,255,255,.04);border-radius:16px;padding:2.5rem;display:flex;gap:2rem;align-items:center}
+@media(max-width:768px){.privacy-banner .container{flex-direction:column;text-align:center}}
+.privacy-icon{font-size:3rem;flex-shrink:0}
+.privacy-banner h3{font-size:1.1rem;font-weight:700;margin-bottom:.5rem}
+.privacy-banner p{color:var(--muted);font-size:.9rem;line-height:1.6}
+
+/* FINAL CTA */
+.final-cta{padding:8rem 2rem;text-align:center;position:relative;z-index:1}
+.final-cta::before{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(168,85,247,.05),transparent 70%);pointer-events:none}
+.final-cta h2{font-size:clamp(2rem,4.5vw,3.2rem);margin-bottom:1rem}
+.final-cta h2 .blue{color:var(--waze-blue)}
+.final-cta h2 .purple{color:var(--waze-purple)}
+.final-cta p{color:var(--platinum);font-size:1.1rem;max-width:520px;margin:0 auto 2.5rem}
+
+/* FOOTER */
+footer{padding:3rem 2rem;border-top:1px solid rgba(255,255,255,.04);text-align:center;color:var(--muted);font-size:.8rem;position:relative;z-index:1}
+footer a{color:var(--waze-blue)}
+
+/* REVEAL */
+.reveal{opacity:0;transform:translateY(30px);transition:all .7s cubic-bezier(.16,1,.3,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<div class="road-bg">
+  <div class="road-line"></div>
+  <div class="road-line"></div>
+  <div class="road-line"></div>
+  <div class="road-line"></div>
+  <div class="road-line"></div>
+</div>
+
+<nav>
+  <div class="logo">Go<span>2</span></div>
+  <div class="nav-tag">The Waze of Work</div>
+  <button class="nav-cta">Feed Your AI</button>
+</nav>
+
+<!-- ════════ HERO ════════ -->
+<section class="hero">
+  <h1>Waze crowdsourced <span class="blue">driving data</span><br>and optimized every route.<br>Go2 crowdsources <span class="purple">work data</span><br>and optimizes everything.</h1>
+  <p class="hero-sub">Waze proved that when millions contribute data, everyone gets smarter routes. Go2 applies the same principle to knowledge work: <strong>crowdsourced work intelligence that makes every team's AI smarter.</strong></p>
+  <div class="hero-ctas">
+    <button class="btn btn-blue">Feed Your AI</button>
+    <button class="btn btn-ghost">See the Parallel</button>
+  </div>
+</section>
+
+<!-- ════════ SIDE-BY-SIDE COMPARISON ════════ -->
+<section class="comparison reveal">
+  <div class="container">
+    <div class="section-label">The Parallel</div>
+    <h2>Same playbook. Different domain.</h2>
+    <p class="lead">The Waze model is one of the most successful data plays in history. Go2 brings it to work.</p>
+
+    <table class="compare-table">
+      <thead>
+        <tr><th></th><th>Waze (Driving)</th><th>Go2 (Work)</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Data Source</td>
+          <td class="waze-col">Millions of drivers' GPS data</td>
+          <td class="go2-col">Thousands of workers' desktop activity</td>
+        </tr>
+        <tr>
+          <td>What's Captured</td>
+          <td class="waze-col">Speed, location, stops, incidents, route choices</td>
+          <td class="go2-col">App usage, workflows, communication, process steps</td>
+        </tr>
+        <tr>
+          <td>What's Generated</td>
+          <td class="waze-col">Optimal routes, ETA predictions, hazard alerts</td>
+          <td class="go2-col">AI coaching, auto-SOPs, automation discovery, agent training</td>
+        </tr>
+        <tr>
+          <td>Network Effect</td>
+          <td class="waze-col">More drivers = better routes for everyone</td>
+          <td class="go2-col">More workers = smarter AI for every team</td>
+        </tr>
+        <tr>
+          <td>Privacy Model</td>
+          <td class="waze-col">Anonymous aggregation of driving data</td>
+          <td class="go2-col">Local-first, encrypted, worker-controlled</td>
+        </tr>
+        <tr>
+          <td>Value Creation</td>
+          <td class="waze-col">Saved 10+ minutes per commute, billions in fuel</td>
+          <td class="go2-col">23% productivity gain, $4,200/employee/year</td>
+        </tr>
+        <tr>
+          <td>Outcome</td>
+          <td class="waze-col">$1.1B acquisition by Google</td>
+          <td class="go2-col">Making AI actually work for SMBs</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ════════ SIDE-BY-SIDE VISUAL ════════ -->
+<section class="sidebyside reveal">
+  <div class="container">
+    <div class="section-label" style="text-align:center">How it Works</div>
+    <h2 style="text-align:center">The data flywheel, side by side</h2>
+
+    <div class="sbs-grid">
+      <div class="sbs-card waze">
+        <div class="sbs-header">
+          <div class="sbs-logo">W</div>
+          <div><div class="sbs-name">Waze</div><div class="sbs-tagline">Crowdsourced Navigation</div></div>
+        </div>
+        <ul class="sbs-steps">
+          <li class="sbs-step"><div class="sbs-step-num">1</div><div><h4>Collect</h4><p>Phone GPS tracks speed, route, and stops automatically while you drive</p></div></li>
+          <li class="sbs-step"><div class="sbs-step-num">2</div><div><h4>Aggregate</h4><p>Millions of trips create real-time traffic maps and pattern databases</p></div></li>
+          <li class="sbs-step"><div class="sbs-step-num">3</div><div><h4>Optimize</h4><p>AI finds faster routes, predicts delays, reroutes in real time</p></div></li>
+          <li class="sbs-step"><div class="sbs-step-num">4</div><div><h4>Compound</h4><p>Every driver makes the map smarter. Network effects kick in. Routes get 40% faster.</p></div></li>
+        </ul>
+      </div>
+
+      <div class="sbs-divider"><div class="sbs-equals">=</div></div>
+
+      <div class="sbs-card go2">
+        <div class="sbs-header">
+          <div class="sbs-logo">G2</div>
+          <div><div class="sbs-name">Go2</div><div class="sbs-tagline">Crowdsourced Work Intelligence</div></div>
+        </div>
+        <ul class="sbs-steps">
+          <li class="sbs-step"><div class="sbs-step-num">1</div><div><h4>Capture</h4><p>Desktop agent observes app usage, workflows, and communication patterns as you work</p></div></li>
+          <li class="sbs-step"><div class="sbs-step-num">2</div><div><h4>Structure</h4><p>Work data becomes process maps, tool graphs, skill taxonomies, time patterns</p></div></li>
+          <li class="sbs-step"><div class="sbs-step-num">3</div><div><h4>Activate</h4><p>AI delivers coaching, generates SOPs, discovers automations, trains agents</p></div></li>
+          <li class="sbs-step"><div class="sbs-step-num">4</div><div><h4>Compound</h4><p>Every worker makes the system smarter. Cross-team patterns emerge. AI gets 23% better.</p></div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ NETWORK EFFECTS ════════ -->
+<section class="network reveal">
+  <div class="container" style="text-align:center">
+    <div class="section-label">The Moat</div>
+    <h2>Network effects: the most powerful force in tech</h2>
+    <p class="lead" style="max-width:600px;margin:0 auto 3rem">Waze didn't win because of better maps. It won because every new driver made every other driver's experience better. Go2 works the same way.</p>
+
+    <div class="net-visual">
+      <div class="net-rings">
+        <div class="net-ring"></div>
+        <div class="net-ring"></div>
+        <div class="net-ring"></div>
+        <div class="net-ring"></div>
+        <div class="net-ring"></div>
+        <div class="net-center">More<br>Workers<br>= Smarter<br>AI</div>
+      </div>
+    </div>
+
+    <div class="net-grid">
+      <div class="net-card">
+        <div class="net-icon">🔄</div>
+        <h3>Cross-Team Patterns</h3>
+        <p>When sales and engineering both use Go2, you discover workflow patterns that span departments. No survey could surface these.</p>
+      </div>
+      <div class="net-card">
+        <div class="net-icon">📈</div>
+        <h3>Best Practice Amplification</h3>
+        <p>When one team finds a faster way, Go2 detects it and suggests it to similar teams. Knowledge spreads automatically.</p>
+      </div>
+      <div class="net-card">
+        <div class="net-icon">🧠</div>
+        <h3>Smarter AI Models</h3>
+        <p>Aggregate patterns across industries improve Go2's AI for everyone. Your AI gets smarter because thousands of others are contributing data too.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ FLYWHEEL ════════ -->
+<section class="flywheel reveal">
+  <div class="container">
+    <div class="section-label" style="text-align:center">The Flywheel</div>
+    <h2 style="text-align:center">How Go2's data compound over time</h2>
+    <p class="lead" style="text-align:center;max-width:600px;margin:0 auto 1rem">Every week, the value accelerates. Here's why.</p>
+
+    <div class="fw-stages">
+      <div class="fw-stage">
+        <div class="fw-num">1</div>
+        <h3>More Data</h3>
+        <p>Each worker adds hundreds of workflow data points daily</p>
+      </div>
+      <div class="fw-stage">
+        <div class="fw-num">2</div>
+        <h3>Better Patterns</h3>
+        <p>AI detects increasingly nuanced process and productivity signals</p>
+      </div>
+      <div class="fw-stage">
+        <div class="fw-num">3</div>
+        <h3>Smarter Outputs</h3>
+        <p>Coaching, SOPs, automations, and agents become more accurate</p>
+      </div>
+      <div class="fw-stage">
+        <div class="fw-num">4</div>
+        <h3>Higher Adoption</h3>
+        <p>Workers see value, engage more, generating even richer data</p>
+      </div>
+    </div>
+
+    <div class="fw-loop">
+      <p>This is the same flywheel that made Waze unstoppable.</p>
+      <span>Every rotation makes Go2 more valuable and harder to replicate.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ HOW WAZE WON ════════ -->
+<section class="waze-story reveal">
+  <div class="container">
+    <div class="section-label">The Precedent</div>
+    <h2>How Waze proved the model</h2>
+    <p style="color:var(--platinum);font-size:1rem;margin-bottom:2rem">The Waze story isn't just an analogy. It's a proven playbook for turning crowdsourced data into massive value.</p>
+
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-year">2008</div>
+        <div class="tl-content">
+          <h3>Launch: The data is invisible</h3>
+          <p>GPS devices had maps, but no real-time traffic data. Drivers had no way to share what they saw. The data existed in millions of phones but wasn't being captured.</p>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-year">2009</div>
+        <div class="tl-content">
+          <h3>Capture: Passive data collection begins</h3>
+          <p>Waze's app runs in the background. No effort required. Just drive. The phone captures speed, route, and stops automatically.</p>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-year">2011</div>
+        <div class="tl-content">
+          <h3>Network effect: Critical mass reached</h3>
+          <p>With millions of users, Waze's maps became more accurate than Google's. Real-time data beats static maps every time.</p>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-year">2013</div>
+        <div class="tl-content">
+          <h3>Exit: Google acquires for $1.1B</h3>
+          <p>The data asset was so valuable that Google paid $1.1 billion. Not for the app. For the crowdsourced data network.</p>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-year">2026</div>
+        <div class="tl-content">
+          <h3>Go2: The same play, for work</h3>
+          <p>47K workers already generating work data. The network effect is building. The data moat is deepening. AI tools are getting fed.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ RESULTS ════════ -->
+<section class="results reveal">
+  <div class="container">
+    <div class="section-label">The Numbers</div>
+    <h2>The data network is already working</h2>
+
+    <div class="result-row">
+      <div class="result-item">
+        <div class="result-num">47K+</div>
+        <div class="result-label">Workers contributing data</div>
+      </div>
+      <div class="result-item">
+        <div class="result-num">23%</div>
+        <div class="result-label">Average productivity gain</div>
+      </div>
+      <div class="result-item">
+        <div class="result-num">$4,200</div>
+        <div class="result-label">Saved per employee/year</div>
+      </div>
+      <div class="result-item">
+        <div class="result-num">89%</div>
+        <div class="result-label">Worker satisfaction</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ WHAT THE DATA POWERS ════════ -->
+<section class="network reveal" style="padding:6rem 2rem">
+  <div class="container" style="text-align:left">
+    <div class="section-label">Downstream Value</div>
+    <h2>One data network. Five superpowers.</h2>
+    <p style="color:var(--platinum);font-size:1.05rem;margin-bottom:2.5rem;max-width:600px">Just like Waze's driving data powers navigation, ETA, and hazard detection simultaneously, Go2's work data powers multiple AI capabilities at once.</p>
+
+    <div class="net-grid" style="grid-template-columns:1fr 1fr;gap:1.25rem">
+      <div class="net-card" style="text-align:left;padding:1.75rem">
+        <h3 style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem"><span style="font-size:1.3rem">🎯</span> Real-Time AI Coaching</h3>
+        <p>Like Waze saying "turn left in 200 meters," Go2 delivers contextual nudges: "You've been context-switching every 3 minutes — try a 25-min focus block." Personalized to each worker's actual patterns.</p>
+      </div>
+      <div class="net-card" style="text-align:left;padding:1.75rem">
+        <h3 style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem"><span style="font-size:1.3rem">📋</span> Auto-Generated SOPs</h3>
+        <p>Like Waze building maps from driving data, Go2 builds process documentation from work data. Living SOPs that update automatically as workflows evolve. Never stale.</p>
+      </div>
+      <div class="net-card" style="text-align:left;padding:1.75rem">
+        <h3 style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem"><span style="font-size:1.3rem">⚡</span> Automation Discovery</h3>
+        <p>Like Waze detecting traffic patterns, Go2 detects work patterns. Finds tasks that are repeated 50+ times a day across your team, then builds the automations to eliminate them.</p>
+      </div>
+      <div class="net-card" style="text-align:left;padding:1.75rem">
+        <h3 style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem"><span style="font-size:1.3rem">🤖</span> AI Agent Training</h3>
+        <p>Like Waze enabling self-driving car navigation, Go2 enables self-working AI agents. Your human workflows become training data for agents that can execute them.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ GETTING STARTED ════════ -->
+<section class="flywheel reveal" style="background:var(--bg)">
+  <div class="container">
+    <div class="section-label" style="text-align:center">Getting Started</div>
+    <h2 style="text-align:center">As easy as installing Waze</h2>
+    <p style="color:var(--platinum);font-size:1rem;text-align:center;max-width:550px;margin:0 auto 2rem">Waze didn't ask drivers to fill out surveys about their commute. It just worked. Go2 does the same for knowledge work.</p>
+
+    <div class="fw-stages" style="grid-template-columns:repeat(3,1fr)">
+      <div class="fw-stage">
+        <div class="fw-num" style="font-size:1rem">5 min</div>
+        <h3>Install</h3>
+        <p>Lightweight desktop agent. Mac or Windows. No IT changes needed. Works with your existing stack.</p>
+      </div>
+      <div class="fw-stage">
+        <div class="fw-num" style="background:rgba(34,197,94,.1);color:var(--waze-green);border-color:rgba(34,197,94,.2);font-size:1rem">24 hrs</div>
+        <h3>First Insights</h3>
+        <p>Patterns start emerging within a day. Coaching tips flow. Process maps begin building.</p>
+      </div>
+      <div class="fw-stage">
+        <div class="fw-num" style="background:rgba(168,85,247,.1);color:var(--waze-purple);border-color:rgba(168,85,247,.2);font-size:1rem">Week 2</div>
+        <h3>Full Intelligence</h3>
+        <p>Complete workflow maps. Cross-team patterns. Automation opportunities. Agent training data ready.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ INTEGRATIONS ════════ -->
+<section class="flywheel reveal">
+  <div class="container">
+    <div class="section-label" style="text-align:center">40+ Integrations</div>
+    <h2 style="text-align:center">Connects to your entire stack</h2>
+    <p style="color:var(--platinum);font-size:.95rem;text-align:center;max-width:550px;margin:0 auto 2rem">Just like Waze connects to Apple CarPlay, Android Auto, and Spotify, Go2 plugs into everything you use.</p>
+    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:.75rem;max-width:700px;margin:0 auto">
+      <span style="padding:.5rem 1rem;background:var(--bg);border:1px solid rgba(255,255,255,.04);border-radius:8px;font-size:.8rem;color:var(--muted)">Slack</span>
+      <span style="padding:.5rem 1rem;background:var(--bg);border:1px solid rgba(255,255,255,.04);border-radius:8px;font-size:.8rem;color:var(--muted)">Teams</span>
+      <span style="padding:.5rem 1rem;background:var(--bg);border:1px solid rgba(255,255,255,.04);border-radius:8px;font-size:.8rem;color:var(--muted)">Jira</span>
+      <span style="padding:.5rem 1rem;background:var(--bg);border:1px solid rgba(255,255,255,.04);border-radius:8px;font-size:.8rem;color:var(--muted)">Asana</span>
+      <span style="padding:.5rem 1rem;background:var(--bg);border:1px solid rgba(255,255,255,.04);border-radius:8px;font-size:.8rem;color:var(--muted)">Salesforce</span>
+      <span style="padding:.5rem 1rem;background:var(--bg);border:1px solid rgba(255,255,255,.04);border-radius:8px;font-size:.8rem;color:var(--muted)">HubSpot</span>
+      <span style="padding:.5rem 1rem;background:var(--bg);border:1px solid rgba(255,255,255,.04);border-radius:8px;font-size:.8rem;color:var(--muted)">GitHub</span>
+      <span style="padding:.5rem 1rem;background:var(--bg);border:1px solid rgba(255,255,255,.04);border-radius:8px;font-size:.8rem;color:var(--muted)">Notion</span>
+      <span style="padding:.5rem 1rem;background:var(--bg);border:1px solid rgba(255,255,255,.04);border-radius:8px;font-size:.8rem;color:var(--muted)">Figma</span>
+      <span style="padding:.5rem 1rem;background:var(--bg);border:1px solid rgba(255,255,255,.04);border-radius:8px;font-size:.8rem;color:var(--muted)">Google Workspace</span>
+      <span style="padding:.5rem 1rem;background:var(--bg);border:1px solid rgba(255,255,255,.04);border-radius:8px;font-size:.8rem;color:var(--muted)">Microsoft 365</span>
+      <span style="padding:.5rem 1rem;background:var(--bg);border:1px solid rgba(255,255,255,.04);border-radius:8px;font-size:.8rem;color:var(--muted)">Zoom</span>
+      <span style="padding:.5rem 1rem;background:var(--bg);border:1px solid rgba(255,255,255,.04);border-radius:8px;font-size:.8rem;color:var(--muted)">Linear</span>
+      <span style="padding:.5rem 1rem;background:var(--bg);border:1px solid rgba(255,255,255,.04);border-radius:8px;font-size:.8rem;color:var(--muted)">Confluence</span>
+      <span style="padding:.5rem 1rem;background:var(--bg);border:1px solid rgba(255,255,255,.04);border-radius:8px;font-size:.8rem;color:var(--muted)">+ 26 more</span>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ PRIVACY ════════ -->
+<section class="privacy-banner reveal">
+  <div class="container">
+    <div class="privacy-icon">🔐</div>
+    <div>
+      <h3>Privacy-first, like Waze was location-first</h3>
+      <p>Waze anonymized driving data. Go2 goes further: local-first processing, end-to-end encryption, worker-controlled data. Employees see what's captured, can pause or delete anytime. 89% satisfaction proves it works. This isn't surveillance. It's a fair exchange: contribute data, get smarter AI.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ FINAL CTA ════════ -->
+<section class="final-cta reveal">
+  <h2>Waze made every <span class="blue">driver</span> smarter.<br>Go2 makes every <span class="purple">team</span> smarter.</h2>
+  <p>Join the 47,000+ workers already contributing to the work intelligence network. Deploy in 15 minutes.</p>
+  <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+    <button class="btn btn-blue">Feed Your AI</button>
+    <button class="btn btn-ghost">See a Demo</button>
+  </div>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2. The Waze of Work. <a href="#">Privacy</a> &middot; <a href="#">Security</a> &middot; <a href="#">About</a></p>
+</footer>
+
+<script>
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }});
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+
+</body>
+</html>

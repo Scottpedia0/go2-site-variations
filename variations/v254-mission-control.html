@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 Mission Control — AI Implementation</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;600;700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0d0f;color:#33ff33;font-family:'JetBrains Mono',monospace;overflow:hidden;height:100vh}
+
+.mc{display:grid;grid-template-columns:1fr 2fr 1fr;grid-template-rows:auto 1fr auto;height:100vh;gap:2px;padding:2px}
+@media(max-width:900px){.mc{grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr 1fr auto}}
+
+/* Top bar */
+.top-bar{grid-column:1/-1;background:#0d1117;border:1px solid #1a2332;padding:8px 16px;display:flex;justify-content:space-between;align-items:center;font-size:12px}
+.mission-title{font-size:16px;font-weight:800;color:#00d4ff;letter-spacing:2px;text-transform:uppercase}
+.top-right{display:flex;gap:20px;align-items:center}
+.top-right .met{color:#888}
+.utc-time{color:#ffd93d;font-weight:600}
+
+/* Panels */
+.panel{background:#0d1117;border:1px solid #1a2332;padding:12px;overflow:hidden;display:flex;flex-direction:column}
+.panel-header{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#888;border-bottom:1px solid #1a2332;padding-bottom:6px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.panel-header .status-light{width:8px;height:8px;border-radius:50%;display:inline-block}
+.status-green{background:#27c93f;box-shadow:0 0 6px #27c93f}
+.status-amber{background:#ffbd2e;box-shadow:0 0 6px #ffbd2e}
+.status-red{background:#ff5f56;box-shadow:0 0 6px #ff5f56}
+
+/* Countdown */
+.countdown{text-align:center;padding:8px 0}
+.countdown .label{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:2px}
+.countdown .time{font-size:36px;font-weight:800;color:#ffd93d;font-family:'JetBrains Mono',monospace;margin:4px 0}
+.countdown .phase{font-size:12px;color:#00d4ff}
+
+/* Flight director */
+.fd-messages{flex:1;overflow-y:auto;font-size:12px;line-height:1.8}
+.fd-messages::-webkit-scrollbar{width:4px}
+.fd-messages::-webkit-scrollbar-thumb{background:#1a2332}
+.fd-msg{padding:4px 0;border-bottom:1px solid #0d1117}
+.fd-msg .ts{color:#555}
+.fd-msg .sender{font-weight:700}
+.fd-msg .sender.fd{color:#ffd93d}
+.fd-msg .sender.capcom{color:#00d4ff}
+.fd-msg .sender.go{color:#27c93f}
+.fd-msg .sender.alert{color:#ff5f56}
+
+/* Telemetry */
+.telemetry-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1;overflow-y:auto}
+.tel-item{background:#080b0e;border:1px solid #1a2332;border-radius:4px;padding:8px;text-align:center}
+.tel-label{font-size:9px;color:#555;text-transform:uppercase;letter-spacing:1px}
+.tel-value{font-size:18px;font-weight:700;margin:2px 0}
+.tel-value.green{color:#27c93f}
+.tel-value.amber{color:#ffbd2e}
+.tel-value.red{color:#ff5f56}
+.tel-value.blue{color:#00d4ff}
+.tel-trend{font-size:10px;color:#555}
+
+/* Team status */
+.team-grid{flex:1;overflow-y:auto;font-size:11px}
+.team-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #0f1318}
+.team-name{color:#ccc}
+.team-status{font-weight:600}
+
+/* Center - main viz */
+.center-panel{display:flex;flex-direction:column}
+.main-viz{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
+
+/* Orbit visualization */
+.orbit-container{position:relative;width:300px;height:300px}
+.orbit-ring{position:absolute;border:1px solid rgba(0,212,255,0.15);border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%)}
+.orbit-ring:nth-child(1){width:100px;height:100px}
+.orbit-ring:nth-child(2){width:180px;height:180px}
+.orbit-ring:nth-child(3){width:260px;height:260px}
+.center-node{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;background:radial-gradient(circle,#00d4ff,#0066aa);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;z-index:5;box-shadow:0 0 20px rgba(0,212,255,0.4)}
+.orbit-node{position:absolute;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;z-index:3;animation:orbitSpin var(--dur) linear infinite;transform-origin:var(--ox) var(--oy)}
+@keyframes orbitSpin{to{transform:rotate(360deg)}}
+.orbit-label{position:absolute;font-size:9px;color:#888;white-space:nowrap;pointer-events:none}
+
+/* Progress stages */
+.stages{display:flex;gap:2px;padding:8px 0}
+.stage{flex:1;text-align:center;padding:6px 4px;font-size:9px;border-radius:3px;background:#0f1318;border:1px solid #1a2332;text-transform:uppercase;letter-spacing:1px}
+.stage.complete{background:#0a2010;border-color:#27c93f;color:#27c93f}
+.stage.active{background:#1a1800;border-color:#ffd93d;color:#ffd93d;animation:stagePulse 2s ease infinite}
+.stage.pending{color:#333}
+@keyframes stagePulse{0%,100%{opacity:1}50%{opacity:0.6}}
+
+/* CAPCOM messages */
+.capcom-feed{flex:1;overflow-y:auto;font-size:11px;line-height:1.8}
+.capcom-msg{padding:6px 0;border-bottom:1px solid #0f1318}
+.capcom-msg .coach-label{color:#7b61ff;font-weight:600;font-size:10px}
+.capcom-msg .msg-text{color:#aaa}
+.capcom-msg .msg-result{color:#27c93f;font-size:10px}
+
+/* Bottom bar */
+.bottom-bar{grid-column:1/-1;background:#0d1117;border:1px solid #1a2332;padding:8px 16px;display:flex;justify-content:space-between;align-items:center;font-size:11px}
+.systems-status{display:flex;gap:16px}
+.sys-item{display:flex;align-items:center;gap:4px}
+.launch-btn{background:linear-gradient(135deg,#ff5f56,#ff9f43);color:#fff;border:none;padding:8px 20px;border-radius:4px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:2px;transition:all 0.2s}
+.launch-btn:hover{transform:scale(1.05);box-shadow:0 0 20px rgba(255,95,86,0.4)}
+.launch-btn.launched{background:linear-gradient(135deg,#27c93f,#4ecdc4);animation:none}
+
+/* Celebration overlay */
+#celebration{position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+#celebration.show{display:flex}
+.cel-title{font-size:48px;font-weight:800;color:#ffd93d;animation:celPulse 1s ease infinite}
+@keyframes celPulse{0%,100%{transform:scale(1);text-shadow:0 0 20px rgba(255,217,61,0.5)}50%{transform:scale(1.05);text-shadow:0 0 40px rgba(255,217,61,0.8)}}
+.cel-sub{font-size:16px;color:#00d4ff;margin:12px 0}
+.cel-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0;max-width:500px}
+.cel-stat{text-align:center}
+.cel-stat .num{font-size:28px;font-weight:800;color:#27c93f}
+.cel-stat .lbl{font-size:10px;color:#888}
+.cel-close{background:none;border:1px solid #555;color:#fff;padding:10px 24px;border-radius:4px;font-family:inherit;cursor:pointer;margin-top:24px;font-size:13px}
+
+/* Particles */
+.particle{position:fixed;width:4px;height:4px;border-radius:50%;pointer-events:none;z-index:201}
+</style>
+</head>
+<body>
+
+<div class="mc">
+  <!-- Top bar -->
+  <div class="top-bar">
+    <div class="mission-title">&#9670; Go2 Mission Control</div>
+    <div class="top-right">
+      <span class="met">MET: <span id="met">T-00:03:00:00</span></span>
+      <span class="utc-time" id="utc"></span>
+    </div>
+  </div>
+
+  <!-- Left panel -->
+  <div class="panel">
+    <div class="panel-header">Flight Director <span class="status-light status-green"></span></div>
+    <div class="countdown">
+      <div class="label">Mission Phase</div>
+      <div class="time" id="countdown">T-03:00:00</div>
+      <div class="phase" id="phase">PRE-LAUNCH: OBSERVATION</div>
+    </div>
+    <div class="panel-header" style="margin-top:8px">Comms Log</div>
+    <div class="fd-messages" id="fd-log"></div>
+  </div>
+
+  <!-- Center panel -->
+  <div class="panel center-panel">
+    <div class="panel-header">Mission Overview <span class="status-light status-green"></span></div>
+    <div class="stages" id="stages">
+      <div class="stage complete">Observation</div>
+      <div class="stage complete">Analysis</div>
+      <div class="stage active">Coaching</div>
+      <div class="stage pending">Shadow</div>
+      <div class="stage pending">Deploy</div>
+      <div class="stage pending">Orbit</div>
+    </div>
+    <div class="main-viz">
+      <div class="orbit-container">
+        <div class="orbit-ring"></div>
+        <div class="orbit-ring"></div>
+        <div class="orbit-ring"></div>
+        <div class="center-node">G2</div>
+        <!-- Orbiting nodes added by JS -->
+      </div>
+    </div>
+    <div class="panel-header">Telemetry</div>
+    <div class="telemetry-grid" id="telemetry">
+      <div class="tel-item"><div class="tel-label">Focus Score</div><div class="tel-value green" id="tel-focus">84%</div><div class="tel-trend">&#9650; 3% from baseline</div></div>
+      <div class="tel-item"><div class="tel-label">Workers Online</div><div class="tel-value blue">42/47</div><div class="tel-trend">5 on PTO</div></div>
+      <div class="tel-item"><div class="tel-label">Coaching Tips</div><div class="tel-value green" id="tel-tips">156</div><div class="tel-trend">89% acceptance</div></div>
+      <div class="tel-item"><div class="tel-label">Agent Accuracy</div><div class="tel-value green">99.7%</div><div class="tel-trend">&#9650; 0.2% today</div></div>
+      <div class="tel-item"><div class="tel-label">Processes Mapped</div><div class="tel-value blue">10</div><div class="tel-trend">3 automated</div></div>
+      <div class="tel-item"><div class="tel-label">Data Points</div><div class="tel-value blue" id="tel-data">2.4M</div><div class="tel-trend">+12K/hr</div></div>
+      <div class="tel-item"><div class="tel-label">Error Rate</div><div class="tel-value green">0.3%</div><div class="tel-trend">&#9660; 67% from baseline</div></div>
+      <div class="tel-item"><div class="tel-label">Hours Saved</div><div class="tel-value green" id="tel-hours">342</div><div class="tel-trend">this month</div></div>
+    </div>
+  </div>
+
+  <!-- Right panel -->
+  <div class="panel">
+    <div class="panel-header">CAPCOM — AI Coaching <span class="status-light status-green"></span></div>
+    <div class="capcom-feed" id="capcom-feed"></div>
+    <div class="panel-header" style="margin-top:8px">Team Status</div>
+    <div class="team-grid" id="team-grid"></div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="bottom-bar">
+    <div class="systems-status">
+      <div class="sys-item"><span class="status-light status-green"></span> DESKTOP AGENT</div>
+      <div class="sys-item"><span class="status-light status-green"></span> COACHING ENGINE</div>
+      <div class="sys-item"><span class="status-light status-green"></span> AGENT RUNTIME</div>
+      <div class="sys-item"><span class="status-light status-green"></span> DATA PIPELINE</div>
+      <div class="sys-item"><span class="status-light status-amber"></span> SHADOW MODE</div>
+    </div>
+    <button class="launch-btn" id="launchBtn" onclick="launch()">&#9650; LAUNCH AGENT</button>
+  </div>
+</div>
+
+<div id="celebration">
+  <div class="cel-title">MISSION SUCCESS</div>
+  <div class="cel-sub">AI Agent Successfully Deployed to Production</div>
+  <div class="cel-stats">
+    <div class="cel-stat"><div class="num">99.7%</div><div class="lbl">Accuracy</div></div>
+    <div class="cel-stat"><div class="num">847</div><div class="lbl">Tasks/Day</div></div>
+    <div class="cel-stat"><div class="num">$652K</div><div class="lbl">Annual Savings</div></div>
+  </div>
+  <p style="color:#888;font-size:13px;max-width:400px;margin:0 auto">"Houston, the agent is in orbit. 847 invoices processed. Zero errors. The team is cheering. AI implementation... is a success."</p>
+  <button class="cel-close" onclick="document.getElementById('celebration').classList.remove('show')">Return to Mission Control</button>
+</div>
+
+<script>
+// UTC Clock
+function updateUTC(){
+  const now=new Date();
+  document.getElementById('utc').textContent=now.toUTCString().split(' ').slice(1,5).join(' ')+' UTC';
+}
+updateUTC();setInterval(updateUTC,1000);
+
+// Flight Director log
+const fdMessages=[
+  {ts:'T-72:00:00',sender:'fd',name:'FLIGHT',msg:'All stations, this is Flight. Go2 desktop agent deployment is GO. Begin observation phase.'},
+  {ts:'T-71:59:00',sender:'go',name:'AGENT',msg:'Desktop agent installed on 47 workstations. All systems nominal. Beginning data capture.'},
+  {ts:'T-71:00:00',sender:'capcom',name:'CAPCOM',msg:'First work patterns detected. Invoice processing identified as primary target.'},
+  {ts:'T-48:00:00',sender:'fd',name:'FLIGHT',msg:'Observation phase complete. 14-step invoice process mapped. 3 undocumented workarounds identified.'},
+  {ts:'T-47:00:00',sender:'go',name:'TELEMETRY',msg:'Data quality: excellent. 2.4M data points captured. Confidence level: 94%.'},
+  {ts:'T-24:00:00',sender:'fd',name:'FLIGHT',msg:'Coaching phase initiated. Real-time tips deploying to all 47 workers.'},
+  {ts:'T-23:30:00',sender:'capcom',name:'CAPCOM',msg:'First coaching tip accepted by Sarah Chen. Focus score increased 42%.'},
+  {ts:'T-12:00:00',sender:'go',name:'COACHING',msg:'89% coaching acceptance rate across team. Productivity up 23%.'},
+  {ts:'T-06:00:00',sender:'fd',name:'FLIGHT',msg:'Shadow mode initiated. Invoice processor agent running in parallel with human team.'},
+  {ts:'T-05:30:00',sender:'go',name:'SHADOW',msg:'Agent agreement rate: 99.2% against human decisions on first 100 invoices.'},
+  {ts:'T-03:00:00',sender:'fd',name:'FLIGHT',msg:'All stations, pre-launch checks. Report status for agent deployment.'},
+  {ts:'T-02:55:00',sender:'go',name:'AGENT',msg:'Invoice processor: GO. Accuracy 99.7%. Confidence threshold met.'},
+  {ts:'T-02:50:00',sender:'capcom',name:'CAPCOM',msg:'Human review queue: GO. 3 reviewers standing by for low-confidence cases.'},
+  {ts:'T-02:45:00',sender:'go',name:'SECURITY',msg:'SOC 2 compliance: GO. Audit trail active. Kill switch tested and functional.'},
+  {ts:'T-02:30:00',sender:'fd',name:'FLIGHT',msg:'All stations are GO. Standing by for launch command.'},
+];
+
+const fdLog=document.getElementById('fd-log');
+fdMessages.forEach(m=>{
+  const div=document.createElement('div');
+  div.className='fd-msg';
+  div.innerHTML=`<span class="ts">${m.ts}</span> <span class="sender ${m.sender}">${m.name}</span>: ${m.msg}`;
+  fdLog.appendChild(div);
+});
+fdLog.scrollTop=fdLog.scrollHeight;
+
+// CAPCOM feed
+const capcomMessages=[
+  {worker:'Sarah Chen',tip:'Context switching detected — 8 switches in 12 min. Suggest 25-min focus block.',result:'Accepted &#10003; Focus +42%'},
+  {worker:'Marcus Johnson',tip:'Pre-call social scan pattern identified. Coaching team to adopt.',result:'Team-wide rollout &#10003;'},
+  {worker:'Priya Patel',tip:'3.2 hrs of meetings today — 30 min over target. Suggest async review.',result:'Accepted &#10003;'},
+  {worker:'Tom Williams',tip:'Manual formatting detected — 34 min/day. Agent can automate this.',result:'Agent deployed &#10003;'},
+  {worker:'Lisa Park',tip:'Afternoon energy dip detected. 5-min break recommended now.',result:'Accepted &#10003; Output +18%'},
+  {worker:'Aisha Thompson',tip:'12 app switches in 8 minutes. High context-switching alert.',result:'Coaching delivered'},
+  {worker:'Carlos Mendez',tip:'Figma keyboard shortcuts can save 45 min/day based on your patterns.',result:'Accepted &#10003;'},
+  {worker:'Nina Volkov',tip:'Deploy frequency up 33% since automated staging checks went live.',result:'Metric logged'},
+];
+
+const capcomFeed=document.getElementById('capcom-feed');
+capcomMessages.forEach(m=>{
+  const div=document.createElement('div');
+  div.className='capcom-msg';
+  div.innerHTML=`<div class="coach-label">&#129504; COACHING &#8594; ${m.worker}</div><div class="msg-text">${m.tip}</div><div class="msg-result">${m.result}</div>`;
+  capcomFeed.appendChild(div);
+});
+
+// Team status
+const team=[
+  {name:'Sarah Chen',status:'FOCUSED',color:'#27c93f'},
+  {name:'Marcus Johnson',status:'FOCUSED',color:'#27c93f'},
+  {name:'Priya Patel',status:'MEETING',color:'#5f87ff'},
+  {name:'Tom Williams',status:'FOCUSED',color:'#27c93f'},
+  {name:'Lisa Park',status:'BREAK',color:'#ffbd2e'},
+  {name:'James Rodriguez',status:'FOCUSED',color:'#27c93f'},
+  {name:'Aisha Thompson',status:'SWITCHING',color:'#ff5f56'},
+  {name:'David Kim',status:'MEETING',color:'#5f87ff'},
+  {name:'Nina Volkov',status:'FOCUSED',color:'#27c93f'},
+  {name:'Carlos Mendez',status:'FOCUSED',color:'#27c93f'},
+];
+
+const teamGrid=document.getElementById('team-grid');
+team.forEach(t=>{
+  const div=document.createElement('div');
+  div.className='team-row';
+  div.innerHTML=`<span class="team-name">${t.name}</span><span class="team-status" style="color:${t.color}">${t.status}</span>`;
+  teamGrid.appendChild(div);
+});
+
+// Orbiting nodes
+const orbitContainer=document.querySelector('.orbit-container');
+const orbitData=[
+  {label:'Invoice Agent',radius:50,dur:8,color:'#27c93f',icon:'&#129302;'},
+  {label:'CRM Agent',radius:50,dur:12,color:'#00d4ff',icon:'&#129302;'},
+  {label:'Report Agent',radius:90,dur:10,color:'#7b61ff',icon:'&#129302;'},
+  {label:'Coaching',radius:90,dur:15,color:'#ffd93d',icon:'&#129504;'},
+  {label:'Data',radius:130,dur:20,color:'#ff9f43',icon:'&#128202;'},
+  {label:'Workers',radius:130,dur:25,color:'#ff5f56',icon:'&#128100;'},
+];
+orbitData.forEach((o,i)=>{
+  const node=document.createElement('div');
+  node.className='orbit-node';
+  node.style.cssText=`width:24px;height:24px;background:${o.color};top:calc(50% - 12px);left:calc(50% - 12px);--dur:${o.dur}s;--ox:${o.radius}px;--oy:12px;transform-origin:${o.radius}px 12px;animation-delay:${i*-2}s`;
+  node.innerHTML=o.icon;
+  node.title=o.label;
+  orbitContainer.appendChild(node);
+});
+
+// Countdown timer
+let countdownSec=3*60*60;
+let launched=false;
+function updateCountdown(){
+  if(launched)return;
+  countdownSec--;
+  if(countdownSec<0)countdownSec=0;
+  const h=Math.floor(countdownSec/3600);
+  const m=Math.floor((countdownSec%3600)/60);
+  const s=countdownSec%60;
+  document.getElementById('countdown').textContent=`T-${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+  document.getElementById('met').textContent=`T-${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+}
+setInterval(updateCountdown,1000);
+
+// Live telemetry updates
+setInterval(()=>{
+  const tips=parseInt(document.getElementById('tel-tips').textContent);
+  document.getElementById('tel-tips').textContent=tips+Math.floor(Math.random()*3);
+  const focus=82+Math.floor(Math.random()*8);
+  document.getElementById('tel-focus').textContent=focus+'%';
+},5000);
+
+// Launch sequence
+function launch(){
+  if(launched)return;
+  launched=true;
+  const btn=document.getElementById('launchBtn');
+  btn.textContent='LAUNCHING...';
+  btn.style.animation='stagePulse 0.5s ease infinite';
+
+  // Add launch messages
+  const launchMsgs=[
+    {delay:0,sender:'fd',name:'FLIGHT',msg:'All stations, we are GO for launch. Initiating agent deployment sequence.'},
+    {delay:1000,sender:'go',name:'AGENT',msg:'Agent bootstrap: complete. Loading process model...'},
+    {delay:2000,sender:'go',name:'AGENT',msg:'Decision trees loaded. 14 steps configured. Edge cases mapped.'},
+    {delay:3000,sender:'go',name:'AGENT',msg:'Human review queue connected. 3 reviewers online.'},
+    {delay:4000,sender:'fd',name:'FLIGHT',msg:'T-minus 10... 9... 8...'},
+    {delay:5000,sender:'fd',name:'FLIGHT',msg:'7... 6... 5... 4...'},
+    {delay:6000,sender:'fd',name:'FLIGHT',msg:'3... 2... 1...'},
+    {delay:7000,sender:'alert',name:'LAUNCH',msg:'&#9650;&#9650;&#9650; AGENT DEPLOYED &#9650;&#9650;&#9650; Invoice processor is LIVE.'},
+    {delay:8000,sender:'go',name:'AGENT',msg:'First invoice processed. Accuracy: confirmed. We have orbit.'},
+    {delay:9000,sender:'capcom',name:'CAPCOM',msg:'Sarah Chen confirms: agent is processing invoices correctly. Decision match: 100%.'},
+    {delay:10000,sender:'fd',name:'FLIGHT',msg:'Mission Control, we have a successful deployment. AI implementation... is a go.'},
+  ];
+
+  launchMsgs.forEach(m=>{
+    setTimeout(()=>{
+      const div=document.createElement('div');
+      div.className='fd-msg';
+      div.innerHTML=`<span class="ts">T+00:00</span> <span class="sender ${m.sender}">${m.name}</span>: ${m.msg}`;
+      fdLog.appendChild(div);
+      fdLog.scrollTop=fdLog.scrollHeight;
+    },m.delay);
+  });
+
+  // Update stages
+  setTimeout(()=>{
+    const stages=document.querySelectorAll('.stage');
+    stages.forEach(s=>s.classList.add('complete'));
+    stages.forEach(s=>s.classList.remove('active','pending'));
+  },7000);
+
+  // Update button
+  setTimeout(()=>{
+    btn.textContent='&#10003; DEPLOYED';
+    btn.classList.add('launched');
+    btn.style.animation='none';
+  },7000);
+
+  // Show celebration
+  setTimeout(()=>{
+    document.getElementById('celebration').classList.add('show');
+    // Particles
+    for(let i=0;i<50;i++){
+      setTimeout(()=>{
+        const p=document.createElement('div');
+        p.className='particle';
+        p.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;background:${['#ffd93d','#27c93f','#00d4ff','#ff5f56','#7b61ff'][Math.floor(Math.random()*5)]};animation:particleFade 2s ease forwards`;
+        document.getElementById('celebration').appendChild(p);
+        setTimeout(()=>p.remove(),2000);
+      },i*50);
+    }
+  },11000);
+}
+
+// Particle animation
+const style=document.createElement('style');
+style.textContent='@keyframes particleFade{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-100px) scale(0);opacity:0}}';
+document.head.appendChild(style);
+</script>
+</body>
+</html>

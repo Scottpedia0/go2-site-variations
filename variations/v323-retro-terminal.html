@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GO2.IO — TERMINAL</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@font-face{font-family:'VT323';src:url('https://fonts.googleapis.com/css2?family=VT323&display=swap')}
+body{font-family:'Courier New',monospace;background:#0a0a0a;color:#33ff33;overflow-x:hidden;min-height:100vh;position:relative}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,rgba(0,0,0,.15) 0px,rgba(0,0,0,.15) 1px,transparent 1px,transparent 2px);pointer-events:none;z-index:1000}
+body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,.6) 100%);pointer-events:none;z-index:999}
+.scanline{position:fixed;top:0;left:0;width:100%;height:4px;background:rgba(51,255,51,.1);z-index:1001;pointer-events:none;animation:scanline 8s linear infinite}
+@keyframes scanline{0%{top:-4px}100%{top:100%}}
+.flicker{animation:flicker .15s infinite}
+@keyframes flicker{0%{opacity:1}50%{opacity:.98}100%{opacity:1}}
+.terminal{max-width:900px;margin:0 auto;padding:20px;position:relative;z-index:1}
+.terminal-header{border:1px solid #33ff33;padding:8px 16px;margin-bottom:0;display:flex;justify-content:space-between;font-size:.85rem}
+.terminal-body{border:1px solid #33ff33;border-top:none;padding:24px;min-height:100vh}
+.prompt{color:#33ff33;margin-bottom:4px}
+.prompt::before{content:'root@go2:~$ ';color:#00aa00}
+.cursor{display:inline-block;width:8px;height:16px;background:#33ff33;animation:blink 1s step-end infinite;vertical-align:middle;margin-left:2px}
+@keyframes blink{50%{opacity:0}}
+.output{margin-bottom:24px;line-height:1.6}
+.output-delay{opacity:0;animation:fadeIn .5s forwards}
+@keyframes fadeIn{to{opacity:1}}
+.green{color:#33ff33}.dim{color:#1a8c1a}.bright{color:#66ff66}.amber{color:#ffaa00}.red{color:#ff3333}.cyan{color:#33ffff}.white{color:#ccc}
+h1{font-family:'Courier New',monospace;font-size:clamp(1rem,3vw,1.5rem);color:#33ff33;font-weight:400;margin:16px 0}
+h2{font-family:'Courier New',monospace;font-size:1.1rem;color:#ffaa00;font-weight:400;margin:16px 0 8px;text-transform:uppercase}
+.ascii-art{font-size:clamp(.4rem,1.2vw,.8rem);line-height:1.2;color:#33ff33;margin:24px 0;white-space:pre;overflow-x:auto}
+.box{border:1px solid #1a8c1a;padding:16px;margin:16px 0}
+.box-title{background:#0a0a0a;padding:0 8px;position:relative;top:-24px;display:inline-block;color:#ffaa00}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:.9rem}
+table th{text-align:left;color:#ffaa00;padding:8px;border-bottom:1px solid #1a8c1a}
+table td{padding:8px;border-bottom:1px solid #0d3d0d}
+.progress-bar{display:flex;gap:1px;margin:4px 0}
+.progress-bar span{display:inline-block;width:8px;height:16px}
+.progress-fill{background:#33ff33}
+.progress-empty{background:#0d3d0d}
+.typing{overflow:hidden;white-space:nowrap;border-right:2px solid #33ff33;animation:typing 3s steps(60) forwards,blink-cursor .75s step-end infinite}
+@keyframes typing{from{width:0}to{width:100%}}
+@keyframes blink-cursor{50%{border-color:transparent}}
+.section{margin:32px 0;padding-top:16px;border-top:1px dashed #0d3d0d}
+.btn-terminal{display:inline-block;border:1px solid #33ff33;color:#33ff33;padding:8px 24px;text-decoration:none;font-family:'Courier New',monospace;font-size:1rem;background:transparent;cursor:pointer;transition:all .2s}
+.btn-terminal:hover{background:#33ff33;color:#0a0a0a}
+.blink-slow{animation:blink 2s step-end infinite}
+.matrix-col{position:fixed;color:#33ff33;font-size:14px;opacity:.05;z-index:0;animation:matrix-fall linear infinite;font-family:'Courier New',monospace}
+@keyframes matrix-fall{0%{transform:translateY(-100vh)}100%{transform:translateY(100vh)}}
+.status-ok{color:#33ff33}
+.status-ok::before{content:'[OK] '}
+.status-warn::before{content:'[!!] ';color:#ffaa00}
+.status-info::before{content:'[--] ';color:#33ffff}
+</style>
+</head>
+<body class="flicker">
+<div class="scanline"></div>
+
+<script>
+// Matrix rain
+for(let i=0;i<20;i++){const el=document.createElement('div');el.className='matrix-col';el.style.left=Math.random()*100+'%';el.style.animationDuration=(10+Math.random()*20)+'s';el.style.animationDelay=-Math.random()*20+'s';el.textContent=Array.from({length:50},()=>String.fromCharCode(0x30A0+Math.random()*96)).join('\n');document.body.appendChild(el)}
+</script>
+
+<div class="terminal">
+<div class="terminal-header">
+<span>go2.io - WORK INTELLIGENCE SYSTEM v4.2.1</span>
+<span class="dim">[2026-03-17 09:41:22 UTC]</span>
+</div>
+<div class="terminal-body">
+
+<pre class="ascii-art">
+  ________  ________  _______
+ /  _____/ /  ___   \/  ___  \
+/  / ___  /  /   /  /  /___\  \
+\  \_/  / \  \___/  /  _______/
+ \______/  \_______/\_________/   WORK INTELLIGENCE
+</pre>
+
+<div class="output">
+<div class="prompt">cat /etc/go2/mission.txt</div>
+<p style="margin:8px 0"><span class="bright">GO2 CAPTURES HOW WORK HAPPENS.</span></p>
+<p class="dim">AI coaches. Auto-documents. Finds automations. Trains agents.</p>
+<p class="dim">95% of AI implementations fail because they're blind to real workflows.</p>
+<p class="dim">Go2 gives AI eyes.</p>
+</div>
+
+<div class="section">
+<div class="prompt">go2 --status --format=table</div>
+<h2>// SYSTEM STATUS</h2>
+<table>
+<tr><th>METRIC</th><th>VALUE</th><th>STATUS</th></tr>
+<tr><td>Active Workers</td><td class="bright">2,000,000+</td><td class="status-ok">NOMINAL</td></tr>
+<tr><td>Revenue</td><td class="bright">$60M+</td><td class="status-ok">GROWING</td></tr>
+<tr><td>Satisfaction Rate</td><td class="bright">89%</td><td class="status-ok">HIGH</td></tr>
+<tr><td>AI Success Rate (Industry)</td><td class="red">5%</td><td class="status-warn amber">CRITICAL</td></tr>
+<tr><td>AI Success Rate (Go2 Users)</td><td class="bright">89%</td><td class="status-ok">EXCEPTIONAL</td></tr>
+</table>
+</div>
+
+<div class="section">
+<div class="prompt">go2 --list-modules</div>
+<h2>// CORE MODULES</h2>
+
+<div class="box">
+<span class="box-title">MODULE 01: CAPTURE ENGINE</span>
+<p>Real-time workflow observation. Captures keyboard patterns, app</p>
+<p>switching, process flows, and behavioral signatures. Not keylogging</p>
+<p>— <span class="bright">pattern intelligence</span>.</p>
+<p class="dim" style="margin-top:8px">Loading capture engine...</p>
+<div class="progress-bar">
+<span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span>
+</div>
+<p class="status-ok">ONLINE</p>
+</div>
+
+<div class="box">
+<span class="box-title">MODULE 02: AI COACH</span>
+<p>Personalized productivity coaching for every worker. Powered by</p>
+<p>real behavioral data, not generic advice. <span class="cyan">Sidecars Claude & ChatGPT</span>.</p>
+<div class="progress-bar">
+<span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span>
+</div>
+<p class="status-ok">ONLINE</p>
+</div>
+
+<div class="box">
+<span class="box-title">MODULE 03: AUTO-DOCUMENTER</span>
+<p>Watches processes. Writes SOPs. Updates them automatically when</p>
+<p>processes change. <span class="bright">Living documentation</span> that never goes stale.</p>
+<div class="progress-bar">
+<span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span>
+</div>
+<p class="status-ok">ONLINE</p>
+</div>
+
+<div class="box">
+<span class="box-title">MODULE 04: AUTOMATION FINDER</span>
+<p>Pattern recognition across millions of work sessions. Identifies</p>
+<p>repetitive tasks your team doesn't even notice. Suggests and</p>
+<p>builds automations. <span class="amber">Average ROI: 340%</span>.</p>
+<div class="progress-bar">
+<span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span>
+</div>
+<p class="status-ok">ONLINE</p>
+</div>
+
+<div class="box">
+<span class="box-title">MODULE 05: AGENT TRAINER</span>
+<p>Uses captured workflow data to train AI agents that understand</p>
+<p>your specific business processes. Not generic — <span class="bright">YOUR</span> processes.</p>
+<div class="progress-bar">
+<span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span>
+</div>
+<p class="status-ok">ONLINE</p>
+</div>
+</div>
+
+<div class="section">
+<div class="prompt">go2 --diff competitors</div>
+<h2>// GO2 vs. EVERYONE ELSE</h2>
+<table>
+<tr><th>CAPABILITY</th><th>COMPETITORS</th><th>GO2</th></tr>
+<tr><td>Approach</td><td class="red">Surveillance</td><td class="bright">Coaching</td></tr>
+<tr><td>Data Source</td><td class="red">Self-reported</td><td class="bright">Ground truth</td></tr>
+<tr><td>Employee Sentiment</td><td class="red">Resentment</td><td class="bright">89% love it</td></tr>
+<tr><td>AI Integration</td><td class="amber">Basic</td><td class="bright">Claude+GPT sidecar</td></tr>
+<tr><td>Documentation</td><td class="red">Manual</td><td class="bright">Auto-generated</td></tr>
+<tr><td>Agent Training</td><td class="red">N/A</td><td class="bright">Built-in</td></tr>
+</table>
+</div>
+
+<div class="section">
+<div class="prompt">go2 --testimonial --random</div>
+<h2>// TRANSMISSION RECEIVED</h2>
+<div class="box">
+<p class="cyan">"Go2 showed us 47 variations of a process we thought was standardized.</p>
+<p class="cyan">Then it automated the best one. We saved $2.3M in year one."</p>
+<p class="dim" style="margin-top:12px">— VP_OPS@FORTUNE500.COM</p>
+</div>
+</div>
+
+<div class="section" style="text-align:center;padding:48px 0">
+<div class="prompt" style="text-align:left">go2 --init</div>
+<p style="margin:24px 0"><span class="bright blink-slow">READY TO SEE HOW WORK ACTUALLY HAPPENS?</span></p>
+<p class="dim" style="margin-bottom:24px">Initialize Go2 for your organization.</p>
+<a href="#" class="btn-terminal">$ go2 --start-trial<span class="cursor"></span></a>
+</div>
+
+<div style="margin-top:32px;padding-top:16px;border-top:1px solid #0d3d0d">
+<p class="dim" style="font-size:.75rem">&copy; 2026 Go2 Intelligence Systems | go2.io | All systems operational</p>
+</div>
+
+</div>
+</div>
+</body>
+</html>

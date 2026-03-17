@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Museum of Failed AI | Go2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap');
+:root{--bg:#1a1410;--wall:#2a2218;--cream:#f5f0e4;--gold:#c9a84c;--frame:#3d2e1a;--text:#e8dcc8;--muted:#8a7d6d;--red:#a83232;--green:#2d7a4f;--accent:#b8860b}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+/* Museum header */
+.museum-header{background:linear-gradient(180deg,#0d0a07,var(--bg));padding:3rem 2rem;text-align:center;border-bottom:3px double var(--gold)}
+.museum-header h1{font-family:'Cormorant Garamond',serif;font-size:clamp(2rem,5vw,3.5rem);font-weight:700;color:var(--gold);letter-spacing:3px;margin-bottom:.5rem}
+.museum-header .sub{font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--muted);font-size:1.1rem}
+.museum-header .admission{margin-top:1rem;font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:3px}
+/* Audio guide */
+.audio-guide{position:fixed;bottom:2rem;right:2rem;background:var(--wall);border:2px solid var(--gold);border-radius:12px;padding:1rem 1.5rem;z-index:100;max-width:320px;box-shadow:0 10px 30px rgba(0,0,0,.5);display:none}
+.audio-guide.show{display:block;animation:slideUp .3s}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.audio-guide .guide-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
+.audio-guide .guide-num{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:700;color:var(--gold)}
+.audio-guide .close-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem}
+.audio-guide .guide-text{font-size:.85rem;line-height:1.7;color:var(--text)}
+.audio-guide .speaker{font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--gold);font-size:.8rem;margin-top:.5rem}
+/* Gallery */
+.gallery{max-width:1000px;margin:0 auto;padding:2rem}
+/* Exhibit */
+.exhibit{margin-bottom:4rem;position:relative}
+.exhibit-number{font-family:'Cormorant Garamond',serif;font-size:5rem;font-weight:700;color:rgba(201,168,76,.1);position:absolute;top:-1.5rem;left:-1rem;z-index:0;line-height:1}
+.exhibit-frame{background:var(--wall);border:8px solid var(--frame);border-image:linear-gradient(135deg,#5c4a2e,#3d2e1a,#5c4a2e,#3d2e1a) 1;box-shadow:inset 0 0 20px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.4);padding:2.5rem;position:relative;z-index:1}
+.exhibit-frame::before{content:'';position:absolute;inset:6px;border:1px solid rgba(201,168,76,.15)}
+/* Frame ornaments */
+.ornament{position:absolute;width:20px;height:20px;border:2px solid var(--gold);opacity:.3}
+.ornament.tl{top:10px;left:10px;border-right:none;border-bottom:none}
+.ornament.tr{top:10px;right:10px;border-left:none;border-bottom:none}
+.ornament.bl{bottom:10px;left:10px;border-right:none;border-top:none}
+.ornament.br{bottom:10px;right:10px;border-left:none;border-top:none}
+.exhibit-content{display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:center}
+@media(max-width:700px){.exhibit-content{grid-template-columns:1fr}}
+.exhibit-visual{aspect-ratio:4/3;border-radius:4px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.exhibit-visual .icon{font-size:5rem;z-index:1;filter:drop-shadow(0 4px 10px rgba(0,0,0,.3))}
+.exhibit-visual .bg-pattern{position:absolute;inset:0;opacity:.1}
+.exhibit-info h2{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:700;color:var(--cream);margin-bottom:.3rem;line-height:1.3}
+.exhibit-info .subtitle{font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--gold);font-size:.95rem;margin-bottom:1rem}
+.exhibit-info p{font-size:.9rem;line-height:1.8;color:var(--text);margin-bottom:1rem}
+.exhibit-info .stat{display:inline-block;padding:.3rem .8rem;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);border-radius:4px;font-size:.8rem;color:var(--gold);margin-right:.5rem;margin-bottom:.5rem}
+/* Plaque */
+.plaque{background:linear-gradient(135deg,#c9a84c,#b8860b);color:#1a1410;padding:1rem 1.5rem;border-radius:4px;margin-top:1.5rem;position:relative;box-shadow:0 4px 10px rgba(0,0,0,.3)}
+.plaque::before{content:'';position:absolute;inset:3px;border:1px solid rgba(26,20,16,.2);border-radius:3px}
+.plaque h4{font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;margin-bottom:.3rem}
+.plaque p{font-size:.8rem;line-height:1.5;opacity:.8}
+/* Audio button */
+.audio-btn{display:inline-flex;align-items:center;gap:.5rem;padding:.5rem 1rem;background:rgba(201,168,76,.1);border:1px solid var(--gold);border-radius:20px;color:var(--gold);font-family:inherit;font-size:.75rem;cursor:pointer;margin-top:.75rem;transition:all .2s}
+.audio-btn:hover{background:rgba(201,168,76,.2)}
+/* Solution exhibit */
+.exhibit-solution .exhibit-frame{border-image:linear-gradient(135deg,#2d7a4f,#1a5c36,#2d7a4f) 1;background:linear-gradient(135deg,rgba(45,122,79,.1),var(--wall))}
+.exhibit-solution .plaque{background:linear-gradient(135deg,#2d7a4f,#1a5c36)}
+.exhibit-solution .plaque h4,.exhibit-solution .plaque p{color:#e8f5e9}
+/* Floor guide */
+.floor-guide{display:flex;justify-content:center;gap:2rem;padding:2rem;flex-wrap:wrap}
+.floor-item{text-align:center;padding:1rem;cursor:pointer;transition:all .2s;border-radius:4px}
+.floor-item:hover{background:rgba(201,168,76,.1)}
+.floor-item .num{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:700;color:var(--gold)}
+.floor-item .name{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:.3rem}
+/* Exit through gift shop */
+.gift-shop{background:var(--wall);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:3rem;max-width:600px;margin:2rem auto;text-align:center}
+.gift-shop h2{font-family:'Cormorant Garamond',serif;font-size:1.8rem;color:var(--gold);margin-bottom:1rem}
+.gift-shop p{color:var(--muted);margin-bottom:2rem;line-height:1.6}
+.gift-shop a{display:inline-block;padding:1rem 2.5rem;background:var(--gold);color:#1a1410;font-weight:700;text-decoration:none;border-radius:4px;font-family:'Cormorant Garamond',serif;font-size:1.1rem;letter-spacing:1px;transition:all .2s}
+.gift-shop a:hover{background:#dbb85c;transform:translateY(-2px)}
+.gift-shop .stats{display:flex;gap:2rem;justify-content:center;margin:2rem 0;flex-wrap:wrap}
+.gift-shop .stat-item{text-align:center}
+.gift-shop .stat-val{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:700;color:var(--gold)}
+.gift-shop .stat-lbl{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.share-row{display:flex;gap:1rem;justify-content:center;margin-top:1.5rem}
+.share-btn{padding:.5rem 1.2rem;border:1px solid rgba(201,168,76,.3);background:transparent;color:var(--gold);border-radius:4px;font-family:inherit;cursor:pointer;font-size:.8rem;transition:all .2s}
+.share-btn:hover{background:rgba(201,168,76,.1)}
+/* Footer */
+.museum-footer{text-align:center;padding:2rem;color:var(--muted);font-size:.75rem;border-top:1px solid rgba(201,168,76,.1)}
+</style>
+</head>
+<body>
+<div class="museum-header">
+<div class="admission">Free Admission &mdash; Sponsored by Go2</div>
+<h1>THE MUSEUM OF FAILED AI</h1>
+<div class="sub">A cautionary exhibition &mdash; and a path forward</div>
+</div>
+
+<div class="floor-guide" id="floor-guide"></div>
+<div class="gallery" id="gallery"></div>
+<div class="gift-shop" id="gift-shop"></div>
+<div class="museum-footer">The Museum of Failed AI &copy; 2025 | A Go2 Production | <a href="https://go2.io" target="_blank" style="color:var(--gold);text-decoration:none">go2.io</a></div>
+<div class="audio-guide" id="audio-guide">
+<div class="guide-header">
+<div class="guide-num" id="guide-num">1</div>
+<button class="close-btn" onclick="closeGuide()">&times;</button>
+</div>
+<div class="guide-text" id="guide-text"></div>
+<div class="speaker" id="guide-speaker"></div>
+</div>
+<script>
+const exhibits=[
+{num:'A',title:'The $50M ChatGPT Rollout That Produced Nothing',subtitle:'Fortune 500 Financial Services, 2024',icon:'&#x1F4B8;',bg:'linear-gradient(135deg,#1a0a2e,#302b63)',color:'var(--red)',
+desc:'A major financial institution spent $50M deploying ChatGPT Enterprise across 40,000 employees. After 8 months, usage had dropped to 3%. The AI couldn\'t do anything useful because it had zero context about how the organization actually worked.',
+stats:['$50M spent','3% adoption','8 months wasted','0 processes improved'],
+plaque:{title:'Lesson',text:'AI without work data is just an expensive chatbot. You can\'t improve processes you don\'t understand.'},
+audio:{text:'What you\'re seeing here is perhaps the most expensive example of the "deploy and pray" approach to AI. The technology was world-class. The implementation budget was unlimited. But without data about how 40,000 employees actually did their jobs, ChatGPT was essentially a $50M autocomplete tool. Three percent adoption. That\'s not a failure of AI — it\'s a failure to provide AI with the context it needs to be useful.',speaker:'— Dr. Sarah Chen, AI Implementation Researcher'}},
+{num:'B',title:'The Consulting Firm That Billed $2M For a PDF',subtitle:'Mid-Market Manufacturing, 2023',icon:'&#x1F4C4;',bg:'linear-gradient(135deg,#2d1810,#4a2520)',color:'var(--red)',
+desc:'A consulting firm was hired to "map processes and identify AI opportunities." They conducted 6 months of interviews, shadowed employees for 200 hours, and produced a 200-page PDF of recommendations. Nobody read it. The recommendations were wrong because they were based on what people SAID they did, not what they actually did.',
+stats:['$2M consulting fee','200-page PDF','6 months','0 recommendations implemented'],
+plaque:{title:'Lesson',text:'Interviews and observation sessions capture what people think they do. Go2 captures what they actually do. The difference is everything.'},
+audio:{text:'This exhibit is particularly painful because the consulting firm wasn\'t incompetent — they were thorough. Six months of interviews, 200 hours of shadowing. The problem is fundamental: when you ask someone to describe their workflow, they describe the official process. They omit the workarounds, the shortcuts, the informal systems that make everything actually work. Go2 captures what happens, not what people say happens. That\'s why it found 40 automation opportunities where the consultants found 3.',speaker:'— Marcus Rivera, VP Operations (former client)'}},
+{num:'C',title:'The Dashboard Nobody Looked At',subtitle:'Series B SaaS Startup, 2024',icon:'&#x1F4CA;',bg:'linear-gradient(135deg,#0a1628,#1a2744)',color:'var(--red)',
+desc:'A startup spent $400K building a comprehensive AI-powered analytics dashboard. Beautiful charts. Real-time data. Dozens of metrics. One problem: the data was based on manual time entries and self-reported productivity scores. It was measuring fiction.',
+stats:['$400K development cost','47 dashboard widgets','0 accurate metrics','12% weekly active usage'],
+plaque:{title:'Lesson',text:'A beautiful dashboard built on bad data is just art. Go2\'s analytics are built on actual observed work patterns — reality, not self-reports.'},
+audio:{text:'I want you to look at this dashboard. It\'s beautiful, isn\'t it? Gorgeous data visualization. Real-time updates. The engineering team did incredible work. But every single data point on this dashboard came from manual time entries — people typing in what they thought they spent their time on. Studies show self-reported time tracking is wrong by 30-40%. So this $400K dashboard was essentially a real-time display of fiction. Pretty fiction, but fiction.',speaker:'— Elena Torres, Product Analytics Lead'}},
+{num:'D',title:'The AI Agent Army That Went Rogue',subtitle:'E-Commerce Giant, 2024',icon:'&#x1F916;',bg:'linear-gradient(135deg,#1a0820,#2d1040)',color:'var(--red)',
+desc:'An e-commerce company deployed 15 AI agents to handle customer service, inventory, and pricing. Trained on generic data, the agents made catastrophic errors: mispricing products at 90% off, sending customers to competitors, and auto-replying to complaints with sales pitches.',
+stats:['15 agents deployed','$3.2M in losses','72-hour crisis','Brand damage: immeasurable'],
+plaque:{title:'Lesson',text:'Generic AI agents don\'t know YOUR business. Go2 trains agents on your actual work data — they know how your specific organization operates.'},
+audio:{text:'This is what happens when you deploy AI agents trained on generic internet data into a specific business context. The pricing agent had learned from general e-commerce patterns but had no understanding of THIS company\'s pricing strategy. The customer service agent had been trained on generic support conversations but didn\'t know this company\'s specific products or policies. Seventy-two hours of chaos. $3.2M in direct losses. All because the agents were intelligent in general but ignorant about the specific.',speaker:'— James Park, AI Safety Researcher'}},
+{num:'E',title:'The Solution',subtitle:'Go2 — Where AI Actually Works',icon:'&#x2728;',bg:'linear-gradient(135deg,#0a2e1a,#1a5c36)',color:'var(--green)',solution:true,
+desc:'After touring the wreckage of failed AI, you arrive at the final exhibit: the platform that solved the work-data problem. Go2 captures how work actually happens — passively, automatically, at scale. Then it coaches, documents, discovers automations, and trains AI agents that actually work. 2M+ workers. 89% satisfaction. $60M+ in sales. This is what the 5% looks like.',
+stats:['2M+ workers','89% satisfaction','$60M+ sales','34% avg. improvement'],
+plaque:{title:'The Answer',text:'Go2 doesn\'t just deploy AI — it gives AI the work data foundation it needs to succeed. Capture. Coach. Document. Automate. Deploy.'},
+audio:{text:'You\'ve walked through the wreckage. You\'ve seen what $50M buys when you deploy AI without understanding how work happens. You\'ve read the 200-page PDF that nobody read. You\'ve marveled at the beautiful dashboard built on lies. Now look at this. Go2 solved the fundamental problem: the work-data gap. By capturing how work actually happens — not how people say it happens — Go2 gives AI the context it needs. Two million workers. Eighty-nine percent satisfaction. Sixty million dollars in sales. Not because the AI is better. Because the data is real.',speaker:'— Museum Curator'}}
+];
+
+// Floor guide
+const fg=document.getElementById('floor-guide');
+exhibits.forEach((e,i)=>{
+fg.innerHTML+=`<div class="floor-item" onclick="scrollToExhibit(${i})"><div class="num">${e.num}</div><div class="name">Exhibit ${e.num}</div></div>`;
+});
+
+// Gallery
+const gallery=document.getElementById('gallery');
+exhibits.forEach((e,i)=>{
+gallery.innerHTML+=`
+<div class="exhibit${e.solution?' exhibit-solution':''}" id="exhibit-${i}">
+<div class="exhibit-number">${e.num}</div>
+<div class="exhibit-frame">
+<div class="ornament tl"></div><div class="ornament tr"></div><div class="ornament bl"></div><div class="ornament br"></div>
+<div class="exhibit-content">
+<div class="exhibit-visual" style="background:${e.bg}">
+<div class="icon">${e.icon}</div>
+</div>
+<div class="exhibit-info">
+<h2>${e.title}</h2>
+<div class="subtitle">${e.subtitle}</div>
+<p>${e.desc}</p>
+<div>${e.stats.map(s=>`<span class="stat">${s}</span>`).join('')}</div>
+<button class="audio-btn" onclick="playAudio(${i})">&#x1F3A7; Audio Guide ${e.num}</button>
+</div>
+</div>
+<div class="plaque">
+<h4>${e.plaque.title}</h4>
+<p>${e.plaque.text}</p>
+</div>
+</div>
+</div>`;
+});
+
+// Gift shop
+document.getElementById('gift-shop').innerHTML=`
+<h2>Exit Through the Gift Shop</h2>
+<p>You've seen what happens when AI meets reality without preparation. Now see what happens when it meets Go2.</p>
+<div class="stats">
+<div class="stat-item"><div class="stat-val">95%</div><div class="stat-lbl">AI Failure Rate (without Go2)</div></div>
+<div class="stat-item"><div class="stat-val">89%</div><div class="stat-lbl">Satisfaction (with Go2)</div></div>
+<div class="stat-item"><div class="stat-val">2M+</div><div class="stat-lbl">Workers on Platform</div></div>
+</div>
+<a href="https://go2.io" target="_blank">Visit Go2.io</a>
+<div class="share-row">
+<button class="share-btn" onclick="shareTwitter()">Share on Twitter</button>
+<button class="share-btn" onclick="shareLinkedIn()">Share on LinkedIn</button>
+</div>`;
+
+function playAudio(idx){
+const e=exhibits[idx];
+const guide=document.getElementById('audio-guide');
+document.getElementById('guide-num').textContent=e.num;
+document.getElementById('guide-text').textContent=e.audio.text;
+document.getElementById('guide-speaker').textContent=e.audio.speaker;
+guide.classList.add('show');
+}
+function closeGuide(){document.getElementById('audio-guide').classList.remove('show');}
+function scrollToExhibit(i){document.getElementById(`exhibit-${i}`).scrollIntoView({behavior:'smooth',block:'center'});}
+
+function shareTwitter(){window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent('Just visited "The Museum of Failed AI" — exhibits include a $50M ChatGPT rollout with 3% adoption and a $2M consulting PDF nobody read. 95% of AI fails. The final exhibit shows what the 5% do differently.')}&url=${encodeURIComponent('https://go2.io')}`,'_blank');}
+function shareLinkedIn(){window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://go2.io')}`,'_blank');}
+</script>
+</body>
+</html>
