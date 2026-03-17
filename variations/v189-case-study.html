@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Why 95% of AI Initiatives Fail: A Case Study</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap');
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --crimson: #A51C30;
+    --navy: #1E2D3D;
+    --cream: #FEFCF8;
+    --warm-gray: #F2EDE6;
+    --text: #2C2C2C;
+    --text-light: #6B6B6B;
+    --rule: #D4CFC7;
+  }
+
+  body {
+    background: var(--cream);
+    color: var(--text);
+    font-family: 'Source Sans 3', 'Georgia', serif;
+    line-height: 1.7;
+  }
+
+  /* HEADER BAR */
+  .journal-header {
+    background: var(--navy);
+    color: white;
+    padding: 0.8rem 3rem;
+    display: flex; justify-content: space-between; align-items: center;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  }
+  .journal-header .journal-name {
+    font-family: 'Libre Baskerville', serif;
+    font-size: 0.85rem; font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .journal-header .journal-meta {
+    font-size: 0.7rem; color: rgba(255,255,255,0.5);
+    letter-spacing: 0.05em;
+  }
+  .journal-header a {
+    color: white; text-decoration: none;
+    font-size: 0.75rem; font-weight: 600;
+    padding: 0.4rem 1rem;
+    border: 1px solid rgba(255,255,255,0.3);
+    transition: all 0.3s;
+  }
+  .journal-header a:hover {
+    background: white; color: var(--navy);
+  }
+
+  /* ARTICLE CONTAINER */
+  .article {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 7rem 2rem 4rem;
+  }
+
+  /* ARTICLE HEADER */
+  .article-meta {
+    display: flex; align-items: center; gap: 1.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .article-meta .category {
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--crimson);
+    font-weight: 700;
+  }
+  .article-meta .date {
+    font-size: 0.8rem;
+    color: var(--text-light);
+  }
+  .article-meta .reading-time {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    font-style: italic;
+  }
+
+  .article h1 {
+    font-family: 'Source Serif 4', 'Georgia', serif;
+    font-size: clamp(2rem, 4.5vw, 3rem);
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--navy);
+    margin-bottom: 1rem;
+    letter-spacing: -0.01em;
+  }
+
+  .article .subtitle {
+    font-family: 'Source Serif 4', serif;
+    font-size: 1.25rem;
+    color: var(--text-light);
+    font-style: italic;
+    line-height: 1.5;
+    margin-bottom: 2rem;
+    font-weight: 400;
+  }
+
+  .byline {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 3rem;
+  }
+  .byline .author-avatar {
+    width: 48px; height: 48px;
+    background: var(--navy);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700;
+    font-family: 'Libre Baskerville', serif;
+    font-size: 0.9rem;
+  }
+  .byline .author-info .name {
+    font-weight: 600; font-size: 0.95rem;
+  }
+  .byline .author-info .title {
+    font-size: 0.8rem; color: var(--text-light);
+  }
+
+  /* ARTICLE BODY */
+  .article p {
+    font-family: 'Source Serif 4', 'Georgia', serif;
+    font-size: 1.1rem;
+    line-height: 1.85;
+    margin-bottom: 1.5rem;
+    color: var(--text);
+  }
+
+  .section-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--crimson);
+    font-weight: 700;
+    font-family: 'Source Sans 3', sans-serif;
+    margin-top: 3rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .article h2 {
+    font-family: 'Source Serif 4', 'Georgia', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 1.5rem;
+    line-height: 1.3;
+  }
+
+  .article h3 {
+    font-family: 'Source Serif 4', 'Georgia', serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--navy);
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  /* PULL QUOTE */
+  .pull-quote {
+    font-family: 'Source Serif 4', serif;
+    font-size: 1.5rem;
+    font-style: italic;
+    color: var(--navy);
+    border-left: 3px solid var(--crimson);
+    padding: 1rem 0 1rem 2rem;
+    margin: 2.5rem 0;
+    line-height: 1.5;
+  }
+  .pull-quote cite {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    font-style: normal;
+    font-family: 'Source Sans 3', sans-serif;
+    margin-top: 0.75rem;
+    font-weight: 500;
+  }
+
+  /* DATA EXHIBIT */
+  .exhibit {
+    background: var(--warm-gray);
+    border: 1px solid var(--rule);
+    padding: 2rem 2.5rem;
+    margin: 2.5rem 0;
+    position: relative;
+  }
+  .exhibit::before {
+    content: attr(data-label);
+    position: absolute;
+    top: -0.6rem; left: 1.5rem;
+    background: var(--cream);
+    padding: 0 0.5rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--crimson);
+    font-weight: 700;
+    font-family: 'Source Sans 3', sans-serif;
+  }
+  .exhibit h4 {
+    font-family: 'Source Serif 4', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 1.5rem;
+  }
+
+  .exhibit-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+  .exhibit-stat .number {
+    font-family: 'Libre Baskerville', serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--crimson);
+    line-height: 1;
+  }
+  .exhibit-stat .label {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-top: 0.3rem;
+    font-family: 'Source Sans 3', sans-serif;
+  }
+  .exhibit-stat .source {
+    font-size: 0.7rem;
+    color: var(--text-light);
+    font-style: italic;
+    margin-top: 0.2rem;
+    font-family: 'Source Sans 3', sans-serif;
+  }
+
+  /* TABLE */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.9rem;
+  }
+  .data-table th {
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-light);
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid var(--navy);
+  }
+  .data-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--rule);
+    color: var(--text);
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table .highlight { color: var(--crimson); font-weight: 600; }
+
+  /* BAR CHART */
+  .bar-chart {
+    margin: 1.5rem 0;
+  }
+  .bar-row {
+    display: flex; align-items: center; gap: 1rem;
+    margin-bottom: 0.8rem;
+  }
+  .bar-label {
+    font-size: 0.8rem; font-family: 'Source Sans 3', sans-serif;
+    color: var(--text-light); width: 140px; text-align: right;
+    flex-shrink: 0;
+  }
+  .bar-track {
+    flex: 1; height: 24px;
+    background: rgba(0,0,0,0.04);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1.5s ease;
+  }
+  .bar-fill.crimson { background: var(--crimson); }
+  .bar-fill.navy { background: var(--navy); }
+  .bar-value {
+    font-family: 'Libre Baskerville', serif;
+    font-size: 0.8rem; font-weight: 700;
+    color: var(--text); width: 50px;
+  }
+
+  /* METHODOLOGY NOTE */
+  .methodology {
+    background: var(--warm-gray);
+    border-left: 3px solid var(--navy);
+    padding: 1.5rem 2rem;
+    margin: 2rem 0;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    line-height: 1.7;
+  }
+  .methodology strong {
+    font-weight: 600;
+    color: var(--text);
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ARTICLE FOOTNOTES */
+  .footnotes {
+    border-top: 1px solid var(--rule);
+    padding-top: 2rem;
+    margin-top: 3rem;
+  }
+  .footnotes h3 {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-light);
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  .footnotes ol {
+    padding-left: 1.5rem;
+  }
+  .footnotes li {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+  }
+
+  /* CTA SECTION */
+  .case-cta {
+    background: var(--navy);
+    color: white;
+    padding: 4rem 2rem;
+    margin-top: 4rem;
+    text-align: center;
+  }
+  .case-cta .inner {
+    max-width: 600px; margin: 0 auto;
+  }
+  .case-cta h2 {
+    font-family: 'Source Serif 4', serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    line-height: 1.3;
+  }
+  .case-cta p {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 1rem;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 2rem;
+    line-height: 1.7;
+  }
+  .case-cta a {
+    display: inline-block;
+    background: var(--crimson);
+    color: white;
+    text-decoration: none;
+    padding: 0.8rem 2rem;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    transition: background 0.3s;
+  }
+  .case-cta a:hover { background: #8B1728; }
+
+  footer {
+    background: var(--navy);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding: 2rem;
+    text-align: center;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.3);
+    font-family: 'Source Sans 3', sans-serif;
+  }
+
+  @media (max-width: 768px) {
+    .article { padding: 6rem 1.5rem 3rem; }
+    .exhibit-stats { grid-template-columns: 1fr; }
+    .journal-header { padding: 0.8rem 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="journal-header">
+  <div>
+    <span class="journal-name">Go2 Research Review</span>
+    <span class="journal-meta" style="margin-left: 1rem;">Vol. 4, No. 1 &mdash; March 2026</span>
+  </div>
+  <a href="#cta">Request Full Report</a>
+</div>
+
+<article class="article">
+  <div class="article-meta">
+    <span class="category">Featured Case Study</span>
+    <span class="date">March 2026</span>
+    <span class="reading-time">12 min read</span>
+  </div>
+
+  <h1>The Missing Infrastructure: Why 95% of AI Initiatives Fail and What One Company Did About It</h1>
+
+  <p class="subtitle">An analysis of the systemic gap between AI capability and organizational readiness, and the emerging infrastructure layer that bridges it.</p>
+
+  <div class="byline">
+    <div class="author-avatar">G2</div>
+    <div class="author-info">
+      <div class="name">Go2 Research</div>
+      <div class="title">AI Infrastructure & Workforce Intelligence</div>
+    </div>
+  </div>
+
+  <!-- SECTION 1: THE PROBLEM -->
+  <div class="section-label">Section I</div>
+  <h2>The Problem: A $340 Billion Blind Spot</h2>
+
+  <p>The enterprise AI market is projected to exceed $340 billion by 2027. Yet the vast majority of AI initiatives fail to deliver measurable business value. This is not a matter of hype versus reality -- the technology works. The failure is structural.</p>
+
+  <p>Two landmark studies frame the scope of the crisis. MIT's research found that 95% of AI pilot projects fail to reach production deployment. Separately, Boston Consulting Group's analysis revealed that only 5% of companies generate meaningful value from their AI investments. The convergence of these findings points to a systemic problem.</p>
+
+  <div class="exhibit" data-label="Exhibit A">
+    <h4>The AI Implementation Gap</h4>
+    <div class="exhibit-stats">
+      <div class="exhibit-stat">
+        <div class="number">95%</div>
+        <div class="label">AI pilots that fail to reach production</div>
+        <div class="source">MIT Sloan Management Review</div>
+      </div>
+      <div class="exhibit-stat">
+        <div class="number">5%</div>
+        <div class="label">Companies creating real value from AI</div>
+        <div class="source">Boston Consulting Group</div>
+      </div>
+      <div class="exhibit-stat">
+        <div class="number">40+</div>
+        <div class="label">Hours per week of automatable work per employee</div>
+        <div class="source">Go2 Workforce Analysis, n=2M+</div>
+      </div>
+      <div class="exhibit-stat">
+        <div class="number">$340B</div>
+        <div class="label">Projected enterprise AI market by 2027</div>
+        <div class="source">Industry estimates</div>
+      </div>
+    </div>
+  </div>
+
+  <p>The question, then, is not whether AI works. It does. The question is why organizations cannot make it work for them. Our analysis points to a single, systemic cause: companies lack data about how work actually happens.</p>
+
+  <div class="pull-quote">
+    "Organizations are deploying AI into a context vacuum. They have powerful general-purpose models with zero knowledge of their specific processes, workflows, or institutional knowledge."
+    <cite>-- Go2 Research Analysis, 2026</cite>
+  </div>
+
+  <!-- SECTION 2: THE INSIGHT -->
+  <div class="section-label">Section II</div>
+  <h2>The Insight: The Data Layer That Doesn't Exist</h2>
+
+  <p>Consider the analogy of GPS navigation. Satellite positioning technology existed for decades before it became useful to consumers. What was missing was not the technology -- it was the map data. Without comprehensive, real-time road data, GPS was a brilliant capability with no practical application.</p>
+
+  <p>The same dynamic is at play in enterprise AI. Organizations have purchased seats for ChatGPT, Claude, Copilot, and dozens of other AI tools. These are, objectively, remarkable general-purpose intelligences. But they operate without any understanding of how the specific organization works -- its processes, its tribal knowledge, its edge cases, its actual workflows.</p>
+
+  <h3>The Sidecar Hypothesis</h3>
+
+  <p>Go2's insight was that the solution is not to build another AI tool, but to build the infrastructure layer that makes existing AI tools useful. Rather than replacing Claude or ChatGPT, Go2 sidecars them -- providing the organizational context they are missing.</p>
+
+  <div class="exhibit" data-label="Exhibit B">
+    <h4>Traditional vs. Infrastructure-First AI Deployment</h4>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Dimension</th>
+          <th>Traditional Approach</th>
+          <th>Go2 Infrastructure Layer</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Process knowledge</td>
+          <td>Manual documentation (often outdated)</td>
+          <td class="highlight">Auto-captured from real workflows</td>
+        </tr>
+        <tr>
+          <td>AI context</td>
+          <td>Generic, no org-specific data</td>
+          <td class="highlight">Rich, real-time workflow intelligence</td>
+        </tr>
+        <tr>
+          <td>Worker experience</td>
+          <td>Monitoring / surveillance perception</td>
+          <td class="highlight">Coaching (89% satisfaction)</td>
+        </tr>
+        <tr>
+          <td>Automation discovery</td>
+          <td>Consultant-driven, expensive</td>
+          <td class="highlight">Continuous, data-driven</td>
+        </tr>
+        <tr>
+          <td>Time to value</td>
+          <td>12-18 month pilots</td>
+          <td class="highlight">Immediate coaching value</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SECTION 3: THE SOLUTION -->
+  <div class="section-label">Section III</div>
+  <h2>The Solution: Cowork.ai and the Go2 Infrastructure</h2>
+
+  <p>Go2's approach centers on a lightweight desktop agent called Cowork.ai, deployed alongside every worker in the organization. Critically, Cowork.ai is designed as a coaching tool, not a monitoring tool -- a distinction that has proven essential for adoption and worker satisfaction.</p>
+
+  <h3>How it works</h3>
+
+  <p><strong>1. Workflow capture.</strong> Cowork.ai observes how work actually happens -- not keystrokes or screenshots, but process patterns, workflow sequences, and decision points. It builds a living map of institutional knowledge.</p>
+
+  <p><strong>2. Real-time coaching.</strong> Workers receive contextual nudges, auto-documented processes, and personalized productivity tips. The system identifies best practices and gently guides workers toward them.</p>
+
+  <p><strong>3. AI context injection.</strong> The captured workflow data feeds directly into existing AI tools. Claude, ChatGPT, and other models suddenly understand the organization's specific processes, enabling dramatically more useful outputs.</p>
+
+  <p><strong>4. Automation surface discovery.</strong> With comprehensive data about how work happens, Go2 continuously identifies automation opportunities and provides the training data needed to build them.</p>
+
+  <div class="methodology">
+    <strong>The Waze Analogy</strong>
+    Go2 operates on a collective intelligence model analogous to Waze. Individual workers contribute workflow data (anonymized and aggregated), and the entire network benefits from the resulting intelligence. With 2M+ worker profiles, pattern recognition across industries and functions creates a compound advantage that improves continuously.
+  </div>
+
+  <!-- SECTION 4: THE RESULTS -->
+  <div class="section-label">Section IV</div>
+  <h2>The Results: Evidence at Scale</h2>
+
+  <p>Go2's approach has been validated at significant scale, with results that address each dimension of the AI implementation gap.</p>
+
+  <div class="exhibit" data-label="Exhibit C">
+    <h4>Key Performance Indicators</h4>
+    <div class="bar-chart">
+      <div class="bar-row">
+        <div class="bar-label">Worker Satisfaction</div>
+        <div class="bar-track"><div class="bar-fill crimson" style="width: 89%;"></div></div>
+        <div class="bar-value">89%</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Worker Profiles</div>
+        <div class="bar-track"><div class="bar-fill navy" style="width: 85%;"></div></div>
+        <div class="bar-value">2M+</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Revenue Generated</div>
+        <div class="bar-track"><div class="bar-fill crimson" style="width: 75%;"></div></div>
+        <div class="bar-value">$60M+</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Automatable Hrs/Wk</div>
+        <div class="bar-track"><div class="bar-fill navy" style="width: 80%;"></div></div>
+        <div class="bar-value">40+</div>
+      </div>
+    </div>
+  </div>
+
+  <p>The 89% worker satisfaction metric is particularly noteworthy. In an industry where workforce monitoring tools typically generate significant employee resistance, Go2's coaching-first approach has achieved remarkably positive reception. This is not incidental -- it is fundamental to the product's data collection model, which depends on worker engagement rather than passive capture.</p>
+
+  <h3>Open Source Commitment</h3>
+
+  <p>Go2 has made its agent training tools open source, reflecting the view that AI infrastructure of this importance should not be proprietary. This decision enables organizations to build custom automations on top of real workflow data while contributing to a growing ecosystem of workforce intelligence tools.</p>
+
+  <div class="pull-quote">
+    "The companies that succeed at AI will not be those with the best models. They will be those with the best data about how their organization actually works."
+    <cite>-- Go2 Infrastructure Thesis</cite>
+  </div>
+
+  <!-- CONCLUSION -->
+  <div class="section-label">Conclusion</div>
+  <h2>Implications for Enterprise AI Strategy</h2>
+
+  <p>The evidence suggests that the AI implementation gap is not primarily a technology problem, a talent problem, or a strategy problem. It is an infrastructure problem. Organizations have been attempting to deploy AI without the foundational data layer that makes AI useful in their specific context.</p>
+
+  <p>Go2 represents an emerging category of AI infrastructure -- tools that don't compete with AI models but make them functional within organizations. As the enterprise AI market continues to grow, the infrastructure layer may prove more valuable than the models themselves.</p>
+
+  <p>For organizations currently struggling with AI adoption -- which is to say, most organizations -- the implication is clear: stop investing in more AI tools and start investing in the data infrastructure that makes your existing tools work.</p>
+
+  <div class="footnotes">
+    <h3>References</h3>
+    <ol>
+      <li>MIT Sloan Management Review, "Why AI Pilots Fail at Scale" (2025)</li>
+      <li>Boston Consulting Group, "The Enterprise AI Value Gap" (2025)</li>
+      <li>Go2 Workforce Intelligence Report, n=2,000,000+ worker profiles (2026)</li>
+      <li>Internal satisfaction surveys, aggregate across Go2 deployments (2024-2026)</li>
+    </ol>
+  </div>
+</article>
+
+<section class="case-cta" id="cta">
+  <div class="inner">
+    <h2>Request the Full Research Report</h2>
+    <p>Get the complete 40-page analysis including detailed methodology, industry-specific findings, and implementation frameworks.</p>
+    <a href="#">Download the Report</a>
+  </div>
+</section>
+
+<footer>
+  &copy; 2026 Go2. All rights reserved. Go2 Research Review is published quarterly.
+</footer>
+
+</body>
+</html>
