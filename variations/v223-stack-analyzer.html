@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 - Analyze Your Tool Stack</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #0a0a0f; color: #fff; min-height: 100vh; overflow-x: hidden; }
+
+  .bg-gradient {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(ellipse at 30% 30%, rgba(99,102,241,0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 70%, rgba(168,85,247,0.08) 0%, transparent 50%);
+    z-index: 0; pointer-events: none;
+  }
+
+  .logo {
+    position: fixed; top: 24px; left: 32px; font-size: 22px; font-weight: 800; z-index: 100;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  .main { position: relative; z-index: 1; padding: 80px 20px 40px; }
+
+  .header { text-align: center; margin-bottom: 32px; }
+  .header h1 { font-size: clamp(28px, 4vw, 48px); font-weight: 300; margin-bottom: 8px; }
+  .header h1 strong { font-weight: 800; }
+  .header p { color: #64748b; font-size: 16px; max-width: 600px; margin: 0 auto; }
+
+  .tool-selector {
+    max-width: 800px; margin: 0 auto 32px; text-align: center;
+  }
+
+  .tool-search {
+    width: 100%; max-width: 500px; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+    color: #fff; font-size: 16px; padding: 14px 20px;
+    font-family: 'Inter', sans-serif; outline: none;
+    transition: border-color 0.3s; margin-bottom: 20px;
+  }
+  .tool-search:focus { border-color: rgba(99,102,241,0.5); }
+  .tool-search::placeholder { color: #475569; }
+
+  .tool-grid {
+    display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+    margin-bottom: 16px;
+  }
+
+  .tool-chip {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px; padding: 10px 18px; cursor: pointer;
+    transition: all 0.3s; font-size: 14px; color: #94a3b8;
+  }
+
+  .tool-chip:hover {
+    background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.3); color: #fff;
+  }
+
+  .tool-chip.selected {
+    background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.5);
+    color: #fff; box-shadow: 0 0 15px rgba(99,102,241,0.15);
+  }
+
+  .tool-chip .dot {
+    width: 10px; height: 10px; border-radius: 3px;
+  }
+
+  .selected-count {
+    font-size: 14px; color: #64748b; margin-top: 8px;
+  }
+
+  .selected-count strong { color: #818cf8; }
+
+  /* Canvas */
+  .canvas-container {
+    position: relative; width: 100%; max-width: 1200px; margin: 0 auto;
+    min-height: 500px;
+  }
+
+  #stackCanvas {
+    width: 100%; height: 600px; display: block;
+  }
+
+  /* Analysis Panel */
+  .analysis-panel {
+    max-width: 1000px; margin: 40px auto 0;
+    display: none;
+  }
+
+  .analysis-panel.visible { display: block; animation: fadeUp 0.6s ease; }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+  .analysis-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px; margin-bottom: 24px;
+  }
+
+  .analysis-card {
+    background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px; padding: 28px;
+  }
+
+  .card-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .card-header-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+  }
+
+  .card-header-icon.red { background: rgba(239,68,68,0.15); }
+  .card-header-icon.yellow { background: rgba(251,191,36,0.15); }
+  .card-header-icon.green { background: rgba(34,197,94,0.15); }
+  .card-header-icon.blue { background: rgba(59,130,246,0.15); }
+
+  .card-title { font-size: 16px; font-weight: 700; }
+
+  .gap-item {
+    padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 14px; color: #cbd5e1; line-height: 1.5;
+  }
+  .gap-item:last-child { border-bottom: none; }
+  .gap-item strong { color: #fff; }
+
+  .go2-node-section {
+    max-width: 1000px; margin: 32px auto;
+    background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.05));
+    border: 1px solid rgba(99,102,241,0.2); border-radius: 20px;
+    padding: 40px; text-align: center;
+  }
+
+  .go2-node-section h3 {
+    font-size: 24px; font-weight: 700; margin-bottom: 8px;
+  }
+
+  .go2-node-section p { color: #94a3b8; font-size: 15px; margin-bottom: 24px; }
+
+  .agent-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px; text-align: left;
+  }
+
+  .agent-card {
+    background: rgba(255,255,255,0.04); border-radius: 12px; padding: 20px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .agent-name { font-size: 14px; font-weight: 700; color: #818cf8; margin-bottom: 4px; }
+  .agent-desc { font-size: 13px; color: #94a3b8; line-height: 1.5; }
+
+  .cta-section {
+    text-align: center; margin: 40px auto; padding-bottom: 60px;
+  }
+
+  .cta-btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff; border: none; padding: 16px 40px;
+    border-radius: 14px; font-size: 16px; font-weight: 700;
+    font-family: 'Inter', sans-serif; cursor: pointer; transition: all 0.3s;
+  }
+
+  .cta-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(99,102,241,0.4);
+  }
+</style>
+</head>
+<body>
+<div class="bg-gradient"></div>
+<div class="logo">Go2</div>
+
+<div class="main">
+  <div class="header">
+    <h1>Analyze Your <strong>Tool Stack</strong></h1>
+    <p>Select the tools your team uses daily. We'll map your ecosystem and find where Go2 plugs in.</p>
+  </div>
+
+  <div class="tool-selector">
+    <input type="text" class="tool-search" id="toolSearch" placeholder="Search tools or click below..." oninput="filterTools()">
+    <div class="tool-grid" id="toolGrid"></div>
+    <div class="selected-count" id="selectedCount"></div>
+  </div>
+
+  <div class="canvas-container">
+    <canvas id="stackCanvas"></canvas>
+  </div>
+
+  <div class="analysis-panel" id="analysisPanel"></div>
+</div>
+
+<script>
+const tools = [
+  { name: 'Slack', cat: 'comm', color: '#E01E5A' },
+  { name: 'Microsoft Teams', cat: 'comm', color: '#6264A7' },
+  { name: 'Zoom', cat: 'comm', color: '#2D8CFF' },
+  { name: 'Gmail', cat: 'comm', color: '#EA4335' },
+  { name: 'Outlook', cat: 'comm', color: '#0078D4' },
+  { name: 'Salesforce', cat: 'crm', color: '#00A1E0' },
+  { name: 'HubSpot', cat: 'crm', color: '#FF7A59' },
+  { name: 'Pipedrive', cat: 'crm', color: '#0D7544' },
+  { name: 'Jira', cat: 'pm', color: '#0052CC' },
+  { name: 'Asana', cat: 'pm', color: '#F06A6A' },
+  { name: 'Monday.com', cat: 'pm', color: '#6161FF' },
+  { name: 'Trello', cat: 'pm', color: '#0079BF' },
+  { name: 'Linear', cat: 'pm', color: '#5E6AD2' },
+  { name: 'Notion', cat: 'docs', color: '#000000' },
+  { name: 'Confluence', cat: 'docs', color: '#172B4D' },
+  { name: 'Google Docs', cat: 'docs', color: '#4285F4' },
+  { name: 'Google Sheets', cat: 'data', color: '#0F9D58' },
+  { name: 'Excel', cat: 'data', color: '#217346' },
+  { name: 'Airtable', cat: 'data', color: '#18BFFF' },
+  { name: 'Zendesk', cat: 'support', color: '#03363D' },
+  { name: 'Intercom', cat: 'support', color: '#286EFA' },
+  { name: 'Freshdesk', cat: 'support', color: '#2FCC71' },
+  { name: 'QuickBooks', cat: 'finance', color: '#2CA01C' },
+  { name: 'Xero', cat: 'finance', color: '#13B5EA' },
+  { name: 'Stripe', cat: 'finance', color: '#635BFF' },
+  { name: 'GitHub', cat: 'dev', color: '#fff' },
+  { name: 'GitLab', cat: 'dev', color: '#FC6D26' },
+  { name: 'VS Code', cat: 'dev', color: '#007ACC' },
+  { name: 'Figma', cat: 'design', color: '#F24E1E' },
+  { name: 'Shopify', cat: 'ecomm', color: '#96BF48' },
+  { name: 'Mailchimp', cat: 'marketing', color: '#FFE01B' },
+  { name: 'Google Analytics', cat: 'data', color: '#E37400' },
+  { name: 'Zapier', cat: 'automation', color: '#FF4A00' },
+  { name: 'Make', cat: 'automation', color: '#6D00CC' }
+];
+
+const catLabels = {
+  comm: 'Communication', crm: 'CRM', pm: 'Project Management',
+  docs: 'Documentation', data: 'Data & Analytics', support: 'Support',
+  finance: 'Finance', dev: 'Development', design: 'Design',
+  ecomm: 'E-Commerce', marketing: 'Marketing', automation: 'Automation'
+};
+
+let selectedTools = [];
+const canvas = document.getElementById('stackCanvas');
+const ctx = canvas.getContext('2d');
+let nodes = [];
+let connections = [];
+let animFrame;
+
+function initToolGrid() {
+  const grid = document.getElementById('toolGrid');
+  grid.innerHTML = tools.map(t =>
+    `<div class="tool-chip" data-name="${t.name}" onclick="toggleTool('${t.name}')">
+      <span class="dot" style="background:${t.color}"></span>${t.name}
+    </div>`
+  ).join('');
+}
+
+function filterTools() {
+  const q = document.getElementById('toolSearch').value.toLowerCase();
+  document.querySelectorAll('.tool-chip').forEach(chip => {
+    chip.style.display = chip.dataset.name.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function toggleTool(name) {
+  const idx = selectedTools.indexOf(name);
+  if (idx > -1) selectedTools.splice(idx, 1);
+  else selectedTools.push(name);
+
+  document.querySelectorAll('.tool-chip').forEach(chip => {
+    chip.classList.toggle('selected', selectedTools.includes(chip.dataset.name));
+  });
+
+  document.getElementById('selectedCount').innerHTML = selectedTools.length > 0
+    ? `<strong>${selectedTools.length}</strong> tools selected`
+    : '';
+
+  updateCanvas();
+  if (selectedTools.length >= 2) buildAnalysis();
+  else document.getElementById('analysisPanel').classList.remove('visible');
+}
+
+function resizeCanvas() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2;
+  canvas.height = 600 * 2;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = '600px';
+  ctx.scale(2, 2);
+}
+
+function updateCanvas() {
+  resizeCanvas();
+  const w = canvas.width / 2;
+  const h = canvas.height / 2;
+
+  nodes = [];
+  connections = [];
+
+  if (selectedTools.length === 0) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#1e293b';
+    ctx.font = '16px Inter';
+    ctx.textAlign = 'center';
+    ctx.fillText('Select tools above to build your stack visualization', w / 2, h / 2);
+    return;
+  }
+
+  // Position nodes in a circle
+  const cx = w / 2;
+  const cy = h / 2;
+  const radius = Math.min(w, h) * 0.32;
+
+  selectedTools.forEach((name, i) => {
+    const angle = (i / selectedTools.length) * Math.PI * 2 - Math.PI / 2;
+    const tool = tools.find(t => t.name === name);
+    nodes.push({
+      x: cx + Math.cos(angle) * radius,
+      y: cy + Math.sin(angle) * radius,
+      name, color: tool?.color || '#6366f1',
+      cat: tool?.cat || 'other',
+      radius: 28,
+      targetX: cx + Math.cos(angle) * radius,
+      targetY: cy + Math.sin(angle) * radius
+    });
+  });
+
+  // Add Go2 center node
+  nodes.push({
+    x: cx, y: cy, name: 'Go2', color: '#6366f1',
+    cat: 'go2', radius: 36, targetX: cx, targetY: cy, isGo2: true
+  });
+
+  // Generate connections
+  const connPairs = getConnections();
+  connPairs.forEach(([a, b, strength]) => {
+    const na = nodes.find(n => n.name === a);
+    const nb = nodes.find(n => n.name === b);
+    if (na && nb) connections.push({ a: na, b: nb, strength });
+  });
+
+  // Connect all to Go2
+  const go2Node = nodes[nodes.length - 1];
+  nodes.slice(0, -1).forEach(n => {
+    connections.push({ a: n, b: go2Node, strength: 0.6, isGo2: true });
+  });
+
+  animate();
+}
+
+function getConnections() {
+  const pairs = [];
+  const connMap = {
+    'Slack': ['Jira', 'Asana', 'GitHub', 'Notion', 'Zoom', 'Google Docs', 'Linear', 'Trello', 'Monday.com', 'Salesforce', 'HubSpot'],
+    'Salesforce': ['HubSpot', 'Gmail', 'Outlook', 'Slack', 'Mailchimp', 'Stripe', 'Google Sheets'],
+    'HubSpot': ['Gmail', 'Slack', 'Mailchimp', 'Stripe', 'Google Sheets', 'Salesforce'],
+    'Jira': ['GitHub', 'GitLab', 'Slack', 'Confluence', 'Linear', 'VS Code'],
+    'GitHub': ['VS Code', 'Jira', 'Linear', 'Slack', 'GitLab'],
+    'Google Docs': ['Google Sheets', 'Slack', 'Notion', 'Gmail'],
+    'Zoom': ['Slack', 'Gmail', 'Outlook', 'Google Docs'],
+    'Zendesk': ['Slack', 'Salesforce', 'HubSpot', 'Intercom', 'Jira'],
+    'Notion': ['Slack', 'Google Docs', 'Jira', 'Asana', 'Figma'],
+    'QuickBooks': ['Stripe', 'Xero', 'Google Sheets', 'Excel'],
+    'Stripe': ['QuickBooks', 'Shopify', 'Xero', 'Salesforce'],
+    'Shopify': ['Stripe', 'Mailchimp', 'Google Analytics', 'Zendesk'],
+    'Zapier': ['Slack', 'Gmail', 'Google Sheets', 'Salesforce', 'HubSpot', 'Jira', 'Airtable'],
+    'Make': ['Slack', 'Gmail', 'Google Sheets', 'Salesforce', 'HubSpot', 'Airtable'],
+    'Figma': ['Slack', 'Notion', 'Jira', 'Linear'],
+    'Google Analytics': ['Google Sheets', 'Shopify', 'HubSpot'],
+    'Airtable': ['Slack', 'Google Sheets', 'Zapier', 'Make']
+  };
+
+  selectedTools.forEach(t => {
+    const conns = connMap[t] || [];
+    conns.forEach(c => {
+      if (selectedTools.includes(c) && !pairs.find(p => (p[0] === t && p[1] === c) || (p[0] === c && p[1] === t))) {
+        pairs.push([t, c, 0.7 + Math.random() * 0.3]);
+      }
+    });
+  });
+
+  return pairs;
+}
+
+function animate() {
+  if (animFrame) cancelAnimationFrame(animFrame);
+  const w = canvas.width / 2;
+  const h = canvas.height / 2;
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    // Draw connections
+    connections.forEach(c => {
+      ctx.beginPath();
+      ctx.moveTo(c.a.x, c.a.y);
+      ctx.lineTo(c.b.x, c.b.y);
+      if (c.isGo2) {
+        ctx.strokeStyle = `rgba(99, 102, 241, 0.15)`;
+        ctx.setLineDash([4, 6]);
+      } else {
+        ctx.strokeStyle = `rgba(255, 255, 255, ${c.strength * 0.15})`;
+        ctx.setLineDash([]);
+      }
+      ctx.lineWidth = c.isGo2 ? 1 : 1.5;
+      ctx.stroke();
+      ctx.setLineDash([]);
+    });
+
+    // Draw data flow particles on connections
+    const time = Date.now() / 1000;
+    connections.forEach((c, i) => {
+      const t = ((time * 0.3 + i * 0.2) % 1);
+      const px = c.a.x + (c.b.x - c.a.x) * t;
+      const py = c.a.y + (c.b.y - c.a.y) * t;
+      ctx.beginPath();
+      ctx.arc(px, py, 2, 0, Math.PI * 2);
+      ctx.fillStyle = c.isGo2 ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.3)';
+      ctx.fill();
+    });
+
+    // Draw nodes
+    nodes.forEach(n => {
+      // Glow
+      if (n.isGo2) {
+        const grd = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.radius * 2.5);
+        grd.addColorStop(0, 'rgba(99, 102, 241, 0.2)');
+        grd.addColorStop(1, 'transparent');
+        ctx.fillStyle = grd;
+        ctx.fillRect(n.x - n.radius * 3, n.y - n.radius * 3, n.radius * 6, n.radius * 6);
+      }
+
+      // Circle
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+      if (n.isGo2) {
+        const grad = ctx.createLinearGradient(n.x - n.radius, n.y, n.x + n.radius, n.y);
+        grad.addColorStop(0, '#6366f1');
+        grad.addColorStop(1, '#a855f7');
+        ctx.fillStyle = grad;
+      } else {
+        ctx.fillStyle = n.color === '#000000' || n.color === '#fff' ? '#1e293b' : n.color;
+      }
+      ctx.fill();
+
+      ctx.strokeStyle = n.isGo2 ? 'rgba(99,102,241,0.6)' : 'rgba(255,255,255,0.15)';
+      ctx.lineWidth = n.isGo2 ? 2 : 1;
+      ctx.stroke();
+
+      // Label
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = n.isGo2 ? 'bold 14px Inter' : '12px Inter';
+      ctx.textAlign = 'center';
+      ctx.fillText(n.name, n.x, n.y + n.radius + 18);
+
+      // Category label
+      if (!n.isGo2 && catLabels[n.cat]) {
+        ctx.fillStyle = '#475569';
+        ctx.font = '10px Inter';
+        ctx.fillText(catLabels[n.cat], n.x, n.y + n.radius + 32);
+      }
+    });
+
+    animFrame = requestAnimationFrame(draw);
+  }
+
+  draw();
+}
+
+function buildAnalysis() {
+  const panel = document.getElementById('analysisPanel');
+  const selTools = selectedTools.map(name => tools.find(t => t.name === name)).filter(Boolean);
+  const cats = [...new Set(selTools.map(t => t.cat))];
+
+  // Data gaps
+  const gaps = [];
+  const hasCRM = selTools.some(t => t.cat === 'crm');
+  const hasPM = selTools.some(t => t.cat === 'pm');
+  const hasComm = selTools.some(t => t.cat === 'comm');
+  const hasSupport = selTools.some(t => t.cat === 'support');
+  const hasDocs = selTools.some(t => t.cat === 'docs');
+  const hasFinance = selTools.some(t => t.cat === 'finance');
+  const hasData = selTools.some(t => t.cat === 'data');
+  const hasAutomation = selTools.some(t => t.cat === 'automation');
+
+  if (hasCRM && hasPM) gaps.push({ text: 'Your <strong>CRM</strong> and <strong>project management</strong> tools likely have disconnected data. Customer context doesn\'t flow into task assignments.', severity: 'high' });
+  if (hasComm && !hasDocs) gaps.push({ text: 'Decisions made in <strong>chat</strong> aren\'t captured in documentation. Tribal knowledge lives in message threads.', severity: 'high' });
+  if (hasCRM && !hasSupport) gaps.push({ text: 'No support tool connected to CRM. Sales doesn\'t see support tickets, and support doesn\'t see deal context.', severity: 'medium' });
+  if (hasPM && !hasData) gaps.push({ text: 'Project management without analytics means you\'re tracking work but not measuring productivity patterns.', severity: 'medium' });
+  if (hasFinance && !hasCRM) gaps.push({ text: 'Financial data is siloed from customer data. Revenue attribution is manual or nonexistent.', severity: 'high' });
+  if (selTools.length >= 4 && !hasAutomation) gaps.push({ text: `You have <strong>${selTools.length} tools</strong> but no automation layer. Data is moving between tools via copy-paste.`, severity: 'high' });
+  if (hasComm && hasComm && selTools.filter(t => t.cat === 'comm').length > 1) gaps.push({ text: 'Multiple communication tools create <strong>notification fatigue</strong> and fragmented conversations.', severity: 'medium' });
+
+  if (gaps.length === 0) gaps.push({ text: 'Your stack has reasonable connectivity but likely still has manual data transfer points that Go2 can bridge.', severity: 'low' });
+
+  // Tribal knowledge areas
+  const tribal = [];
+  if (hasComm) tribal.push('Chat threads contain undocumented decisions, workarounds, and institutional knowledge that disappears on scroll.');
+  if (hasCRM) tribal.push('CRM "notes" fields hold relationship context that only the account owner understands.');
+  if (hasPM) tribal.push('Task descriptions reference past decisions without linking to the original discussion.');
+  if (selTools.length >= 3) tribal.push(`With ${selTools.length} tools, each team member has their own mental model of "how things connect." No two people use the stack identically.`);
+
+  // Go2 agents
+  const agents = [];
+  if (hasComm) agents.push({ name: 'Communication Coach', desc: 'Monitors chat patterns, reduces noise, coaches async habits, summarizes key decisions.' });
+  if (hasCRM) agents.push({ name: 'CRM Intelligence Agent', desc: 'Auto-logs activities, predicts deal outcomes, identifies at-risk accounts from engagement patterns.' });
+  if (hasPM) agents.push({ name: 'Workflow Optimizer', desc: 'Maps actual task completion patterns, identifies bottlenecks, suggests process improvements.' });
+  if (hasSupport) agents.push({ name: 'Support Accelerator', desc: 'Auto-resolves common tickets, surfaces relevant knowledge, predicts escalations.' });
+  if (hasDocs) agents.push({ name: 'Knowledge Curator', desc: 'Keeps documentation current, cross-references discussions with docs, flags stale content.' });
+  if (hasFinance) agents.push({ name: 'Financial Connector', desc: 'Links revenue data to operational activity, auto-generates reports, flags anomalies.' });
+  agents.push({ name: 'Process Recorder', desc: 'Captures how work actually happens across all tools. Auto-documents workflows as they occur.' });
+  agents.push({ name: 'Onboarding Coach', desc: 'Guides new team members through your specific tool stack with real-time contextual tips.' });
+
+  panel.innerHTML = `
+    <div class="analysis-grid">
+      <div class="analysis-card">
+        <div class="card-header">
+          <div class="card-header-icon red">&#9888;&#65039;</div>
+          <div class="card-title">Data Gaps Identified</div>
+        </div>
+        ${gaps.map(g => `<div class="gap-item">${g.text}</div>`).join('')}
+      </div>
+      <div class="analysis-card">
+        <div class="card-header">
+          <div class="card-header-icon yellow">&#129504;</div>
+          <div class="card-title">Where Tribal Knowledge Lives</div>
+        </div>
+        ${tribal.map(t => `<div class="gap-item">${t}</div>`).join('')}
+      </div>
+    </div>
+
+    <div class="analysis-card" style="margin-bottom:24px;">
+      <div class="card-header">
+        <div class="card-header-icon blue">&#128202;</div>
+        <div class="card-title">Stack Complexity Score</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;text-align:center;margin-top:12px;">
+        <div>
+          <div style="font-size:36px;font-weight:800;color:#f87171;">${selTools.length}</div>
+          <div style="font-size:12px;color:#64748b;">Tools in Stack</div>
+        </div>
+        <div>
+          <div style="font-size:36px;font-weight:800;color:#fbbf24;">${Math.round(selTools.length * (selTools.length - 1) / 2)}</div>
+          <div style="font-size:12px;color:#64748b;">Potential Data Paths</div>
+        </div>
+        <div>
+          <div style="font-size:36px;font-weight:800;color:#4ade80;">${cats.length}</div>
+          <div style="font-size:12px;color:#64748b;">Categories Covered</div>
+        </div>
+      </div>
+      <p style="color:#94a3b8;font-size:13px;margin-top:16px;line-height:1.6;">
+        Each tool adds complexity. With ${selTools.length} tools, your team manages ~${Math.round(selTools.length * (selTools.length - 1) / 2)} potential data transfer points.
+        Without Go2, each transfer is a manual copy-paste, a forgotten update, or lost context.
+        Go2 sits at the center of your stack, observing how work flows and coaching your team in real-time.
+      </p>
+    </div>
+
+    <div class="go2-node-section">
+      <h3>Go2 Agents for Your Stack</h3>
+      <p>Based on your ${selTools.length}-tool ecosystem, Go2 would deploy these AI agents:</p>
+      <div class="agent-grid">
+        ${agents.map(a => `<div class="agent-card"><div class="agent-name">${a.name}</div><div class="agent-desc">${a.desc}</div></div>`).join('')}
+      </div>
+    </div>
+
+    <div class="cta-section">
+      <p style="color:#94a3b8;font-size:15px;margin-bottom:16px;">
+        Go2 connects to all ${selTools.length} of your tools in under 5 minutes.
+      </p>
+      <button class="cta-btn" onclick="window.open('https://go2.io','_blank')">
+        Connect Your Stack &mdash; Free Trial
+      </button>
+    </div>
+  `;
+
+  panel.classList.add('visible');
+}
+
+window.addEventListener('resize', () => { if (selectedTools.length > 0) updateCanvas(); });
+
+initToolGrid();
+updateCanvas();
+</script>
+</body>
+</html>

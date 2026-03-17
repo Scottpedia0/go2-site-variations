@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — See What Go2 Sees</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+body{background:#0a0e17;color:#c8d6e5;font-family:'Inter',sans-serif;min-height:100vh}
+.container{max-width:1200px;margin:0 auto;padding:32px 24px}
+h1{font-size:32px;font-weight:800;color:#fff}
+h1 span{color:#00ff87}
+.subtitle{color:#4a6fa5;font-size:13px;font-family:'JetBrains Mono',monospace;margin:8px 0 32px}
+.worker-selector{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.worker-tab{background:#111827;border:1px solid #1e293b;border-radius:8px;padding:10px 18px;font-size:13px;color:#8892b0;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+.worker-tab.active{background:#00ff8722;border-color:#00ff87;color:#00ff87}
+.worker-tab:hover{border-color:#2a3a52}
+.timeline-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.timeline-header h3{font-size:14px;color:#fff;font-weight:600}
+.day-labels{display:flex;gap:0;margin-bottom:4px}
+.day-label{flex:1;text-align:center;font-size:10px;color:#4a6fa5;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px}
+.timeline-grid{display:flex;flex-direction:column;gap:2px;margin-bottom:24px;position:relative}
+.timeline-row{display:flex;align-items:center;gap:0}
+.time-label{width:50px;font-size:9px;color:#4a6fa5;font-family:'JetBrains Mono',monospace;text-align:right;padding-right:8px;flex-shrink:0}
+.blocks-row{display:flex;flex:1;gap:1px;position:relative}
+.block{height:20px;flex:1;border-radius:2px;cursor:pointer;transition:opacity .15s;position:relative}
+.block:hover{opacity:.8;z-index:2;transform:scaleY(1.3)}
+.block.deep{background:#00ff87}
+.block.collab{background:#64b5f6}
+.block.admin{background:#ffd54f}
+.block.comms{background:#e040fb}
+.block.context-switch{background:#ff5252}
+.block.break{background:#1e293b}
+.block.idle{background:#2a1a1a}
+
+.scan-overlay{position:absolute;top:0;left:50px;right:0;bottom:0;pointer-events:none;overflow:hidden;display:none}
+.scan-line{position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#00ff87,transparent);box-shadow:0 0 20px #00ff87;animation:scanDown 3s ease-in-out forwards}
+@keyframes scanDown{0%{top:0;opacity:1}90%{top:100%;opacity:1}100%{top:100%;opacity:0}}
+
+.legend{display:flex;gap:16px;margin:16px 0 32px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#8892b0}
+.legend-dot{width:14px;height:14px;border-radius:3px}
+
+.patterns-section{display:none;margin-top:32px}
+.patterns-section.show{display:block;animation:fadeUp .5s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.pattern-card{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:20px;margin-bottom:16px;display:flex;gap:20px;position:relative;overflow:hidden}
+.pattern-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
+.pattern-card.critical::before{background:#ff5252}
+.pattern-card.warning::before{background:#ffd54f}
+.pattern-card.info::before{background:#64b5f6}
+.pattern-card.positive::before{background:#00ff87}
+.pattern-icon{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.pattern-card.critical .pattern-icon{background:#ff525222;color:#ff5252}
+.pattern-card.warning .pattern-icon{background:#ffd54f22;color:#ffd54f}
+.pattern-card.info .pattern-icon{background:#64b5f622;color:#64b5f6}
+.pattern-card.positive .pattern-icon{background:#00ff8722;color:#00ff87}
+.pattern-content{flex:1}
+.pattern-content h4{font-size:14px;color:#fff;font-weight:600;margin-bottom:4px}
+.pattern-content .detail{font-size:13px;color:#8892b0;line-height:1.6}
+.pattern-content .metric{font-family:'JetBrains Mono',monospace;color:#fff;font-weight:500}
+.pattern-content .impact{font-size:12px;margin-top:8px;padding:6px 10px;background:#0a0e17;border-radius:6px;display:inline-block}
+.pattern-card.critical .impact{color:#ff5252}
+.pattern-card.warning .impact{color:#ffd54f}
+.pattern-card.info .impact{color:#64b5f6}
+.pattern-card.positive .impact{color:#00ff87}
+
+.coaching-section{display:none;margin-top:32px}
+.coaching-section.show{display:block;animation:fadeUp .5s ease}
+.coaching-card{background:#0d2818;border:1px solid #00ff8744;border-radius:12px;padding:20px;margin-bottom:16px;position:relative}
+.coaching-card h4{font-size:14px;color:#00ff87;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.coaching-card .recommendation{font-size:13px;color:#c8d6e5;line-height:1.7}
+.coaching-card .expected{font-size:12px;color:#4a6fa5;margin-top:12px;font-family:'JetBrains Mono',monospace}
+.coaching-card .before-after{display:flex;gap:16px;margin-top:12px}
+.ba-item{flex:1;padding:12px;background:#0a0e17;border-radius:8px;text-align:center}
+.ba-item .ba-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#4a6fa5;margin-bottom:4px}
+.ba-item .ba-val{font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.ba-item.before .ba-val{color:#ff5252}
+.ba-item.after .ba-val{color:#00ff87}
+
+.action-row{display:flex;gap:12px;margin:24px 0}
+.btn{padding:12px 24px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;border:none}
+.btn-primary{background:linear-gradient(135deg,#00ff87,#00cc6a);color:#0a0e17}
+.btn-primary:hover{box-shadow:0 4px 20px rgba(0,255,135,.3);transform:translateY(-1px)}
+.btn-secondary{background:#111827;border:1px solid #1e293b;color:#8892b0}
+.btn-secondary:hover{border-color:#00ff87;color:#00ff87}
+.btn-secondary.active{background:#00ff8722;border-color:#00ff87;color:#00ff87}
+
+.highlight-block{position:absolute;border:2px solid;border-radius:3px;pointer-events:none;animation:highlightPulse 1.5s infinite}
+@keyframes highlightPulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+.summary-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
+.summary-item{background:#111827;border:1px solid #1e293b;border-radius:8px;padding:14px;text-align:center}
+.summary-item .sv{font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace;color:#fff}
+.summary-item .sl{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#4a6fa5;margin-top:4px}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>See What <span>Go2 Sees</span></h1>
+  <div class="subtitle">AI pattern recognition on real work data &mdash; anonymized employee activity from a Go2 customer</div>
+
+  <div class="worker-selector" id="worker-tabs"></div>
+
+  <div class="summary-bar" id="summary-bar"></div>
+
+  <div class="timeline-header">
+    <h3>Weekly Activity Timeline</h3>
+    <div style="font-size:11px;color:#4a6fa5;font-family:'JetBrains Mono',monospace" id="week-label">Mar 10 - Mar 14, 2026</div>
+  </div>
+  <div class="day-labels" id="day-labels"></div>
+  <div class="timeline-grid" id="timeline">
+    <div class="scan-overlay" id="scan-overlay"><div class="scan-line"></div></div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot deep"></div>Deep Focus</div>
+    <div class="legend-item"><div class="legend-dot collab"></div>Collaboration</div>
+    <div class="legend-item"><div class="legend-dot admin"></div>Admin / Manual Work</div>
+    <div class="legend-item"><div class="legend-dot comms"></div>Meetings / Comms</div>
+    <div class="legend-item"><div class="legend-dot context-switch"></div>Context Switching</div>
+    <div class="legend-item"><div class="legend-dot break"></div>Break / Away</div>
+  </div>
+
+  <div class="action-row">
+    <button class="btn btn-primary" id="btn-scan" onclick="runScan()">Run AI Pattern Analysis</button>
+    <button class="btn btn-secondary" id="btn-coaching" onclick="showCoaching()" style="display:none">Show Coaching Recommendations</button>
+  </div>
+
+  <div class="patterns-section" id="patterns"></div>
+  <div class="coaching-section" id="coaching"></div>
+</div>
+
+<script>
+const workers=[
+  {name:'Worker A — Senior Developer',role:'dev',patterns:{deepPct:35,adminPct:22,collabPct:18,commsPct:15,switchPct:10,peakHours:'6am-8am',switches:47,manualHrs:3.2,focusBlocks:2.1}},
+  {name:'Worker B — Project Manager',role:'pm',patterns:{deepPct:15,adminPct:28,collabPct:12,commsPct:35,switchPct:10,peakHours:'10am-12pm',switches:62,manualHrs:4.1,focusBlocks:0.8}},
+  {name:'Worker C — Data Analyst',role:'analyst',patterns:{deepPct:40,adminPct:30,collabPct:10,commsPct:12,switchPct:8,peakHours:'7am-10am',switches:31,manualHrs:5.4,focusBlocks:3.2}},
+  {name:'Worker D — Sales Rep',role:'sales',patterns:{deepPct:10,adminPct:18,collabPct:22,commsPct:40,switchPct:10,peakHours:'2pm-4pm',switches:55,manualHrs:2.8,focusBlocks:0.5}},
+];
+
+let currentWorker=0;
+let scanned=false;
+
+function init(){
+  const tabs=document.getElementById('worker-tabs');
+  tabs.innerHTML=workers.map((w,i)=>`<div class="worker-tab ${i===0?'active':''}" onclick="selectWorker(${i})">${w.name}</div>`).join('');
+  renderTimeline();
+}
+
+function selectWorker(i){
+  currentWorker=i;
+  scanned=false;
+  document.querySelectorAll('.worker-tab').forEach((t,j)=>t.classList.toggle('active',j===i));
+  document.getElementById('patterns').classList.remove('show');
+  document.getElementById('patterns').style.display='none';
+  document.getElementById('coaching').classList.remove('show');
+  document.getElementById('coaching').style.display='none';
+  document.getElementById('btn-coaching').style.display='none';
+  document.getElementById('btn-scan').style.display='';
+  renderTimeline();
+}
+
+function renderTimeline(){
+  const w=workers[currentWorker];
+  const days=['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  document.getElementById('day-labels').innerHTML=`<div style="width:50px;flex-shrink:0"></div>`+days.map(d=>`<div class="day-label">${d}</div>`).join('');
+
+  // Summary
+  const sb=document.getElementById('summary-bar');
+  sb.innerHTML=`
+    <div class="summary-item"><div class="sv">${w.patterns.deepPct}%</div><div class="sl">Deep Focus</div></div>
+    <div class="summary-item"><div class="sv" style="color:#ffd54f">${w.patterns.adminPct}%</div><div class="sl">Manual Work</div></div>
+    <div class="summary-item"><div class="sv" style="color:#ff5252">${w.patterns.switches}</div><div class="sl">Context Switches/Day</div></div>
+    <div class="summary-item"><div class="sv" style="color:#e040fb">${w.patterns.manualHrs}h</div><div class="sl">Manual Data Entry/Day</div></div>
+    <div class="summary-item"><div class="sv">${w.patterns.focusBlocks}h</div><div class="sl">Avg Focus Block</div></div>`;
+
+  const timeline=document.getElementById('timeline');
+  // Keep scan overlay reference
+  const hours=['6a','7a','8a','9a','10a','11a','12p','1p','2p','3p','4p','5p','6p'];
+  let html='<div class="scan-overlay" id="scan-overlay"><div class="scan-line"></div></div>';
+
+  // Generate pseudo-random but deterministic blocks
+  const seed=currentWorker*1000;
+  function seededRand(s){s=Math.sin(s)*43758.5453;return s-Math.floor(s)}
+
+  const types=['deep','collab','admin','comms','context-switch','break'];
+  const weights={
+    dev:[.35,.18,.22,.15,.08,.02],
+    pm:[.15,.12,.28,.35,.08,.02],
+    analyst:[.40,.10,.30,.12,.06,.02],
+    sales:[.10,.22,.18,.40,.08,.02]
+  };
+  const wt=weights[w.role];
+
+  hours.forEach((h,hi)=>{
+    html+=`<div class="timeline-row"><div class="time-label">${h}</div><div class="blocks-row">`;
+    for(let d=0;d<5;d++){
+      // 4 blocks per hour
+      for(let b=0;b<4;b++){
+        const r=seededRand(seed+hi*100+d*20+b);
+        let cumul=0,type='break';
+        for(let t=0;t<wt.length;t++){
+          cumul+=wt[t];
+          // Time-of-day adjustments
+          let adj=wt[t];
+          if(types[t]==='deep'&&(hi<2||hi>9))adj*=.3;
+          if(types[t]==='comms'&&(hi>=3&&hi<=7))adj*=1.5;
+          if(types[t]==='break'&&(hi===6))adj=.4;// lunch
+          cumul=0;
+        }
+        // Recalculate with adjustments
+        let adjW=[...wt];
+        if(hi<2){adjW[0]*=1.8;adjW[3]*=.3;}// early = more deep
+        if(hi>=3&&hi<=5){adjW[3]*=1.5;adjW[0]*=.5;}// mid-morning = meetings
+        if(hi===6){adjW[5]=.3;}// lunch breaks
+        if(hi>=8&&hi<=9){adjW[0]*=1.3;adjW[3]*=.6;}// afternoon focus
+        if(hi>=10){adjW[0]*=.4;adjW[1]*=.5;adjW[5]*=2;}// wind down
+        const total=adjW.reduce((a,b)=>a+b,0);
+        adjW=adjW.map(x=>x/total);
+        cumul=0;
+        for(let t=0;t<adjW.length;t++){
+          cumul+=adjW[t];
+          if(r<cumul){type=types[t];break;}
+        }
+        const blockId=`b-${hi}-${d}-${b}`;
+        html+=`<div class="block ${type}" id="${blockId}" title="${h}:${b*15}0 - ${types.indexOf(type)>=0?type.replace('-',' '):''}"></div>`;
+      }
+    }
+    html+=`</div></div>`;
+  });
+  timeline.innerHTML=html;
+}
+
+function runScan(){
+  const overlay=document.getElementById('scan-overlay');
+  overlay.style.display='block';
+  // Reset animation
+  const line=overlay.querySelector('.scan-line');
+  line.style.animation='none';
+  line.offsetHeight;
+  line.style.animation='scanDown 3s ease-in-out forwards';
+
+  document.getElementById('btn-scan').textContent='Analyzing...';
+  document.getElementById('btn-scan').disabled=true;
+
+  setTimeout(()=>{
+    showPatterns();
+    document.getElementById('btn-scan').style.display='none';
+    document.getElementById('btn-coaching').style.display='';
+    overlay.style.display='none';
+    scanned=true;
+  },3200);
+}
+
+function showPatterns(){
+  const w=workers[currentWorker];
+  const p=w.patterns;
+  const patternsEl=document.getElementById('patterns');
+
+  const patternData=[
+    {
+      type:'critical',icon:'&#9888;',
+      title:`${p.switches} context switches per day detected`,
+      detail:`This worker switches between applications and tasks an average of <span class="metric">${p.switches} times per day</span>. Research shows each switch costs 23 minutes of refocus time. That's <span class="metric">${(p.switches*23/60).toFixed(1)} hours/day</span> of lost cognitive capacity.`,
+      impact:`Estimated cost: $${Math.round(p.switches*23/60*45*250/1000)}K/year in lost productivity`
+    },
+    {
+      type:'warning',icon:'&#9202;',
+      title:`${p.manualHrs} hours/day on manual data entry`,
+      detail:`Pattern analysis shows <span class="metric">${p.manualHrs} hours daily</span> spent on repetitive manual tasks including data entry, copy-paste operations, and manual report formatting. These tasks follow consistent patterns suitable for automation.`,
+      impact:`${Math.round(p.manualHrs*250)} hours/year of automatable work identified`
+    },
+    {
+      type:'positive',icon:'&#9733;',
+      title:`Peak deep work window: ${p.peakHours}`,
+      detail:`This worker's most productive deep focus periods consistently occur between <span class="metric">${p.peakHours}</span>. Average focus block duration during this window is <span class="metric">${(p.focusBlocks*1.6).toFixed(1)} hours</span> compared to <span class="metric">${(p.focusBlocks*.6).toFixed(1)} hours</span> at other times.`,
+      impact:`Protecting this window could add 1.4 hours of deep work daily`
+    },
+    {
+      type:'info',icon:'&#128200;',
+      title:`Meeting load: ${p.commsPct}% of working time`,
+      detail:`<span class="metric">${p.commsPct}%</span> of this worker's time is spent in meetings and synchronous communication. Analysis shows <span class="metric">${Math.round(p.commsPct*.35)}%</span> of meetings have no clear agenda or outcome, and <span class="metric">${Math.round(p.commsPct*.25)}%</span> could be replaced with async updates.`,
+      impact:`${Math.round(p.commsPct*.6*40/100*52)} hours/year recoverable through meeting optimization`
+    },
+    {
+      type:'warning',icon:'&#128260;',
+      title:`Process documentation gap detected`,
+      detail:`This worker performs <span class="metric">${Math.round(p.adminPct*.6*8/100*10)/10} hours/day</span> of process-dependent work that has no documented procedure. If this worker left, institutional knowledge for <span class="metric">${Math.round(p.adminPct*.8)} processes</span> would be lost.`,
+      impact:`Knowledge risk: ${Math.round(p.adminPct*.8)} undocumented processes`
+    }
+  ];
+
+  patternsEl.innerHTML=`<h2 style="font-size:18px;color:#fff;margin-bottom:16px;font-weight:700">Patterns Detected <span style="font-size:12px;color:#4a6fa5;font-weight:400">(${patternData.length} findings)</span></h2>`;
+  patternData.forEach((pat,i)=>{
+    setTimeout(()=>{
+      const card=document.createElement('div');
+      card.className=`pattern-card ${pat.type}`;
+      card.style.animation='fadeUp .4s ease';
+      card.innerHTML=`<div class="pattern-icon">${pat.icon}</div><div class="pattern-content"><h4>${pat.title}</h4><div class="detail">${pat.detail}</div><div class="impact">${pat.impact}</div></div>`;
+      patternsEl.appendChild(card);
+    },i*400);
+  });
+
+  patternsEl.style.display='block';
+  patternsEl.classList.add('show');
+}
+
+function showCoaching(){
+  const w=workers[currentWorker];
+  const p=w.patterns;
+  const coachingEl=document.getElementById('coaching');
+
+  const recommendations=[
+    {
+      title:'Focus Shield: Protect peak hours',
+      text:`Go2 would automatically enable "Focus Shield" during ${p.peakHours}, silencing non-critical notifications, blocking meeting invites, and displaying a "deep work" status to the team. Based on similar workers, this typically adds 1.2-1.8 hours of uninterrupted focus per day.`,
+      before:`${p.focusBlocks}h avg focus block`,
+      after:`${(p.focusBlocks*1.8).toFixed(1)}h avg focus block`,
+      expected:'Expected improvement within 2 weeks'
+    },
+    {
+      title:'Auto-Document & Automate',
+      text:`Go2 identified ${Math.round(p.adminPct*.6)} repetitive workflows suitable for automation. The AI agent would first document each process by observing the worker, then propose step-by-step automation. Starting with the highest-impact task (estimated ${(p.manualHrs*.4).toFixed(1)} hrs/day), Go2 would train a bot on the worker's actual patterns.`,
+      before:`${p.manualHrs}h/day manual work`,
+      after:`${(p.manualHrs*.3).toFixed(1)}h/day manual work`,
+      expected:'70% reduction in manual tasks within 30 days'
+    },
+    {
+      title:'Context Switch Reduction Protocol',
+      text:`Go2 would implement intelligent task batching, grouping similar activities together and suggesting optimal switching points. Real-time nudges would alert the worker when they're about to break a focus session for a low-priority interruption. The AI learns which interruptions are truly urgent vs. ones that can wait.`,
+      before:`${p.switches} switches/day`,
+      after:`${Math.round(p.switches*.45)} switches/day`,
+      expected:'55% reduction in context switches within 3 weeks'
+    },
+    {
+      title:'Meeting Optimizer',
+      text:`Go2 would analyze meeting patterns and suggest: converting ${Math.round(p.commsPct*.25)}% of recurring meetings to async updates, adding agenda requirements, and providing AI-generated summaries so attendance becomes optional for status-only meetings.`,
+      before:`${p.commsPct}% time in meetings`,
+      after:`${Math.round(p.commsPct*.55)}% time in meetings`,
+      expected:'Recovers ~${Math.round(p.commsPct*.45*40/100)} hours/week per worker'
+    }
+  ];
+
+  coachingEl.innerHTML=`<h2 style="font-size:18px;color:#00ff87;margin-bottom:16px;font-weight:700">Go2 Coaching Recommendations</h2>`;
+  recommendations.forEach((rec,i)=>{
+    setTimeout(()=>{
+      const card=document.createElement('div');
+      card.className='coaching-card';
+      card.style.animation='fadeUp .4s ease';
+      card.innerHTML=`
+        <h4><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1L10 6H15L11 9.5L12.5 15L8 11.5L3.5 15L5 9.5L1 6H6L8 1Z" fill="#00ff87"/></svg> ${rec.title}</h4>
+        <div class="recommendation">${rec.text}</div>
+        <div class="before-after">
+          <div class="ba-item before"><div class="ba-label">Current</div><div class="ba-val">${rec.before}</div></div>
+          <div class="ba-item after"><div class="ba-label">With Go2</div><div class="ba-val">${rec.after}</div></div>
+        </div>
+        <div class="expected">${rec.expected}</div>`;
+      coachingEl.appendChild(card);
+    },i*350);
+  });
+
+  coachingEl.style.display='block';
+  coachingEl.classList.add('show');
+  document.getElementById('btn-coaching').classList.add('active');
+
+  setTimeout(()=>{
+    coachingEl.scrollIntoView({behavior:'smooth',block:'start'});
+  },200);
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 for Healthcare Administration | go2.io</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a2e;--border:#2a2a3e;--primary:#06b6d4;--primary-glow:#06b6d433;--accent:#22c55e;--text:#e2e8f0;--text-dim:#94a3b8;--success:#22c55e;--warning:#eab308;--danger:#ef4444}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.6}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 0;background:var(--bg)cc;backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+nav .container{display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:22px;font-weight:800;color:var(--text);text-decoration:none}.logo span{color:var(--primary)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:none;transition:all .2s}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{filter:brightness(1.1);transform:translateY(-1px);box-shadow:0 8px 30px var(--primary-glow)}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{border-color:var(--primary)}
+.hero{min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 50%,var(--primary-glow),transparent 50%),radial-gradient(circle at 70% 50%,#22c55e22,transparent 50%);animation:g 8s ease-in-out infinite alternate}
+@keyframes g{0%{transform:translate(0,0)}100%{transform:translate(-5%,3%)}}
+.hero-content{position:relative;z-index:1;max-width:700px}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:100px;font-size:13px;color:var(--primary);margin-bottom:24px}
+.badge::before{content:'';width:8px;height:8px;background:var(--primary);border-radius:50%;animation:p 2s infinite}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.4}}
+.hero h1{font-size:clamp(36px,5vw,60px);font-weight:800;line-height:1.1;margin-bottom:20px;background:linear-gradient(135deg,#fff,var(--primary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:18px;color:var(--text-dim);margin-bottom:32px;max-width:560px}
+.hero-stats{display:flex;gap:32px;margin-top:40px;flex-wrap:wrap}
+.hero-stat .num{font-size:32px;font-weight:800;color:var(--primary)}
+.hero-stat .label{font-size:13px;color:var(--text-dim)}
+section{padding:100px 0}.section-label{font-size:13px;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px}
+.section-title{font-size:clamp(28px,3.5vw,42px);font-weight:800;margin-bottom:16px}
+.section-desc{font-size:16px;color:var(--text-dim);max-width:600px;margin-bottom:48px}
+
+/* Scheduling Viz */
+.schedule-viz{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px;overflow-x:auto}
+.schedule-grid{display:grid;grid-template-columns:80px repeat(12,1fr);gap:2px;min-width:800px}
+.schedule-header{font-size:11px;color:var(--text-dim);text-align:center;padding:8px 4px;font-weight:600}
+.schedule-provider{font-size:12px;font-weight:600;padding:8px;display:flex;align-items:center}
+.schedule-slot{height:40px;border-radius:6px;cursor:pointer;transition:all .2s;position:relative;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600}
+.schedule-slot:hover{transform:scale(1.05);z-index:2}
+.slot-booked{background:#06b6d433;border:1px solid #06b6d466;color:var(--primary)}
+.slot-open{background:var(--surface2);border:1px solid var(--border);color:var(--text-dim)}
+.slot-gap{background:#ef444422;border:1px solid #ef444444;color:var(--danger)}
+.slot-optimized{background:#22c55e22;border:1px solid #22c55e44;color:var(--success)}
+.schedule-legend{display:flex;gap:20px;margin-top:16px;flex-wrap:wrap}
+.schedule-legend .leg{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-dim)}
+.schedule-legend .leg .dot{width:12px;height:12px;border-radius:4px}
+.schedule-controls{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.schedule-controls button{padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;transition:all .2s}
+.schedule-controls button.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.schedule-controls button:hover{border-color:var(--primary)}
+
+/* Claims Flow */
+.claims-flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.claims-step{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center;transition:all .3s;cursor:pointer}
+.claims-step:hover{border-color:var(--primary);transform:translateY(-2px)}
+.claims-step .step-icon{font-size:32px;margin-bottom:8px}
+.claims-step h4{font-size:14px;margin-bottom:4px}
+.claims-step p{font-size:12px;color:var(--text-dim)}
+.claims-step .status{display:inline-block;padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700;margin-top:8px}
+.claims-step .status.auto{background:#22c55e22;color:var(--success)}
+.claims-step .status.manual{background:#ef444422;color:var(--danger)}
+.claims-step .status.coached{background:#06b6d422;color:var(--primary)}
+.claims-detail{margin-top:20px;padding:20px;background:var(--surface);border:1px solid var(--border);border-radius:16px;display:none}
+.claims-detail.active{display:block}
+
+/* Wait Time */
+.wait-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px}
+.wait-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center}
+.wait-card .before-after{display:flex;justify-content:center;gap:20px;margin-top:12px}
+.wait-card .ba-item .ba-val{font-size:28px;font-weight:800}
+.wait-card .ba-item .ba-label{font-size:11px;color:var(--text-dim)}
+.wait-card .arrow{font-size:24px;color:var(--success);display:flex;align-items:center}
+
+/* Compliance */
+.compliance-list{display:grid;gap:16px}
+.compliance-item{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:center}
+.compliance-item .c-icon{width:48px;height:48px;border-radius:12px;background:var(--primary-glow);display:flex;align-items:center;justify-content:center;font-size:22px}
+.compliance-item h4{font-size:15px;margin-bottom:4px}
+.compliance-item p{font-size:13px;color:var(--text-dim)}
+.compliance-item .c-status{text-align:right;font-size:12px;font-weight:700;color:var(--success)}
+
+/* Coaching */
+.coaching-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:24px}
+.coaching-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;transition:all .3s}
+.coaching-card:hover{border-color:var(--primary)}
+.coaching-card .scenario{font-size:13px;color:var(--accent);margin-bottom:8px;font-weight:600}
+.coaching-card .situation{font-size:14px;margin-bottom:16px;color:var(--text-dim)}
+.coaching-card .ai-response{background:var(--surface2);border-left:3px solid var(--primary);padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;line-height:1.6}
+.coaching-card .ai-response strong{color:var(--primary)}
+
+/* ROI */
+.roi-calc{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px;display:grid;grid-template-columns:1fr 1fr;gap:40px}
+@media(max-width:768px){.roi-calc{grid-template-columns:1fr}}
+.roi-inputs label{display:block;font-size:13px;color:var(--text-dim);margin-bottom:6px;margin-top:16px}
+.roi-inputs label:first-child{margin-top:0}
+.roi-inputs input[type=range]{width:100%;accent-color:var(--primary)}
+.roi-inputs .val{font-size:20px;font-weight:700;color:var(--primary)}
+.roi-results{background:var(--surface2);border-radius:16px;padding:28px}
+.roi-results h3{font-size:18px;margin-bottom:24px}
+.roi-row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}.roi-row:last-child{border:none}
+.roi-row .rl{color:var(--text-dim);font-size:14px}.roi-row .rv{font-weight:700;font-size:16px}
+.roi-total{margin-top:16px;padding:16px;background:var(--primary-glow);border-radius:12px;text-align:center}
+.roi-total .amount{font-size:36px;font-weight:800;color:var(--primary)}
+.roi-total .period{font-size:13px;color:var(--text-dim)}
+
+.hipaa-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:#22c55e11;border:1px solid #22c55e44;border-radius:8px;font-size:13px;color:var(--success);margin-bottom:24px}
+footer{padding:60px 0;border-top:1px solid var(--border);text-align:center}footer p{color:var(--text-dim);font-size:14px}footer a{color:var(--primary);text-decoration:none}
+</style>
+</head>
+<body>
+<nav><div class="container"><a href="#" class="logo">Go<span>2</span></a><button class="btn btn-primary" style="padding:10px 20px;font-size:13px">Schedule Demo</button></div></nav>
+
+<section class="hero">
+<div class="container"><div class="hero-content">
+<div class="badge">Built for Healthcare Admin</div>
+<h1>Your admin staff spends 62% of their day on tasks AI can handle.</h1>
+<p>Go2 observes how your front desk, billing, and scheduling teams actually work -- then coaches them in real-time and automates the repetitive parts. HIPAA-compliant by design.</p>
+<div class="hipaa-badge">&#128274; HIPAA-Compliant -- No PHI stored or transmitted</div>
+<div style="display:flex;gap:12px;flex-wrap:wrap">
+<button class="btn btn-primary" onclick="document.getElementById('scheduling').scrollIntoView({behavior:'smooth'})">See Scheduling Optimizer</button>
+<button class="btn btn-secondary" onclick="document.getElementById('claims').scrollIntoView({behavior:'smooth'})">Claims Automation</button>
+</div>
+<div class="hero-stats">
+<div class="hero-stat"><div class="num">34%</div><div class="label">Reduction in no-shows</div></div>
+<div class="hero-stat"><div class="num">71%</div><div class="label">Faster claims processing</div></div>
+<div class="hero-stat"><div class="num">$18K</div><div class="label">Monthly admin savings</div></div>
+</div>
+</div></div>
+</section>
+
+<section id="scheduling">
+<div class="container">
+<div class="section-label">Scheduling Optimization</div>
+<div class="section-title">Your schedule has $12K/month in hidden gaps</div>
+<div class="section-desc">Go2 analyzes scheduling patterns to identify wasted slots, optimize provider utilization, and reduce patient wait times.</div>
+<div class="schedule-viz">
+<div class="schedule-controls">
+<button class="active" onclick="showSchedule('before',this)">Before Go2</button>
+<button onclick="showSchedule('after',this)">After Go2 Optimization</button>
+</div>
+<div id="scheduleGrid" class="schedule-grid"></div>
+<div class="schedule-legend">
+<div class="leg"><div class="dot" style="background:#06b6d433;border:1px solid #06b6d466"></div>Booked</div>
+<div class="leg"><div class="dot" style="background:var(--surface2);border:1px solid var(--border)"></div>Open</div>
+<div class="leg"><div class="dot" style="background:#ef444422;border:1px solid #ef444444"></div>Gap / No-Show</div>
+<div class="leg"><div class="dot" style="background:#22c55e22;border:1px solid #22c55e44"></div>Go2 Optimized</div>
+</div>
+</div>
+</div>
+</section>
+
+<section style="background:var(--surface)">
+<div class="container">
+<div class="section-label">Wait Time Impact</div>
+<div class="section-title">Patients notice. So do your reviews.</div>
+<div class="wait-grid">
+<div class="wait-card"><h4>Check-in to Exam Room</h4><div class="before-after"><div class="ba-item"><div class="ba-val" style="color:var(--danger)">23m</div><div class="ba-label">Before</div></div><div class="arrow">&#8594;</div><div class="ba-item"><div class="ba-val" style="color:var(--success)">8m</div><div class="ba-label">After</div></div></div></div>
+<div class="wait-card"><h4>Phone Hold Time</h4><div class="before-after"><div class="ba-item"><div class="ba-val" style="color:var(--danger)">11m</div><div class="ba-label">Before</div></div><div class="arrow">&#8594;</div><div class="ba-item"><div class="ba-val" style="color:var(--success)">2m</div><div class="ba-label">After</div></div></div></div>
+<div class="wait-card"><h4>Appointment Scheduling</h4><div class="before-after"><div class="ba-item"><div class="ba-val" style="color:var(--danger)">6.2m</div><div class="ba-label">Before</div></div><div class="arrow">&#8594;</div><div class="ba-item"><div class="ba-val" style="color:var(--success)">1.8m</div><div class="ba-label">After</div></div></div></div>
+<div class="wait-card"><h4>Referral Processing</h4><div class="before-after"><div class="ba-item"><div class="ba-val" style="color:var(--danger)">4.2d</div><div class="ba-label">Before</div></div><div class="arrow">&#8594;</div><div class="ba-item"><div class="ba-val" style="color:var(--success)">0.5d</div><div class="ba-label">After</div></div></div></div>
+</div>
+</div>
+</section>
+
+<section id="claims">
+<div class="container">
+<div class="section-label">Claims Processing</div>
+<div class="section-title">Your billing team touches each claim 4.3 times. Should be 1.2.</div>
+<div class="claims-flow" id="claimsFlow">
+<div class="claims-step" onclick="showClaimsDetail(0)"><div class="step-icon">&#128203;</div><h4>Charge Capture</h4><p>Auto-extract from EHR encounter notes</p><span class="status auto">Automatable</span></div>
+<div class="claims-step" onclick="showClaimsDetail(1)"><div class="step-icon">&#128269;</div><h4>Code Verification</h4><p>AI validates CPT/ICD-10 accuracy</p><span class="status auto">Automatable</span></div>
+<div class="claims-step" onclick="showClaimsDetail(2)"><div class="step-icon">&#9989;</div><h4>Eligibility Check</h4><p>Real-time payer verification</p><span class="status auto">Automatable</span></div>
+<div class="claims-step" onclick="showClaimsDetail(3)"><div class="step-icon">&#128228;</div><h4>Claim Submission</h4><p>Auto-submit with scrubbing</p><span class="status auto">Automatable</span></div>
+<div class="claims-step" onclick="showClaimsDetail(4)"><div class="step-icon">&#128260;</div><h4>Denial Management</h4><p>AI-coached appeal drafting</p><span class="status coached">Coached</span></div>
+<div class="claims-step" onclick="showClaimsDetail(5)"><div class="step-icon">&#128176;</div><h4>Payment Posting</h4><p>Auto-match and post ERAs</p><span class="status auto">Automatable</span></div>
+</div>
+<div class="claims-detail" id="claimsDetail"></div>
+</div>
+</section>
+
+<section style="background:var(--surface)">
+<div class="container">
+<div class="section-label">Staff Coaching</div>
+<div class="section-title">Real-time coaching for admin teams</div>
+<div class="coaching-grid">
+<div class="coaching-card">
+<div class="scenario">Front Desk -- Scheduling Conflict</div>
+<div class="situation">Receptionist double-booking a provider who has a procedure scheduled.</div>
+<div class="ai-response"><strong>Go2 Coach:</strong> Dr. Patel has a 45-min procedure at 2:00. This appointment needs 30 min. Next available: 3:15 or tomorrow at 10:00. Patient's history shows they prefer mornings. Suggest 10:00 tomorrow.</div>
+</div>
+<div class="coaching-card">
+<div class="scenario">Billing -- Denial Prevention</div>
+<div class="situation">Coder selecting a code that has a 68% denial rate with this payer.</div>
+<div class="ai-response"><strong>Go2 Coach:</strong> Code 99214 has a 68% denial rate with Aetna for this diagnosis group. Code 99213 with modifier 25 has a 94% acceptance rate and only $12 less reimbursement. Supporting documentation needed: HPI detail + 2 exam elements.</div>
+</div>
+<div class="coaching-card">
+<div class="scenario">Compliance -- Documentation Gap</div>
+<div class="situation">Intake form missing required consent for a new procedure type.</div>
+<div class="ai-response"><strong>Go2 Coach:</strong> This procedure requires ABN form (not in chart) and updated insurance authorization (expired 3/1). Patient is in the waiting room -- send ABN to their portal now. Auth request auto-submitted, est. response: 2 hrs.</div>
+</div>
+<div class="coaching-card">
+<div class="scenario">Phone Triage -- Patient Routing</div>
+<div class="situation">Patient calling about medication refill, currently on hold for 8 minutes.</div>
+<div class="ai-response"><strong>Go2 Coach:</strong> This is a routine refill request (lisinopril, last filled 28 days ago). Route to pharmacy auto-refill queue instead of nurse line. Patient has refills remaining. Estimated resolution: 30 seconds vs current 8-min wait.</div>
+</div>
+</div>
+</div>
+</section>
+
+<section>
+<div class="container">
+<div class="section-label">Compliance Documentation</div>
+<div class="section-title">Auto-generate compliance docs from actual workflows</div>
+<div class="compliance-list">
+<div class="compliance-item"><div class="c-icon">&#128196;</div><div><h4>HIPAA Training Documentation</h4><p>Auto-generated from observed staff behavior. Identifies gaps and creates targeted training.</p></div><div class="c-status">Auto-Generated</div></div>
+<div class="compliance-item"><div class="c-icon">&#128203;</div><div><h4>Audit Trail Reports</h4><p>Complete documentation of who accessed what, when. Auto-compiled for auditor review.</p></div><div class="c-status">Always Current</div></div>
+<div class="compliance-item"><div class="c-icon">&#9888;</div><div><h4>Incident Reporting</h4><p>Workflow deviations flagged in real-time. Incident reports auto-drafted with context.</p></div><div class="c-status">Real-Time</div></div>
+<div class="compliance-item"><div class="c-icon">&#128209;</div><div><h4>Policy & Procedure Manuals</h4><p>SOPs auto-generated from actual observed workflows. Always reflects current practice.</p></div><div class="c-status">Auto-Updated</div></div>
+</div>
+</div>
+</section>
+
+<section id="roi" style="background:var(--surface)">
+<div class="container">
+<div class="section-label">ROI Calculator</div>
+<div class="section-title">Calculate your practice's savings</div>
+<div class="roi-calc">
+<div class="roi-inputs">
+<label>Providers <span class="val" id="v1">6</span></label>
+<input type="range" id="s1" min="1" max="50" value="6" oninput="calcROI()">
+<label>Admin staff <span class="val" id="v2">12</span></label>
+<input type="range" id="s2" min="2" max="100" value="12" oninput="calcROI()">
+<label>Monthly patient visits <span class="val" id="v3">2,400</span></label>
+<input type="range" id="s3" min="200" max="20000" step="100" value="2400" oninput="calcROI()">
+<label>Claims/month <span class="val" id="v4">1,800</span></label>
+<input type="range" id="s4" min="100" max="15000" step="100" value="1800" oninput="calcROI()">
+<label>No-show rate <span class="val" id="v5">18%</span></label>
+<input type="range" id="s5" min="5" max="40" value="18" oninput="calcROI()">
+</div>
+<div class="roi-results">
+<h3>Monthly Impact</h3>
+<div class="roi-row"><span class="rl">Scheduling gap recovery</span><span class="rv" id="r1">--</span></div>
+<div class="roi-row"><span class="rl">Claims automation savings</span><span class="rv" id="r2">--</span></div>
+<div class="roi-row"><span class="rl">No-show reduction revenue</span><span class="rv" id="r3">--</span></div>
+<div class="roi-row"><span class="rl">Admin time savings</span><span class="rv" id="r4">--</span></div>
+<div class="roi-total"><div class="amount" id="roiTotal">--</div><div class="period">estimated monthly savings</div></div>
+</div>
+</div>
+</div>
+</section>
+
+<footer><div class="container"><p><a href="#">Go2</a> -- HIPAA-compliant AI workforce optimization for healthcare. <a href="#">Schedule a demo</a></p></div></footer>
+
+<script>
+const schedBefore=[
+['B','B','G','B','O','B','G','B','B','O','G','O'],
+['B','B','B','G','B','O','B','B','G','O','O','G'],
+['O','B','B','B','G','B','B','G','B','B','O','O'],
+['B','G','B','B','O','G','B','B','O','B','G','O']
+];
+const schedAfter=[
+['B','B','S','B','S','B','B','B','B','S','B','B'],
+['B','B','B','S','B','B','B','B','S','B','B','S'],
+['B','B','B','B','S','B','B','S','B','B','B','B'],
+['B','S','B','B','B','S','B','B','B','B','S','B']
+];
+const providers=['Dr. Smith','Dr. Patel','Dr. Chen','Dr. Jones'];
+const times=['8:00','8:30','9:00','9:30','10:00','10:30','11:00','11:30','1:00','1:30','2:00','2:30'];
+
+function showSchedule(mode,btn){
+document.querySelectorAll('.schedule-controls button').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+const grid=document.getElementById('scheduleGrid');
+const data=mode==='before'?schedBefore:schedAfter;
+let html='<div class="schedule-header"></div>';
+times.forEach(t=>html+=`<div class="schedule-header">${t}</div>`);
+providers.forEach((prov,i)=>{
+html+=`<div class="schedule-provider">${prov}</div>`;
+data[i].forEach(s=>{
+const cls=s==='B'?'slot-booked':s==='O'?'slot-open':s==='G'?'slot-gap':'slot-optimized';
+const label=s==='B'?'Booked':s==='O'?'Open':s==='G'?'Gap':'Filled';
+html+=`<div class="schedule-slot ${cls}">${label}</div>`;
+});
+});
+grid.innerHTML=html;
+}
+
+const claimsDetails=[
+{t:'Charge Capture Automation',d:'Go2 observes provider documentation patterns and auto-extracts billable charges from EHR encounter notes. Catches 23% more billable items than manual capture.',s:'Avg increase: $4,200/provider/month in captured charges'},
+{t:'Code Verification AI',d:'Real-time CPT/ICD-10 validation against payer-specific rules. Cross-references diagnosis, procedure, and modifier combinations before submission.',s:'Reduces coding errors by 78%. First-pass acceptance rate: 96%'},
+{t:'Eligibility Auto-Check',d:'Real-time eligibility verification at scheduling, check-in, and pre-submission. Auto-flags coverage gaps, deductible status, and prior auth requirements.',s:'Eliminates 89% of eligibility-related denials'},
+{t:'Clean Claim Submission',d:'Auto-scrubs claims against 400+ payer rules before submission. Batches and submits electronically with full EDI compliance.',s:'First-pass rate improves from 72% to 96%'},
+{t:'AI-Coached Denial Appeals',d:'Go2 analyzes denial reasons, pulls supporting documentation, and coaches billers on appeal strategy. Auto-drafts appeal letters with highest-success language.',s:'Appeal success rate: 67% (up from 34%). Avg recovery: $340/appeal'},
+{t:'Automated Payment Posting',d:'ERA/EOB auto-matched and posted. Variance flagged for review. Patient statements auto-generated with balance details.',s:'Reduces posting time by 82%. Catches $2,100/month in posting errors'}
+];
+function showClaimsDetail(i){
+const d=document.getElementById('claimsDetail');
+d.innerHTML=`<h4>${claimsDetails[i].t}</h4><p style="color:var(--text-dim);margin:8px 0">${claimsDetails[i].d}</p><p style="color:var(--success);font-weight:700;font-size:14px">${claimsDetails[i].s}</p>`;
+d.classList.add('active');
+}
+
+function calcROI(){
+const providers=+document.getElementById('s1').value;
+const staff=+document.getElementById('s2').value;
+const visits=+document.getElementById('s3').value;
+const claims=+document.getElementById('s4').value;
+const noshow=+document.getElementById('s5').value;
+document.getElementById('v1').textContent=providers;
+document.getElementById('v2').textContent=staff;
+document.getElementById('v3').textContent=visits.toLocaleString();
+document.getElementById('v4').textContent=claims.toLocaleString();
+document.getElementById('v5').textContent=noshow+'%';
+const schedGap=Math.round(visits*0.12*180);
+const claimsSave=Math.round(claims*8*0.7/60*28);
+const noshowRev=Math.round(visits*(noshow/100)*0.34*180);
+const adminSave=Math.round(staff*14*22*0.4);
+document.getElementById('r1').textContent='$'+schedGap.toLocaleString();
+document.getElementById('r2').textContent='$'+claimsSave.toLocaleString();
+document.getElementById('r3').textContent='$'+noshowRev.toLocaleString();
+document.getElementById('r4').textContent='$'+adminSave.toLocaleString();
+document.getElementById('roiTotal').textContent='$'+(schedGap+claimsSave+noshowRev+adminSave).toLocaleString();
+}
+
+showSchedule('before',document.querySelector('.schedule-controls button'));
+calcROI();
+</script>
+</body>
+</html>

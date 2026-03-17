@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escape the AI Failure Room | Go2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Orbitron:wght@400;700;900&display=swap');
+:root{--neon:#00ff88;--red:#ff3366;--blue:#0088ff;--dark:#0a0a12;--panel:#12121f;--gold:#ffd700}
+body{font-family:'Space Mono',monospace;background:var(--dark);color:#fff;min-height:100vh;overflow:hidden}
+#game{width:100vw;height:100vh;position:relative}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:2rem}
+.screen.active{display:flex}
+/* INTRO */
+#intro{background:radial-gradient(ellipse at center,#1a0a2e 0%,var(--dark) 70%)}
+#intro h1{font-family:'Orbitron',sans-serif;font-size:clamp(2rem,5vw,4rem);color:var(--red);text-shadow:0 0 30px rgba(255,51,102,.5);margin-bottom:1rem;text-align:center}
+#intro p{max-width:600px;text-align:center;color:#aaa;line-height:1.6;margin-bottom:2rem;font-size:.95rem}
+.btn{font-family:'Orbitron',sans-serif;padding:1rem 2.5rem;border:2px solid var(--neon);background:transparent;color:var(--neon);font-size:1rem;cursor:pointer;text-transform:uppercase;letter-spacing:2px;transition:all .3s;position:relative;overflow:hidden}
+.btn:hover{background:var(--neon);color:var(--dark);box-shadow:0 0 30px rgba(0,255,136,.4)}
+.btn.red{border-color:var(--red);color:var(--red)}.btn.red:hover{background:var(--red);color:#fff}
+/* HUD */
+#hud{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(10,10,18,.95);border-bottom:1px solid #222;display:none;align-items:center;justify-content:space-between;padding:0 2rem;z-index:100;backdrop-filter:blur(10px)}
+#hud.active{display:flex}
+.hud-item{display:flex;align-items:center;gap:.5rem;font-size:.85rem}
+.hud-item span{color:var(--neon);font-family:'Orbitron',sans-serif}
+#timer{color:var(--red);font-family:'Orbitron',sans-serif;font-size:1.2rem}
+#keys-display{display:flex;gap:.3rem}
+.key-slot{width:28px;height:28px;border:2px solid #333;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:.8rem;transition:all .3s}
+.key-slot.collected{border-color:var(--gold);background:rgba(255,215,0,.15);color:var(--gold);animation:pulse .5s}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
+/* ROOM */
+.room{background:var(--panel);border:1px solid #222;border-radius:12px;padding:2rem;max-width:800px;width:95%;position:relative}
+.room h2{font-family:'Orbitron',sans-serif;font-size:1.4rem;margin-bottom:.5rem;color:var(--blue)}
+.room .subtitle{color:#666;font-size:.8rem;margin-bottom:1.5rem;text-transform:uppercase;letter-spacing:2px}
+/* PUZZLE TYPES */
+.puzzle-area{min-height:300px;display:flex;flex-direction:column;gap:1rem}
+.terminal{background:#000;border:1px solid #333;border-radius:8px;padding:1.5rem;font-family:'Space Mono',monospace;font-size:.85rem;line-height:1.8}
+.terminal .prompt{color:var(--neon)}
+.terminal .error{color:var(--red)}
+.terminal .info{color:var(--blue)}
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.option-btn{padding:1rem;border:1px solid #333;background:#0a0a15;color:#ccc;font-family:'Space Mono',monospace;font-size:.85rem;cursor:pointer;border-radius:8px;text-align:left;transition:all .2s}
+.option-btn:hover{border-color:var(--neon);background:#0f0f1f}
+.option-btn.correct{border-color:var(--neon);background:rgba(0,255,136,.1);color:var(--neon)}
+.option-btn.wrong{border-color:var(--red);background:rgba(255,51,102,.1);color:var(--red)}
+/* WIRE PUZZLE */
+.wire-board{display:flex;justify-content:space-between;align-items:center;padding:2rem 0;position:relative}
+.wire-col{display:flex;flex-direction:column;gap:1.5rem}
+.wire-node{width:120px;padding:.6rem;border:2px solid #444;border-radius:6px;text-align:center;font-size:.75rem;cursor:pointer;transition:all .2s;user-select:none}
+.wire-node:hover{border-color:var(--blue)}
+.wire-node.selected{border-color:var(--neon);background:rgba(0,255,136,.1)}
+.wire-node.matched{border-color:var(--gold);background:rgba(255,215,0,.1)}
+.wire-svg{position:absolute;inset:0;pointer-events:none}
+/* CODE PUZZLE */
+.code-slots{display:flex;gap:.5rem;justify-content:center;margin:1.5rem 0}
+.code-digit{width:50px;height:60px;border:2px solid #333;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:1.5rem;color:var(--neon);background:#000;cursor:pointer;user-select:none;transition:all .2s}
+.code-digit:hover{border-color:var(--blue)}
+.code-digit.active{border-color:var(--neon);box-shadow:0 0 15px rgba(0,255,136,.3)}
+.clue-text{color:#888;font-size:.85rem;text-align:center;padding:1rem;background:#0a0a15;border-radius:8px;border-left:3px solid var(--blue)}
+/* DRAG PUZZLE */
+.drag-zone{min-height:80px;border:2px dashed #333;border-radius:8px;padding:1rem;display:flex;flex-wrap:wrap;gap:.5rem;transition:all .2s}
+.drag-zone.over{border-color:var(--neon);background:rgba(0,255,136,.05)}
+.drag-item{padding:.5rem 1rem;background:var(--dark);border:1px solid #444;border-radius:6px;cursor:grab;font-size:.8rem;user-select:none;transition:all .2s}
+.drag-item:active{cursor:grabbing;opacity:.7}
+.drag-item.placed{border-color:var(--neon);background:rgba(0,255,136,.1)}
+/* HINT */
+#hint-btn{position:fixed;bottom:2rem;right:2rem;z-index:101;background:var(--panel);border:1px solid #444;color:#888;padding:.6rem 1rem;border-radius:8px;cursor:pointer;font-family:'Space Mono',monospace;font-size:.8rem;transition:all .3s}
+#hint-btn:hover{border-color:var(--blue);color:var(--blue)}
+.hint-popup{position:fixed;bottom:5rem;right:2rem;background:var(--panel);border:1px solid var(--blue);border-radius:8px;padding:1rem 1.5rem;max-width:350px;font-size:.85rem;color:var(--blue);z-index:102;animation:slideUp .3s}
+@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+/* RESULT */
+.result-card{text-align:center;padding:3rem}
+.result-card h1{font-family:'Orbitron',sans-serif;font-size:2.5rem;margin-bottom:1rem}
+.score-display{font-family:'Orbitron',sans-serif;font-size:4rem;color:var(--gold);text-shadow:0 0 30px rgba(255,215,0,.3);margin:1.5rem 0}
+.stats-row{display:flex;gap:2rem;justify-content:center;margin:2rem 0;flex-wrap:wrap}
+.stat-box{background:#0a0a15;border:1px solid #222;border-radius:8px;padding:1rem 1.5rem;min-width:120px}
+.stat-box .val{font-family:'Orbitron',sans-serif;font-size:1.5rem;color:var(--neon)}
+.stat-box .label{font-size:.7rem;color:#666;text-transform:uppercase;margin-top:.3rem}
+/* PROGRESS */
+.progress-bar{width:100%;height:4px;background:#1a1a2e;border-radius:2px;margin-top:1rem;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--neon),var(--blue));transition:width .5s;border-radius:2px}
+/* FEEDBACK */
+.feedback{padding:.75rem 1rem;border-radius:8px;margin-top:1rem;font-size:.85rem;animation:slideUp .3s}
+.feedback.success{background:rgba(0,255,136,.1);border:1px solid var(--neon);color:var(--neon)}
+.feedback.error{background:rgba(255,51,102,.1);border:1px solid var(--red);color:var(--red)}
+/* SHARE */
+.share-row{display:flex;gap:1rem;margin-top:2rem;justify-content:center}
+.share-btn{padding:.7rem 1.5rem;border-radius:8px;border:none;cursor:pointer;font-family:'Space Mono',monospace;font-size:.8rem;transition:all .2s}
+.share-btn.twitter{background:#1DA1F2;color:#fff}.share-btn.linkedin{background:#0077B5;color:#fff}
+.share-btn:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,0,0,.3)}
+@media(max-width:600px){.options-grid{grid-template-columns:1fr}.wire-node{width:90px;font-size:.65rem}.stats-row{gap:1rem}}
+</style>
+</head>
+<body>
+<div id="game">
+<!-- INTRO -->
+<div id="intro" class="screen active">
+<h1>ESCAPE THE AI FAILURE ROOM</h1>
+<p>You're trapped in a company where AI implementation has gone horribly wrong. 95% of AI projects fail. Solve 5 puzzles to fix the broken systems, collect all keys, and deploy a working AI agent before time runs out.</p>
+<div style="display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;justify-content:center">
+<div style="text-align:center;padding:1rem;border:1px solid #222;border-radius:8px;min-width:100px"><div style="color:var(--gold);font-family:Orbitron;font-size:1.3rem">5</div><div style="font-size:.7rem;color:#666">PUZZLES</div></div>
+<div style="text-align:center;padding:1rem;border:1px solid #222;border-radius:8px;min-width:100px"><div style="color:var(--neon);font-family:Orbitron;font-size:1.3rem">5</div><div style="font-size:.7rem;color:#666">KEYS</div></div>
+<div style="text-align:center;padding:1rem;border:1px solid #222;border-radius:8px;min-width:100px"><div style="color:var(--red);font-family:Orbitron;font-size:1.3rem">5:00</div><div style="font-size:.7rem;color:#666">MINUTES</div></div>
+</div>
+<button class="btn" onclick="startGame()">ENTER THE ROOM</button>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+<div class="hud-item">ROOM <span id="room-num">1/5</span></div>
+<div id="keys-display"></div>
+<div id="timer">5:00</div>
+<div class="hud-item">SCORE <span id="score">0</span></div>
+</div>
+
+<!-- PUZZLE SCREENS -->
+<div id="puzzle-screen" class="screen">
+<div class="room" id="room-container"></div>
+<div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+</div>
+
+<!-- WIN SCREEN -->
+<div id="win-screen" class="screen">
+<div class="result-card">
+<div style="font-size:4rem;margin-bottom:1rem">&#x1f3c6;</div>
+<h1 style="color:var(--gold)">AGENT DEPLOYED!</h1>
+<p style="color:#aaa;margin-bottom:1rem">You escaped the AI Failure Room and built a working AI agent.</p>
+<div class="score-display" id="final-score">0</div>
+<div style="color:#666;font-size:.8rem">POINTS</div>
+<div class="stats-row">
+<div class="stat-box"><div class="val" id="stat-time">--</div><div class="label">Time Left</div></div>
+<div class="stat-box"><div class="val" id="stat-hints">0</div><div class="label">Hints Used</div></div>
+<div class="stat-box"><div class="val" id="stat-keys">5</div><div class="label">Keys Found</div></div>
+<div class="stat-box"><div class="val" id="stat-accuracy">100%</div><div class="label">Accuracy</div></div>
+</div>
+<p style="color:var(--neon);font-size:.9rem;margin-top:1rem">The secret? Go2 captures how work actually happens — giving AI the data it needs to succeed.</p>
+<div style="margin-top:1.5rem">
+<a href="https://go2.io" target="_blank" class="btn" style="text-decoration:none;display:inline-block">VISIT GO2.IO</a>
+</div>
+<div class="share-row">
+<button class="share-btn twitter" onclick="shareTwitter()">Share on Twitter</button>
+<button class="share-btn linkedin" onclick="shareLinkedIn()">Share on LinkedIn</button>
+</div>
+</div>
+</div>
+
+<!-- FAIL SCREEN -->
+<div id="fail-screen" class="screen">
+<div class="result-card">
+<div style="font-size:4rem;margin-bottom:1rem">&#x23F0;</div>
+<h1 style="color:var(--red)">TIME'S UP!</h1>
+<p style="color:#aaa;margin:1rem 0">Like 95% of AI projects, this one ran out of time. But with Go2, it doesn't have to.</p>
+<div class="stats-row">
+<div class="stat-box"><div class="val" id="fail-keys">0</div><div class="label">Keys Found</div></div>
+<div class="stat-box"><div class="val" id="fail-score">0</div><div class="label">Score</div></div>
+</div>
+<div style="display:flex;gap:1rem;margin-top:2rem;justify-content:center;flex-wrap:wrap">
+<button class="btn" onclick="startGame()">TRY AGAIN</button>
+<a href="https://go2.io" target="_blank" class="btn red" style="text-decoration:none;display:inline-block">LEARN ABOUT GO2</a>
+</div>
+</div>
+</div>
+
+<button id="hint-btn" style="display:none" onclick="showHint()">&#x1F4A1; HINT (<span id="hints-left">3</span>)</button>
+</div>
+
+<script>
+const puzzles=[
+{
+title:"THE DATA BLACK HOLE",
+subtitle:"Room 1 of 5 - Diagnostic Terminal",
+key:"DATA",
+hint:"Think about what's missing when companies deploy AI without understanding their work processes.",
+intro:'<div class="terminal"><span class="error">ERROR: AI_AGENT_FAILURE</span><br><span class="info">// Your company deployed an AI agent but it\'s producing garbage outputs.</span><br><span class="info">// Diagnose the root cause to earn the DATA key.</span><br><br><span class="prompt">&gt; run diagnostic...</span><br><span class="error">Agent accuracy: 12%</span><br><span class="error">Training data: [NONE]</span><br><span class="error">Work process maps: [MISSING]</span><br><span class="prompt">&gt; What is the PRIMARY reason 95% of AI implementations fail?</span></div>',
+type:"choice",
+question:"What is the PRIMARY reason 95% of AI implementations fail?",
+options:["Not enough compute power","No training data about how work actually happens","AI models aren't smart enough","Teams don't attend enough AI workshops"],
+correct:1,
+explanation:"Without data about how work actually gets done, AI is flying blind. Go2 captures real work patterns from 2M+ workers, giving AI the foundation it needs."
+},
+{
+title:"WIRE THE COACHING ENGINE",
+subtitle:"Room 2 of 5 - System Wiring",
+key:"COACH",
+hint:"Match each Go2 capability to its business outcome. Think about what each feature actually delivers.",
+intro:'<div class="terminal"><span class="info">// The AI coaching system is disconnected.</span><br><span class="info">// Wire each Go2 capability to its correct outcome.</span><br><span class="prompt">&gt; Match all 4 pairs to earn the COACH key.</span></div>',
+type:"wire",
+left:["Work Pattern Capture","AI Coaching","Auto-Documentation","Automation Discovery"],
+right:["Finds repetitive tasks to eliminate","Records processes without manual effort","Real-time productivity guidance","Understands how work happens"],
+connections:[[0,3],[1,2],[2,1],[3,0]]
+},
+{
+title:"CRACK THE DEPLOYMENT CODE",
+subtitle:"Room 3 of 5 - Security Vault",
+key:"DEPLOY",
+hint:"Each digit comes from a Go2 stat. 2M+ workers, 89% satisfaction, 95% of AI fails, $60M+ in sales.",
+intro:'<div class="terminal"><span class="info">// The deployment vault is locked with a 4-digit code.</span><br><span class="info">// Each digit is hidden in Go2\'s key metrics.</span><br><span class="prompt">&gt; Crack the code to earn the DEPLOY key.</span></div>',
+type:"code",
+clues:["Digit 1: How many millions of workers use Go2? (first digit of 2M+)","Digit 2: What percentage of AI projects fail? Start with this digit.","Digit 3: Go2 satisfaction rate starts with this digit.","Digit 4: Go2 has generated $__0M+ in sales. (first digit)"],
+answer:[2,9,8,6]
+},
+{
+title:"BUILD THE AI PIPELINE",
+subtitle:"Room 4 of 5 - Assembly Required",
+key:"PIPELINE",
+hint:"The correct order follows Go2's actual workflow: first capture data, then analyze, then coach, then automate, then deploy agents.",
+intro:'<div class="terminal"><span class="info">// The AI agent pipeline is scrambled.</span><br><span class="info">// Arrange the steps in the correct order.</span><br><span class="prompt">&gt; Rebuild the pipeline to earn the PIPELINE key.</span></div>',
+type:"order",
+items:["Deploy trained AI agents","Capture real work patterns","Identify automation opportunities","Analyze and document processes","Deliver AI coaching insights"],
+correctOrder:[1,3,4,2,0]
+},
+{
+title:"THE FINAL DEPLOYMENT",
+subtitle:"Room 5 of 5 - Mission Critical",
+key:"AGENT",
+hint:"Each question is about Go2's real capabilities. Think about what makes Go2 different from other AI tools.",
+intro:'<div class="terminal"><span class="info">// Final deployment sequence initiated.</span><br><span class="info">// Answer 3 rapid-fire questions to launch the agent.</span><br><span class="prompt">&gt; All answers correct = AGENT key + bonus points.</span></div>',
+type:"rapid",
+questions:[
+{q:"What does Go2 capture that other AI tools miss?",opts:["Social media activity","How work actually happens","Employee personal data","Stock market trends"],correct:1},
+{q:"Go2's AI coaching delivers guidance that is:",opts:["Annual reviews","Monthly reports","Real-time and contextual","Quarterly summaries"],correct:2},
+{q:"Go2 trains AI agents using:",opts:["Generic internet data","Real organizational work patterns","Random datasets","Customer reviews"],correct:1}
+]
+}
+];
+let state={current:0,keys:[],score:0,hints:3,hintsUsed:0,timer:300,timerInterval:null,totalWrong:0,totalRight:0,wireSelLeft:null,codeValues:[0,0,0,0],codeActive:0,orderItems:[],rapidIdx:0,rapidCorrect:0};
+function startGame(){
+state={current:0,keys:[],score:0,hints:3,hintsUsed:0,timer:300,timerInterval:null,totalWrong:0,totalRight:0,wireSelLeft:null,codeValues:[0,0,0,0],codeActive:0,orderItems:[],rapidIdx:0,rapidCorrect:0};
+document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+document.getElementById('puzzle-screen').classList.add('active');
+document.getElementById('hud').classList.add('active');
+document.getElementById('hint-btn').style.display='block';
+updateHUD();
+loadPuzzle(0);
+state.timerInterval=setInterval(tick,1000);
+}
+function tick(){
+state.timer--;
+if(state.timer<=0){clearInterval(state.timerInterval);gameFail();}
+updateHUD();
+}
+function updateHUD(){
+document.getElementById('room-num')=`${state.current+1}/5`;
+document.getElementById('timer').textContent=`${Math.floor(state.timer/60)}:${(state.timer%60).toString().padStart(2,'0')}`;
+document.getElementById('score').textContent=state.score;
+document.getElementById('hints-left').textContent=state.hints;
+document.getElementById('progress').style.width=`${(state.current/5)*100}%`;
+let kd=document.getElementById('keys-display');
+kd.innerHTML='';
+['DATA','COACH','DEPLOY','PIPELINE','AGENT'].forEach(k=>{
+let d=document.createElement('div');d.className='key-slot'+(state.keys.includes(k)?' collected':'');
+d.textContent=state.keys.includes(k)?'&#x1F511;':'?';
+if(state.keys.includes(k))d.innerHTML='&#x1F511;';
+kd.appendChild(d);
+});
+}
+function loadPuzzle(idx){
+state.current=idx;
+const p=puzzles[idx];
+const c=document.getElementById('room-container');
+updateHUD();
+let html=`<h2>${p.title}</h2><div class="subtitle">${p.subtitle}</div>${p.intro}<div class="puzzle-area" id="puzzle-area">`;
+if(p.type==='choice'){
+html+=`<p style="color:#ccc;margin:1rem 0">${p.question}</p><div class="options-grid">`;
+p.options.forEach((o,i)=>{html+=`<button class="option-btn" onclick="answerChoice(${i})" id="opt-${i}">${o}</button>`;});
+html+=`</div>`;
+}else if(p.type==='wire'){
+html+=`<div class="wire-board" id="wire-board"><div class="wire-col">`;
+p.left.forEach((l,i)=>{html+=`<div class="wire-node" id="wl-${i}" onclick="selectWireLeft(${i})">${l}</div>`;});
+html+=`</div><svg class="wire-svg" id="wire-svg"></svg><div class="wire-col">`;
+p.right.forEach((r,i)=>{html+=`<div class="wire-node" id="wr-${i}" onclick="selectWireRight(${i})">${r}</div>`;});
+html+=`</div></div><div id="wire-feedback"></div>`;
+state.wireMatches=[];state.wireSelLeft=null;
+}else if(p.type==='code'){
+html+=`<div class="code-slots" id="code-slots">`;
+for(let i=0;i<4;i++){html+=`<div class="code-digit${i===0?' active':''}" id="cd-${i}" onclick="selectCodeDigit(${i})">0</div>`;}
+html+=`</div><div style="display:flex;gap:.5rem;justify-content:center;margin:1rem 0"><button class="btn" style="padding:.5rem 1rem;font-size:.8rem" onclick="changeCodeDigit(-1)">&#x25BC;</button><button class="btn" style="padding:.5rem 1rem;font-size:.8rem" onclick="changeCodeDigit(1)">&#x25B2;</button></div>`;
+p.clues.forEach(cl=>{html+=`<div class="clue-text">${cl}</div>`;});
+html+=`<button class="btn" style="margin-top:1rem" onclick="submitCode()">SUBMIT CODE</button>`;
+state.codeValues=[0,0,0,0];state.codeActive=0;
+}else if(p.type==='order'){
+state.orderItems=[...p.items];
+shuffleArray(state.orderItems);
+html+=`<p style="color:#888;font-size:.85rem;margin-bottom:1rem">Drag items into the correct order (top to bottom):</p>`;
+html+=`<div class="drag-zone" id="order-zone"></div>`;
+html+=`<button class="btn" style="margin-top:1rem" onclick="submitOrder()">VERIFY SEQUENCE</button>`;
+}else if(p.type==='rapid'){
+state.rapidIdx=0;state.rapidCorrect=0;
+html+=renderRapidQ(0);
+}
+html+=`</div><div id="feedback-area"></div>`;
+c.innerHTML=html;
+if(p.type==='order')renderOrderItems();
+}
+function renderRapidQ(idx){
+const q=puzzles[state.current].questions[idx];
+let h=`<div id="rapid-q"><p style="color:#ccc;margin:1rem 0;font-size:.95rem">${q.q}</p><div style="color:#666;font-size:.75rem;margin-bottom:.5rem">Question ${idx+1} of 3</div><div class="options-grid">`;
+q.opts.forEach((o,i)=>{h+=`<button class="option-btn" onclick="answerRapid(${i})" id="ropt-${i}">${o}</button>`;});
+h+=`</div></div>`;return h;
+}
+function answerChoice(i){
+const p=puzzles[state.current];
+document.querySelectorAll('.option-btn').forEach(b=>b.style.pointerEvents='none');
+if(i===p.correct){
+document.getElementById(`opt-${i}`).classList.add('correct');
+state.score+=200;state.totalRight++;
+showFeedback(true,p.explanation);
+collectKey(p.key);
+}else{
+document.getElementById(`opt-${i}`).classList.add('wrong');
+document.getElementById(`opt-${p.correct}`).classList.add('correct');
+state.totalWrong++;state.score=Math.max(0,state.score-50);
+showFeedback(false,`Incorrect. ${p.explanation}`);
+setTimeout(()=>collectKey(p.key),2000);
+}
+}
+function selectWireLeft(i){
+document.querySelectorAll('#wire-board .wire-col:first-child .wire-node').forEach(n=>n.classList.remove('selected'));
+document.getElementById(`wl-${i}`).classList.add('selected');
+state.wireSelLeft=i;
+}
+function selectWireRight(i){
+if(state.wireSelLeft===null)return;
+const p=puzzles[state.current];
+const correct=p.connections.find(c=>c[0]===state.wireSelLeft&&c[1]===i);
+if(correct){
+document.getElementById(`wl-${state.wireSelLeft}`).classList.add('matched');
+document.getElementById(`wr-${i}`).classList.add('matched');
+document.getElementById(`wl-${state.wireSelLeft}`).style.pointerEvents='none';
+document.getElementById(`wr-${i}`).style.pointerEvents='none';
+state.wireMatches=state.wireMatches||[];
+state.wireMatches.push(correct);
+state.score+=50;state.totalRight++;
+drawWire(state.wireSelLeft,i);
+if(state.wireMatches.length===4){
+showFeedback(true,"All connections made! The coaching engine is online.");
+collectKey(p.key);
+}
+}else{
+state.totalWrong++;state.score=Math.max(0,state.score-25);
+document.getElementById('wire-feedback').innerHTML='<div class="feedback error">Wrong connection. Try again.</div>';
+setTimeout(()=>{document.getElementById('wire-feedback').innerHTML='';},1500);
+}
+document.querySelectorAll('.wire-node').forEach(n=>n.classList.remove('selected'));
+state.wireSelLeft=null;
+}
+function drawWire(l,r){
+const svg=document.getElementById('wire-svg');
+const board=document.getElementById('wire-board');
+const lEl=document.getElementById(`wl-${l}`);
+const rEl=document.getElementById(`wr-${r}`);
+const bRect=board.getBoundingClientRect();
+const lRect=lEl.getBoundingClientRect();
+const rRect=rEl.getBoundingClientRect();
+const x1=lRect.right-bRect.left;const y1=lRect.top+lRect.height/2-bRect.top;
+const x2=rRect.left-bRect.left;const y2=rRect.top+rRect.height/2-bRect.top;
+const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+line.setAttribute('x1',x1);line.setAttribute('y1',y1);line.setAttribute('x2',x2);line.setAttribute('y2',y2);
+line.setAttribute('stroke','#00ff88');line.setAttribute('stroke-width','2');line.setAttribute('opacity','0.6');
+svg.appendChild(line);
+}
+function selectCodeDigit(i){
+state.codeActive=i;
+document.querySelectorAll('.code-digit').forEach(d=>d.classList.remove('active'));
+document.getElementById(`cd-${i}`).classList.add('active');
+}
+function changeCodeDigit(dir){
+state.codeValues[state.codeActive]=(state.codeValues[state.codeActive]+dir+10)%10;
+document.getElementById(`cd-${state.codeActive}`).textContent=state.codeValues[state.codeActive];
+}
+function submitCode(){
+const p=puzzles[state.current];
+const correct=state.codeValues.every((v,i)=>v===p.answer[i]);
+if(correct){
+state.score+=300;state.totalRight++;
+showFeedback(true,"Vault opened! Go2: 2M+ workers, 95% of AI fails without work data, 89% satisfaction, $60M+ sales.");
+collectKey(p.key);
+}else{
+state.totalWrong++;state.score=Math.max(0,state.score-50);
+showFeedback(false,"Wrong code. Re-read the clues carefully.");
+}
+}
+function renderOrderItems(){
+const zone=document.getElementById('order-zone');
+zone.innerHTML='';
+state.orderItems.forEach((item,i)=>{
+const d=document.createElement('div');d.className='drag-item';d.draggable=true;d.textContent=item;d.dataset.idx=i;
+d.ondragstart=e=>{e.dataTransfer.setData('text/plain',i);d.style.opacity='.5';};
+d.ondragend=()=>{d.style.opacity='1';};
+d.ondragover=e=>{e.preventDefault();d.style.borderColor='var(--neon)';};
+d.ondragleave=()=>{d.style.borderColor='#444';};
+d.ondrop=e=>{e.preventDefault();d.style.borderColor='#444';const from=parseInt(e.dataTransfer.getData('text/plain'));const to=i;
+const temp=state.orderItems[from];state.orderItems[from]=state.orderItems[to];state.orderItems[to]=temp;renderOrderItems();};
+zone.appendChild(d);
+});
+}
+function submitOrder(){
+const p=puzzles[state.current];
+const correct=p.correctOrder.every((ci,i)=>p.items[ci]===state.orderItems[i]);
+if(correct){
+state.score+=250;state.totalRight++;
+showFeedback(true,"Pipeline assembled! Capture -> Analyze -> Coach -> Automate -> Deploy.");
+collectKey(p.key);
+}else{
+state.totalWrong++;state.score=Math.max(0,state.score-50);
+showFeedback(false,"Not quite right. Think about Go2's workflow: what comes first?");
+}
+}
+function answerRapid(i){
+const p=puzzles[state.current];
+const q=p.questions[state.rapidIdx];
+document.querySelectorAll(`#rapid-q .option-btn`).forEach(b=>b.style.pointerEvents='none');
+if(i===q.correct){
+document.getElementById(`ropt-${i}`).classList.add('correct');
+state.rapidCorrect++;state.score+=100;state.totalRight++;
+}else{
+document.getElementById(`ropt-${i}`).classList.add('wrong');
+document.getElementById(`ropt-${q.correct}`).classList.add('correct');
+state.totalWrong++;
+}
+setTimeout(()=>{
+state.rapidIdx++;
+if(state.rapidIdx<3){
+document.getElementById('puzzle-area').innerHTML=renderRapidQ(state.rapidIdx);
+}else{
+if(state.rapidCorrect===3)state.score+=200;
+showFeedback(state.rapidCorrect>=2,`${state.rapidCorrect}/3 correct! ${state.rapidCorrect===3?'Perfect!':''}Agent deployment sequence ${state.rapidCorrect>=2?'successful':'needs tuning'}.`);
+collectKey(p.key);
+}
+},1000);
+}
+function collectKey(key){
+if(!state.keys.includes(key)){state.keys.push(key);state.score+=100;}
+updateHUD();
+setTimeout(()=>{
+if(state.current<4){loadPuzzle(state.current+1);}
+else{gameWin();}
+},2500);
+}
+function showFeedback(success,msg){
+document.getElementById('feedback-area').innerHTML=`<div class="feedback ${success?'success':'error'}">${success?'&#x2705;':'&#x274C;'} ${msg}</div>`;
+}
+function showHint(){
+if(state.hints<=0)return;
+state.hints--;state.hintsUsed++;state.score=Math.max(0,state.score-50);
+updateHUD();
+const h=puzzles[state.current].hint;
+const popup=document.createElement('div');popup.className='hint-popup';popup.textContent=h;
+document.body.appendChild(popup);
+setTimeout(()=>popup.remove(),5000);
+}
+function gameWin(){
+clearInterval(state.timerInterval);
+document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+document.getElementById('win-screen').classList.add('active');
+document.getElementById('hud').classList.remove('active');
+document.getElementById('hint-btn').style.display='none';
+const timeBonus=state.timer*2;
+state.score+=timeBonus;
+document.getElementById('final-score').textContent=state.score;
+document.getElementById('stat-time').textContent=`${Math.floor(state.timer/60)}:${(state.timer%60).toString().padStart(2,'0')}`;
+document.getElementById('stat-hints').textContent=state.hintsUsed;
+document.getElementById('stat-keys').textContent=state.keys.length;
+const acc=state.totalRight+state.totalWrong>0?Math.round(state.totalRight/(state.totalRight+state.totalWrong)*100):100;
+document.getElementById('stat-accuracy').textContent=acc+'%';
+}
+function gameFail(){
+clearInterval(state.timerInterval);
+document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+document.getElementById('fail-screen').classList.add('active');
+document.getElementById('hud').classList.remove('active');
+document.getElementById('hint-btn').style.display='none';
+document.getElementById('fail-keys').textContent=state.keys.length;
+document.getElementById('fail-score').textContent=state.score;
+}
+function shuffleArray(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
+function shareTwitter(){window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`I escaped the AI Failure Room with ${state.score} points! Can you beat my score? 95% of AI fails — unless you have the right work data. @go2io`)}&url=${encodeURIComponent('https://go2.io')}`,'_blank');}
+function shareLinkedIn(){window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://go2.io')}`,'_blank');}
+</script>
+</body>
+</html>

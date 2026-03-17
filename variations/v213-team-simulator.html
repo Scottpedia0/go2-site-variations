@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Team Simulator</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0e17;--surface:#111827;--surface2:#1a2236;--border:#1e293b;--accent:#6366f1;--accent2:#818cf8;--green:#22c55e;--red:#ef4444;--orange:#f59e0b;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.header{border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;justify-content:space-between}
+.header-left{display:flex;align-items:center;gap:12px}
+.logo{font-size:20px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.divider{width:1px;height:24px;background:var(--border)}
+.container{max-width:1400px;margin:0 auto;padding:32px}
+.intro{text-align:center;margin-bottom:32px}
+.intro h1{font-size:28px;font-weight:700;margin-bottom:8px}
+.intro p{color:var(--text3);font-size:15px;max-width:600px;margin:0 auto}
+.layout{display:grid;grid-template-columns:340px 1fr;gap:24px}
+.add-panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;align-self:start;position:sticky;top:24px}
+.add-panel h3{font-size:16px;font-weight:600;margin-bottom:16px}
+.form-group{margin-bottom:14px}
+.form-group label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);display:block;margin-bottom:5px}
+.form-group input,.form-group select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-size:13px;outline:none;font-family:inherit}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;width:100%;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-accent{background:var(--accent);color:#fff}.btn-accent:hover{background:var(--accent2)}
+.btn-outline{background:transparent;color:var(--text2);border:1px solid var(--border);margin-top:8px}
+.btn-outline:hover{border-color:var(--accent);color:var(--text)}
+.btn-sm{padding:6px 12px;font-size:12px;width:auto}
+.quick-add{margin-top:16px;border-top:1px solid var(--border);padding-top:16px}
+.quick-add h4{font-size:12px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.quick-chips{display:flex;flex-wrap:wrap;gap:6px}
+.quick-chip{padding:5px 10px;border-radius:6px;font-size:11px;background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .15s;border:1px solid transparent}
+.quick-chip:hover{border-color:var(--accent);color:var(--text)}
+.main-area{min-height:400px}
+/* Stats bar */
+.stats-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
+.stat-mini{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat-mini .val{font-size:20px;font-weight:700}
+.stat-mini .lbl{font-size:10px;color:var(--text3);text-transform:uppercase;margin-top:2px}
+/* Heat map */
+.heatmap-panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:24px}
+.panel-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.panel-header h3{font-size:14px;font-weight:600}
+.panel-header .tabs{display:flex;gap:4px}
+.panel-header .tab{padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;color:var(--text3);transition:all .15s}
+.panel-header .tab.active{background:var(--accent);color:#fff}
+.panel-header .tab:hover:not(.active){background:var(--surface2);color:var(--text)}
+.heatmap-grid{padding:20px;display:grid;gap:4px}
+.heat-row{display:flex;align-items:center;gap:4px}
+.heat-name{width:120px;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:var(--text2)}
+.heat-name:hover{color:var(--accent2)}
+.heat-cell{flex:1;height:28px;border-radius:4px;transition:all .3s;cursor:pointer;position:relative}
+.heat-cell:hover{transform:scaleY(1.2);z-index:1}
+.heat-cell .tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:11px;white-space:nowrap;z-index:10}
+.heat-cell:hover .tip{display:block}
+.heat-legend{display:flex;align-items:center;gap:12px;padding:12px 20px;border-top:1px solid var(--border);font-size:11px;color:var(--text3)}
+.heat-legend-bar{display:flex;height:12px;border-radius:3px;overflow:hidden;width:120px}
+.heat-legend-bar div{flex:1}
+/* Team cards */
+.team-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:24px}
+.person-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;cursor:pointer;transition:all .2s;position:relative}
+.person-card:hover{border-color:var(--accent)}
+.person-card.expanded{grid-column:1/-1;border-color:var(--accent)}
+.person-top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.person-avatar{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#fff;flex-shrink:0}
+.person-info h4{font-size:14px;font-weight:600}
+.person-info p{font-size:11px;color:var(--text3)}
+.person-remove{position:absolute;top:12px;right:12px;width:24px;height:24px;border-radius:6px;background:var(--surface2);border:none;color:var(--text3);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.person-remove:hover{background:rgba(239,68,68,.15);color:var(--red)}
+.person-bars{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.person-bar-item{display:flex;flex-direction:column;gap:3px}
+.person-bar-label{display:flex;justify-content:space-between;font-size:11px;color:var(--text3)}
+.person-bar-label span:last-child{font-weight:600;color:var(--text2)}
+.bar-track{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:width 1s ease}
+/* Coaching panel (expanded) */
+.coaching-panel{margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:none}
+.person-card.expanded .coaching-panel{display:block}
+.coaching-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.coaching-section h5{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:8px}
+.coaching-item{display:flex;gap:8px;padding:8px 0;font-size:12px;line-height:1.5;color:var(--text2)}
+.coaching-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+.coaching-insight{background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:8px;padding:12px;margin-top:12px}
+.coaching-insight h5{font-size:12px;color:var(--accent2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.coaching-insight p{font-size:12px;color:var(--text2);line-height:1.6}
+.empty-state{text-align:center;padding:80px 20px;color:var(--text3)}
+.empty-state .icon{font-size:48px;margin-bottom:16px;opacity:.5}
+.empty-state h3{font-size:18px;font-weight:600;color:var(--text2);margin-bottom:8px}
+.empty-state p{font-size:14px;max-width:400px;margin:0 auto}
+</style>
+</head>
+<body>
+<div class="header">
+<div class="header-left">
+<span class="logo">Go2</span>
+<span class="divider"></span>
+<h1 style="font-size:16px;font-weight:600">Team Simulator</h1>
+</div>
+<div style="font-size:13px;color:var(--text3)">Simulate your team's productivity with Go2</div>
+</div>
+
+<div class="container">
+<div class="intro">
+<h1>Simulate Your Team with Go2</h1>
+<p>Add your team members below and see how Go2 would analyze their work patterns, identify coaching opportunities, and find automatable tasks.</p>
+</div>
+
+<div class="layout">
+<div class="add-panel">
+<h3>Add Team Member</h3>
+<div class="form-group"><label>Full Name</label><input type="text" id="inp-name" placeholder="e.g. Sarah Chen"></div>
+<div class="form-row">
+<div class="form-group"><label>Role</label><input type="text" id="inp-role" placeholder="e.g. Sales Rep"></div>
+<div class="form-group"><label>Department</label><select id="inp-dept"><option>Engineering</option><option>Sales</option><option>Marketing</option><option>Support</option><option>Operations</option><option>Finance</option><option>HR</option><option>Design</option><option>Product</option></select></div>
+</div>
+<button class="btn btn-accent" onclick="addMember()">+ Add Team Member</button>
+<button class="btn btn-outline" onclick="clearTeam()">Clear All</button>
+
+<div class="quick-add">
+<h4>Quick Add Templates</h4>
+<div class="quick-chips">
+<div class="quick-chip" onclick="quickAdd('startup')">5-Person Startup</div>
+<div class="quick-chip" onclick="quickAdd('sales')">Sales Team (6)</div>
+<div class="quick-chip" onclick="quickAdd('eng')">Eng Team (8)</div>
+<div class="quick-chip" onclick="quickAdd('support')">Support Team (5)</div>
+<div class="quick-chip" onclick="quickAdd('ecomm')">E-commerce (15)</div>
+</div>
+</div>
+</div>
+
+<div class="main-area" id="main-area">
+<div class="empty-state" id="empty-state">
+<div class="icon">&#128101;</div>
+<h3>No team members yet</h3>
+<p>Add team members using the form, or try a quick-add template to see Go2's team simulation in action.</p>
+</div>
+<div id="populated" style="display:none">
+<div class="stats-bar" id="stats-bar"></div>
+<div class="heatmap-panel" id="heatmap-panel">
+<div class="panel-header">
+<h3>Team Activity Heatmap</h3>
+<div class="tabs">
+<div class="tab active" data-metric="deepWork" onclick="switchHeatmap(this)">Deep Work</div>
+<div class="tab" data-metric="meetings" onclick="switchHeatmap(this)">Meetings</div>
+<div class="tab" data-metric="switching" onclick="switchHeatmap(this)">Context Switching</div>
+<div class="tab" data-metric="automatable" onclick="switchHeatmap(this)">Automatable</div>
+</div>
+</div>
+<div class="heatmap-grid" id="heatmap-grid"></div>
+<div class="heat-legend"><span>Low</span><div class="heat-legend-bar" id="legend-bar"></div><span>High</span></div>
+</div>
+<div class="team-list" id="team-list"></div>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+let team=[];
+let currentHeatMetric='deepWork';
+const colors={
+accent:['#1e1b4b','#312e81','#4338ca','#6366f1','#818cf8'],
+green:['#052e16','#14532d','#166534','#22c55e','#4ade80'],
+red:['#450a0a','#7f1d1d','#b91c1c','#ef4444','#f87171'],
+orange:['#431407','#7c2d12','#c2410c','#f59e0b','#fbbf24']
+};
+const deptProfiles={
+Engineering:{deepWork:[5,7],meetings:[1,2.5],switching:[0.3,1.2],automatable:[15,30],coachFocus:'deep work protection',coachTips:['Block 2+ hr focus sessions in morning','Reduce PR review context switches','Automate deployment pipeline checks','Use async standups instead of daily meetings']},
+Sales:{deepWork:[2,4],meetings:[3,5],switching:[1.5,3],automatable:[25,45],coachFocus:'meeting efficiency',coachTips:['Batch prospecting calls into 2hr blocks','Use AI-generated call prep summaries','Automate CRM data entry after calls','Replace status meetings with async updates']},
+Marketing:{deepWork:[3,5],meetings:[1.5,3],switching:[1,2.5],automatable:[20,40],coachFocus:'creative focus time',coachTips:['Protect creative blocks from interruptions','Automate social media post scheduling','Use templates for recurring campaign reports','Batch content reviews to reduce context switching']},
+Support:{deepWork:[2,4],meetings:[1,2],switching:[2,4],automatable:[30,50],coachFocus:'ticket handling efficiency',coachTips:['Use AI-suggested responses for common tickets','Automate ticket categorization and routing','Reduce app switching with unified dashboard','Batch similar tickets for faster resolution']},
+Operations:{deepWork:[3,5],meetings:[1.5,3],switching:[1,2.5],automatable:[25,45],coachFocus:'process standardization',coachTips:['Document and automate repeating processes','Use checklists for multi-step workflows','Automate inventory and order status updates','Reduce manual data entry across systems']},
+Finance:{deepWork:[4,6],meetings:[1,2],switching:[0.5,1.5],automatable:[30,50],coachFocus:'data accuracy',coachTips:['Automate invoice data extraction','Use reconciliation bots for matching','Schedule deep work for month-end close','Reduce manual report generation']},
+HR:{deepWork:[3,4.5],meetings:[2,3.5],switching:[1,2],automatable:[20,35],coachFocus:'process automation',coachTips:['Automate onboarding document generation','Use AI for initial resume screening','Schedule batch interview blocks','Automate benefits enrollment reminders']},
+Design:{deepWork:[4,6.5],meetings:[1,2.5],switching:[0.5,1.5],automatable:[10,25],coachFocus:'creative flow protection',coachTips:['Block 3hr uninterrupted design sessions','Batch feedback review sessions','Use AI for asset resizing and variants','Reduce meeting attendance to essential only']},
+Product:{deepWork:[3,5],meetings:[2,4],switching:[1,2.5],automatable:[15,30],coachFocus:'strategic thinking time',coachTips:['Protect morning hours for deep analysis','Automate competitor monitoring reports','Use AI summaries for user research','Batch stakeholder meetings on specific days']}
+};
+
+function rand(min,max){return Math.round((min+Math.random()*(max-min))*10)/10}
+function randInt(min,max){return Math.floor(min+Math.random()*(max-min+1))}
+
+function generateData(dept){
+const p=deptProfiles[dept]||deptProfiles.Operations;
+const deepWork=rand(p.deepWork[0],p.deepWork[1]);
+const meetings=rand(p.meetings[0],p.meetings[1]);
+const switching=rand(p.switching[0],p.switching[1]);
+const automatable=randInt(p.automatable[0],p.automatable[1]);
+const efficiency=Math.min(98,Math.max(55,Math.round(65+deepWork*4-switching*5-meetings*1.5+Math.random()*10)));
+// hourly heatmap (9am-6pm, 9 hours)
+const hourly=[];
+for(let h=0;h<9;h++){
+hourly.push({
+deepWork:Math.max(0,rand(0,deepWork/4)),
+meetings:Math.max(0,rand(0,meetings/3)),
+switching:Math.max(0,rand(0,switching/3)),
+automatable:Math.max(0,rand(0,automatable/9))
+});
+}
+return{deepWork,meetings,switching,automatable,efficiency,hourly,coachFocus:p.coachFocus,coachTips:p.coachTips};
+}
+
+function getInitials(name){return name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)}
+function getColor(name){const hues=['#6366f1','#a855f7','#ec4899','#ef4444','#f59e0b','#22c55e','#06b6d4','#14b8a6','#8b5cf6','#f97316'];let h=0;for(let i=0;i<name.length;i++)h+=name.charCodeAt(i);return hues[h%hues.length]}
+
+function addMember(name,role,dept){
+if(!name){
+name=document.getElementById('inp-name').value.trim();
+role=document.getElementById('inp-role').value.trim();
+dept=document.getElementById('inp-dept').value;
+if(!name){document.getElementById('inp-name').focus();return}
+if(!role)role=dept+' Specialist';
+document.getElementById('inp-name').value='';document.getElementById('inp-role').value='';
+}
+const data=generateData(dept);
+team.push({id:Date.now()+Math.random(),name,role,dept,color:getColor(name),initials:getInitials(name),...data});
+renderAll();
+}
+
+function removeMember(id){
+team=team.filter(m=>m.id!==id);renderAll();
+}
+
+function clearTeam(){team=[];renderAll()}
+
+function quickAdd(type){
+const templates={
+startup:[['Alex Rivera','CTO','Engineering'],['Jordan Lee','Full Stack Dev','Engineering'],['Maya Patel','Head of Growth','Marketing'],['Chris Thompson','Designer','Design'],['Sam Nguyen','Ops Manager','Operations']],
+sales:[['Tom Baker','Sales Director','Sales'],['Nina Roberts','Sr. AE','Sales'],['Rachel Green','AE','Sales'],['Mike Chen','SDR','Sales'],['Lisa Park','SDR','Sales'],['Dan Wilson','Sales Ops','Sales']],
+eng:[['Kevin Zhao','Tech Lead','Engineering'],['Alex Chen','Sr. Frontend','Engineering'],['Dave Johnson','Backend Dev','Engineering'],['Ryan Moore','DevOps','Engineering'],['Mike Brown','QA Lead','Engineering'],['Priya Patel','Data Eng','Engineering'],['Emily Walsh','iOS Dev','Engineering'],['James Kim','ML Engineer','Engineering']],
+support:[['James Wilson','Support Lead','Support'],['Carlos Ruiz','Sr. Agent','Support'],['Chris Murphy','Agent','Support'],['Amy Foster','Agent','Support'],['Tyler Scott','Agent','Support']],
+ecomm:[['Brian Adams','VP Eng','Engineering'],['Kevin Zhao','Tech Lead','Engineering'],['Alex Chen','Frontend Dev','Engineering'],['Dave Johnson','Backend Dev','Engineering'],['Tom Baker','Sales Lead','Sales'],['Nina Roberts','AE','Sales'],['Sarah Kim','UX Designer','Design'],['Lisa Wang','Marketing Mgr','Marketing'],['Emily Davis','Content Writer','Marketing'],['James Wilson','Support Lead','Support'],['Carlos Ruiz','Support Agent','Support'],['Sofia Hernandez','Inventory Mgr','Operations'],['Dan Lee','Finance Analyst','Finance'],['Amy Foster','HR Coord','HR'],['Maria Santos','Product Mgr','Product']]
+};
+clearTeam();
+(templates[type]||[]).forEach(t=>addMember(t[0],t[1],t[2]));
+}
+
+function renderAll(){
+const empty=document.getElementById('empty-state');
+const pop=document.getElementById('populated');
+if(!team.length){empty.style.display='block';pop.style.display='none';return}
+empty.style.display='none';pop.style.display='block';
+renderStats();renderHeatmap();renderCards();
+}
+
+function renderStats(){
+const bar=document.getElementById('stats-bar');
+const avgEff=Math.round(team.reduce((s,m)=>s+m.efficiency,0)/team.length);
+const avgDeep=Math.round(team.reduce((s,m)=>s+m.deepWork,0)/team.length*10)/10;
+const avgMeet=Math.round(team.reduce((s,m)=>s+m.meetings,0)/team.length*10)/10;
+const avgSwitch=Math.round(team.reduce((s,m)=>s+m.switching,0)/team.length*10)/10;
+const totalAuto=team.reduce((s,m)=>s+m.automatable,0);
+bar.innerHTML=`
+<div class="stat-mini"><div class="val">${team.length}</div><div class="lbl">Members</div></div>
+<div class="stat-mini"><div class="val" style="color:${avgEff>=80?'var(--green)':avgEff>=65?'var(--orange)':'var(--red)'}">${avgEff}%</div><div class="lbl">Avg Efficiency</div></div>
+<div class="stat-mini"><div class="val">${avgDeep}h</div><div class="lbl">Avg Deep Work</div></div>
+<div class="stat-mini"><div class="val">${avgMeet}h</div><div class="lbl">Avg Meetings</div></div>
+<div class="stat-mini"><div class="val" style="color:var(--green)">${totalAuto}%</div><div class="lbl">Total Automatable</div></div>`;
+}
+
+function switchHeatmap(el){
+document.querySelectorAll('.panel-header .tab').forEach(t=>t.classList.remove('active'));
+el.classList.add('active');currentHeatMetric=el.dataset.metric;renderHeatmap();
+}
+
+function renderHeatmap(){
+const grid=document.getElementById('heatmap-grid');grid.innerHTML='';
+const legend=document.getElementById('legend-bar');
+const colorMap={deepWork:colors.accent,meetings:colors.orange,switching:colors.red,automatable:colors.green};
+const pal=colorMap[currentHeatMetric];
+legend.innerHTML=pal.map(c=>`<div style="background:${c}"></div>`).join('');
+const hours=['9a','10a','11a','12p','1p','2p','3p','4p','5p'];
+// header
+const headerRow=document.createElement('div');headerRow.className='heat-row';
+headerRow.innerHTML=`<div class="heat-name" style="color:var(--text3);font-weight:600">Name</div>${hours.map(h=>`<div style="flex:1;text-align:center;font-size:10px;color:var(--text3)">${h}</div>`).join('')}`;
+grid.appendChild(headerRow);
+grid.style.gridTemplateColumns='1fr';
+team.forEach(m=>{
+const row=document.createElement('div');row.className='heat-row';
+let cells='';
+m.hourly.forEach((h,i)=>{
+let val=h[currentHeatMetric];
+let maxVal=currentHeatMetric==='automatable'?8:currentHeatMetric==='deepWork'?2:currentHeatMetric==='meetings'?2:1.5;
+let idx=Math.min(4,Math.floor(val/maxVal*5));
+cells+=`<div class="heat-cell" style="background:${pal[idx]}" onclick="expandPerson(${m.id})"><div class="tip">${m.name} ${hours[i]}: ${val}${currentHeatMetric==='automatable'?'%':'h'}</div></div>`;
+});
+row.innerHTML=`<div class="heat-name" onclick="expandPerson(${m.id})">${m.name}</div>${cells}`;
+grid.appendChild(row);
+});
+}
+
+function renderCards(){
+const list=document.getElementById('team-list');list.innerHTML='';
+team.forEach(m=>{
+const card=document.createElement('div');card.className='person-card';card.id='card-'+m.id;
+const effColor=m.efficiency>=80?'var(--green)':m.efficiency>=65?'var(--orange)':'var(--red)';
+card.innerHTML=`
+<div class="person-top">
+<div class="person-avatar" style="background:${m.color}">${m.initials}</div>
+<div class="person-info"><h4>${m.name}</h4><p>${m.role} &mdash; ${m.dept}</p></div>
+</div>
+<button class="person-remove" onclick="event.stopPropagation();removeMember(${m.id})">&times;</button>
+<div class="person-bars">
+<div class="person-bar-item"><div class="person-bar-label"><span>Deep Work</span><span>${m.deepWork}h/day</span></div><div class="bar-track"><div class="bar-fill" style="width:${m.deepWork/8*100}%;background:var(--accent)"></div></div></div>
+<div class="person-bar-item"><div class="person-bar-label"><span>Meetings</span><span>${m.meetings}h/day</span></div><div class="bar-track"><div class="bar-fill" style="width:${m.meetings/6*100}%;background:var(--orange)"></div></div></div>
+<div class="person-bar-item"><div class="person-bar-label"><span>Context Switching</span><span>${m.switching}h/day</span></div><div class="bar-track"><div class="bar-fill" style="width:${m.switching/4*100}%;background:var(--red)"></div></div></div>
+<div class="person-bar-item"><div class="person-bar-label"><span>Automatable Tasks</span><span>${m.automatable}%</span></div><div class="bar-track"><div class="bar-fill" style="width:${m.automatable}%;background:var(--green)"></div></div></div>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px">
+<div style="font-size:12px;color:var(--text3)">Efficiency Score</div>
+<div style="font-size:16px;font-weight:700;color:${effColor}">${m.efficiency}%</div>
+</div>
+<div class="coaching-panel">
+<div class="coaching-grid">
+<div class="coaching-section">
+<h5>AI Coaching Recommendations</h5>
+${m.coachTips.map(t=>`<div class="coaching-item"><div class="coaching-icon">&#128161;</div><div>${t}</div></div>`).join('')}
+</div>
+<div class="coaching-section">
+<h5>Key Metrics Breakdown</h5>
+<div class="coaching-item"><div class="coaching-icon">&#9201;</div><div><strong>Productive hours:</strong> ${m.deepWork}h of 8h day (${Math.round(m.deepWork/8*100)}%)</div></div>
+<div class="coaching-item"><div class="coaching-icon">&#128197;</div><div><strong>Meeting load:</strong> ${m.meetings}h/day ${m.meetings>3?'(above average)':'(healthy range)'}</div></div>
+<div class="coaching-item"><div class="coaching-icon">&#128256;</div><div><strong>Context switches:</strong> ~${Math.round(m.switching*15)} per day ${m.switching>2?'(high)':'(acceptable)'}</div></div>
+<div class="coaching-item"><div class="coaching-icon">&#9889;</div><div><strong>Automation potential:</strong> ${m.automatable}% of tasks could be automated, saving ~${Math.round(m.automatable/100*m.deepWork*0.5*10)/10}h/day</div></div>
+</div>
+</div>
+<div class="coaching-insight">
+<h5>Go2 Insight for ${m.name}</h5>
+<p>${getInsight(m)}</p>
+</div>
+</div>`;
+card.onclick=(e)=>{if(e.target.closest('.person-remove'))return;expandPerson(m.id)};
+list.appendChild(card);
+});
+}
+
+function getInsight(m){
+if(m.switching>2)return`${m.name} spends ${m.switching}h/day in context switching, which is significantly impacting deep work time. Go2 recommends batching similar tasks and using notification blocking during focus hours. This alone could recover ${Math.round(m.switching*0.4*10)/10}h of productive time daily.`;
+if(m.meetings>3)return`${m.name}'s meeting load of ${m.meetings}h/day is above the healthy threshold. Go2 has identified ${Math.round(m.meetings*0.3*10)/10}h of meetings that could be replaced with async updates. Focus area: ${m.coachFocus}.`;
+if(m.automatable>35)return`${m.automatable}% of ${m.name}'s daily tasks are candidates for automation. Go2 can build AI agents to handle repetitive ${m.dept.toLowerCase()} workflows, potentially saving ${Math.round(m.automatable/100*4*10)/10}h per day. Priority: ${m.coachFocus}.`;
+if(m.efficiency>=90)return`${m.name} is performing exceptionally well with a ${m.efficiency}% efficiency score. Go2 coaching will focus on maintaining these habits and sharing best practices with the ${m.dept} team. Key strength: ${m.deepWork}h daily deep work.`;
+return`${m.name} has a balanced workday profile. Go2 coaching will focus on ${m.coachFocus}, aiming to increase deep work from ${m.deepWork}h to ${Math.round((m.deepWork+0.8)*10)/10}h daily. Current automation potential: ${m.automatable}% of tasks.`;
+}
+
+function expandPerson(id){
+const card=document.getElementById('card-'+id);
+if(!card)return;
+const wasExpanded=card.classList.contains('expanded');
+document.querySelectorAll('.person-card').forEach(c=>c.classList.remove('expanded'));
+if(!wasExpanded){card.classList.add('expanded');card.scrollIntoView({behavior:'smooth',block:'center'})}
+}
+</script>
+</body>
+</html>

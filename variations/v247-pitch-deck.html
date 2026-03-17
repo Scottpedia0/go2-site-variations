@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Investor Pitch Deck</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#000;color:#fff;overflow:hidden;height:100vh}
+#deck{position:relative;width:100vw;height:100vh}
+.slide{position:absolute;top:0;left:0;width:100vw;height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px 100px;opacity:0;transform:scale(0.8) rotateY(10deg);transition:all 0.8s cubic-bezier(0.23,1,0.32,1);pointer-events:none;text-align:center}
+.slide.active{opacity:1;transform:scale(1) rotateY(0);pointer-events:all}
+.slide.prev{opacity:0;transform:scale(0.8) rotateY(-10deg)}
+.slide.next{opacity:0;transform:scale(0.8) rotateY(10deg)}
+
+/* Slide backgrounds */
+.s-dark{background:linear-gradient(135deg,#0a0a0a,#1a1a2e)}
+.s-blue{background:linear-gradient(135deg,#0f0c29,#302b63,#24243e)}
+.s-green{background:linear-gradient(135deg,#0a2e1f,#134e3a)}
+.s-red{background:linear-gradient(135deg,#2e0a0a,#4e1313)}
+.s-purple{background:linear-gradient(135deg,#1a0a2e,#2d1b69)}
+.s-gradient{background:linear-gradient(135deg,#667eea,#764ba2)}
+
+h1{font-size:72px;font-weight:900;line-height:1.1;margin-bottom:24px;letter-spacing:-2px}
+h2{font-size:48px;font-weight:800;margin-bottom:20px;letter-spacing:-1px}
+h3{font-size:32px;font-weight:600;margin-bottom:16px}
+p{font-size:22px;line-height:1.6;color:rgba(255,255,255,0.8);max-width:900px}
+.subtitle{font-size:28px;color:rgba(255,255,255,0.6);font-weight:300}
+.big-stat{font-size:120px;font-weight:900;background:linear-gradient(135deg,#00d4ff,#7b61ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
+.stat-label{font-size:24px;color:rgba(255,255,255,0.5);margin-top:8px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;margin-top:40px;width:100%;max-width:1100px}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:40px;margin-top:40px;width:100%;max-width:1000px}
+.card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:32px;text-align:left}
+.card h3{font-size:24px;margin-bottom:12px}
+.card p{font-size:16px;color:rgba(255,255,255,0.6)}
+.card .icon{font-size:40px;margin-bottom:16px}
+.highlight{color:#00d4ff}
+.green{color:#27c93f}
+.red{color:#ff5f56}
+.yellow{color:#ffbd2e}
+
+/* Chart bars */
+.bar-chart{display:flex;align-items:flex-end;gap:24px;height:250px;margin-top:40px}
+.bar-col{display:flex;flex-direction:column;align-items:center;gap:8px}
+.bar{width:60px;border-radius:8px 8px 0 0;transition:height 1s ease;background:linear-gradient(to top,#7b61ff,#00d4ff)}
+.bar-label{font-size:14px;color:rgba(255,255,255,0.5)}
+.bar-value{font-size:16px;font-weight:600}
+
+/* Nav */
+#nav{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:100}
+.nav-dot{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,0.2);cursor:pointer;transition:all 0.3s}
+.nav-dot.active{background:#00d4ff;transform:scale(1.3)}
+#slide-counter{position:fixed;bottom:30px;right:40px;font-size:14px;color:rgba(255,255,255,0.3);z-index:100}
+#notes-toggle{position:fixed;bottom:30px;left:40px;font-size:13px;color:rgba(255,255,255,0.3);cursor:pointer;z-index:100;border:1px solid rgba(255,255,255,0.1);padding:6px 12px;border-radius:6px}
+#notes-toggle:hover{color:#fff;border-color:rgba(255,255,255,0.3)}
+.speaker-notes{position:fixed;bottom:0;left:0;width:100%;background:rgba(0,0,0,0.95);border-top:1px solid #333;padding:20px 40px;font-size:15px;color:rgba(255,255,255,0.6);line-height:1.6;transform:translateY(100%);transition:transform 0.3s;z-index:90;max-height:150px;overflow-y:auto}
+.speaker-notes.visible{transform:translateY(0)}
+
+/* Animations */
+.slide.active .reveal{animation:revealUp 0.8s ease forwards}
+.slide.active .reveal-d1{animation:revealUp 0.8s 0.2s ease forwards;opacity:0}
+.slide.active .reveal-d2{animation:revealUp 0.8s 0.4s ease forwards;opacity:0}
+.slide.active .reveal-d3{animation:revealUp 0.8s 0.6s ease forwards;opacity:0}
+.slide.active .reveal-d4{animation:revealUp 0.8s 0.8s ease forwards;opacity:0}
+@keyframes revealUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.slide.active .grow-bar{animation:growBar 1.2s 0.5s ease forwards}
+@keyframes growBar{from{height:0}to{height:var(--h)}}
+
+/* Progress bar */
+#progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,#00d4ff,#7b61ff);z-index:100;transition:width 0.5s}
+
+.logo{font-size:28px;font-weight:900;letter-spacing:-1px}
+.logo span{color:#00d4ff}
+
+/* Comparison table */
+.comp-table{width:100%;max-width:900px;border-collapse:collapse;margin-top:30px}
+.comp-table th,.comp-table td{padding:14px 20px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.1);font-size:16px}
+.comp-table th{color:rgba(255,255,255,0.4);font-weight:500;font-size:14px;text-transform:uppercase}
+.comp-table td:first-child{font-weight:600}
+.flywheel{width:300px;height:300px;border-radius:50%;border:3px solid rgba(0,212,255,0.3);display:flex;align-items:center;justify-content:center;position:relative;margin:30px auto}
+.flywheel-label{position:absolute;background:rgba(0,0,0,0.8);padding:8px 16px;border-radius:20px;font-size:14px;font-weight:600;border:1px solid rgba(0,212,255,0.3);white-space:nowrap}
+.flywheel-label:nth-child(1){top:-15px;left:50%;transform:translateX(-50%)}
+.flywheel-label:nth-child(2){right:-40px;top:50%;transform:translateY(-50%)}
+.flywheel-label:nth-child(3){bottom:-15px;left:50%;transform:translateX(-50%)}
+.flywheel-label:nth-child(4){left:-40px;top:50%;transform:translateY(-50%)}
+.flywheel-center{font-size:20px;font-weight:800;color:#00d4ff}
+.slide.active .flywheel{animation:spin 20s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.slide.active .flywheel-label{animation:counterspin 20s linear infinite}
+@keyframes counterspin{to{transform:rotate(-360deg)}}
+.flywheel-label:nth-child(1){animation-delay:0s!important}
+.team-row{display:flex;gap:20px;align-items:center;margin-top:24px;flex-wrap:wrap;justify-content:center}
+.team-member{text-align:center}
+.team-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#7b61ff,#00d4ff);display:flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:8px}
+.team-name{font-size:14px;font-weight:600}
+.team-role{font-size:12px;color:rgba(255,255,255,0.4)}
+</style>
+</head>
+<body>
+<div id="progress" style="width:0%"></div>
+<div id="deck">
+
+<!-- Slide 0: Title -->
+<div class="slide s-dark active" data-notes="Open with confidence. Go2 is the first platform that bridges the gap between how AI is sold and how work actually happens.">
+  <div class="logo reveal">Go<span>2</span></div>
+  <h1 class="reveal-d1" style="margin-top:20px">AI That Learns<br>How Your Team<br>Actually Works</h1>
+  <p class="subtitle reveal-d2">Seed Round | March 2026</p>
+  <p class="reveal-d3" style="font-size:16px;color:rgba(255,255,255,0.3);margin-top:40px">Press <span style="color:#00d4ff">&#8594;</span> or swipe to navigate</p>
+</div>
+
+<!-- Slide 1: Problem -->
+<div class="slide s-red" data-notes="The core insight: $200B spent on AI tools, but 87% of companies can't show ROI. The problem isn't AI — it's that AI doesn't know how your people actually work.">
+  <h2 class="reveal">The $200B Problem</h2>
+  <div class="grid-3 reveal-d1">
+    <div class="card">
+      <div class="big-stat" style="font-size:72px">87%</div>
+      <p>of AI projects fail to reach production</p>
+    </div>
+    <div class="card">
+      <div class="big-stat" style="font-size:72px">$4.6M</div>
+      <p>average enterprise AI spend with no measurable ROI</p>
+    </div>
+    <div class="card">
+      <div class="big-stat" style="font-size:72px">14mo</div>
+      <p>average time before companies abandon AI initiatives</p>
+    </div>
+  </div>
+  <p class="reveal-d2" style="margin-top:40px;font-size:28px;color:#ff5f56;font-weight:600">AI fails because it doesn't know how your people actually work.</p>
+</div>
+
+<!-- Slide 2: Why AI Fails -->
+<div class="slide s-dark" data-notes="Walk through the typical AI implementation failure. Companies buy tools, consultants build models on assumptions, not reality. The missing piece is real work data.">
+  <h2 class="reveal">Why AI Fails Today</h2>
+  <div class="grid-2 reveal-d1">
+    <div class="card" style="border-color:rgba(255,95,86,0.3)">
+      <div class="icon">1</div>
+      <h3 class="red">Buy an AI tool</h3>
+      <p>"We'll use ChatGPT/Copilot/custom LLM for everything"</p>
+    </div>
+    <div class="card" style="border-color:rgba(255,95,86,0.3)">
+      <div class="icon">2</div>
+      <h3 class="red">Hire consultants</h3>
+      <p>$200K to "map processes" through interviews and workshops</p>
+    </div>
+    <div class="card" style="border-color:rgba(255,95,86,0.3)">
+      <div class="icon">3</div>
+      <h3 class="red">Build on assumptions</h3>
+      <p>Models trained on how people SAY they work, not how they DO</p>
+    </div>
+    <div class="card" style="border-color:rgba(255,95,86,0.3)">
+      <div class="icon">4</div>
+      <h3 class="red">Fail and blame AI</h3>
+      <p>"AI isn't ready for our business" — wrong. The data was wrong.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 3: Market -->
+<div class="slide s-purple" data-notes="TAM is massive because we sit at the intersection of workforce analytics ($8B), process mining ($2B), and AI automation ($15B). Our wedge is the 50-500 employee company.">
+  <h2 class="reveal">Market Opportunity</h2>
+  <div class="bar-chart reveal-d1">
+    <div class="bar-col"><div class="bar-value">$8B</div><div class="bar grow-bar" style="--h:120px;height:0;background:linear-gradient(to top,#7b61ff,#9b8eff)"></div><div class="bar-label">Workforce<br>Analytics</div></div>
+    <div class="bar-col"><div class="bar-value">$15B</div><div class="bar grow-bar" style="--h:200px;height:0"></div><div class="bar-label">AI<br>Automation</div></div>
+    <div class="bar-col"><div class="bar-value">$2B</div><div class="bar grow-bar" style="--h:60px;height:0;background:linear-gradient(to top,#00d4ff,#7bc4ff)"></div><div class="bar-label">Process<br>Mining</div></div>
+    <div class="bar-col"><div class="bar-value highlight" style="font-size:24px">$25B+</div><div class="bar grow-bar" style="--h:250px;height:0;background:linear-gradient(to top,#ff9f43,#ffd93d)"></div><div class="bar-label" style="font-weight:600;color:#fff">Go2's TAM<br>(intersection)</div></div>
+  </div>
+  <p class="reveal-d2" style="margin-top:30px">We're the first platform that captures real work, coaches in real-time,<br>and deploys AI agents trained on how your best people actually operate.</p>
+</div>
+
+<!-- Slide 4: Solution -->
+<div class="slide s-green" data-notes="The Go2 flywheel. Each element feeds the next. The desktop agent captures data, data enables coaching, coaching improves work AND creates training data for agents, agents handle routine work.">
+  <h2 class="reveal">The Go2 Platform</h2>
+  <div style="display:flex;align-items:center;gap:60px" class="reveal-d1">
+    <div class="flywheel">
+      <div class="flywheel-label">Capture Work</div>
+      <div class="flywheel-label">Coach Humans</div>
+      <div class="flywheel-label">Train Agents</div>
+      <div class="flywheel-label">Automate</div>
+      <div class="flywheel-center">Go2</div>
+    </div>
+    <div style="text-align:left">
+      <div style="margin-bottom:20px"><span class="highlight" style="font-size:24px;font-weight:700">1. Capture</span><br><span style="color:rgba(255,255,255,0.6)">Desktop agent observes real work patterns</span></div>
+      <div style="margin-bottom:20px"><span class="highlight" style="font-size:24px;font-weight:700">2. Coach</span><br><span style="color:rgba(255,255,255,0.6)">AI delivers real-time productivity tips</span></div>
+      <div style="margin-bottom:20px"><span class="highlight" style="font-size:24px;font-weight:700">3. Document</span><br><span style="color:rgba(255,255,255,0.6)">Auto-generate process documentation</span></div>
+      <div><span class="highlight" style="font-size:24px;font-weight:700">4. Automate</span><br><span style="color:rgba(255,255,255,0.6)">Deploy AI agents trained on real work</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 5: Product - Capture -->
+<div class="slide s-dark" data-notes="The Cowork.ai desktop agent is our moat. Privacy-first — captures workflow patterns and app metadata, NOT screenshots or keystrokes. Think Hubspot activity tracking but for desktop work.">
+  <h2 class="reveal">Capture: The Desktop Agent</h2>
+  <p class="reveal-d1">Cowork.ai runs silently, capturing <em>how</em> work happens — not <em>what</em> is typed.</p>
+  <div class="grid-3 reveal-d2">
+    <div class="card">
+      <div class="icon">&#128274;</div>
+      <h3>Privacy-First</h3>
+      <p>No keylogging. No screenshots. Only workflow metadata and app transitions. SOC 2 certified.</p>
+    </div>
+    <div class="card">
+      <div class="icon">&#128200;</div>
+      <h3>Pattern Recognition</h3>
+      <p>Identifies repetitive tasks, process variations, and automation candidates automatically.</p>
+    </div>
+    <div class="card">
+      <div class="icon">&#129302;</div>
+      <h3>Agent Training Data</h3>
+      <p>Every captured workflow becomes training data for AI agents that replicate your best people.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 6: Product - Coach -->
+<div class="slide s-blue" data-notes="The coaching layer is what makes Go2 feel magical. It's not monitoring — it's like having a personal productivity expert watching your patterns and gently suggesting improvements.">
+  <h2 class="reveal">Coach: Real-Time AI Guidance</h2>
+  <div class="grid-2 reveal-d1">
+    <div style="text-align:left">
+      <div class="card" style="margin-bottom:20px;border-color:rgba(0,212,255,0.3)">
+        <p style="color:#00d4ff;font-size:14px;margin-bottom:8px">&#129504; GO2 COACH — 10:32 AM</p>
+        <p style="color:#fff;font-size:18px">"You've context-switched 8 times in 12 minutes. Your focus score drops 34% when this happens. Try a 25-min focus block?"</p>
+        <p style="color:#27c93f;margin-top:12px;font-size:14px">&#10003; Accepted — Focus score improved 42%</p>
+      </div>
+      <div class="card" style="border-color:rgba(0,212,255,0.3)">
+        <p style="color:#00d4ff;font-size:14px;margin-bottom:8px">&#129504; GO2 COACH — 2:15 PM</p>
+        <p style="color:#fff;font-size:18px">"I noticed you manually copy invoice data to NetSuite 47 times this week. Want me to automate this?"</p>
+        <p style="color:#27c93f;margin-top:12px;font-size:14px">&#10003; Accepted — Agent deployed, saves 12.4 hrs/week</p>
+      </div>
+    </div>
+    <div>
+      <h3 style="margin-bottom:24px">Coaching Results</h3>
+      <div style="margin-bottom:16px">Tip Acceptance Rate<br><div style="background:rgba(255,255,255,0.1);border-radius:8px;height:24px;margin-top:8px"><div style="background:linear-gradient(90deg,#00d4ff,#27c93f);height:100%;border-radius:8px;width:89%"></div></div><span style="font-size:14px;color:rgba(255,255,255,0.5)">89%</span></div>
+      <div style="margin-bottom:16px">Productivity Improvement<br><div style="background:rgba(255,255,255,0.1);border-radius:8px;height:24px;margin-top:8px"><div style="background:linear-gradient(90deg,#7b61ff,#00d4ff);height:100%;border-radius:8px;width:41%"></div></div><span style="font-size:14px;color:rgba(255,255,255,0.5)">+41% avg</span></div>
+      <div>Error Reduction<br><div style="background:rgba(255,255,255,0.1);border-radius:8px;height:24px;margin-top:8px"><div style="background:linear-gradient(90deg,#ff9f43,#ffd93d);height:100%;border-radius:8px;width:67%"></div></div><span style="font-size:14px;color:rgba(255,255,255,0.5)">-67%</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 7: Product - Automate -->
+<div class="slide s-dark" data-notes="This is the endgame. Agents trained on real work, not hypothetical processes. Shadow mode ensures safety. The key differentiator: our agents actually work because they're based on real data.">
+  <h2 class="reveal">Automate: AI Agents From Real Work</h2>
+  <p class="reveal-d1">Not hypothetical workflows. Not consultant guesses.<br>Agents trained on how your best people actually do the job.</p>
+  <div class="grid-3 reveal-d2">
+    <div class="card">
+      <h3>&#128064; Observe</h3>
+      <p>Go2 watches Sarah process 2,847 invoices over 3 months.</p>
+    </div>
+    <div class="card">
+      <h3>&#129504; Learn</h3>
+      <p>Builds a decision model including her edge-case handling.</p>
+    </div>
+    <div class="card">
+      <h3>&#129302; Deploy</h3>
+      <p>Agent runs in shadow mode, then promotes to active at 99%+ accuracy.</p>
+    </div>
+  </div>
+  <p class="reveal-d3" style="margin-top:30px;font-weight:600;color:#27c93f">Result: 847 invoices/day at 99.7% accuracy. Sarah now handles strategy.</p>
+</div>
+
+<!-- Slide 8: Competition -->
+<div class="slide s-dark" data-notes="We're the only player that does all three: capture real work data, coach in real-time, and deploy agents trained on that data. Everyone else does one piece.">
+  <h2 class="reveal">Competitive Landscape</h2>
+  <table class="comp-table reveal-d1">
+    <tr><th>Capability</th><th style="color:#00d4ff">Go2</th><th>Time Doctor</th><th>Celonis</th><th>UiPath</th></tr>
+    <tr><td>Desktop work capture</td><td class="green">&#10003;</td><td class="green">&#10003;</td><td class="red">&#10007;</td><td class="red">&#10007;</td></tr>
+    <tr><td>Real-time AI coaching</td><td class="green">&#10003;</td><td class="red">&#10007;</td><td class="red">&#10007;</td><td class="red">&#10007;</td></tr>
+    <tr><td>Auto process documentation</td><td class="green">&#10003;</td><td class="red">&#10007;</td><td class="yellow">Partial</td><td class="red">&#10007;</td></tr>
+    <tr><td>AI agents from real data</td><td class="green">&#10003;</td><td class="red">&#10007;</td><td class="red">&#10007;</td><td class="yellow">Manual</td></tr>
+    <tr><td>Privacy-first (no keylog)</td><td class="green">&#10003;</td><td class="red">&#10007;</td><td>N/A</td><td>N/A</td></tr>
+    <tr><td>SMB-friendly pricing</td><td class="green">&#10003;</td><td class="green">&#10003;</td><td class="red">&#10007;</td><td class="red">&#10007;</td></tr>
+  </table>
+  <p class="reveal-d2" style="margin-top:24px;font-weight:600">Go2 is the <span class="highlight">only</span> platform connecting work capture → coaching → agent deployment.</p>
+</div>
+
+<!-- Slide 9: Business Model -->
+<div class="slide s-purple" data-notes="Land with coaching ($15/user/mo), expand into automation ($50/agent/mo). The magic: coaching users generate the data that makes agents possible, creating natural upsell.">
+  <h2 class="reveal">Business Model</h2>
+  <div class="grid-3 reveal-d1">
+    <div class="card" style="border-color:rgba(0,212,255,0.3)">
+      <h3 class="highlight">Starter</h3>
+      <div style="font-size:36px;font-weight:800;margin:12px 0">$15<span style="font-size:16px;color:rgba(255,255,255,0.4)">/user/mo</span></div>
+      <p>Work capture + AI coaching. The hook that generates training data.</p>
+    </div>
+    <div class="card" style="border-color:rgba(123,97,255,0.3)">
+      <h3 style="color:#7b61ff">Pro</h3>
+      <div style="font-size:36px;font-weight:800;margin:12px 0">$35<span style="font-size:16px;color:rgba(255,255,255,0.4)">/user/mo</span></div>
+      <p>+ Process documentation + automation recommendations + 2 AI agents.</p>
+    </div>
+    <div class="card" style="border-color:rgba(255,159,67,0.3)">
+      <h3 style="color:#ff9f43">Enterprise</h3>
+      <div style="font-size:36px;font-weight:800;margin:12px 0">Custom</div>
+      <p>Unlimited agents, custom integrations, dedicated success team, SLA.</p>
+    </div>
+  </div>
+  <p class="reveal-d2" style="margin-top:30px"><span style="color:#00d4ff;font-weight:600">Key insight:</span> Coaching users generate the data that trains agents. Natural upsell path with 73% Pro conversion.</p>
+</div>
+
+<!-- Slide 10: Traction -->
+<div class="slide s-dark" data-notes="Early traction is strong. 47 companies in beta, $1.2M ARR, 89% coaching acceptance rate is our secret weapon — it means users trust Go2 and engagement is genuine.">
+  <h2 class="reveal">Traction</h2>
+  <div class="grid-3 reveal-d1">
+    <div style="text-align:center"><div class="big-stat" style="font-size:80px">$1.2M</div><div class="stat-label">ARR (growing 32% MoM)</div></div>
+    <div style="text-align:center"><div class="big-stat" style="font-size:80px">47</div><div class="stat-label">Companies in production</div></div>
+    <div style="text-align:center"><div class="big-stat" style="font-size:80px">2,340</div><div class="stat-label">Active coached users</div></div>
+  </div>
+  <div class="grid-3 reveal-d2" style="margin-top:20px">
+    <div style="text-align:center"><div style="font-size:48px;font-weight:800;color:#27c93f">89%</div><div class="stat-label">Coaching acceptance rate</div></div>
+    <div style="text-align:center"><div style="font-size:48px;font-weight:800;color:#27c93f">4.8/5</div><div class="stat-label">User satisfaction</div></div>
+    <div style="text-align:center"><div style="font-size:48px;font-weight:800;color:#27c93f">138x</div><div class="stat-label">Average customer ROI</div></div>
+  </div>
+  <p class="reveal-d3" style="margin-top:30px;color:rgba(255,255,255,0.4)">Net revenue retention: 142% | Logo churn: 2.1% monthly | CAC payback: 4.2 months</p>
+</div>
+
+<!-- Slide 11: Case Study -->
+<div class="slide s-green" data-notes="Acme Corp is our flagship. 50 employees, 14 months of failed AI before Go2. Within 60 days we had 4 agents deployed and $650K annualized savings.">
+  <h2 class="reveal">Case Study: Acme Corp</h2>
+  <p class="reveal-d1">50-person logistics company. Spent $280K on AI consultants. Zero ROI.</p>
+  <div class="grid-2 reveal-d2">
+    <div class="card">
+      <h3 class="red">Before Go2</h3>
+      <p style="margin-bottom:8px">&#10007; 14 months of failed AI projects</p>
+      <p style="margin-bottom:8px">&#10007; $280K spent on consultants</p>
+      <p style="margin-bottom:8px">&#10007; 0 processes automated</p>
+      <p>&#10007; Team skeptical of AI</p>
+    </div>
+    <div class="card" style="border-color:rgba(39,201,63,0.3)">
+      <h3 class="green">After Go2 (60 days)</h3>
+      <p style="margin-bottom:8px">&#10003; 10 processes auto-documented</p>
+      <p style="margin-bottom:8px">&#10003; 4 AI agents deployed</p>
+      <p style="margin-bottom:8px">&#10003; 342 hrs/month saved</p>
+      <p>&#10003; $652K annualized savings</p>
+    </div>
+  </div>
+  <p class="reveal-d3" style="margin-top:24px;font-weight:600;font-size:24px">"Go2 did in 60 days what our AI consultants couldn't do in 14 months."<br><span style="font-size:16px;color:rgba(255,255,255,0.4)">— VP Operations, Acme Corp</span></p>
+</div>
+
+<!-- Slide 12: Go-to-Market -->
+<div class="slide s-dark" data-notes="Bottom-up adoption. Individual managers try coaching, see results, expand to team, then organization. The data flywheel means each user makes the product better for everyone.">
+  <h2 class="reveal">Go-to-Market</h2>
+  <div class="grid-2 reveal-d1">
+    <div style="text-align:left">
+      <h3 class="highlight">Bottom-Up Adoption</h3>
+      <div style="margin:24px 0">
+        <p style="margin-bottom:16px"><span style="color:#00d4ff;font-weight:700">Week 1:</span> Manager installs Cowork.ai for their team (free trial)</p>
+        <p style="margin-bottom:16px"><span style="color:#00d4ff;font-weight:700">Week 2:</span> AI coaching starts. Team sees immediate focus improvements</p>
+        <p style="margin-bottom:16px"><span style="color:#00d4ff;font-weight:700">Month 1:</span> First automation opportunities identified</p>
+        <p style="margin-bottom:16px"><span style="color:#00d4ff;font-weight:700">Month 2:</span> First agent deployed. Manager shares ROI with leadership</p>
+        <p><span style="color:#00d4ff;font-weight:700">Month 3:</span> Company-wide rollout. Enterprise contract signed</p>
+      </div>
+    </div>
+    <div>
+      <h3>Channel Mix</h3>
+      <div class="card" style="margin-top:24px">
+        <p style="margin-bottom:8px"><span class="highlight">45%</span> Product-led (free trial → paid)</p>
+        <p style="margin-bottom:8px"><span class="highlight">30%</span> Content marketing (SEO, thought leadership)</p>
+        <p style="margin-bottom:8px"><span class="highlight">15%</span> Partner channel (MSPs, consultants)</p>
+        <p><span class="highlight">10%</span> Outbound sales (enterprise)</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 13: Team -->
+<div class="slide s-blue" data-notes="Highlight founder-market fit. Deep experience in workforce tech, AI/ML, and enterprise SaaS. Advisors from Slack, Salesforce, and UiPath.">
+  <h2 class="reveal">Team</h2>
+  <div class="team-row reveal-d1">
+    <div class="team-member"><div class="team-avatar">&#128100;</div><div class="team-name">CEO / Co-founder</div><div class="team-role">Ex-Workforce Analytics Lead, Microsoft</div></div>
+    <div class="team-member"><div class="team-avatar">&#128100;</div><div class="team-name">CTO / Co-founder</div><div class="team-role">Ex-ML Platform, Google Brain</div></div>
+    <div class="team-member"><div class="team-avatar">&#128100;</div><div class="team-name">VP Engineering</div><div class="team-role">Ex-Automation, UiPath</div></div>
+    <div class="team-member"><div class="team-avatar">&#128100;</div><div class="team-name">VP Product</div><div class="team-role">Ex-Product, Slack</div></div>
+  </div>
+  <div class="reveal-d2" style="margin-top:40px">
+    <h3>Advisors</h3>
+    <p style="font-size:16px">Former CRO, Salesforce &bull; Former VP AI, UiPath &bull; Former CEO, Time Doctor<br>Partner, Andreessen Horowitz &bull; Professor of AI Ethics, Stanford</p>
+  </div>
+  <p class="reveal-d3" style="margin-top:24px;font-size:16px;color:rgba(255,255,255,0.4)">12 engineers | 4 in sales | 2 in customer success | Fully remote</p>
+</div>
+
+<!-- Slide 14: The Ask -->
+<div class="slide s-gradient" data-notes="Raising $8M seed to accelerate product development, expand sales team, and reach 200 companies. 18-month runway to Series A metrics.">
+  <h2 class="reveal">The Ask</h2>
+  <div class="big-stat reveal-d1" style="margin:20px 0">$8M</div>
+  <p class="reveal-d1" style="font-size:28px;font-weight:300">Seed Round</p>
+  <div class="grid-3 reveal-d2" style="margin-top:40px">
+    <div class="card" style="background:rgba(255,255,255,0.1)">
+      <h3>40% Product</h3>
+      <p>Agent platform v2, enterprise features, more integrations</p>
+    </div>
+    <div class="card" style="background:rgba(255,255,255,0.1)">
+      <h3>35% Go-to-Market</h3>
+      <p>Sales team expansion, content, partner program launch</p>
+    </div>
+    <div class="card" style="background:rgba(255,255,255,0.1)">
+      <h3>25% Operations</h3>
+      <p>Customer success, compliance certifications, infrastructure</p>
+    </div>
+  </div>
+  <p class="reveal-d3" style="margin-top:30px;font-weight:600">Target: 200 companies, $5M ARR, Series A in 18 months</p>
+</div>
+
+<!-- Slide 15: Vision -->
+<div class="slide s-dark" data-notes="End big. Go2 becomes the operating system for human-AI collaboration. Every company will need this. The question is whether they build it themselves or use Go2.">
+  <h2 class="reveal" style="font-size:56px">The Future of Work<br>Isn't AI vs. Humans</h2>
+  <p class="subtitle reveal-d1" style="margin-top:20px;font-size:32px">It's AI <span class="highlight">trained by</span> humans,<br>working <span class="highlight">alongside</span> humans.</p>
+  <div class="reveal-d2" style="margin-top:60px">
+    <div class="logo" style="font-size:48px">Go<span>2</span></div>
+    <p style="margin-top:16px;font-size:20px;color:rgba(255,255,255,0.4)">go2.io | hello@go2.io</p>
+  </div>
+</div>
+
+</div>
+
+<!-- Navigation -->
+<div id="nav"></div>
+<div id="slide-counter"></div>
+<div id="notes-toggle" onclick="toggleNotes()">Speaker Notes</div>
+<div class="speaker-notes" id="notes"></div>
+
+<script>
+const slides=document.querySelectorAll('.slide');
+let current=0,notesVisible=false;
+
+function buildNav(){
+  const nav=document.getElementById('nav');
+  slides.forEach((_,i)=>{
+    const dot=document.createElement('div');
+    dot.className='nav-dot'+(i===0?' active':'');
+    dot.onclick=()=>goTo(i);
+    nav.appendChild(dot);
+  });
+}
+
+function goTo(idx){
+  if(idx<0||idx>=slides.length)return;
+  slides[current].classList.remove('active');
+  slides[current].classList.add(idx>current?'prev':'next');
+  current=idx;
+  slides.forEach((s,i)=>{
+    s.classList.remove('active','prev','next');
+    if(i===current)s.classList.add('active');
+    else if(i<current)s.classList.add('prev');
+    else s.classList.add('next');
+  });
+  document.querySelectorAll('.nav-dot').forEach((d,i)=>d.classList.toggle('active',i===current));
+  document.getElementById('slide-counter').textContent=`${current+1} / ${slides.length}`;
+  document.getElementById('progress').style.width=((current/(slides.length-1))*100)+'%';
+  const note=slides[current].dataset.notes||'';
+  document.getElementById('notes').textContent=note;
+}
+
+function toggleNotes(){
+  notesVisible=!notesVisible;
+  document.getElementById('notes').classList.toggle('visible',notesVisible);
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' ')goTo(current+1);
+  if(e.key==='ArrowLeft')goTo(current-1);
+  if(e.key==='n')toggleNotes();
+  if(e.key==='f')document.documentElement.requestFullscreen?.();
+});
+
+let touchStartX=0;
+document.addEventListener('touchstart',e=>touchStartX=e.touches[0].clientX);
+document.addEventListener('touchend',e=>{
+  const diff=e.changedTouches[0].clientX-touchStartX;
+  if(Math.abs(diff)>50){diff<0?goTo(current+1):goTo(current-1)}
+});
+
+buildNav();
+goTo(0);
+</script>
+</body>
+</html>

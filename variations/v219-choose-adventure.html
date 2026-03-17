@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Choose Your AI Adventure - Go2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Mono&display=swap');
+body{font-family:'Inter',sans-serif;background:#0a0a0f;color:#fff;min-height:100vh;display:flex;justify-content:center;align-items:center}
+.game{max-width:720px;width:100%;padding:20px;margin:20px}
+.hud{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;margin-bottom:20px;font-family:'Space Mono',monospace;font-size:12px}
+.hud-item{text-align:center}
+.hud-label{color:#666;font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.hud-value{font-weight:700;font-size:16px}
+.hud-value.money{color:#33ff88}
+.hud-value.time{color:#ffcc00}
+.hud-value.morale{color:#ff6699}
+.hud-value.trust{color:#33ccff}
+.scene{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:40px;animation:fadeScene 0.5s ease-out}
+@keyframes fadeScene{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.scene-chapter{font-size:11px;text-transform:uppercase;letter-spacing:3px;color:#888;margin-bottom:16px}
+.scene-art{font-size:48px;text-align:center;margin-bottom:20px;line-height:1.4}
+.scene-title{font-size:28px;font-weight:900;margin-bottom:16px;line-height:1.2}
+.scene-text{font-size:15px;line-height:1.8;color:#bbb;margin-bottom:28px}
+.scene-text b{color:#fff}
+.scene-text .highlight{color:#ffcc00;font-weight:600}
+.scene-text .money{color:#33ff88;font-weight:700;font-family:'Space Mono',monospace}
+.scene-text .bad{color:#ff3366;font-weight:600}
+.choices{display:flex;flex-direction:column;gap:10px}
+.choice{padding:18px 24px;border-radius:12px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.03);cursor:pointer;transition:all 0.25s;display:flex;align-items:center;gap:14px;text-align:left}
+.choice:hover{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.25);transform:translateX(4px)}
+.choice-icon{font-size:24px;min-width:36px;text-align:center}
+.choice-content{flex:1}
+.choice-title{font-weight:700;font-size:14px;margin-bottom:2px}
+.choice-desc{font-size:12px;color:#888}
+.choice.risky{border-color:rgba(255,51,102,0.3)}
+.choice.risky:hover{border-color:rgba(255,51,102,0.6);background:rgba(255,51,102,0.08)}
+.choice.safe{border-color:rgba(0,204,255,0.3)}
+.choice.safe:hover{border-color:rgba(0,204,255,0.6);background:rgba(0,204,255,0.08)}
+.choice.go2{border-color:rgba(0,255,136,0.3)}
+.choice.go2:hover{border-color:rgba(0,255,136,0.6);background:rgba(0,255,136,0.08)}
+.impact{background:rgba(255,255,255,0.05);border-radius:12px;padding:16px 20px;margin-bottom:20px;border-left:3px solid}
+.impact.negative{border-color:#ff3366;background:rgba(255,51,102,0.05)}
+.impact.positive{border-color:#33ff88;background:rgba(51,255,136,0.05)}
+.impact.neutral{border-color:#ffcc00;background:rgba(255,204,0,0.05)}
+.impact-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.impact.negative .impact-title{color:#ff3366}
+.impact.positive .impact-title{color:#33ff88}
+.impact.neutral .impact-title{color:#ffcc00}
+.impact-text{font-size:13px;color:#bbb}
+.scorecard{text-align:center}
+.scorecard h2{font-size:32px;font-weight:900;margin-bottom:24px}
+.scorecard-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;text-align:left}
+.score-item{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px}
+.score-item-label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.score-item-value{font-size:20px;font-weight:800}
+.decisions-list{text-align:left;margin-bottom:24px}
+.decision-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px}
+.decision-icon{font-size:16px}
+.grade{font-size:72px;font-weight:900;margin:20px 0}
+.grade.a{color:#33ff88}
+.grade.b{color:#88cc00}
+.grade.c{color:#ffcc00}
+.grade.d{color:#ff8833}
+.grade.f{color:#ff3366}
+.restart-btn{padding:16px 40px;border-radius:12px;border:none;background:linear-gradient(135deg,#00ccff,#00ff88);color:#000;font-size:16px;font-weight:700;cursor:pointer;margin-top:16px;transition:all 0.3s}
+.restart-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,204,255,0.3)}
+.path-indicator{display:flex;gap:6px;justify-content:center;margin-bottom:20px}
+.path-dot{width:10px;height:10px;border-radius:50%;background:#1a1a2e;border:1px solid #333;transition:all 0.3s}
+.path-dot.active{background:#00ccff;border-color:#00ccff;box-shadow:0 0 10px rgba(0,204,255,0.5)}
+.path-dot.complete{background:#33ff88;border-color:#33ff88}
+</style>
+</head>
+<body>
+<div class="game">
+  <div class="hud">
+    <div class="hud-item"><div class="hud-label">Budget Left</div><div class="hud-value money" id="hudBudget">$500K</div></div>
+    <div class="hud-item"><div class="hud-label">Time Left</div><div class="hud-value time" id="hudTime">12 months</div></div>
+    <div class="hud-item"><div class="hud-label">Team Morale</div><div class="hud-value morale" id="hudMorale">45%</div></div>
+    <div class="hud-item"><div class="hud-label">CEO Trust</div><div class="hud-value trust" id="hudTrust">30%</div></div>
+  </div>
+  <div class="path-indicator" id="pathDots"></div>
+  <div class="scene" id="scene"></div>
+</div>
+
+<script>
+let state = {
+  budget: 500000,
+  time: 12,
+  morale: 45,
+  trust: 30,
+  decisions: [],
+  scene: 'intro',
+  savings: 0
+};
+
+const scenes = {
+  intro: {
+    chapter: 'Chapter 1: The Reckoning',
+    art: '😰💼📉',
+    title: 'The CEO Wants Answers',
+    text: `It's Monday morning. You're the VP of Operations at a 50-person company. Your CEO, Diana, just walked into your office unannounced.\n\n"We spent <span class="money">$200K</span> on AI last year," she says, arms crossed. "Chatbot project — <span class="bad">failed</span>. Process automation — <span class="bad">failed</span>. That ML vendor — <span class="bad">ghosted us</span>."\n\nShe drops a board deck on your desk. <b>"The board meets in 12 months. I need to show ROI on AI or we're cutting the entire digital budget. Fix this."</b>\n\nYour remaining budget: <span class="money">$500K</span>. Your reputation: on the line.`,
+    choices: [
+      {icon:'🏢',title:'Hire an AI consulting firm',desc:'Big 4 firm, $180K engagement, 3-month assessment',cls:'risky',next:'consultants'},
+      {icon:'🛠️',title:'Buy more AI tools',desc:'Stack of point solutions — chatbot, RPA, analytics',cls:'risky',next:'tools'},
+      {icon:'💡',title:'Try a different approach entirely',desc:'Research what actually works before spending',cls:'safe',next:'research'}
+    ]
+  },
+  consultants: {
+    chapter: 'Chapter 2: The Consultants',
+    art: '👔📊💸',
+    title: 'McKinsey Jr. Has Arrived',
+    text: `You hire StratAI Consulting. <span class="money">-$180K</span> from your budget.\n\nWeek 1: They send 4 junior consultants who schedule 47 interviews with your team. <span class="bad">Morale drops</span> — everyone thinks layoffs are coming.\n\nWeek 8: They deliver a 200-page PDF titled "AI Transformation Roadmap." It recommends... <b>buying more AI tools and hiring an ML engineer</b>.\n\nYour CTO reads it and says: <span class="bad">"This is just a shopping list. They didn't even watch how we actually work."</span>\n\n3 months gone. Budget bleeding. The PDF sits on a shelf.`,
+    impact: {type:'negative',title:'Impact',text:'Budget: -$180K | Time: -3 months | Morale: -15% | No actual progress'},
+    onEnter: () => { state.budget -= 180000; state.time -= 3; state.morale -= 15; state.decisions.push({icon:'💸',text:'Hired consultants — wasted $180K on a PDF'}); },
+    choices: [
+      {icon:'🛠️',title:'Follow the consultant\'s advice — buy tools',desc:'They recommended $80K in RPA and chatbot software',cls:'risky',next:'tools_after_consult'},
+      {icon:'🔍',title:'Ignore the report, try something new',desc:'That PDF was useless. Time to think differently.',cls:'safe',next:'research_late'},
+      {icon:'🤖',title:'Someone mentions Go2 at a conference',desc:'"Have you heard of this company that watches how work actually happens?"',cls:'go2',next:'go2_discovery'}
+    ]
+  },
+  tools: {
+    chapter: 'Chapter 2: The Tool Stack',
+    art: '🔧⚙️🤖',
+    title: 'Death by a Thousand SaaS',
+    text: `You go shopping. <span class="money">-$80K</span> on a stack of AI tools:\n\n• Chatbot platform — <span class="money">$25K/yr</span>\n• RPA tool — <span class="money">$30K/yr</span>\n• AI analytics dashboard — <span class="money">$25K/yr</span>\n\nMonth 1: IT spends 3 weeks on integrations. Half don't work with your legacy systems.\n\nMonth 2: The chatbot answers 40% of questions correctly. Customers are <span class="bad">furious</span>.\n\nMonth 3: The RPA breaks every time someone changes a spreadsheet column. Your team spends <span class="bad">more time fixing automation than doing the work manually</span>.\n\n<b>Nobody asked the fundamental question: what does our work actually look like?</b>`,
+    impact: {type:'negative',title:'Impact',text:'Budget: -$80K | Time: -3 months | Morale: -10% | Customer complaints up 200%'},
+    onEnter: () => { state.budget -= 80000; state.time -= 3; state.morale -= 10; state.decisions.push({icon:'🔧',text:'Bought AI tools — none fit actual workflows'}); },
+    choices: [
+      {icon:'👔',title:'Hire consultants to fix the tools',desc:'Maybe experts can make this stack work',cls:'risky',next:'consult_after_tools'},
+      {icon:'💡',title:'Step back and rethink everything',desc:'Something fundamental is wrong with our approach',cls:'safe',next:'research_late'},
+      {icon:'🤖',title:'A frustrated team member finds Go2',desc:'"This company says they watch first, automate second..."',cls:'go2',next:'go2_discovery'}
+    ]
+  },
+  research: {
+    chapter: 'Chapter 2: The Investigation',
+    art: '🔍📖💡',
+    title: 'Down the Rabbit Hole',
+    text: `Smart move. Before spending, you research why AI projects fail.\n\nYou find a pattern in every failure case:\n\n<b>"The AI didn't understand the actual work."</b>\n\n• MIT Sloan: <span class="highlight">"95% of AI projects fail in deployment"</span>\n• Gartner: <span class="highlight">"Organizations lack process documentation for 78% of their workflows"</span>\n• McKinsey: <span class="highlight">"The #1 predictor of AI success is contextual understanding"</span>\n\nYou realize: every AI vendor asks "what do you want to automate?" But <b>nobody asks "how does your work actually happen?"</b>\n\nThen you find something interesting...`,
+    impact: {type:'neutral',title:'Impact',text:'Budget: $0 spent | Time: -1 month | Insight: +100% | You now understand the real problem'},
+    onEnter: () => { state.time -= 1; state.trust += 5; state.decisions.push({icon:'🔍',text:'Researched AI failures — identified root cause'}); },
+    choices: [
+      {icon:'🤖',title:'Discover Go2',desc:'"Observe first. Automate second. Coach always." This is different.',cls:'go2',next:'go2_early'}
+    ]
+  },
+  tools_after_consult: {
+    chapter: 'Chapter 3: Doubling Down',
+    art: '🔧💸😱',
+    title: 'Good Money After Bad',
+    text: `You follow the consultant's playbook. <span class="money">-$80K</span> more.\n\nThe RPA tool doesn't know your processes. The chatbot was trained on generic FAQ, not your actual support conversations. The analytics dashboard shows beautiful charts of... <span class="bad">nothing useful</span>.\n\nYou've now spent <span class="money">$260K</span> of your <span class="money">$500K</span> budget. Diana is asking for a status update.\n\n<b>6 months gone. Zero ROI. Your job is at risk.</b>`,
+    impact: {type:'negative',title:'Impact',text:'Budget: -$80K | Time: -3 months | CEO Trust: -20% | Total waste: $260K'},
+    onEnter: () => { state.budget -= 80000; state.time -= 3; state.trust -= 20; state.decisions.push({icon:'💸',text:'Bought more tools — still no understanding of actual work'}); },
+    choices: [
+      {icon:'🤖',title:'Last chance: try Go2',desc:'With $240K left and 6 months, you need a miracle',cls:'go2',next:'go2_desperate'}
+    ]
+  },
+  consult_after_tools: {
+    chapter: 'Chapter 3: The Spiral',
+    art: '👔💸🌀',
+    title: 'Consultants to Fix the Consultants\' Advice',
+    text: `You hire another consulting firm to fix the tool stack. <span class="money">-$120K</span>.\n\nThey spend 2 months analyzing why the tools don't work. Their conclusion: <span class="bad">"The tools were implemented without process understanding."</span>\n\nYou could have figured that out yourself. You've now spent <span class="money">$280K</span>. <b>Diana calls an emergency meeting.</b>\n\n"I gave you half a million dollars and a year. You've burned through more than half with nothing to show. What's your plan?"`,
+    impact: {type:'negative',title:'Impact',text:'Budget: -$120K | Time: -2 months | CEO Trust: -25% | Career: endangered'},
+    onEnter: () => { state.budget -= 120000; state.time -= 2; state.trust -= 25; state.morale -= 10; state.decisions.push({icon:'🌀',text:'Hired consultants to fix failed tools — meta-failure'}); },
+    choices: [
+      {icon:'🤖',title:'Hail Mary: Go2',desc:'A board member mentions Go2. "Their approach is completely different."',cls:'go2',next:'go2_desperate'}
+    ]
+  },
+  research_late: {
+    chapter: 'Chapter 3: The Awakening',
+    art: '💡🔍✨',
+    title: 'Better Late Than Never',
+    text: `You stop spending and start thinking. You interview your own team:\n\n• Sarah in ops: <span class="highlight">"I have 14 workarounds nobody knows about"</span>\n• Mike in sales: <span class="highlight">"Our CRM workflow takes 23 steps. It should take 5"</span>\n• Priya in support: <span class="highlight">"I trained 3 people this year. Each time I had to show them everything from scratch because nothing is documented"</span>\n\n<b>The problem isn't AI. The problem is nobody understands how work actually happens.</b>\n\nThen your CTO sends you a link: "Check this out — Go2."`,
+    impact: {type:'neutral',title:'Impact',text:'Budget: $0 | Time: -1 month | Critical insight: the problem was never the AI'},
+    onEnter: () => { state.time -= 1; state.decisions.push({icon:'💡',text:'Paused, listened to team — discovered the real problem'}); },
+    choices: [
+      {icon:'🤖',title:'Try Go2',desc:'"Observe how work actually happens. Then automate." Finally, someone gets it.',cls:'go2',next:'go2_discovery'}
+    ]
+  },
+  go2_early: {
+    chapter: 'Chapter 3: The Discovery',
+    art: '🤖✨🎯',
+    title: 'Go2: A Completely Different Approach',
+    text: `You find Go2 and immediately see the difference.\n\nEvery other vendor: <span class="bad">"Tell us what you want to automate!"</span>\nGo2: <span class="highlight">"Let us watch first. We'll tell YOU what to automate."</span>\n\nThe Cowork.ai desktop agent quietly observes how your team actually works. No surveys. No consultants. No guessing.\n\nCost: <span class="money">$48K/year</span> — less than one consultant.\n\n<b>Day 1:</b> Agent deployed. Workers opt in (94% do — it's non-invasive).\n<b>Day 14:</b> Go2 has mapped 47 processes nobody knew existed.\n<b>Day 30:</b> Real-time coaching begins. Workers start getting faster immediately.`,
+    impact: {type:'positive',title:'Impact',text:'Budget: -$48K | Time invested: 1 month | Processes discovered: 47 | Coaching: active'},
+    onEnter: () => { state.budget -= 48000; state.time -= 1; state.morale += 15; state.trust += 10; state.savings = 412000; state.decisions.push({icon:'🎯',text:'Chose Go2 early — observe first, automate second'}); },
+    choices: [
+      {icon:'📊',title:'See the results',desc:'Month 6 — time to show Diana the numbers',cls:'go2',next:'go2_results'}
+    ]
+  },
+  go2_discovery: {
+    chapter: 'Chapter 4: The Pivot',
+    art: '🤖💡🔄',
+    title: 'Go2: The Approach Nobody Tried',
+    text: `Go2 is fundamentally different from everything you've tried.\n\n<b>Instead of asking what to automate, it watches how work actually happens.</b>\n\nThe Cowork.ai desktop agent deploys in minutes. Your team opts in (they're relieved — it's coaching, not monitoring). Within 2 weeks, Go2 has documented more processes than your consultants found in 3 months.\n\nCost: <span class="money">$48K/year</span>.\n\nSarah's 14 workarounds? <span class="highlight">Documented automatically.</span>\nMike's 23-step CRM flow? <span class="highlight">Optimized to 7 steps with real-time coaching.</span>\nPriya's training problem? <span class="highlight">New hires watch AI-generated process videos.</span>`,
+    impact: {type:'positive',title:'Impact',text:'Budget: -$48K | Processes mapped in 14 days: 47 | Team morale boost: +20%'},
+    onEnter: () => { state.budget -= 48000; state.time -= 1; state.morale += 20; state.trust += 10; state.savings = 380000; state.decisions.push({icon:'🔄',text:'Pivoted to Go2 — finally observing actual work'}); },
+    choices: [
+      {icon:'📊',title:'Fast forward to results',desc:'3 months later — transformation underway',cls:'go2',next:'go2_results'}
+    ]
+  },
+  go2_desperate: {
+    chapter: 'Chapter 4: The Hail Mary',
+    art: '🤖🙏✨',
+    title: 'Last Chance: Go2',
+    text: `With <span class="money">$${(state.budget/1000).toFixed(0)}K</span> left and ${state.time} months on the clock, you deploy Go2.\n\nYou're skeptical. You've been burned. But Go2 does something no other vendor did: <b>it actually watches how your team works before trying to change anything.</b>\n\nWeek 1: The Cowork.ai agent is quietly observing. Your team barely notices.\nWeek 2: Go2 shows you a process map. You're stunned — there are workflows nobody in management knew existed.\nWeek 3: Coaching starts. Workers are getting faster. No disruption. No training. Just gentle AI nudges.\n\n<b>For the first time in a year, something is actually working.</b>`,
+    impact: {type:'positive',title:'Impact',text:'Budget: -$48K | Hope restored | First real progress in months'},
+    onEnter: () => { state.budget -= 48000; state.morale += 15; state.trust += 5; state.savings = 320000; state.decisions.push({icon:'🙏',text:'Deployed Go2 as last resort — it actually worked'}); },
+    choices: [
+      {icon:'📊',title:'See what happened next',desc:'The transformation begins, even this late',cls:'go2',next:'go2_results'}
+    ]
+  },
+  go2_results: {
+    chapter: 'The Finale',
+    art: '📈🎉💰',
+    title: 'The Board Meeting',
+    text: `Diana walks into the boardroom. You're ready.\n\n<b>"Here's what Go2 found and fixed:"</b>\n\n• <span class="highlight">247 processes</span> documented automatically (was 12)\n• <span class="highlight">34 automations</span> deployed — saving 120 hours/week\n• <span class="highlight">$${(state.savings/1000).toFixed(0)}K/year</span> in identified savings\n• New hire onboarding: <span class="highlight">3 days</span> (was 21)\n• AI success rate: <span class="highlight">100%</span> (was 0%)\n• Employee satisfaction: <span class="highlight">up 34%</span>\n\nDiana looks at the board. The board looks at you.\n\n<b>"How did we not do this first?"</b> she asks.\n\nBecause nobody else starts by understanding how work actually happens. That's why 95% fail. <b>Go2 is the 5%.</b>`,
+    choices: [
+      {icon:'📋',title:'View your scorecard',desc:'See how your decisions played out',cls:'go2',next:'scorecard'}
+    ]
+  },
+  scorecard: {
+    chapter: 'Your Scorecard',
+    isScorecard: true
+  }
+};
+
+function render() {
+  const s = scenes[state.scene];
+  const el = document.getElementById('scene');
+
+  // Update HUD
+  document.getElementById('hudBudget').textContent = '$' + (state.budget/1000).toFixed(0) + 'K';
+  document.getElementById('hudBudget').style.color = state.budget > 300000 ? '#33ff88' : state.budget > 150000 ? '#ffcc00' : '#ff3366';
+  document.getElementById('hudTime').textContent = state.time + ' months';
+  document.getElementById('hudTime').style.color = state.time > 8 ? '#ffcc00' : state.time > 4 ? '#ff8833' : '#ff3366';
+  document.getElementById('hudMorale').textContent = Math.max(0, state.morale) + '%';
+  document.getElementById('hudMorale').style.color = state.morale > 60 ? '#33ff88' : state.morale > 30 ? '#ffcc00' : '#ff3366';
+  document.getElementById('hudTrust').textContent = Math.max(0, state.trust) + '%';
+  document.getElementById('hudTrust').style.color = state.trust > 50 ? '#33ff88' : state.trust > 20 ? '#ffcc00' : '#ff3366';
+
+  // Path dots
+  const dots = document.getElementById('pathDots');
+  dots.innerHTML = '';
+  for (let i = 0; i < state.decisions.length + 1; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'path-dot' + (i < state.decisions.length ? ' complete' : ' active');
+    dots.appendChild(dot);
+  }
+
+  if (s.isScorecard) {
+    renderScorecard(el);
+    return;
+  }
+
+  let html = `<div class="scene-chapter">${s.chapter}</div>`;
+  html += `<div class="scene-art">${s.art}</div>`;
+  html += `<div class="scene-title">${s.title}</div>`;
+  html += `<div class="scene-text">${s.text.replace(/\n/g, '<br>')}</div>`;
+
+  if (s.impact) {
+    html += `<div class="impact ${s.impact.type}"><div class="impact-title">${s.impact.title}</div><div class="impact-text">${s.impact.text}</div></div>`;
+  }
+
+  html += '<div class="choices">';
+  s.choices.forEach((c, i) => {
+    html += `<div class="choice ${c.cls || ''}" onclick="choose('${c.next}')">
+      <div class="choice-icon">${c.icon}</div>
+      <div class="choice-content">
+        <div class="choice-title">${c.title}</div>
+        <div class="choice-desc">${c.desc}</div>
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+
+  el.innerHTML = html;
+  el.style.animation = 'none';
+  requestAnimationFrame(() => el.style.animation = 'fadeScene 0.5s ease-out');
+}
+
+function renderScorecard(el) {
+  const spent = 500000 - state.budget;
+  const wastePct = state.savings > 0 ? Math.round(((spent - 48000) / spent) * 100) : 100;
+  const directPath = state.decisions.length <= 2;
+
+  let grade, gradeClass, verdict;
+  if (directPath && state.savings > 400000) { grade = 'A+'; gradeClass = 'a'; verdict = 'Brilliant. You skipped the noise and went straight to what works.'; }
+  else if (state.decisions.length <= 3 && state.savings > 350000) { grade = 'A'; gradeClass = 'a'; verdict = 'Smart. You found Go2 quickly and maximized results.'; }
+  else if (state.decisions.length <= 4) { grade = 'B'; gradeClass = 'b'; verdict = 'You made some detours but got there in the end.'; }
+  else { grade = 'C'; gradeClass = 'c'; verdict = 'The scenic route. But you still found the answer: context is everything.'; }
+
+  let html = `<div class="scorecard">`;
+  html += `<div class="scene-chapter">Final Report</div>`;
+  html += `<div class="grade ${gradeClass}">${grade}</div>`;
+  html += `<h2>${verdict}</h2>`;
+  html += `<div class="scorecard-grid">
+    <div class="score-item"><div class="score-item-label">Total Spent</div><div class="score-item-value" style="color:${spent > 200000 ? '#ff3366' : '#33ff88'}">$${(spent/1000).toFixed(0)}K</div></div>
+    <div class="score-item"><div class="score-item-label">Annual Savings Found</div><div class="score-item-value" style="color:#33ff88">$${(state.savings/1000).toFixed(0)}K</div></div>
+    <div class="score-item"><div class="score-item-label">Decisions Made</div><div class="score-item-value">${state.decisions.length}</div></div>
+    <div class="score-item"><div class="score-item-label">Money Wasted Before Go2</div><div class="score-item-value" style="color:#ff3366">$${((spent-48000)/1000).toFixed(0)}K</div></div>
+  </div>`;
+
+  html += `<div class="decisions-list"><h3 style="margin-bottom:12px;font-size:14px;color:#888">Your Journey</h3>`;
+  state.decisions.forEach(d => {
+    html += `<div class="decision-item"><span class="decision-icon">${d.icon}</span><span>${d.text}</span></div>`;
+  });
+  html += '</div>';
+
+  html += `<div class="impact positive" style="text-align:center;margin-top:20px">
+    <div class="impact-title">The Lesson</div>
+    <div class="impact-text" style="font-size:15px"><b>95% of AI projects fail because they lack context.</b><br>Go2 captures that context by observing how work actually happens.<br>No consultants. No guessing. No failed pilots.<br><br><b>Observe first. Automate second. Coach always.</b></div>
+  </div>`;
+
+  html += `<button class="restart-btn" onclick="restart()">Play Again — Try a Different Path</button>`;
+  html += '</div>';
+
+  el.innerHTML = html;
+  el.style.animation = 'none';
+  requestAnimationFrame(() => el.style.animation = 'fadeScene 0.5s ease-out');
+}
+
+function choose(next) {
+  const nextScene = scenes[next];
+  if (nextScene && nextScene.onEnter) {
+    // Fix dynamic text in go2_desperate
+    if (next === 'go2_desperate') {
+      nextScene.text = nextScene.text.replace(/\$\d+K/, '$' + (state.budget/1000).toFixed(0) + 'K');
+    }
+    nextScene.onEnter();
+  }
+  state.scene = next;
+  render();
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function restart() {
+  state = { budget: 500000, time: 12, morale: 45, trust: 30, decisions: [], scene: 'intro', savings: 0 };
+  render();
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+render();
+</script>
+</body>
+</html>

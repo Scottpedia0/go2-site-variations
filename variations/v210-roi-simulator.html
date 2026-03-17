@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 ROI Simulator</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0f;color:#e0e0e0;min-height:100vh}
+.page{max-width:960px;margin:0 auto;padding:24px}
+.header{text-align:center;padding:32px 0 24px}
+.header h1{font-size:28px;font-weight:700;margin-bottom:6px}
+.header h1 span{color:#6c5ce7}
+.header p{color:#888;font-size:14px}
+
+/* Input section */
+.input-section{background:#12121e;border:1px solid #252540;border-radius:16px;padding:28px;margin-bottom:24px}
+.input-section h2{font-size:16px;font-weight:600;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.input-section h2 .step{width:24px;height:24px;background:#6c5ce7;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:12px;color:#888;font-weight:500}
+.form-group input,.form-group select{background:#1a1a2e;border:1px solid #252540;border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;transition:border .2s}
+.form-group input:focus,.form-group select:focus{border-color:#6c5ce7}
+.form-group select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.form-group .hint{font-size:10px;color:#555}
+.run-btn{width:100%;background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff;border:none;padding:14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px;transition:opacity .2s}
+.run-btn:hover{opacity:.9}
+.run-btn:disabled{opacity:.4;cursor:default}
+
+/* Simulation */
+.sim-container{display:none}
+.sim-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.sim-header h2{font-size:18px;font-weight:600}
+.sim-header .reset{background:none;border:1px solid #252540;color:#888;padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer}
+
+/* Timeline */
+.timeline{position:relative;padding:0 0 0 40px;margin-bottom:28px}
+.timeline::before{content:'';position:absolute;left:15px;top:0;bottom:0;width:2px;background:#1a1a2e}
+.tl-node{position:relative;margin-bottom:20px;opacity:0;transform:translateY(10px);transition:all .4s ease}
+.tl-node.visible{opacity:1;transform:translateY(0)}
+.tl-dot{position:absolute;left:-32px;top:4px;width:14px;height:14px;border-radius:50%;border:2px solid #252540;background:#0a0a0f;transition:all .3s}
+.tl-node.visible .tl-dot{background:#6c5ce7;border-color:#6c5ce7;box-shadow:0 0 10px #6c5ce744}
+.tl-node.visible.milestone .tl-dot{background:#4ade80;border-color:#4ade80;box-shadow:0 0 10px #4ade8044}
+.tl-time{font-size:11px;color:#6c5ce7;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.tl-title{font-size:14px;font-weight:600;margin-bottom:2px}
+.tl-desc{font-size:12px;color:#888;line-height:1.5}
+.tl-metric{display:inline-block;background:#6c5ce711;border:1px solid #6c5ce733;border-radius:6px;padding:2px 8px;font-size:11px;color:#a29bfe;font-weight:600;margin-top:4px}
+.tl-metric.green{background:#1a5c1a33;border-color:#1a5c1a;color:#4ade80}
+
+/* Running counter */
+.counter-bar{background:#12121e;border:1px solid #252540;border-radius:14px;padding:20px 24px;margin-bottom:24px;display:none}
+.counter-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.counter-item{text-align:center;flex:1;min-width:120px}
+.counter-item .val{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
+.counter-item .val.purple{color:#6c5ce7}
+.counter-item .val.green{color:#4ade80}
+.counter-item .val.orange{color:#e67e22}
+.counter-item .lbl{font-size:11px;color:#666;margin-top:2px}
+.counter-item .sub{font-size:10px;color:#444}
+
+/* Comparison */
+.comparison{display:none;background:#12121e;border:1px solid #252540;border-radius:14px;padding:24px;margin-bottom:24px}
+.comparison h3{font-size:14px;font-weight:600;margin-bottom:16px;text-align:center;color:#888;text-transform:uppercase;letter-spacing:1px}
+.comp-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px}
+.comp-cell{padding:10px 14px;font-size:12px;text-align:center}
+.comp-cell.header{color:#888;font-weight:600;border-bottom:1px solid #252540}
+.comp-cell.label{text-align:left;color:#aaa;font-weight:500}
+.comp-cell.go2{color:#4ade80;font-weight:600}
+.comp-cell.consultant{color:#e67e22}
+
+/* Final summary */
+.final-summary{display:none;background:linear-gradient(135deg,#12121e,#1a1a35);border:1px solid #6c5ce733;border-radius:16px;padding:28px;text-align:center;margin-bottom:24px}
+.final-summary h3{font-size:20px;font-weight:700;margin-bottom:6px}
+.final-summary h3 span{color:#4ade80}
+.final-summary .payback{font-size:14px;color:#888;margin-bottom:20px}
+.final-summary .big-number{font-size:52px;font-weight:800;color:#4ade80;margin:12px 0}
+.final-summary .big-label{font-size:14px;color:#888}
+.final-summary .cta{background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff;border:none;padding:14px 36px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-top:20px}
+.progress-ring{width:100%;height:6px;background:#1a1a2e;border-radius:3px;margin-bottom:8px;overflow:hidden;display:none}
+.progress-ring .fill{height:100%;background:linear-gradient(90deg,#6c5ce7,#4ade80);border-radius:3px;transition:width .3s linear;width:0}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <h1>Go2 <span>ROI Simulator</span></h1>
+    <p>See what 90 days with Go2 looks like for your team</p>
+  </div>
+
+  <div id="inputSection" class="input-section">
+    <h2><span class="step">1</span> Your Team Details</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Team Size</label>
+        <input type="number" id="teamSize" value="15" min="1" max="500">
+        <div class="hint">Number of employees</div>
+      </div>
+      <div class="form-group">
+        <label>Average Annual Salary</label>
+        <input type="number" id="avgSalary" value="85000" min="20000" max="500000" step="5000">
+        <div class="hint">USD per employee</div>
+      </div>
+      <div class="form-group">
+        <label>Industry</label>
+        <select id="industry">
+          <option value="saas">SaaS / Software</option>
+          <option value="ecommerce">E-Commerce / Retail</option>
+          <option value="agency">Agency / Services</option>
+          <option value="healthcare">Healthcare</option>
+          <option value="finance">Finance / Accounting</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Current AI Tool Spend</label>
+        <select id="aiSpend">
+          <option value="0">$0 / month</option>
+          <option value="500">$1-500 / month</option>
+          <option value="2000">$500-2,000 / month</option>
+          <option value="5000">$2,000-5,000 / month</option>
+          <option value="10000">$5,000+ / month</option>
+        </select>
+        <div class="hint">ChatGPT, Copilot, etc.</div>
+      </div>
+    </div>
+    <button class="run-btn" id="runBtn" onclick="runSimulation()">Run 90-Day Simulation</button>
+  </div>
+
+  <div class="sim-container" id="simContainer">
+    <div class="progress-ring" id="progressRing"><div class="fill" id="progressFill"></div></div>
+    <div class="sim-header">
+      <h2 id="simTitle">Running simulation...</h2>
+      <button class="reset" onclick="resetSim()">Reset & Reconfigure</button>
+    </div>
+    <div class="counter-bar" id="counterBar">
+      <div class="counter-row">
+        <div class="counter-item"><div class="val purple" id="cWorkflows">0</div><div class="lbl">Workflows Discovered</div></div>
+        <div class="counter-item"><div class="val green" id="cHours">0</div><div class="lbl">Hours Saved</div></div>
+        <div class="counter-item"><div class="val orange" id="cAutomations">0</div><div class="lbl">Automations Deployed</div></div>
+        <div class="counter-item"><div class="val green" id="cDollars">$0</div><div class="lbl">Dollar Value Saved</div></div>
+      </div>
+    </div>
+    <div class="timeline" id="timeline"></div>
+    <div class="comparison" id="comparison">
+      <h3>Go2 vs Traditional Consulting</h3>
+      <div class="comp-grid" id="compGrid"></div>
+    </div>
+    <div class="final-summary" id="finalSummary"></div>
+  </div>
+</div>
+<script>
+let simData={},animFrame=null;
+
+const industryMultipliers={saas:{waste:.22,workflows:12,name:'SaaS'},ecommerce:{waste:.28,workflows:15,name:'E-Commerce'},agency:{waste:.32,workflows:18,name:'Agency'},healthcare:{waste:.30,workflows:14,name:'Healthcare'},finance:{waste:.25,workflows:13,name:'Finance'},other:{waste:.25,workflows:12,name:'General'}};
+
+function runSimulation(){
+  const teamSize=parseInt(document.getElementById('teamSize').value)||15;
+  const avgSalary=parseInt(document.getElementById('avgSalary').value)||85000;
+  const industry=document.getElementById('industry').value;
+  const aiSpend=parseInt(document.getElementById('aiSpend').value)||0;
+  const ind=industryMultipliers[industry];
+  const hourlyRate=avgSalary/2080;
+  const weeklyWasteHrs=Math.round(40*ind.waste*teamSize);
+  const go2Monthly=teamSize*49;
+
+  simData={teamSize,avgSalary,industry:ind.name,hourlyRate,weeklyWasteHrs,go2Monthly,aiSpend,
+    workflows:Math.round(ind.workflows*Math.sqrt(teamSize)),
+    wastePercent:Math.round(ind.waste*100)};
+
+  // Calculate milestones
+  const w1Workflows=Math.round(simData.workflows*0.3);
+  const w2Workflows=Math.round(simData.workflows*0.6);
+  const m1Workflows=simData.workflows;
+  const w2HrsSaved=Math.round(weeklyWasteHrs*0.1);
+  const m1HrsSaved=Math.round(weeklyWasteHrs*0.25*4);
+  const m2HrsSaved=Math.round(weeklyWasteHrs*0.4*4);
+  const m3HrsSaved=Math.round(weeklyWasteHrs*0.6*4);
+  const m1Automations=Math.round(simData.workflows*0.15);
+  const m2Automations=Math.round(simData.workflows*0.35);
+  const m3Automations=Math.round(simData.workflows*0.55);
+  const m3Agents=Math.round(m3Automations*0.4);
+  const totalHrsSaved=m1HrsSaved+m2HrsSaved+m3HrsSaved;
+  const totalDollarsSaved=Math.round(totalHrsSaved*hourlyRate);
+  const fteFreed=(totalHrsSaved/(13*40)).toFixed(1);
+  const go2TotalCost=go2Monthly*3;
+  const roi=Math.round((totalDollarsSaved-go2TotalCost)/go2TotalCost*100);
+  const paybackWeeks=Math.max(1,Math.round(go2TotalCost/(totalDollarsSaved/13)));
+  const consultantCost=Math.round(teamSize*2500);
+
+  simData.milestones=[
+    {time:'Day 1',title:'Go2 Desktop Agent Deployed',desc:`Cowork.ai agent installed on ${teamSize} machines. Silent observation begins — no workflow disruption.`,metric:`${teamSize} agents active`,phase:0},
+    {time:'Day 3',title:'First Workflows Captured',desc:`AI identifies ${w1Workflows} distinct business processes from actual work patterns.`,metric:`${w1Workflows} workflows mapped`,val:{w:w1Workflows,h:0,a:0,d:0},phase:5},
+    {time:'Week 1',title:'Process Documentation Auto-Generated',desc:`${w2Workflows} workflows now have auto-generated SOPs. No manual documentation needed.`,metric:`${w2Workflows} SOPs created`,val:{w:w2Workflows,h:0,a:0,d:0},phase:12},
+    {time:'Week 2',title:'Coaching Goes Live',desc:`Real-time coaching tips start appearing. Team saves ${w2HrsSaved} hours this week from contextual guidance.`,metric:`${w2HrsSaved} hrs saved/week`,milestone:true,val:{w:w2Workflows,h:w2HrsSaved,a:0,d:Math.round(w2HrsSaved*hourlyRate)},phase:22},
+    {time:'Month 1',title:'First Automations Identified',desc:`${m1Automations} workflows flagged as automatable. ${m1Workflows} total workflows documented. ${m1HrsSaved} hours saved from coaching alone.`,metric:`$${(m1HrsSaved*hourlyRate).toLocaleString()} saved`,milestone:true,val:{w:m1Workflows,h:m1HrsSaved,a:m1Automations,d:Math.round(m1HrsSaved*hourlyRate)},phase:40},
+    {time:'Month 2',title:'Automations Deployed',desc:`${m2Automations} automations now running. Coaching has adapted to each team member. ${m2HrsSaved} additional hours saved.`,metric:`${m2Automations} automations live`,val:{w:m1Workflows,h:m1HrsSaved+m2HrsSaved,a:m2Automations,d:Math.round((m1HrsSaved+m2HrsSaved)*hourlyRate)},phase:65},
+    {time:'Month 3',title:'AI Agents Active',desc:`${m3Agents} AI agents trained on real work data handling routine tasks. ${m3Automations} total automations. ${fteFreed} FTE equivalent freed up.`,metric:`${fteFreed} FTEs freed`,milestone:true,val:{w:m1Workflows,h:totalHrsSaved,a:m3Automations,d:totalDollarsSaved},phase:90},
+  ];
+  simData.totals={totalHrsSaved,totalDollarsSaved,fteFreed,go2TotalCost,roi,paybackWeeks,consultantCost,m3Agents,m3Automations};
+
+  // Show simulation
+  document.getElementById('inputSection').style.display='none';
+  document.getElementById('simContainer').style.display='block';
+  document.getElementById('counterBar').style.display='block';
+  document.getElementById('progressRing').style.display='block';
+  buildTimeline();
+  animateSimulation();
+}
+
+function buildTimeline(){
+  const tl=document.getElementById('timeline');
+  tl.innerHTML='';
+  simData.milestones.forEach((m,i)=>{
+    const node=document.createElement('div');
+    node.className=`tl-node${m.milestone?' milestone':''}`;
+    node.id='tl-'+i;
+    node.innerHTML=`
+      <div class="tl-dot"></div>
+      <div class="tl-time">${m.time}</div>
+      <div class="tl-title">${m.title}</div>
+      <div class="tl-desc">${m.desc}</div>
+      <div class="tl-metric${m.milestone?' green':''}">${m.metric}</div>
+    `;
+    tl.appendChild(node);
+  });
+}
+
+function animateSimulation(){
+  let nodeIndex=0;
+  const total=simData.milestones.length;
+  const interval=setInterval(()=>{
+    if(nodeIndex>=total){
+      clearInterval(interval);
+      showComparison();
+      setTimeout(showFinalSummary,800);
+      document.getElementById('simTitle').textContent='90-Day Simulation Complete';
+      return;
+    }
+    const node=document.getElementById('tl-'+nodeIndex);
+    node.classList.add('visible');
+    node.scrollIntoView({behavior:'smooth',block:'center'});
+    const m=simData.milestones[nodeIndex];
+    // Update counters
+    if(m.val){animateCounter('cWorkflows',m.val.w);animateCounter('cHours',m.val.h);animateCounter('cAutomations',m.val.a);animateDollar('cDollars',m.val.d)}
+    // Update progress
+    document.getElementById('progressFill').style.width=m.phase+'%';
+    nodeIndex++;
+  },1200);
+}
+
+function animateCounter(id,target){
+  const el=document.getElementById(id);
+  const current=parseInt(el.textContent.replace(/[^0-9]/g,''))||0;
+  if(current===target)return;
+  const steps=20;
+  const inc=(target-current)/steps;
+  let step=0;
+  const anim=setInterval(()=>{
+    step++;
+    const v=Math.round(current+inc*step);
+    el.textContent=v.toLocaleString();
+    if(step>=steps){clearInterval(anim);el.textContent=target.toLocaleString()}
+  },30);
+}
+function animateDollar(id,target){
+  const el=document.getElementById(id);
+  const current=parseInt(el.textContent.replace(/[^0-9]/g,''))||0;
+  const steps=20;const inc=(target-current)/steps;let step=0;
+  const anim=setInterval(()=>{
+    step++;const v=Math.round(current+inc*step);
+    el.textContent='$'+v.toLocaleString();
+    if(step>=steps){clearInterval(anim);el.textContent='$'+target.toLocaleString()}
+  },30);
+}
+
+function showComparison(){
+  const t=simData.totals;
+  const comp=document.getElementById('comparison');
+  comp.style.display='block';
+  const grid=document.getElementById('compGrid');
+  const rows=[
+    ['','Go2','Consultant'],
+    ['90-Day Cost','$'+(t.go2TotalCost).toLocaleString(),'$'+(t.consultantCost).toLocaleString()],
+    ['Time to First Insight','3 days','4-6 weeks'],
+    ['Workflows Documented',simData.workflows,'5-10 (manual)'],
+    ['Ongoing Coaching','24/7 real-time','Report delivered, done'],
+    ['AI Agents Trained',t.m3Agents+' agents','0 (not in scope)'],
+    ['Automation Deployed',t.m3Automations+' workflows','Recommendations only'],
+    ['ROI at 90 Days',t.roi+'%','Negative (still implementing)']
+  ];
+  grid.innerHTML='';
+  rows.forEach((row,ri)=>{
+    row.forEach((cell,ci)=>{
+      const div=document.createElement('div');
+      div.className=`comp-cell${ri===0?' header':''}${ci===0?' label':''}${ci===1&&ri>0?' go2':''}${ci===2&&ri>0?' consultant':''}`;
+      div.textContent=cell;
+      grid.appendChild(div);
+    });
+  });
+  comp.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+function showFinalSummary(){
+  const t=simData.totals;
+  const fs=document.getElementById('finalSummary');
+  fs.style.display='block';
+  fs.innerHTML=`
+    <h3>90-Day Projected <span>Net Savings</span></h3>
+    <div class="payback">Payback period: ${t.paybackWeeks} weeks | ROI: ${t.roi}%</div>
+    <div class="big-number">$${(t.totalDollarsSaved-t.go2TotalCost).toLocaleString()}</div>
+    <div class="big-label">Net savings after Go2 costs (${simData.teamSize} team members x 3 months)</div>
+    <div style="display:flex;justify-content:center;gap:32px;margin-top:20px;flex-wrap:wrap">
+      <div><div style="font-size:24px;font-weight:700;color:#a29bfe">${t.totalHrsSaved.toLocaleString()}</div><div style="font-size:11px;color:#666">Hours Recovered</div></div>
+      <div><div style="font-size:24px;font-weight:700;color:#4ade80">${t.fteFreed}</div><div style="font-size:11px;color:#666">FTEs Freed Up</div></div>
+      <div><div style="font-size:24px;font-weight:700;color:#e67e22">${t.m3Automations}</div><div style="font-size:11px;color:#666">Workflows Automated</div></div>
+    </div>
+    <button class="cta" onclick="window.open('https://go2.io','_blank')">Start Your Free Pilot &rarr;</button>
+  `;
+  fs.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+function resetSim(){
+  document.getElementById('inputSection').style.display='block';
+  document.getElementById('simContainer').style.display='none';
+  document.getElementById('progressFill').style.width='0';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
