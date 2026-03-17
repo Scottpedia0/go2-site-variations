@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 | 90 Days of AI That Actually Works</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #f5f5f5; font-family: 'Inter', -apple-system, sans-serif; font-size: 14px; color: #1a1a1a; }
+
+  .email-client {
+    max-width: 900px; margin: 0 auto; background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1); min-height: 100vh;
+  }
+
+  /* Email client header */
+  .client-header {
+    background: #f8f9fa; border-bottom: 1px solid #e0e0e0; padding: 12px 20px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .client-header .back-arrow { color: #666; font-size: 18px; cursor: pointer; }
+  .client-header .archive-btn, .client-header .spam-btn, .client-header .delete-btn {
+    padding: 4px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;
+    color: #555; cursor: pointer; background: white;
+  }
+  .client-header .spacer { flex: 1; }
+  .client-header .nav-text { font-size: 12px; color: #888; }
+
+  /* Thread header */
+  .thread-header {
+    padding: 20px 24px; border-bottom: 1px solid #eee;
+  }
+  .thread-subject {
+    font-size: 22px; font-weight: 400; color: #1a1a1a; line-height: 1.3;
+  }
+  .thread-label {
+    display: inline-block; background: #e8f5e9; color: #2e7d32; font-size: 11px;
+    font-weight: 600; padding: 2px 8px; border-radius: 3px; margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  /* Individual email */
+  .email {
+    border-bottom: 1px solid #eee; position: relative;
+  }
+  .email.collapsed { cursor: pointer; }
+  .email.collapsed:hover { background: #fafafa; }
+  .email.collapsed .email-body { display: none; }
+  .email.collapsed .email-header-expanded { display: none; }
+  .email.collapsed .email-header-collapsed { display: flex; }
+
+  .email-header-collapsed {
+    display: none; padding: 12px 24px; align-items: center; gap: 12px;
+  }
+  .email-header-collapsed .sender-name { font-weight: 600; font-size: 13px; min-width: 140px; }
+  .email-header-collapsed .preview { color: #666; font-size: 13px; flex: 1; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; }
+  .email-header-collapsed .date { color: #888; font-size: 12px; white-space: nowrap; }
+
+  .email-header-expanded {
+    padding: 16px 24px 0; display: flex; align-items: flex-start; gap: 12px;
+  }
+  .avatar {
+    width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-weight: 700; font-size: 16px; color: white; flex-shrink: 0;
+  }
+  .header-info { flex: 1; }
+  .header-top { display: flex; align-items: center; justify-content: space-between; }
+  .sender-full { font-weight: 600; font-size: 14px; }
+  .header-date { font-size: 12px; color: #888; }
+  .header-details { font-size: 12px; color: #888; margin-top: 2px; }
+  .header-details a { color: #1a73e8; text-decoration: none; }
+
+  .email-body {
+    padding: 12px 24px 20px 76px; line-height: 1.7; color: #333;
+  }
+  .email-body p { margin-bottom: 12px; }
+  .email-body .sig {
+    color: #888; font-size: 13px; border-top: 1px solid #eee; padding-top: 12px; margin-top: 16px;
+  }
+  .email-body ul, .email-body ol { margin: 8px 0 12px 20px; }
+  .email-body li { margin-bottom: 4px; }
+  .email-body blockquote {
+    border-left: 3px solid #ddd; padding-left: 12px; margin: 12px 0; color: #666;
+  }
+  .email-body .highlight-stat {
+    background: #e8f5e9; padding: 2px 6px; border-radius: 3px; font-weight: 600; color: #2e7d32;
+  }
+  .email-body .warning-stat {
+    background: #fff3e0; padding: 2px 6px; border-radius: 3px; font-weight: 600; color: #e65100;
+  }
+  .email-body .bold-stat {
+    background: #e3f2fd; padding: 2px 6px; border-radius: 3px; font-weight: 600; color: #1565c0;
+  }
+
+  /* Attachment */
+  .attachment {
+    display: inline-flex; align-items: center; gap: 8px; background: #f5f5f5;
+    border: 1px solid #e0e0e0; border-radius: 8px; padding: 8px 14px; margin: 8px 4px 8px 0;
+    font-size: 12px; cursor: pointer; transition: background 0.15s;
+  }
+  .attachment:hover { background: #eee; }
+  .attachment .att-icon { font-size: 18px; }
+  .attachment .att-name { font-weight: 500; }
+  .attachment .att-size { color: #888; }
+
+  /* Inline data table */
+  .data-table {
+    width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px;
+  }
+  .data-table th {
+    text-align: left; padding: 8px 12px; background: #f5f5f5; border-bottom: 2px solid #ddd;
+    font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #555;
+  }
+  .data-table td {
+    padding: 8px 12px; border-bottom: 1px solid #eee;
+  }
+  .data-table tr:hover { background: #fafafa; }
+
+  /* Day marker */
+  .day-marker {
+    text-align: center; padding: 20px; position: relative;
+  }
+  .day-marker span {
+    background: #f5f5f5; padding: 4px 16px; font-size: 12px; color: #888;
+    font-weight: 500; position: relative; z-index: 1; border-radius: 12px;
+    border: 1px solid #e0e0e0;
+  }
+  .day-marker::before {
+    content: ''; position: absolute; top: 50%; left: 24px; right: 24px;
+    height: 1px; background: #eee;
+  }
+
+  /* Toggle collapsed */
+  .expand-toggle { font-size: 11px; color: #1a73e8; cursor: pointer; padding: 8px 24px; }
+
+  /* CTA footer */
+  .cta-footer {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 40px 24px; text-align: center; color: white;
+  }
+  .cta-footer h2 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  .cta-footer p { font-size: 16px; opacity: 0.9; margin-bottom: 20px; }
+  .cta-footer a {
+    display: inline-block; background: white; color: #764ba2; padding: 12px 32px;
+    border-radius: 8px; font-weight: 700; text-decoration: none; font-size: 16px;
+    transition: transform 0.15s;
+  }
+  .cta-footer a:hover { transform: scale(1.05); }
+</style>
+</head>
+<body>
+
+<div class="email-client">
+
+  <!-- Client header -->
+  <div class="client-header">
+    <span class="back-arrow">&larr;</span>
+    <button class="archive-btn">Archive</button>
+    <button class="spam-btn">Report spam</button>
+    <button class="delete-btn">Delete</button>
+    <div class="spacer"></div>
+    <span class="nav-text">1 of 247</span>
+  </div>
+
+  <!-- Thread header -->
+  <div class="thread-header">
+    <div class="thread-subject">
+      Re: New AI tool pilot - Go2 / Cowork.ai
+      <span class="thread-label">Inbox</span>
+    </div>
+  </div>
+
+  <!-- EMAIL 1: Day 1 - COO announces -->
+  <div class="email" id="email1">
+    <div class="email-header-collapsed">
+      <span class="sender-name">Sarah Mitchell</span>
+      <span class="preview">Team, I know we've been burned by AI before. Three times, actually...</span>
+      <span class="date">Jan 6</span>
+    </div>
+    <div class="email-header-expanded">
+      <div class="avatar" style="background:#1a73e8">SM</div>
+      <div class="header-info">
+        <div class="header-top">
+          <span class="sender-full">Sarah Mitchell &lt;sarah.mitchell@meridian-supply.com&gt;</span>
+          <span class="header-date">Mon, Jan 6, 2026, 8:47 AM</span>
+        </div>
+        <div class="header-details">
+          to <a href="#">ops-team</a>, <a href="#">engineering</a>, <a href="#">finance</a>
+        </div>
+      </div>
+    </div>
+    <div class="email-body">
+      <p>Team,</p>
+      <p>I know we've been burned by AI before. Three times, actually. RoboTask ($80K, lasted 4 months). SmartChat ($60K, 12% adoption). DocuMind ($60K, nobody used it). I take responsibility for those decisions. The board has made it very clear: one more shot, 90 days, or AI is done at Meridian.</p>
+      <p>So why am I asking you to try again?</p>
+      <p>Because I found something fundamentally different. It's called <strong>Go2</strong>. Their desktop agent (Cowork.ai) doesn't try to replace what you do or force you to learn a new tool. It sits on your machine, quietly observes how you actually work, and then:</p>
+      <ol>
+        <li><strong>Coaches you</strong> with small tips to work faster (think: "Hey, you've done this 3 times today, here's a shortcut")</li>
+        <li><strong>Documents your processes</strong> automatically (no more writing SOPs that nobody reads)</li>
+        <li><strong>Identifies what should be automated</strong> based on real data, not guesses</li>
+        <li><strong>Trains AI agents</strong> on your actual work patterns</li>
+      </ol>
+      <p>The key difference: it learns before it acts. Every other tool we tried jumped straight to "automation" without understanding what we actually do. That's why they failed.</p>
+      <p>I'm asking each of you to install the Cowork.ai agent today. For the first two weeks, it just observes. No changes to your workflow. No new processes. Just let it watch.</p>
+      <p>I'll send weekly updates. If at any point this feels like another waste of time, tell me directly. My door is open.</p>
+      <p>Let's give this a real shot.</p>
+      <div class="sig">
+        <strong>Sarah Mitchell</strong><br>
+        COO, Meridian Supply Co.<br>
+        sarah.mitchell@meridian-supply.com | (503) 555-0142
+      </div>
+      <div>
+        <div class="attachment">
+          <span class="att-icon">&#128196;</span>
+          <span class="att-name">Go2-Overview.pdf</span>
+          <span class="att-size">2.4 MB</span>
+        </div>
+        <div class="attachment">
+          <span class="att-icon">&#128279;</span>
+          <span class="att-name">Cowork.ai Install Guide</span>
+          <span class="att-size">Link</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMAIL 2: Day 1 - Skeptic reply -->
+  <div class="email" id="email2">
+    <div class="email-header-collapsed">
+      <span class="sender-name">Dave Kowalski</span>
+      <span class="preview">Sarah, with all due respect, is this another monitoring tool? Because...</span>
+      <span class="date">Jan 6</span>
+    </div>
+    <div class="email-header-expanded">
+      <div class="avatar" style="background:#e65100">DK</div>
+      <div class="header-info">
+        <div class="header-top">
+          <span class="sender-full">Dave Kowalski &lt;d.kowalski@meridian-supply.com&gt;</span>
+          <span class="header-date">Mon, Jan 6, 2026, 9:23 AM</span>
+        </div>
+        <div class="header-details">to <a href="#">sarah.mitchell</a>, <a href="#">ops-team</a>, <a href="#">engineering</a></div>
+      </div>
+    </div>
+    <div class="email-body">
+      <p>Sarah,</p>
+      <p>With all due respect, is this another monitoring tool? Because the last thing my team needs is software watching their every keystroke and reporting back to management. We already lost two good people over the Hubstaff experiment last year.</p>
+      <p>I'll install it because you're asking, but I want to be transparent with my team about what this thing sees and who has access to the data.</p>
+      <div class="sig">
+        <strong>Dave Kowalski</strong><br>
+        Operations Team Lead<br>
+        Meridian Supply Co.
+      </div>
+    </div>
+  </div>
+
+  <!-- EMAIL 3: Day 1 - Sarah responds -->
+  <div class="email" id="email3">
+    <div class="email-header-collapsed">
+      <span class="sender-name">Sarah Mitchell</span>
+      <span class="preview">Dave - Fair question. The key difference: Go2 coaches the WORKER directly...</span>
+      <span class="date">Jan 6</span>
+    </div>
+    <div class="email-header-expanded">
+      <div class="avatar" style="background:#1a73e8">SM</div>
+      <div class="header-info">
+        <div class="header-top">
+          <span class="sender-full">Sarah Mitchell &lt;sarah.mitchell@meridian-supply.com&gt;</span>
+          <span class="header-date">Mon, Jan 6, 2026, 9:41 AM</span>
+        </div>
+        <div class="header-details">to <a href="#">d.kowalski</a>, <a href="#">ops-team</a>, <a href="#">engineering</a></div>
+      </div>
+    </div>
+    <div class="email-body">
+      <p>Dave -- Fair question. This is NOT monitoring.</p>
+      <p>The key difference: Go2 coaches the WORKER directly. I don't get a dashboard showing who's "productive" and who's not. The coaching tips go to each person privately. I only see aggregate data: "your team could save X hours by automating Y process."</p>
+      <p>It's the difference between surveillance and coaching. One breeds fear, the other breeds improvement.</p>
+      <p>You have my word: nobody gets individual tracking data. This is about making everyone's job easier, not harder.</p>
+      <div class="sig">-- Sarah</div>
+    </div>
+  </div>
+
+  <div class="day-marker"><span>Day 7 -- January 13, 2026</span></div>
+
+  <!-- EMAIL 4: Day 7 - First week data -->
+  <div class="email" id="email4">
+    <div class="email-header-collapsed">
+      <span class="sender-name">Sarah Mitchell</span>
+      <span class="preview">Team, first week data is in. I need to be honest: it's eye-opening and a little embarrassing...</span>
+      <span class="date">Jan 13</span>
+    </div>
+    <div class="email-header-expanded">
+      <div class="avatar" style="background:#1a73e8">SM</div>
+      <div class="header-info">
+        <div class="header-top">
+          <span class="sender-full">Sarah Mitchell &lt;sarah.mitchell@meridian-supply.com&gt;</span>
+          <span class="header-date">Mon, Jan 13, 2026, 8:12 AM</span>
+        </div>
+        <div class="header-details">to <a href="#">ops-team</a>, <a href="#">engineering</a>, <a href="#">finance</a></div>
+      </div>
+    </div>
+    <div class="email-body">
+      <p>Team,</p>
+      <p>First week data is in. I need to be honest: it's eye-opening and a little embarrassing. Here's the aggregate (no individual data, as promised):</p>
+
+      <table class="data-table">
+        <thead>
+          <tr><th>Finding</th><th>Impact</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Time spent on manual data transfer between systems</td><td class="warning-stat">22 hrs/week across team</td></tr>
+          <tr><td>Duplicate report generation (same data, different formats)</td><td class="warning-stat">11 hrs/week</td></tr>
+          <tr><td>Copy-paste operations that could be automated</td><td class="warning-stat">8 hrs/week</td></tr>
+          <tr><td>Meetings that reference data available in dashboards</td><td class="warning-stat">6 hrs/week</td></tr>
+          <tr><td><strong>Total automatable work identified</strong></td><td><strong class="warning-stat">47 hrs/week (35% of total capacity)</strong></td></tr>
+        </tbody>
+      </table>
+
+      <p>35% of our team's working hours are going to tasks that software could handle. That's over one full-time employee's worth of work, every week, being done manually.</p>
+      <p>For now, Go2 is still in observation mode. Coaching tips start this week. Nobody has to accept them --- they're suggestions, not mandates.</p>
+      <p>More updates next Monday.</p>
+      <div class="sig">-- Sarah</div>
+      <div>
+        <div class="attachment">
+          <span class="att-icon">&#128202;</span>
+          <span class="att-name">Week1-Workflow-Analysis.pdf</span>
+          <span class="att-size">1.8 MB</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMAIL 5: Day 7 - Dave's surprised reply -->
+  <div class="email" id="email5">
+    <div class="email-header-collapsed">
+      <span class="sender-name">Dave Kowalski</span>
+      <span class="preview">OK I'll admit that 22 hours on data transfer number hit hard. I knew it was bad but...</span>
+      <span class="date">Jan 13</span>
+    </div>
+    <div class="email-header-expanded">
+      <div class="avatar" style="background:#e65100">DK</div>
+      <div class="header-info">
+        <div class="header-top">
+          <span class="sender-full">Dave Kowalski &lt;d.kowalski@meridian-supply.com&gt;</span>
+          <span class="header-date">Mon, Jan 13, 2026, 8:34 AM</span>
+        </div>
+        <div class="header-details">to <a href="#">sarah.mitchell</a>, <a href="#">ops-team</a></div>
+      </div>
+    </div>
+    <div class="email-body">
+      <p>OK I'll admit that 22 hours on data transfer number hit hard. I knew it was bad but seeing it quantified is different.</p>
+      <p>Also -- I got my first coaching tip this morning. It showed me that when I process returns, I open 4 tabs in a specific sequence every single time. It offered to auto-open all 4 with one shortcut. Saved me maybe 90 seconds, but I do that 15 times a day.</p>
+      <p>That's 22 minutes a day. From one tiny tip.</p>
+      <p>I'm... cautiously less skeptical.</p>
+      <div class="sig">-- Dave</div>
+    </div>
+  </div>
+
+  <div class="day-marker"><span>Day 14 -- January 20, 2026</span></div>
+
+  <!-- EMAIL 6: Day 14 - Coaching working -->
+  <div class="email collapsed" id="email6" onclick="toggleEmail(this)">
+    <div class="email-header-collapsed">
+      <span class="sender-name">Mei-Lin Chen</span>
+      <span class="preview">Sarah, the coaching tips are kind of addicting? I got one about invoice matching that I never would have...</span>
+      <span class="date">Jan 20</span>
+    </div>
+    <div class="email-header-expanded">
+      <div class="avatar" style="background:#2e7d32">MC</div>
+      <div class="header-info">
+        <div class="header-top">
+          <span class="sender-full">Mei-Lin Chen &lt;m.chen@meridian-supply.com&gt;</span>
+          <span class="header-date">Mon, Jan 20, 2026, 10:05 AM</span>
+        </div>
+        <div class="header-details">to <a href="#">sarah.mitchell</a>, <a href="#">ops-team</a></div>
+      </div>
+    </div>
+    <div class="email-body">
+      <p>Sarah,</p>
+      <p>The coaching tips are kind of addicting? I got one about invoice matching that I never would have thought of on my own. Apparently I've been cross-referencing data in a way that takes 3 steps when there's a built-in feature in our accounting software that does it in 1. I've been doing it the long way for <em>two years</em>.</p>
+      <p>My team collectively saved <span class="highlight-stat">6.5 hours last week</span> just from coaching tips. No automation yet. Just working smarter.</p>
+      <p>Also, Go2 auto-generated documentation for our month-end close process. I compared it to the SOP I wrote last year and honestly? The auto-generated one is better. It includes steps I forgot to document because they were "obvious" (to me, not to a new hire).</p>
+      <div class="sig">
+        <strong>Mei-Lin Chen</strong><br>
+        Finance Manager, Meridian Supply Co.
+      </div>
+    </div>
+  </div>
+
+  <div class="day-marker"><span>Day 30 -- February 5, 2026</span></div>
+
+  <!-- EMAIL 7: Day 30 - First automation -->
+  <div class="email" id="email7">
+    <div class="email-header-collapsed">
+      <span class="sender-name">Sarah Mitchell</span>
+      <span class="preview">Team - 30-day update. The numbers are getting hard to ignore...</span>
+      <span class="date">Feb 5</span>
+    </div>
+    <div class="email-header-expanded">
+      <div class="avatar" style="background:#1a73e8">SM</div>
+      <div class="header-info">
+        <div class="header-top">
+          <span class="sender-full">Sarah Mitchell &lt;sarah.mitchell@meridian-supply.com&gt;</span>
+          <span class="header-date">Wed, Feb 5, 2026, 8:30 AM</span>
+        </div>
+        <div class="header-details">to <a href="#">all-staff</a></div>
+      </div>
+    </div>
+    <div class="email-body">
+      <p>Team,</p>
+      <p>30-day update. The numbers are getting hard to ignore.</p>
+      <p><strong>Coaching results (no automations yet, just tips):</strong></p>
+      <ul>
+        <li>Average time saved per person: <span class="highlight-stat">47 min/day</span></li>
+        <li>Coaching tip acceptance rate: <span class="highlight-stat">89%</span></li>
+        <li>Process documentation auto-generated: <span class="bold-stat">23 SOPs</span></li>
+        <li>Team satisfaction survey: <span class="highlight-stat">4.2/5</span> (up from 3.1 pre-Go2)</li>
+      </ul>
+      <p>Here's the big news: Go2 has identified <strong>14 workflows</strong> that are ready for automation. These aren't guesses --- the system has watched us perform these workflows hundreds of times and mapped every step. It knows exactly what to automate because it's seen the real work.</p>
+      <p>I'm going to approve the first 3 automations this week:</p>
+      <ol>
+        <li>Order intake data transfer (CRM &rarr; inventory system)</li>
+        <li>Weekly sales report generation</li>
+        <li>Customer shipping notification sequence</li>
+      </ol>
+      <p>These three alone should save ~18 hours/week.</p>
+      <p>Dave, Mei-Lin -- can you review the workflow maps Go2 generated for your respective areas and confirm accuracy before we flip the switch?</p>
+      <div class="sig">-- Sarah</div>
+      <div>
+        <div class="attachment">
+          <span class="att-icon">&#128202;</span>
+          <span class="att-name">30-Day-Report.pdf</span>
+          <span class="att-size">3.1 MB</span>
+        </div>
+        <div class="attachment">
+          <span class="att-icon">&#128736;</span>
+          <span class="att-name">Workflow-Maps-v1.pdf</span>
+          <span class="att-size">5.7 MB</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMAIL 8: Dave is a convert -->
+  <div class="email" id="email8">
+    <div class="email-header-collapsed">
+      <span class="sender-name">Dave Kowalski</span>
+      <span class="preview">Sarah, I reviewed the workflow maps for ops. They're dead accurate. I've been trying to document...</span>
+      <span class="date">Feb 5</span>
+    </div>
+    <div class="email-header-expanded">
+      <div class="avatar" style="background:#e65100">DK</div>
+      <div class="header-info">
+        <div class="header-top">
+          <span class="sender-full">Dave Kowalski &lt;d.kowalski@meridian-supply.com&gt;</span>
+          <span class="header-date">Wed, Feb 5, 2026, 10:18 AM</span>
+        </div>
+        <div class="header-details">to <a href="#">sarah.mitchell</a>, <a href="#">ops-team</a></div>
+      </div>
+    </div>
+    <div class="email-body">
+      <p>Sarah,</p>
+      <p>I reviewed the workflow maps for ops. They're dead accurate. I've been trying to document these processes for 3 years and never finished because every time I start writing, the process changes slightly. Go2 just... did it. Automatically. From real work.</p>
+      <p>One thing I want to flag: the order intake automation? My team is actually excited about it. That's never happened with a tech rollout before. They've seen the coaching tips work, so they trust the system. That matters.</p>
+      <p>I owe you an apology for my skepticism on day 1. This is genuinely different from every other tool we've tried.</p>
+      <div class="sig">-- Dave</div>
+    </div>
+  </div>
+
+  <div class="day-marker"><span>Day 45 -- February 20, 2026</span></div>
+
+  <!-- EMAIL 9: Automations running -->
+  <div class="email collapsed" id="email9" onclick="toggleEmail(this)">
+    <div class="email-header-collapsed">
+      <span class="sender-name">Sarah Mitchell</span>
+      <span class="preview">Quick update: all 3 automations have been running for 2 weeks with zero errors. 18.5 hours/week saved...</span>
+      <span class="date">Feb 20</span>
+    </div>
+    <div class="email-header-expanded">
+      <div class="avatar" style="background:#1a73e8">SM</div>
+      <div class="header-info">
+        <div class="header-top">
+          <span class="sender-full">Sarah Mitchell &lt;sarah.mitchell@meridian-supply.com&gt;</span>
+          <span class="header-date">Thu, Feb 20, 2026, 3:15 PM</span>
+        </div>
+        <div class="header-details">to <a href="#">all-staff</a></div>
+      </div>
+    </div>
+    <div class="email-body">
+      <p>Quick update: all 3 automations have been running for 2 weeks with zero errors. <span class="highlight-stat">18.5 hours/week saved</span>, matching Go2's prediction almost exactly.</p>
+      <p>We're approving the next batch of 5 automations. Go2 has also started training its first AI agent --- it will handle routine customer order status inquiries. The agent is being trained on how our actual support team handles these requests (not generic responses).</p>
+      <p>Finance update from Mei-Lin: we've already recouped 40% of the Go2 investment from the first 3 automations alone. At this rate, full ROI payback happens at day 62.</p>
+      <div class="sig">-- Sarah</div>
+    </div>
+  </div>
+
+  <div class="day-marker"><span>Day 60 -- March 7, 2026</span></div>
+
+  <!-- EMAIL 10: 60-day milestone -->
+  <div class="email" id="email10">
+    <div class="email-header-collapsed">
+      <span class="sender-name">Sarah Mitchell</span>
+      <span class="preview">Team - 60-day update. We just automated our 11th workflow. The AI agents are live. I need to share...</span>
+      <span class="date">Mar 7</span>
+    </div>
+    <div class="email-header-expanded">
+      <div class="avatar" style="background:#1a73e8">SM</div>
+      <div class="header-info">
+        <div class="header-top">
+          <span class="sender-full">Sarah Mitchell &lt;sarah.mitchell@meridian-supply.com&gt;</span>
+          <span class="header-date">Sat, Mar 7, 2026, 7:45 AM</span>
+        </div>
+        <div class="header-details">to <a href="#">all-staff</a>, <a href="#">board</a></div>
+      </div>
+    </div>
+    <div class="email-body">
+      <p>Team (and board),</p>
+      <p>60-day update. We just automated our 11th workflow. Two AI agents are now live and handling tasks that used to eat up someone's entire day. I need to share some numbers:</p>
+
+      <table class="data-table">
+        <thead>
+          <tr><th>Metric</th><th>Before Go2</th><th>After 60 Days</th><th>Change</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Hours spent on automatable work (weekly)</td><td>47 hrs</td><td class="highlight-stat">14 hrs</td><td class="highlight-stat">-70%</td></tr>
+          <tr><td>Process documentation coverage</td><td>23%</td><td class="highlight-stat">94%</td><td class="highlight-stat">+309%</td></tr>
+          <tr><td>Average task completion time</td><td>34 min</td><td class="highlight-stat">21 min</td><td class="highlight-stat">-38%</td></tr>
+          <tr><td>Employee satisfaction (survey)</td><td>3.1/5</td><td class="highlight-stat">4.4/5</td><td class="highlight-stat">+42%</td></tr>
+          <tr><td>Customer response time</td><td>4.2 hrs</td><td class="highlight-stat">23 min</td><td class="highlight-stat">-91%</td></tr>
+          <tr><td>Investment to date</td><td colspan="3">$35,400 (licenses + setup)</td></tr>
+          <tr><td>Value of time saved to date</td><td colspan="3" class="highlight-stat">$87,200</td></tr>
+        </tbody>
+      </table>
+
+      <p>The AI customer service agent handled 247 inquiries last week with a 4.8/5 satisfaction score. It wasn't trained on generic data --- it was trained on how our team actually responds to customers. That's why it sounds like us, not like a robot.</p>
+      <p>I'm writing up the board presentation now. For the first time in three AI attempts, I'm actually looking forward to it.</p>
+      <div class="sig">-- Sarah</div>
+      <div>
+        <div class="attachment">
+          <span class="att-icon">&#128202;</span>
+          <span class="att-name">60-Day-Dashboard.pdf</span>
+          <span class="att-size">4.2 MB</span>
+        </div>
+        <div class="attachment">
+          <span class="att-icon">&#129302;</span>
+          <span class="att-name">AI-Agent-Performance.pdf</span>
+          <span class="att-size">1.9 MB</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMAIL 11: Excited team member -->
+  <div class="email collapsed" id="email11" onclick="toggleEmail(this)">
+    <div class="email-header-collapsed">
+      <span class="sender-name">Priya Sharma</span>
+      <span class="preview">Not to be dramatic but Go2 just auto-generated a workflow map that would have taken me 2 weeks to draw...</span>
+      <span class="date">Mar 8</span>
+    </div>
+    <div class="email-header-expanded">
+      <div class="avatar" style="background:#7c3aed">PS</div>
+      <div class="header-info">
+        <div class="header-top">
+          <span class="sender-full">Priya Sharma &lt;p.sharma@meridian-supply.com&gt;</span>
+          <span class="header-date">Sun, Mar 8, 2026, 11:22 AM</span>
+        </div>
+        <div class="header-details">to <a href="#">sarah.mitchell</a>, <a href="#">engineering</a></div>
+      </div>
+    </div>
+    <div class="email-body">
+      <p>Not to be dramatic but Go2 just auto-generated a workflow map that would have taken me 2 weeks to draw manually. And it's more accurate because it's based on what people ACTUALLY do, not what they SAY they do (which are very different things, as we've all learned).</p>
+      <p>Also, the third AI agent we deployed (inventory restock) just correctly predicted a stockout that would have cost us ~$12K in rush shipping fees. It caught it 3 days early because it learned our ordering patterns from real data.</p>
+      <p>This is the AI project I always wanted to work on.</p>
+      <div class="sig">
+        <strong>Priya Sharma</strong><br>
+        Jr. Developer / Unofficial AI Enthusiast
+      </div>
+    </div>
+  </div>
+
+  <div class="day-marker"><span>Day 90 -- April 6, 2026</span></div>
+
+  <!-- EMAIL 12: The final report -->
+  <div class="email" id="email12">
+    <div class="email-header-expanded">
+      <div class="avatar" style="background:#1a73e8">SM</div>
+      <div class="header-info">
+        <div class="header-top">
+          <span class="sender-full">Sarah Mitchell &lt;sarah.mitchell@meridian-supply.com&gt;</span>
+          <span class="header-date">Mon, Apr 6, 2026, 7:00 AM</span>
+        </div>
+        <div class="header-details">to <a href="#">all-staff</a>, <a href="#">board-of-directors</a></div>
+      </div>
+    </div>
+    <div class="email-body">
+      <p>Team,</p>
+      <p>90 days. Here are the final numbers. I'm sharing the board presentation with everyone because you deserve to see what you helped build.</p>
+
+      <table class="data-table">
+        <thead>
+          <tr><th>90-Day Results</th><th>Number</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Total hours saved</td><td><strong class="highlight-stat">1,847 hours</strong></td></tr>
+          <tr><td>Workflows automated</td><td><strong class="bold-stat">11 of 14 identified</strong></td></tr>
+          <tr><td>AI agents running autonomously</td><td><strong class="bold-stat">5</strong></td></tr>
+          <tr><td>Process documentation auto-generated</td><td><strong class="bold-stat">47 SOPs</strong></td></tr>
+          <tr><td>Coaching tips delivered</td><td>1,284</td></tr>
+          <tr><td>Coaching tip acceptance rate</td><td><strong class="highlight-stat">89%</strong></td></tr>
+          <tr><td>Employee satisfaction</td><td><strong class="highlight-stat">4.6/5</strong> (was 3.1)</td></tr>
+          <tr><td>Customer satisfaction</td><td><strong class="highlight-stat">4.8/5</strong></td></tr>
+          <tr><td>Total investment</td><td>$35,400</td></tr>
+          <tr><td>Total value delivered</td><td><strong class="highlight-stat">$120,280</strong></td></tr>
+          <tr style="background:#e8f5e9"><td><strong>90-Day ROI</strong></td><td><strong style="font-size:20px;color:#2e7d32">340%</strong></td></tr>
+        </tbody>
+      </table>
+
+      <p>For context: our three previous AI tools, combined, delivered <span class="warning-stat">$0 in ROI</span> on <span class="warning-stat">$200K in spending</span>. Go2 delivered <span class="highlight-stat">$120K in value</span> on <span class="highlight-stat">$35K in spending</span> in one quarter.</p>
+
+      <p>The difference wasn't the technology. It was the approach:</p>
+      <ul>
+        <li><strong>The others guessed</strong> what to automate. Go2 <strong>learned from our actual work.</strong></li>
+        <li><strong>The others imposed change.</strong> Go2 <strong>coached us into it.</strong></li>
+        <li><strong>The others used generic data.</strong> Go2 <strong>trained on OUR data.</strong></li>
+        <li><strong>The others required months of setup.</strong> Go2 <strong>installed in a day.</strong></li>
+      </ul>
+
+      <p>The board has approved company-wide rollout. We're expanding Go2 to all departments.</p>
+
+      <p>To Dave, who was rightly skeptical on Day 1: thank you for giving it a chance. To Mei-Lin, whose finance team saved us from three more bad AI investments: you were right about data-first. To Priya, who found Go2 in the first place: you changed this company.</p>
+
+      <p>95% of AI projects fail. We're in the 5%. And it feels different this time because it IS different.</p>
+
+      <p>Onward.</p>
+
+      <div class="sig">
+        <strong>Sarah Mitchell</strong><br>
+        COO, Meridian Supply Co.<br>
+        sarah.mitchell@meridian-supply.com | (503) 555-0142
+      </div>
+      <div>
+        <div class="attachment">
+          <span class="att-icon">&#128202;</span>
+          <span class="att-name">90-Day-Board-Presentation.pdf</span>
+          <span class="att-size">8.4 MB</span>
+        </div>
+        <div class="attachment">
+          <span class="att-icon">&#128176;</span>
+          <span class="att-name">ROI-Analysis-Final.xlsx</span>
+          <span class="att-size">2.1 MB</span>
+        </div>
+        <div class="attachment">
+          <span class="att-icon">&#129302;</span>
+          <span class="att-name">AI-Agent-Audit-Report.pdf</span>
+          <span class="att-size">3.3 MB</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMAIL 13: Dave's final reply -->
+  <div class="email" id="email13">
+    <div class="email-header-expanded">
+      <div class="avatar" style="background:#e65100">DK</div>
+      <div class="header-info">
+        <div class="header-top">
+          <span class="sender-full">Dave Kowalski &lt;d.kowalski@meridian-supply.com&gt;</span>
+          <span class="header-date">Mon, Apr 6, 2026, 7:22 AM</span>
+        </div>
+        <div class="header-details">to <a href="#">sarah.mitchell</a>, <a href="#">all-staff</a></div>
+      </div>
+    </div>
+    <div class="email-body">
+      <p>For the record, I'm going to frame my Day 1 email and hang it in my office as a reminder to keep an open mind.</p>
+      <p>My team used to dread Monday mornings. Now they come in and check what Go2 automated over the weekend. That's... not something I ever expected to type.</p>
+      <p>Good call, Sarah. Good call.</p>
+      <div class="sig">-- Dave<br><br><em>P.S. Whoever at Go2 designed the coaching UX: chef's kiss. It feels like a helpful colleague, not a nagging boss. That's why people actually use it.</em></div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-footer">
+    <h2>This could be your team's story.</h2>
+    <p>95% of AI fails. Go2 learns how you actually work --- then makes it better.</p>
+    <a href="https://go2.io">Start your 90 days at go2.io</a>
+  </div>
+
+</div>
+
+<script>
+function toggleEmail(el) {
+  el.classList.toggle('collapsed');
+}
+
+// Make collapsed emails work
+document.querySelectorAll('.email.collapsed').forEach(email => {
+  email.addEventListener('click', function() {
+    this.classList.remove('collapsed');
+    this.onclick = null;
+  });
+});
+</script>
+
+</body>
+</html>

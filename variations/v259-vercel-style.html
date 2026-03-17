@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Deploy AI Agents in 60 Seconds</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap');
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #000000;
+  --bg-secondary: #0a0a0a;
+  --bg-card: #111111;
+  --bg-hover: #1a1a1a;
+  --border: #222222;
+  --border-hover: #333333;
+  --text: #ededed;
+  --text-secondary: #888888;
+  --text-muted: #555555;
+  --accent: #0070f3;
+  --accent-cyan: #00dfd8;
+  --accent-purple: #7928ca;
+  --accent-pink: #ff0080;
+  --accent-orange: #f5a623;
+  --gradient-vercel: linear-gradient(90deg, #0070f3, #00dfd8);
+  --gradient-deploy: linear-gradient(90deg, #7928ca, #ff0080);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* Grid Background */
+.grid-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.3) 0%, transparent 70%);
+}
+
+.content { position: relative; z-index: 1; }
+
+/* Nav */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: 64px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.nav-logo svg { width: 20px; height: 20px; }
+
+.nav-center {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.nav-center a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 400;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: color 0.15s;
+}
+
+.nav-center a:hover { color: var(--text); }
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.btn-ghost { background: transparent; color: var(--text-secondary); }
+.btn-ghost:hover { color: var(--text); }
+
+.btn-primary { background: var(--text); color: var(--bg); }
+.btn-primary:hover { opacity: 0.9; }
+
+.btn-gradient {
+  background: var(--gradient-vercel);
+  color: white;
+  font-weight: 600;
+}
+.btn-gradient:hover { opacity: 0.9; transform: translateY(-1px); }
+
+.btn-outline {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-outline:hover { border-color: var(--border-hover); }
+
+/* Hero */
+.hero {
+  padding: 200px 24px 100px;
+  text-align: center;
+  position: relative;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1000px;
+  height: 600px;
+  background:
+    radial-gradient(ellipse 400px 300px at 30% 40%, rgba(0, 112, 243, 0.08), transparent),
+    radial-gradient(ellipse 400px 300px at 70% 60%, rgba(0, 223, 216, 0.06), transparent);
+  pointer-events: none;
+}
+
+.hero-command {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 100px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 40px;
+  cursor: pointer;
+  transition: all 0.2s;
+  animation: fadeIn 0.8s ease both;
+}
+
+.hero-command:hover { border-color: var(--border-hover); }
+
+.hero-command .prompt { color: var(--accent-cyan); }
+.hero-command .cmd { color: var(--text); }
+.hero-command .copy-icon { margin-left: 8px; opacity: 0.4; }
+
+.hero h1 {
+  font-size: clamp(48px, 8vw, 88px);
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 1.0;
+  margin-bottom: 24px;
+  animation: fadeInUp 0.8s ease 0.1s both;
+}
+
+.hero h1 .gradient-text {
+  background: var(--gradient-vercel);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-sub {
+  font-size: 18px;
+  color: var(--text-secondary);
+  max-width: 560px;
+  margin: 0 auto 40px;
+  line-height: 1.6;
+  animation: fadeInUp 0.8s ease 0.2s both;
+}
+
+.hero-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  animation: fadeInUp 0.8s ease 0.3s both;
+}
+
+.hero-frameworks {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+  animation: fadeInUp 0.8s ease 0.4s both;
+}
+
+.hero-frameworks span { display: flex; align-items: center; gap: 6px; }
+
+/* Terminal Hero */
+.terminal-hero {
+  max-width: 720px;
+  margin: 64px auto 0;
+  padding: 0 24px;
+  animation: fadeInUp 1s ease 0.5s both;
+}
+
+.terminal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.terminal-bar {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+}
+
+.terminal-dot { width: 10px; height: 10px; border-radius: 50%; }
+.terminal-dot:nth-child(1) { background: #ff5f57; }
+.terminal-dot:nth-child(2) { background: #febc2e; }
+.terminal-dot:nth-child(3) { background: #28c840; }
+
+.terminal-title {
+  flex: 1;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.terminal-body {
+  padding: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 2;
+  min-height: 280px;
+}
+
+.t-line {
+  opacity: 0;
+  animation: termAppear 0.3s ease forwards;
+}
+
+.t-prompt { color: var(--accent-cyan); }
+.t-cmd { color: var(--text); }
+.t-dim { color: var(--text-muted); }
+.t-success { color: #28c840; }
+.t-info { color: var(--accent); }
+.t-warn { color: var(--accent-orange); }
+.t-url { color: var(--accent-cyan); text-decoration: underline; }
+
+.t-line:nth-child(1) { animation-delay: 0.3s; }
+.t-line:nth-child(2) { animation-delay: 0.8s; }
+.t-line:nth-child(3) { animation-delay: 1.3s; }
+.t-line:nth-child(4) { animation-delay: 1.7s; }
+.t-line:nth-child(5) { animation-delay: 2.1s; }
+.t-line:nth-child(6) { animation-delay: 2.5s; }
+.t-line:nth-child(7) { animation-delay: 2.9s; }
+.t-line:nth-child(8) { animation-delay: 3.2s; }
+.t-line:nth-child(9) { animation-delay: 3.5s; }
+.t-line:nth-child(10) { animation-delay: 3.8s; }
+
+@keyframes termAppear {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Pipeline */
+.pipeline-section {
+  padding: 120px 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.pipeline-header {
+  text-align: center;
+  margin-bottom: 80px;
+}
+
+.pipeline-header h2 {
+  font-size: 48px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  margin-bottom: 16px;
+}
+
+.pipeline-header p {
+  font-size: 17px;
+  color: var(--text-secondary);
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.pipeline {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  position: relative;
+}
+
+.pipeline::before {
+  content: '';
+  position: absolute;
+  top: 40px;
+  left: 12.5%;
+  right: 12.5%;
+  height: 2px;
+  background: var(--gradient-vercel);
+  opacity: 0.3;
+}
+
+.pipeline-step {
+  text-align: center;
+  padding: 0 16px;
+  position: relative;
+}
+
+.pipeline-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  transition: all 0.3s;
+  position: relative;
+  z-index: 1;
+}
+
+.pipeline-step:hover .pipeline-icon {
+  border-color: var(--accent);
+  box-shadow: 0 0 30px rgba(0, 112, 243, 0.15);
+  transform: translateY(-4px);
+}
+
+.pipeline-icon svg { width: 32px; height: 32px; color: var(--text-secondary); }
+.pipeline-step:hover .pipeline-icon svg { color: var(--accent); }
+
+.pipeline-step h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.pipeline-step p {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.pipeline-arrow {
+  position: absolute;
+  right: -8px;
+  top: 40px;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  z-index: 2;
+}
+
+/* Metrics Dashboard */
+.dashboard-section {
+  padding: 120px 24px;
+  position: relative;
+}
+
+.dashboard-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+}
+
+.dashboard-header {
+  text-align: center;
+  margin-bottom: 64px;
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.dashboard-header h2 {
+  font-size: 48px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  margin-bottom: 16px;
+}
+
+.dashboard-header p {
+  font-size: 17px;
+  color: var(--text-secondary);
+}
+
+.dashboard-preview {
+  max-width: 1100px;
+  margin: 0 auto;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.dashboard-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dashboard-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dashboard-topbar h3 {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dashboard-topbar-tabs {
+  display: flex;
+  gap: 0;
+}
+
+.dashboard-topbar-tab {
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+
+.dashboard-topbar-tab.active { color: var(--text); border-bottom-color: var(--text); }
+.dashboard-topbar-tab:hover { color: var(--text-secondary); }
+
+.dashboard-body {
+  padding: 24px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.dash-metric {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  transition: all 0.2s;
+}
+
+.dash-metric:hover { border-color: var(--border-hover); }
+
+.dash-metric-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+.dash-metric-value {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.dash-metric-change {
+  font-size: 12px;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.dash-metric-change.up { color: #28c840; }
+.dash-metric-change.down { color: #ff5f57; }
+
+.dashboard-chart {
+  grid-column: 1 / -1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  height: 200px;
+  position: relative;
+  overflow: hidden;
+}
+
+.chart-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 140px;
+  padding-top: 20px;
+}
+
+.chart-bar {
+  flex: 1;
+  border-radius: 2px 2px 0 0;
+  min-height: 4px;
+  transition: all 0.3s;
+  cursor: pointer;
+  position: relative;
+}
+
+.chart-bar:hover { opacity: 0.8; }
+
+.chart-bar::after {
+  content: attr(data-value);
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity 0.2s;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.chart-bar:hover::after { opacity: 1; }
+
+/* Features */
+.features-section {
+  padding: 120px 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.feature-card {
+  background: var(--bg-secondary);
+  padding: 40px 32px;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.feature-card:hover { background: var(--bg-card); }
+
+.feature-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(0, 112, 243, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  color: var(--accent);
+  transition: all 0.3s;
+}
+
+.feature-card:hover .feature-card-icon {
+  background: rgba(0, 112, 243, 0.15);
+  transform: scale(1.05);
+}
+
+.feature-card h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.feature-card p {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* Edge section */
+.edge-section {
+  padding: 120px 24px;
+  text-align: center;
+  position: relative;
+}
+
+.edge-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+}
+
+.edge-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.edge-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px 24px;
+  text-align: left;
+  transition: all 0.3s;
+}
+
+.edge-card:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-2px);
+}
+
+.edge-card h3 {
+  font-size: 48px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  margin-bottom: 4px;
+}
+
+.edge-card:nth-child(1) h3 { color: var(--accent); }
+.edge-card:nth-child(2) h3 { color: var(--accent-cyan); }
+.edge-card:nth-child(3) h3 { color: var(--accent-purple); }
+
+.edge-card p {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* CTA */
+.cta-section {
+  padding: 160px 24px;
+  text-align: center;
+  position: relative;
+}
+
+.cta-section::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 400px;
+  background: radial-gradient(ellipse, rgba(0,112,243,0.06), transparent);
+  pointer-events: none;
+}
+
+.cta-section h2 {
+  font-size: 56px;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.cta-section p {
+  font-size: 18px;
+  color: var(--text-secondary);
+  margin-bottom: 40px;
+  position: relative;
+}
+
+.cta-terminal {
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.cta-cmd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.cta-cmd:hover { border-color: var(--border-hover); }
+
+.cta-cmd .prompt { color: var(--accent-cyan); }
+.cta-cmd .text { color: var(--text); flex: 1; }
+.cta-cmd .copy { color: var(--text-muted); font-size: 12px; }
+
+/* Footer */
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 48px 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr repeat(4, 1fr);
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.footer-brand p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 12px;
+  line-height: 1.6;
+}
+
+.footer-col h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.footer-col a {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 3px 0;
+  transition: color 0.15s;
+}
+
+.footer-col a:hover { color: var(--text-secondary); }
+
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-up {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fade-up.visible { opacity: 1; transform: translateY(0); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .nav-center { display: none; }
+  .hero h1 { font-size: 40px; }
+  .pipeline { grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  .pipeline::before { display: none; }
+  .dashboard-body { grid-template-columns: repeat(2, 1fr); }
+  .features-grid { grid-template-columns: 1fr; }
+  .edge-grid { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<div class="content">
+
+<!-- Nav -->
+<nav class="nav">
+  <a href="#" class="nav-logo">
+    <svg viewBox="0 0 20 20" fill="none">
+      <path d="M10 2L18 18H2L10 2Z" fill="white"/>
+    </svg>
+    Go2
+  </a>
+  <div class="nav-center">
+    <a href="#">Agents</a>
+    <a href="#">Dashboard</a>
+    <a href="#">Docs</a>
+    <a href="#">Pricing</a>
+    <a href="#">Enterprise</a>
+    <a href="#">Blog</a>
+  </div>
+  <div class="nav-right">
+    <a href="#" class="btn btn-ghost">Log In</a>
+    <a href="#" class="btn btn-primary">Sign Up</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-command" onclick="navigator.clipboard.writeText('npx go2 deploy')">
+    <span class="prompt">$</span>
+    <span class="cmd">npx go2 deploy</span>
+    <span class="copy-icon">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M11 5V3.5A1.5 1.5 0 009.5 2h-6A1.5 1.5 0 002 3.5v6A1.5 1.5 0 003.5 11H5" stroke="currentColor" stroke-width="1.2"/></svg>
+    </span>
+  </div>
+
+  <h1>Deploy AI agents<br><span class="gradient-text">in 60 seconds</span></h1>
+
+  <p class="hero-sub">Go2 captures real workflows, trains agents on your team's actual behavior, and deploys them at the edge. Framework-agnostic. Unreasonably fast.</p>
+
+  <div class="hero-actions">
+    <a href="#" class="btn btn-primary" style="padding:12px 24px">Start Deploying</a>
+    <a href="#" class="btn btn-outline" style="padding:12px 24px">View Documentation</a>
+  </div>
+
+  <div class="hero-frameworks">
+    <span>Works with:</span>
+    <span>Python</span>
+    <span>TypeScript</span>
+    <span>Go</span>
+    <span>REST API</span>
+    <span>+ more</span>
+  </div>
+
+  <!-- Terminal -->
+  <div class="terminal-hero">
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="terminal-dot"></div>
+        <div class="terminal-dot"></div>
+        <div class="terminal-dot"></div>
+        <div class="terminal-title">Terminal &mdash; go2 deploy</div>
+      </div>
+      <div class="terminal-body">
+        <div class="t-line"><span class="t-prompt">$</span> <span class="t-cmd">npx go2 deploy --team finance --task invoices</span></div>
+        <div class="t-line"><span class="t-dim">Connecting to Go2 Cloud...</span></div>
+        <div class="t-line"><span class="t-info">&#9632; Resolving workflow captures from team "finance"</span></div>
+        <div class="t-line"><span class="t-dim">  Found 2,847 captures across 23 unique patterns</span></div>
+        <div class="t-line"><span class="t-info">&#9632; Training agent on real workflow data...</span></div>
+        <div class="t-line"><span class="t-dim">  Model confidence: <span class="t-success">97.2%</span> (target: 95%)</span></div>
+        <div class="t-line"><span class="t-info">&#9632; Deploying to edge (7 regions)...</span></div>
+        <div class="t-line"><span class="t-success">&#10003; Ready</span> <span class="t-dim">https://</span><span class="t-url">agents.go2.io/invoice-processor</span></div>
+        <div class="t-line"><span class="t-dim">  Latency: 23ms &middot; Regions: 7 &middot; Status: production</span></div>
+        <div class="t-line"><span class="t-prompt">$</span> <span class="t-dim" style="animation:blink 1s step-end infinite">&#9608;</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pipeline -->
+<section class="pipeline-section fade-up">
+  <div class="pipeline-header">
+    <h2>The deployment pipeline</h2>
+    <p>Four stages from raw observation to production AI agents, fully automated.</p>
+  </div>
+
+  <div class="pipeline">
+    <div class="pipeline-step">
+      <div class="pipeline-icon">
+        <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M16 4v6M16 22v6M6.1 10l5.2 3M20.7 19l5.2 3M6.1 22l5.2-3M20.7 13l5.2-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <h3>Capture</h3>
+      <p>Lightweight desktop agent observes how your team works. Zero friction.</p>
+    </div>
+    <div class="pipeline-step">
+      <div class="pipeline-icon">
+        <svg viewBox="0 0 32 32" fill="none"><rect x="6" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.5"/><circle cx="16" cy="14" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M10 22c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.5"/></svg>
+      </div>
+      <h3>Train</h3>
+      <p>AI learns from your best performers' real workflows, not synthetic data.</p>
+    </div>
+    <div class="pipeline-step">
+      <div class="pipeline-icon">
+        <svg viewBox="0 0 32 32" fill="none"><path d="M16 6v20M6 16l10-10 10 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h3>Deploy</h3>
+      <p>One command deploys to 7 edge regions. 23ms average latency.</p>
+    </div>
+    <div class="pipeline-step">
+      <div class="pipeline-icon">
+        <svg viewBox="0 0 32 32" fill="none"><path d="M6 16h4l3-8 4 16 3-8h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h3>Monitor</h3>
+      <p>Real-time metrics, confidence tracking, human-in-the-loop escalation.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Dashboard -->
+<section class="dashboard-section fade-up">
+  <div class="dashboard-header">
+    <h2>Real-time observability</h2>
+    <p>Monitor every agent, every workflow, every metric. Built for teams that need answers now.</p>
+  </div>
+
+  <div class="dashboard-preview">
+    <div class="dashboard-topbar">
+      <div class="dashboard-topbar-left">
+        <h3>Agent Metrics</h3>
+        <div class="dashboard-topbar-tabs">
+          <div class="dashboard-topbar-tab active">Overview</div>
+          <div class="dashboard-topbar-tab">Agents</div>
+          <div class="dashboard-topbar-tab">Workflows</div>
+          <div class="dashboard-topbar-tab">Coaching</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);font-family:'JetBrains Mono',monospace">Last updated: 3s ago</div>
+    </div>
+    <div class="dashboard-body">
+      <div class="dash-metric">
+        <div class="dash-metric-label">Active Agents</div>
+        <div class="dash-metric-value">14</div>
+        <div class="dash-metric-change up">+3 this week</div>
+      </div>
+      <div class="dash-metric">
+        <div class="dash-metric-label">Tasks Processed</div>
+        <div class="dash-metric-value">12.8K</div>
+        <div class="dash-metric-change up">+23% vs last month</div>
+      </div>
+      <div class="dash-metric">
+        <div class="dash-metric-label">Avg Confidence</div>
+        <div class="dash-metric-value">96.2%</div>
+        <div class="dash-metric-change up">+1.4% improvement</div>
+      </div>
+      <div class="dash-metric">
+        <div class="dash-metric-label">Avg Latency</div>
+        <div class="dash-metric-value">23ms</div>
+        <div class="dash-metric-change up">-12ms optimized</div>
+      </div>
+      <div class="dashboard-chart">
+        <div class="chart-title">Agent Task Volume (30d)</div>
+        <div class="chart-bars" id="chartBars"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="features-section fade-up">
+  <div class="pipeline-header">
+    <h2>Built for production</h2>
+    <p>Everything you need to deploy and manage AI agents at scale.</p>
+  </div>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-card-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.5"/></svg>
+      </div>
+      <h3>Zero-Trust Security</h3>
+      <p>SOC 2 Type II compliant. End-to-end encryption. Your data never leaves your infrastructure.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" stroke="currentColor" stroke-width="1.5"/></svg>
+      </div>
+      <h3>Edge Deployment</h3>
+      <p>Deploy to 7 regions globally. 23ms average latency. Agents run close to your users.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" stroke="currentColor" stroke-width="1.5"/></svg>
+      </div>
+      <h3>Real-time Coaching</h3>
+      <p>AI coaches delivered at the right moment. Not surveillance, coaching. 89% satisfaction.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="1.5"/><path d="M14 2v6h6" stroke="currentColor" stroke-width="1.5"/></svg>
+      </div>
+      <h3>Auto-Documentation</h3>
+      <p>Processes document themselves. SOPs and playbooks generated from actual behavior.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M9 9h6v6H9z" stroke="currentColor" stroke-width="1.5"/></svg>
+      </div>
+      <h3>Framework Agnostic</h3>
+      <p>Python, TypeScript, Go, REST API. Works with any stack. No vendor lock-in.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h3>Automation Discovery</h3>
+      <p>AI finds what should be automated before you ask. Pattern recognition at scale.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Edge Stats -->
+<section class="edge-section fade-up">
+  <div class="pipeline-header">
+    <h2>Enterprise scale</h2>
+    <p>Trusted by teams that can't afford downtime.</p>
+  </div>
+  <div class="edge-grid">
+    <div class="edge-card">
+      <h3>2M+</h3>
+      <p>Workers coached on the platform</p>
+    </div>
+    <div class="edge-card">
+      <h3>99.99%</h3>
+      <p>Uptime SLA guaranteed</p>
+    </div>
+    <div class="edge-card">
+      <h3>23ms</h3>
+      <p>Average edge latency</p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section fade-up">
+  <h2>Start deploying<br><span class="gradient-text">right now</span></h2>
+  <p>Free to start. No credit card required. Your first agent in 60 seconds.</p>
+  <div class="cta-terminal">
+    <div class="cta-cmd" onclick="navigator.clipboard.writeText('npx go2 deploy')">
+      <span class="prompt">$</span>
+      <span class="text">npx go2 deploy</span>
+      <span class="copy">Copy</span>
+    </div>
+  </div>
+  <div style="margin-top:24px;display:flex;justify-content:center;gap:12px">
+    <a href="#" class="btn btn-primary" style="padding:12px 24px">Get Started</a>
+    <a href="#" class="btn btn-outline" style="padding:12px 24px">Talk to Sales</a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <a href="#" class="nav-logo">
+        <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
+          <path d="M10 2L18 18H2L10 2Z" fill="white"/>
+        </svg>
+        Go2
+      </a>
+      <p>Deploy AI agents trained on real work. Framework-agnostic, edge-native, unreasonably fast.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <a href="#">Agents</a>
+      <a href="#">Dashboard</a>
+      <a href="#">Coaching</a>
+      <a href="#">Pricing</a>
+    </div>
+    <div class="footer-col">
+      <h4>Developers</h4>
+      <a href="#">Documentation</a>
+      <a href="#">API Reference</a>
+      <a href="#">SDKs</a>
+      <a href="#">CLI</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="#">About</a>
+      <a href="#">Blog</a>
+      <a href="#">Careers</a>
+      <a href="#">Contact</a>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="#">Security</a>
+      <a href="#">SLA</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>&copy; 2026 Go2, Inc.</span>
+    <span style="display:flex;gap:8px;align-items:center">
+      <span style="width:6px;height:6px;border-radius:50%;background:#28c840"></span>
+      All systems operational
+    </span>
+  </div>
+</footer>
+
+</div>
+
+<script>
+// Chart bars
+const chartContainer = document.getElementById('chartBars');
+for (let i = 0; i < 30; i++) {
+  const bar = document.createElement('div');
+  bar.className = 'chart-bar';
+  const base = 40 + i * 2;
+  const height = base + Math.random() * 50;
+  const value = Math.round(height * 4);
+  bar.style.height = height + 'px';
+  bar.style.background = `linear-gradient(to top, rgba(0,112,243,0.6), rgba(0,223,216,0.6))`;
+  bar.setAttribute('data-value', value);
+  chartContainer.appendChild(bar);
+}
+
+// Scroll animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('visible');
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// Blink cursor
+const style = document.createElement('style');
+style.textContent = '@keyframes blink { 50% { opacity: 0; } }';
+document.head.appendChild(style);
+
+// Copy command
+document.querySelector('.hero-command').addEventListener('click', function() {
+  navigator.clipboard.writeText('npx go2 deploy');
+  this.querySelector('.cmd').textContent = 'Copied!';
+  setTimeout(() => {
+    this.querySelector('.cmd').textContent = 'npx go2 deploy';
+  }, 1500);
+});
+</script>
+
+</body>
+</html>

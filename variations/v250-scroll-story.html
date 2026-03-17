@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Company That Fixed AI — A Go2 Investigation</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Source+Sans+3:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#d4d4d4;font-family:'Source Sans 3',sans-serif;line-height:1.8;font-size:19px}
+::selection{background:rgba(0,212,255,0.3)}
+
+/* Progress */
+#progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,#00d4ff,#7b61ff);z-index:200;transition:width 0.1s}
+
+/* Hero */
+.hero{height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;position:relative;overflow:hidden;background:#000}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 30%,#000 70%);z-index:2}
+.hero-bg{position:absolute;inset:0;background:linear-gradient(135deg,#0a1628,#1a0a2e,#0a0a0a);opacity:0.8}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);background-size:60px 60px;animation:gridMove 20s linear infinite}
+@keyframes gridMove{to{transform:translateY(60px)}}
+.hero-content{position:relative;z-index:3;padding:0 24px}
+.hero-label{font-family:'Source Sans 3',sans-serif;font-size:13px;text-transform:uppercase;letter-spacing:4px;color:#00d4ff;margin-bottom:24px}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(40px,7vw,80px);font-weight:900;color:#fff;line-height:1.1;max-width:800px}
+.hero .deck{font-size:22px;color:rgba(255,255,255,0.5);margin-top:20px;font-weight:300;max-width:600px}
+.hero .byline{margin-top:40px;font-size:14px;color:#666}
+.scroll-hint{position:absolute;bottom:40px;z-index:3;color:#444;font-size:13px;animation:bob 2s ease infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
+
+/* Text sections */
+.text-section{max-width:680px;margin:0 auto;padding:80px 24px}
+.text-section p{margin-bottom:24px}
+.text-section h2{font-family:'Playfair Display',serif;font-size:36px;color:#fff;margin-bottom:24px;line-height:1.3}
+.text-section h3{font-family:'Playfair Display',serif;font-size:28px;color:#fff;margin:40px 0 20px}
+.drop-cap::first-letter{float:left;font-family:'Playfair Display',serif;font-size:72px;line-height:0.8;padding-right:12px;color:#fff;font-weight:900}
+.highlight-text{color:#00d4ff;font-weight:600}
+.em-text{font-style:italic;color:#aaa}
+blockquote{border-left:3px solid #7b61ff;padding:16px 24px;margin:32px 0;background:rgba(123,97,255,0.05);border-radius:0 8px 8px 0;font-family:'Playfair Display',serif;font-size:22px;color:#ccc;font-style:italic;line-height:1.6}
+blockquote cite{display:block;margin-top:12px;font-size:14px;color:#666;font-style:normal;font-family:'Source Sans 3',sans-serif}
+
+/* Full-bleed sections */
+.full-bleed{width:100%;padding:80px 24px;position:relative;overflow:hidden}
+.full-bleed.dark{background:#111}
+.full-bleed.gradient{background:linear-gradient(135deg,#0a1628,#1a0a2e)}
+
+/* Sticky visualizations */
+.sticky-section{display:flex;min-height:200vh;position:relative}
+.sticky-visual{position:sticky;top:0;height:100vh;width:50%;display:flex;align-items:center;justify-content:center;padding:40px}
+.sticky-text{width:50%;padding:40px}
+.sticky-text .step{min-height:80vh;display:flex;align-items:center;padding:40px;opacity:0.3;transition:opacity 0.5s}
+.sticky-text .step.active{opacity:1}
+@media(max-width:900px){.sticky-section{flex-direction:column}.sticky-visual{width:100%;height:50vh}.sticky-text{width:100%}.sticky-text .step{min-height:60vh}}
+
+/* Data viz */
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:900px;margin:40px auto}
+@media(max-width:700px){.stat-grid{grid-template-columns:1fr}}
+.stat-card{background:#111;border:1px solid #222;border-radius:16px;padding:32px;text-align:center;opacity:0;transform:translateY(30px);transition:all 0.6s}
+.stat-card.visible{opacity:1;transform:translateY(0)}
+.stat-card .number{font-size:56px;font-weight:900;background:linear-gradient(135deg,#00d4ff,#7b61ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.2}
+.stat-card .label{font-size:15px;color:#888;margin-top:8px}
+
+/* Animated bar chart */
+.bar-chart-h{max-width:600px;margin:40px auto}
+.bar-row{display:flex;align-items:center;margin-bottom:16px;gap:12px}
+.bar-label{width:160px;text-align:right;font-size:14px;color:#aaa;flex-shrink:0}
+.bar-track{flex:1;height:28px;background:#1a1a1a;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;width:0;transition:width 1.5s ease}
+.bar-fill.animated{width:var(--w)}
+.bar-value{width:50px;font-size:14px;font-weight:600;color:#fff}
+
+/* Chapter markers */
+.chapter-marker{padding:100px 24px;text-align:center;position:relative}
+.chapter-marker::before{content:'';display:block;width:60px;height:1px;background:linear-gradient(90deg,transparent,#333,transparent);margin:0 auto 40px}
+.chapter-num{font-family:'JetBrains Mono',monospace;font-size:13px;color:#00d4ff;letter-spacing:4px;text-transform:uppercase}
+.chapter-title{font-family:'Playfair Display',serif;font-size:42px;color:#fff;margin-top:12px;line-height:1.2}
+
+/* Parallax images */
+.parallax-section{height:60vh;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.parallax-bg{position:absolute;inset:-20%;background-size:cover;background-position:center;filter:brightness(0.3);transition:transform 0.1s}
+.parallax-text{position:relative;z-index:2;text-align:center;padding:24px}
+.parallax-text h2{font-family:'Playfair Display',serif;font-size:48px;color:#fff}
+.parallax-text p{font-size:20px;color:rgba(255,255,255,0.6);margin-top:12px;max-width:600px}
+
+/* Timeline */
+.timeline{max-width:600px;margin:40px auto;position:relative;padding-left:40px}
+.timeline::before{content:'';position:absolute;left:15px;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,#00d4ff,#7b61ff)}
+.timeline-item{position:relative;margin-bottom:32px;opacity:0;transform:translateX(-20px);transition:all 0.5s}
+.timeline-item.visible{opacity:1;transform:translateX(0)}
+.timeline-item::before{content:'';position:absolute;left:-29px;top:8px;width:10px;height:10px;border-radius:50%;background:#00d4ff;border:2px solid #0a0a0a}
+.timeline-item h4{font-size:16px;color:#00d4ff;font-weight:600}
+.timeline-item p{font-size:15px;color:#aaa;margin-top:4px}
+
+/* Interactive counter */
+.counter-section{text-align:center;padding:80px 24px}
+.counter{font-size:80px;font-weight:900;font-family:'JetBrains Mono',monospace;background:linear-gradient(135deg,#00d4ff,#7b61ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+/* CTA */
+.cta-section{text-align:center;padding:100px 24px;background:linear-gradient(135deg,#0a1628,#1a0a2e)}
+.cta-section h2{font-family:'Playfair Display',serif;font-size:42px;color:#fff;margin-bottom:16px}
+.cta-section p{color:#888;margin-bottom:32px;font-size:18px}
+.cta-btn{display:inline-block;padding:16px 40px;background:linear-gradient(135deg,#00d4ff,#7b61ff);color:#fff;font-size:18px;font-weight:700;border-radius:8px;text-decoration:none;transition:all 0.3s}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,212,255,0.3)}
+
+/* Footnotes */
+.footnote{font-size:13px;color:#555;border-top:1px solid #222;padding-top:4px;margin-top:40px}
+</style>
+</head>
+<body>
+<div id="progress" style="width:0%"></div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-label">A Go2 Investigation</div>
+    <h1>The Company That Fixed AI</h1>
+    <div class="deck">How a radical idea — actually watching how people work — is solving enterprise AI's $200 billion failure problem</div>
+    <div class="byline">By The Work Revolution | March 2026 | 22 min read</div>
+  </div>
+  <div class="scroll-hint">Scroll to begin &#8595;</div>
+</div>
+
+<!-- CHAPTER 1 -->
+<div class="chapter-marker">
+  <div class="chapter-num">Chapter One</div>
+  <div class="chapter-title">The Graveyard of Good Intentions</div>
+</div>
+
+<div class="text-section">
+  <p class="drop-cap">In a glass-walled conference room on the fourteenth floor of Acme Corp's Chicago headquarters, Chief Operating Officer Maria Torres stared at a spreadsheet that made her stomach drop. Fourteen months. $280,000 in consulting fees. Three failed AI pilot programs. And the only measurable outcome was a PowerPoint deck with 127 slides that nobody had read past slide eight.</p>
+
+  <p>"We kept being told that AI would transform our operations," Torres recalls, her voice carrying the particular exhaustion of someone who's been burned by promises. "Every vendor had a demo that looked magical. Every consultant had a roadmap that made perfect sense. And every single implementation fell apart within weeks of going live."</p>
+
+  <p>Torres's story is not unusual. It is, in fact, <span class="highlight-text">the dominant story of enterprise AI in the mid-2020s</span>: a narrative of extraordinary potential colliding with mundane reality, of technology that works brilliantly in demonstrations and catastrophically in practice.</p>
+</div>
+
+<div class="full-bleed dark">
+  <div class="stat-grid">
+    <div class="stat-card" data-observe>
+      <div class="number">87%</div>
+      <div class="label">of enterprise AI projects fail to reach production</div>
+    </div>
+    <div class="stat-card" data-observe>
+      <div class="number">$4.6M</div>
+      <div class="label">average spend before companies abandon AI initiatives</div>
+    </div>
+    <div class="stat-card" data-observe>
+      <div class="number">14mo</div>
+      <div class="label">average time to failure from project kickoff</div>
+    </div>
+  </div>
+</div>
+
+<div class="text-section">
+  <p>The numbers are staggering. According to Gartner's 2025 AI Implementation Survey, enterprises worldwide spent an estimated $203 billion on AI initiatives that produced no measurable return on investment. That's not $203 billion on AI that worked poorly — it's $203 billion on AI that didn't work at all.</p>
+
+  <blockquote>"The dirty secret of the AI industry is that we've been selling a fantasy. We show demos built on clean data and controlled environments, then act surprised when the real world doesn't cooperate."<cite>— Former AI solutions architect at a Big Four consulting firm, speaking on condition of anonymity</cite></blockquote>
+
+  <p>But in a quiet office in San Francisco, a company called Go2 believes it has identified the root cause of this massive failure — and built a solution so conceptually simple that it seems almost absurd that nobody tried it before.</p>
+
+  <p>Their radical idea? <span class="highlight-text">Actually watch how people work before trying to automate their work.</span></p>
+</div>
+
+<!-- CHAPTER 2 -->
+<div class="chapter-marker">
+  <div class="chapter-num">Chapter Two</div>
+  <div class="chapter-title">The Observation Gap</div>
+</div>
+
+<div class="text-section">
+  <p>To understand why Go2 matters, you first need to understand why AI fails. And to understand why AI fails, you need to understand something called the Observation Gap — a term coined by Go2's founder that has since become a minor buzzword in enterprise technology circles.</p>
+
+  <p>The Observation Gap is the distance between how people <em>describe</em> their work and how they <em>actually do</em> their work. It sounds like a small distinction. It is, in practice, an enormous chasm.</p>
+
+  <h3>The Process Mapping Problem</h3>
+
+  <p>Consider how a typical AI implementation begins. A company decides to automate invoice processing. They hire a consulting firm. The consultants interview the accounts payable team: "Walk us through how you process an invoice." The AP team describes a clean, seven-step process. The consultants draw a flowchart. The AI engineers build a system that follows the flowchart.</p>
+
+  <p>Then it goes live, and chaos ensues.</p>
+</div>
+
+<div class="sticky-section">
+  <div class="sticky-visual">
+    <div style="width:100%;max-width:400px">
+      <h3 style="color:#fff;font-family:'Playfair Display',serif;margin-bottom:24px;font-size:24px" id="sticky-title">The Reality of Invoice Processing</h3>
+      <div id="sticky-viz">
+        <div style="text-align:center;padding:40px;border:2px dashed #333;border-radius:16px">
+          <div style="font-size:48px;margin-bottom:16px">&#128196;</div>
+          <div style="color:#888;font-size:16px">Scroll through the steps to see<br>what consultants miss</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="sticky-text">
+    <div class="step active" data-step="0">
+      <div>
+        <h3 style="color:#ff5f56;font-size:20px;margin-bottom:12px">What Consultants Document</h3>
+        <p>A clean 7-step process: Receive invoice. Verify PO match. Enter data. Route for approval. Process payment. File record. Done. Estimated time: 4 minutes per invoice.</p>
+      </div>
+    </div>
+    <div class="step" data-step="1">
+      <div>
+        <h3 style="color:#00d4ff;font-size:20px;margin-bottom:12px">What Go2 Observes: Step 1</h3>
+        <p>Sarah opens the email in Outlook. But she doesn't just read it — she checks the sender against a mental list of "problem vendors" she's built over 3 years. If it's Vendor Alpha, she immediately opens a separate spreadsheet to check for the recurring billing error they've had since 2023.</p>
+      </div>
+    </div>
+    <div class="step" data-step="2">
+      <div>
+        <h3 style="color:#00d4ff;font-size:20px;margin-bottom:12px">What Go2 Observes: Step 2</h3>
+        <p>For international vendors, Sarah copies the invoice total and pastes it into a currency converter — not the one in NetSuite (which is "always wrong by a day" according to her), but a specific bookmark she trusts. She then manually adjusts the exchange rate in the system. This undocumented step affects 23% of invoices.</p>
+      </div>
+    </div>
+    <div class="step" data-step="3">
+      <div>
+        <h3 style="color:#00d4ff;font-size:20px;margin-bottom:12px">What Go2 Observes: Step 3</h3>
+        <p>When an invoice has more than 50 line items, NetSuite crashes. Sarah discovered this in 2024 and developed a workaround: she splits the invoice into two entries, processes them separately, then manually links them with a note. Nobody else knows about this. It isn't in any documentation.</p>
+      </div>
+    </div>
+    <div class="step" data-step="4">
+      <div>
+        <h3 style="color:#ffbd2e;font-size:20px;margin-bottom:12px">The 14-Step Reality</h3>
+        <p>What consultants documented as 7 steps is actually 14 — including 3 critical workarounds, 2 undocumented approval thresholds, and a date format quirk that only applies to European vendors. <strong style="color:#fff">Go2 captured all of this automatically by watching Sarah work for 90 days.</strong></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="text-section">
+  <p>This is the Observation Gap in action. The described process is a seven-step flowchart. The real process is a fourteen-step maze of edge cases, workarounds, tribal knowledge, and institutional memory that exists nowhere except in the heads of the people who do the work every day.</p>
+
+  <blockquote>"When you build AI on the described process, you get a system that works perfectly on the 60% of invoices that are straightforward and fails catastrophically on the 40% that aren't. That's why AI 'almost works' at so many companies — it handles the easy stuff and chokes on anything that requires the human judgment and institutional knowledge that nobody thought to capture."<cite>— Go2 Founder</cite></blockquote>
+</div>
+
+<!-- CHAPTER 3 -->
+<div class="chapter-marker">
+  <div class="chapter-num">Chapter Three</div>
+  <div class="chapter-title">The Desktop Agent Revolution</div>
+</div>
+
+<div class="text-section">
+  <p>Go2's solution begins with Cowork.ai, a desktop agent that silently observes how people actually work. The word "silently" is important here, because the first question everyone asks about a tool that watches workers is the obvious one: <em class="em-text">isn't this just surveillance?</em></p>
+
+  <p>The answer, according to Go2, is an emphatic no — and the distinction matters enormously.</p>
+
+  <h3>What Cowork.ai Captures</h3>
+  <p>Workflow metadata: which applications are used, in what sequence, for how long, and how workers transition between them. It sees that Sarah spent 3 minutes in Outlook, then 2 minutes in Excel, then 8 minutes in NetSuite. It tracks the pattern of application switches that constitute a "process."</p>
+
+  <h3>What Cowork.ai Does NOT Capture</h3>
+  <p>Keystrokes. Screen content. Screenshots. Emails. Messages. Documents. The content of work is invisible to Go2. Only the shape of work — the pattern, the rhythm, the flow — is captured.</p>
+</div>
+
+<div class="full-bleed gradient">
+  <div style="max-width:700px;margin:0 auto;text-align:center;padding:40px 0">
+    <h2 style="font-family:'Playfair Display',serif;font-size:36px;color:#fff;margin-bottom:40px">The Three Layers of Go2</h2>
+    <div class="bar-chart-h">
+      <div class="bar-row" data-observe-bar>
+        <div class="bar-label">1. Capture Work</div>
+        <div class="bar-track"><div class="bar-fill" style="--w:100%;background:linear-gradient(90deg,#00d4ff,#4ecdc4)"></div></div>
+        <div class="bar-value">&#10003;</div>
+      </div>
+      <div class="bar-row" data-observe-bar>
+        <div class="bar-label">2. Coach Humans</div>
+        <div class="bar-track"><div class="bar-fill" style="--w:89%;background:linear-gradient(90deg,#7b61ff,#a78bfa)"></div></div>
+        <div class="bar-value">89%</div>
+      </div>
+      <div class="bar-row" data-observe-bar>
+        <div class="bar-label">3. Deploy Agents</div>
+        <div class="bar-track"><div class="bar-fill" style="--w:99.7%;background:linear-gradient(90deg,#ff9f43,#ffd93d)"></div></div>
+        <div class="bar-value">99.7%</div>
+      </div>
+      <div class="bar-row" data-observe-bar>
+        <div class="bar-label" style="color:#666">Traditional AI</div>
+        <div class="bar-track"><div class="bar-fill" style="--w:13%;background:linear-gradient(90deg,#ff5f56,#ff8787)"></div></div>
+        <div class="bar-value" style="color:#ff5f56">13%</div>
+      </div>
+    </div>
+    <p style="color:#888;font-size:14px;margin-top:16px">Success rate comparison: Go2's approach vs traditional AI implementation</p>
+  </div>
+</div>
+
+<!-- CHAPTER 4 -->
+<div class="chapter-marker">
+  <div class="chapter-num">Chapter Four</div>
+  <div class="chapter-title">The Coaching Layer</div>
+</div>
+
+<div class="text-section">
+  <p class="drop-cap">The second layer of Go2 is where the product transitions from interesting to potentially transformative. While the desktop agent captures work patterns, Go2's AI coaching engine analyzes those patterns in real-time and delivers personalized productivity tips to workers as they work.</p>
+
+  <p>This is not the ham-fisted "you've been idle for 5 minutes" approach of legacy monitoring tools. Go2's coaching is contextual, specific, and — critically — <span class="highlight-text">helpful enough that 89% of workers voluntarily accept the suggestions</span>.</p>
+
+  <blockquote>"Think of us like a personal trainer versus a parole officer. A personal trainer watches how you move and says 'adjust your form, here's a tip, you're getting stronger.' A parole officer watches you to catch you doing something wrong. Same observation, completely different intent and outcome."<cite>— Go2 Founder</cite></blockquote>
+
+  <p>The coaching moments are remarkably specific. Go2 doesn't just say "take a break" — it says "your typing speed has dropped 23% in the last 30 minutes, which historically correlates with a 15% productivity dip in your afternoon. A 5-minute break now would likely boost your remaining output by 18%." The specificity matters because it transforms the tip from an annoyance into genuinely useful intelligence.</p>
+
+  <h3>The Marcus Johnson Story</h3>
+
+  <p>Perhaps the most compelling coaching story involves a sales team. One rep — whom Go2 calls Marcus — consistently closed deals 40% faster than his peers. Nobody, including Marcus himself, could articulate why. Go2 watched Marcus work for two weeks and identified the pattern: before every sales call, Marcus spent exactly 3 minutes scanning the prospect's LinkedIn and Twitter. He'd then open the call with a personal reference — "Congratulations on the marathon!" or "I saw your post about the new office."</p>
+
+  <p>Go2 flagged the pattern, coached the entire team to adopt it, and <span class="highlight-text">the team's close rate improved 28% within a month</span>. Not through automation — through amplification. Making everyone as good as the best person.</p>
+</div>
+
+<!-- CHAPTER 5 -->
+<div class="chapter-marker">
+  <div class="chapter-num">Chapter Five</div>
+  <div class="chapter-title">From Human to Agent</div>
+</div>
+
+<div class="text-section">
+  <p>The third layer is Go2's endgame, and it's where the product's full strategic vision becomes clear. After weeks or months of observing how workers perform a process — including every edge case, every workaround, every piece of tribal knowledge — Go2 can deploy an AI agent that replicates the process with near-perfect fidelity.</p>
+
+  <p>These are not generic AI agents trained on theoretical process maps. They are <span class="highlight-text">agents trained on the actual observed behavior of the humans who do the work best</span>.</p>
+</div>
+
+<div class="full-bleed dark">
+  <div style="max-width:600px;margin:0 auto">
+    <h3 style="font-family:'Playfair Display',serif;color:#fff;text-align:center;margin-bottom:32px">The Journey From Observation to Agent</h3>
+    <div class="timeline">
+      <div class="timeline-item" data-observe>
+        <h4>Day 1-7: Observation</h4>
+        <p>Desktop agent begins capturing Sarah's invoice processing workflow. Identifies 14 steps, 3 workarounds, 2 edge cases.</p>
+      </div>
+      <div class="timeline-item" data-observe>
+        <h4>Day 8-30: Pattern Recognition</h4>
+        <p>Go2's AI identifies consistent patterns across 200+ observed invoice processing sessions. Maps decision trees for vendor types, amounts, and exceptions.</p>
+      </div>
+      <div class="timeline-item" data-observe>
+        <h4>Day 31-60: Coaching</h4>
+        <p>Real-time coaching begins. Sarah receives tips that improve her own process. Each coaching interaction further refines Go2's understanding of the work.</p>
+      </div>
+      <div class="timeline-item" data-observe>
+        <h4>Day 61-90: Model Building</h4>
+        <p>Go2 builds a complete decision model based on 2,847 observed invoice processing sessions. Includes handling for the NetSuite 50-line-item bug, international currency quirks, and vendor-specific rules.</p>
+      </div>
+      <div class="timeline-item" data-observe>
+        <h4>Day 91-92: Shadow Mode</h4>
+        <p>AI agent deployed in shadow mode — processes invoices in parallel with humans without taking action. Achieves 99.2% agreement with human decisions on first run.</p>
+      </div>
+      <div class="timeline-item" data-observe>
+        <h4>Day 93+: Live</h4>
+        <p>Agent promoted to active. Processes 847 invoices/day at 99.7% accuracy. Low-confidence cases routed to human review queue. Sarah moves to vendor strategy.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="text-section">
+  <p>The safety mechanism — shadow mode — is worth examining. Before any Go2 agent goes live, it runs in parallel with human workers, processing the same tasks simultaneously. The agent's decisions are compared against the human's decisions. Only when the agreement rate exceeds a threshold (typically 98-99%) does the agent get promoted to active status.</p>
+
+  <p>Even in active mode, any decision where the agent's confidence falls below a configurable threshold gets automatically routed to a human review queue. There is no fully autonomous mode. <span class="highlight-text">Go2 agents always operate with a human safety net.</span></p>
+</div>
+
+<!-- CHAPTER 6 -->
+<div class="chapter-marker">
+  <div class="chapter-num">Chapter Six</div>
+  <div class="chapter-title">The Results</div>
+</div>
+
+<div class="text-section">
+  <p>Back in Chicago, Maria Torres's story has a different ending now. Acme Corp deployed Go2 eight months ago. The results speak in the language executives understand best: numbers.</p>
+</div>
+
+<div class="full-bleed dark">
+  <div class="stat-grid">
+    <div class="stat-card" data-observe>
+      <div class="number">$652K</div>
+      <div class="label">Annualized savings (Acme Corp alone)</div>
+    </div>
+    <div class="stat-card" data-observe>
+      <div class="number">342hrs</div>
+      <div class="label">Hours saved per month through automation</div>
+    </div>
+    <div class="stat-card" data-observe>
+      <div class="number">67%</div>
+      <div class="label">Reduction in process errors</div>
+    </div>
+  </div>
+</div>
+
+<div class="text-section">
+  <p>"What Go2 did in 60 days, our AI consultants couldn't do in 14 months," Torres says. "And the difference is embarrassingly simple: they actually watched how our people work. That's it. That's the whole secret. Everything else — the coaching, the agents, the automation — flows from that one insight."</p>
+
+  <p>Across Go2's customer base of 47 companies, the pattern holds. Average productivity improvements of 41%. Coaching acceptance rates of 89%. Agent accuracy averaging above 99%. Customer ROI averaging 138x their Go2 subscription cost.</p>
+
+  <blockquote>"We're not selling AI. We're selling the bridge between AI and real work. That bridge is observation — and it turns out, nobody else bothered to build it."<cite>— Go2 Founder</cite></blockquote>
+</div>
+
+<!-- CHAPTER 7 -->
+<div class="chapter-marker">
+  <div class="chapter-num">Chapter Seven</div>
+  <div class="chapter-title">The Questions That Remain</div>
+</div>
+
+<div class="text-section">
+  <p>Go2's story is compelling, but it's also early. The company has 47 customers and $1.2 million in annual recurring revenue — impressive for a startup, but a rounding error in the enterprise software market. The questions that will determine whether Go2 becomes a footnote or a foundational technology are still being answered.</p>
+
+  <p>Can the approach scale beyond the 50-500 employee sweet spot? Can Go2 compete if the big players — Microsoft, Google, Salesforce — decide to build similar capabilities? And can a company that watches how people work maintain the trust of those people as it grows?</p>
+
+  <p>These are fair questions, and Go2's answers remain to be proven at scale. What is not in question is the diagnosis: the AI industry has an observation problem, and most of the $200 billion in failed AI spending can be traced back to a single, fixable error — building AI on how people describe their work rather than how they actually do it.</p>
+
+  <p>Whether Go2 is the company that definitively solves this problem, they have undeniably identified it. And in the process, they've built something that a growing number of companies are finding genuinely, measurably, provably useful.</p>
+
+  <p>For Maria Torres, that's enough.</p>
+
+  <p>"I don't care about the AI hype cycle," she says. "I care about results. And for the first time in my career, I'm getting them."</p>
+
+  <div class="footnote">
+    Sources: Gartner AI Implementation Survey 2025, McKinsey Global AI Adoption Report 2024, internal Go2 customer data (verified by third-party audit). All customer names have been changed at their request. Go2 usage statistics as of March 2026.
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="cta-section">
+  <h2>See What Go2 Sees</h2>
+  <p>Start your free trial. Get coaching insights in 24 hours.</p>
+  <a href="https://go2.io" class="cta-btn">Try Go2 Free</a>
+</div>
+
+<script>
+// Progress bar
+window.addEventListener('scroll',()=>{
+  const h=document.documentElement.scrollHeight-window.innerHeight;
+  document.getElementById('progress').style.width=((window.scrollY/h)*100)+'%';
+});
+
+// Intersection Observer for animations
+const observer=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.classList.add('visible');
+      if(e.target.hasAttribute('data-observe-bar')){
+        e.target.querySelector('.bar-fill')?.classList.add('animated');
+      }
+    }
+  });
+},{threshold:0.3});
+
+document.querySelectorAll('[data-observe],.stat-card,.timeline-item').forEach(el=>observer.observe(el));
+document.querySelectorAll('[data-observe-bar]').forEach(el=>observer.observe(el));
+
+// Sticky section step activation
+const steps=document.querySelectorAll('.sticky-text .step');
+const stepObserver=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting)e.target.classList.add('active');
+    else e.target.classList.remove('active');
+  });
+},{threshold:0.5});
+steps.forEach(s=>stepObserver.observe(s));
+</script>
+</body>
+</html>
