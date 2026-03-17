@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Your First Week</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --day1: #f0f7ff;
+  --day2: #eef6f0;
+  --day3: #f5f0ff;
+  --day4: #fff7ed;
+  --day5: #fef2f2;
+  --accent: #2563eb;
+  --accent-dark: #1d4ed8;
+  --text: #1e293b;
+  --text-light: #64748b;
+  --timeline-color: #cbd5e1;
+  --timeline-active: #2563eb;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Hero */
+.hero {
+  min-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4rem 2rem;
+  background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+  position: relative;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 100px;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  color: var(--text-light);
+  margin-bottom: 2rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.hero-badge svg {
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+}
+
+.hero h1 {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 800;
+  line-height: 1.1;
+  max-width: 800px;
+  letter-spacing: -0.03em;
+  margin-bottom: 1.5rem;
+}
+
+.hero h1 span {
+  background: linear-gradient(135deg, var(--accent), #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero p {
+  font-size: 1.25rem;
+  color: var(--text-light);
+  max-width: 560px;
+  margin-bottom: 2.5rem;
+}
+
+.hero-week {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 3rem;
+}
+
+.hero-day {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: white;
+  opacity: 0.5;
+  transition: all 0.4s ease;
+}
+
+.hero-day.active { opacity: 1; transform: scale(1.1); }
+
+.hero-day:nth-child(1) { background: #3b82f6; }
+.hero-day:nth-child(2) { background: #10b981; }
+.hero-day:nth-child(3) { background: #8b5cf6; }
+.hero-day:nth-child(4) { background: #f59e0b; }
+.hero-day:nth-child(5) { background: #ef4444; }
+
+.scroll-indicator {
+  position: absolute;
+  bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-light);
+  font-size: 0.875rem;
+  animation: bounce 2s ease infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(8px); }
+}
+
+/* Progress sidebar */
+.progress-track {
+  position: fixed;
+  left: 2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.progress-line {
+  width: 3px;
+  height: 60px;
+  background: var(--timeline-color);
+  transition: background 0.4s ease;
+}
+
+.progress-line.filled { background: var(--timeline-active); }
+
+.progress-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid var(--timeline-color);
+  transition: all 0.4s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.progress-dot.active {
+  border-color: var(--timeline-active);
+  background: var(--timeline-active);
+  box-shadow: 0 0 0 4px rgba(37,99,235,0.15);
+}
+
+.progress-dot .tooltip {
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--text);
+  color: white;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.progress-dot:hover .tooltip { opacity: 1; }
+
+/* Day sections */
+.day-section {
+  min-height: 100vh;
+  padding: 6rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.day-section:nth-child(1) { background: var(--day1); }
+.day-section:nth-child(2) { background: var(--day2); }
+.day-section:nth-child(3) { background: var(--day3); }
+.day-section:nth-child(4) { background: var(--day4); }
+.day-section:nth-child(5) { background: var(--day5); }
+
+.day-inner {
+  max-width: 960px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+}
+
+.day-section:nth-child(even) .day-inner {
+  direction: rtl;
+}
+
+.day-section:nth-child(even) .day-inner > * {
+  direction: ltr;
+}
+
+.day-content { opacity: 0; transform: translateY(40px); transition: all 0.7s ease; }
+.day-visual { opacity: 0; transform: translateY(40px); transition: all 0.7s ease 0.15s; }
+.day-section.visible .day-content,
+.day-section.visible .day-visual { opacity: 1; transform: translateY(0); }
+
+.day-marker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.day-number {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.125rem;
+  color: white;
+}
+
+.day-section:nth-child(1) .day-number { background: #3b82f6; }
+.day-section:nth-child(2) .day-number { background: #10b981; }
+.day-section:nth-child(3) .day-number { background: #8b5cf6; }
+.day-section:nth-child(4) .day-number { background: #f59e0b; }
+.day-section:nth-child(5) .day-number { background: #ef4444; }
+
+.day-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-light);
+}
+
+.day-title {
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.25rem;
+}
+
+.day-desc {
+  font-size: 1.0625rem;
+  color: var(--text-light);
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+
+/* Milestones */
+.milestones {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.milestone {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  padding: 1rem 1.25rem;
+  background: rgba(255,255,255,0.7);
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.05);
+  backdrop-filter: blur(8px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.milestone:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+.milestone-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.125rem;
+}
+
+.day-section:nth-child(1) .milestone-icon { background: #dbeafe; }
+.day-section:nth-child(2) .milestone-icon { background: #d1fae5; }
+.day-section:nth-child(3) .milestone-icon { background: #ede9fe; }
+.day-section:nth-child(4) .milestone-icon { background: #fef3c7; }
+.day-section:nth-child(5) .milestone-icon { background: #fee2e2; }
+
+.milestone-text {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.milestone-text strong {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 0.125rem;
+}
+
+.milestone-text span {
+  color: var(--text-light);
+  font-size: 0.875rem;
+}
+
+/* Visual cards */
+.visual-card {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+.visual-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.8125rem;
+  color: var(--text-light);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.visual-card-header .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: pulse-dot 2s ease infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* App map visual (Day 1) */
+.app-map {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+.app-tile {
+  aspect-ratio: 1;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: white;
+  gap: 0.375rem;
+  opacity: 0;
+  animation: tile-in 0.4s ease forwards;
+}
+
+.app-tile svg { width: 20px; height: 20px; }
+
+.app-tile:nth-child(1) { background: #3b82f6; animation-delay: 0.1s; }
+.app-tile:nth-child(2) { background: #8b5cf6; animation-delay: 0.2s; }
+.app-tile:nth-child(3) { background: #10b981; animation-delay: 0.3s; }
+.app-tile:nth-child(4) { background: #f59e0b; animation-delay: 0.4s; }
+.app-tile:nth-child(5) { background: #ef4444; animation-delay: 0.5s; }
+.app-tile:nth-child(6) { background: #06b6d4; animation-delay: 0.6s; }
+.app-tile:nth-child(7) { background: #ec4899; animation-delay: 0.7s; }
+.app-tile:nth-child(8) { background: #6366f1; animation-delay: 0.8s; }
+
+@keyframes tile-in {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Coaching visual (Day 2) */
+.coaching-msg {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #f0f7ff;
+  border-radius: 12px;
+  margin-bottom: 0.75rem;
+  border-left: 3px solid var(--accent);
+}
+
+.coaching-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), #7c3aed);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.coaching-avatar svg { width: 18px; height: 18px; color: white; }
+
+.coaching-body {
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.coaching-body strong { color: var(--accent); }
+
+.coaching-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.coaching-stat:last-child { border-bottom: none; }
+
+.coaching-stat-label { font-size: 0.8125rem; color: var(--text-light); }
+.coaching-stat-value { font-weight: 700; font-size: 0.9375rem; }
+
+/* Team patterns (Day 3) */
+.pattern-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.pattern-person {
+  text-align: center;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border-radius: 10px;
+}
+
+.pattern-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  margin: 0 auto 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-light);
+}
+
+.pattern-time {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.pattern-label {
+  font-size: 0.625rem;
+  color: var(--text-light);
+}
+
+.pattern-winner { background: #f0fdf4; border: 1px solid #bbf7d0; }
+
+.pattern-insight {
+  background: #f0fdf4;
+  padding: 0.875rem;
+  border-radius: 10px;
+  font-size: 0.8125rem;
+  color: #166534;
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.pattern-insight svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+
+/* Workflow map (Day 4) */
+.workflow-map {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.wf-step {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border-radius: 10px;
+  position: relative;
+}
+
+.wf-step::after {
+  content: '';
+  position: absolute;
+  left: 1.75rem;
+  bottom: -0.5rem;
+  width: 2px;
+  height: 0.5rem;
+  background: #e2e8f0;
+}
+
+.wf-step:last-child::after { display: none; }
+
+.wf-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8125rem;
+  flex-shrink: 0;
+}
+
+.wf-step-text {
+  font-size: 0.8125rem;
+  flex: 1;
+}
+
+.wf-time {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  font-weight: 600;
+}
+
+.adoption-bar {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #fff7ed;
+  border-radius: 10px;
+}
+
+.adoption-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-light);
+  margin-bottom: 0.5rem;
+}
+
+.adoption-track {
+  height: 8px;
+  background: #fed7aa;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.adoption-fill {
+  height: 100%;
+  width: 73%;
+  background: #f59e0b;
+  border-radius: 4px;
+  transition: width 1.5s ease;
+}
+
+.adoption-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #f59e0b;
+  margin-top: 0.375rem;
+}
+
+/* Summary (Day 5) */
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.summary-stat {
+  padding: 1rem;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.summary-stat:nth-child(1) { background: #eff6ff; }
+.summary-stat:nth-child(2) { background: #f0fdf4; }
+.summary-stat:nth-child(3) { background: #faf5ff; }
+.summary-stat:nth-child(4) { background: #fef2f2; }
+
+.summary-stat-num {
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.summary-stat:nth-child(1) .summary-stat-num { color: #3b82f6; }
+.summary-stat:nth-child(2) .summary-stat-num { color: #10b981; }
+.summary-stat:nth-child(3) .summary-stat-num { color: #8b5cf6; }
+.summary-stat:nth-child(4) .summary-stat-num { color: #ef4444; }
+
+.summary-stat-label {
+  font-size: 0.6875rem;
+  color: var(--text-light);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.top-opp {
+  padding: 0.875rem 1rem;
+  background: #fef2f2;
+  border-radius: 10px;
+  border-left: 3px solid #ef4444;
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.top-opp-name { font-size: 0.8125rem; font-weight: 600; }
+.top-opp-hours { font-size: 0.875rem; font-weight: 800; color: #ef4444; }
+
+/* Week 2+ */
+.week2-section {
+  padding: 6rem 2rem;
+  background: linear-gradient(180deg, #f8fafc, #e2e8f0);
+  text-align: center;
+}
+
+.week2-inner {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.week2-section h2 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 1rem;
+}
+
+.week2-section p {
+  font-size: 1.125rem;
+  color: var(--text-light);
+  max-width: 560px;
+  margin: 0 auto 3rem;
+  line-height: 1.7;
+}
+
+.compound-graph {
+  max-width: 480px;
+  margin: 0 auto 3rem;
+  padding: 2rem;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+}
+
+.compound-graph svg { width: 100%; height: auto; }
+
+.compound-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.compound-stat h3 {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.compound-stat p {
+  font-size: 0.875rem;
+  color: var(--text-light);
+  margin: 0;
+}
+
+/* CTA */
+.cta-section {
+  padding: 6rem 2rem;
+  background: var(--text);
+  text-align: center;
+  color: white;
+}
+
+.cta-inner {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.cta-section h2 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 1rem;
+}
+
+.cta-section p {
+  font-size: 1.125rem;
+  color: #94a3b8;
+  margin-bottom: 2.5rem;
+  line-height: 1.7;
+}
+
+.cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: white;
+  color: var(--text);
+  padding: 1rem 2.5rem;
+  border-radius: 12px;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(255,255,255,0.15);
+}
+
+.cta-btn svg { width: 20px; height: 20px; }
+
+.cta-note {
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin-top: 1.25rem;
+}
+
+/* Nav */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  transform: translateY(-100%);
+  transition: transform 0.3s ease;
+}
+
+.nav.show { transform: translateY(0); }
+
+.nav-logo {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: -0.03em;
+}
+
+.nav-days {
+  display: flex;
+  gap: 0.375rem;
+}
+
+.nav-day-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: white;
+  opacity: 0.4;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: none;
+}
+
+.nav-day-dot.active { opacity: 1; transform: scale(1.1); }
+
+.nav-day-dot:nth-child(1) { background: #3b82f6; }
+.nav-day-dot:nth-child(2) { background: #10b981; }
+.nav-day-dot:nth-child(3) { background: #8b5cf6; }
+.nav-day-dot:nth-child(4) { background: #f59e0b; }
+.nav-day-dot:nth-child(5) { background: #ef4444; }
+
+.nav-cta {
+  padding: 0.5rem 1.25rem;
+  background: var(--text);
+  color: white;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+
+.nav-cta:hover { background: #334155; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .day-inner {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  .day-section:nth-child(even) .day-inner { direction: ltr; }
+
+  .day-section { padding: 4rem 1.5rem; min-height: auto; }
+
+  .progress-track { display: none; }
+
+  .hero-week { gap: 0.5rem; }
+  .hero-day { width: 40px; height: 40px; }
+
+  .compound-stats { grid-template-columns: 1fr; gap: 1rem; }
+
+  .nav-days { display: none; }
+
+  .pattern-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 480px) {
+  .summary-grid { grid-template-columns: 1fr; }
+  .app-map { grid-template-columns: repeat(3, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- Fixed nav -->
+<nav class="nav" id="nav">
+  <a href="#" class="nav-logo">Go2</a>
+  <div class="nav-days">
+    <button class="nav-day-dot" onclick="scrollToDay(0)">M</button>
+    <button class="nav-day-dot" onclick="scrollToDay(1)">T</button>
+    <button class="nav-day-dot" onclick="scrollToDay(2)">W</button>
+    <button class="nav-day-dot" onclick="scrollToDay(3)">T</button>
+    <button class="nav-day-dot" onclick="scrollToDay(4)">F</button>
+  </div>
+  <a href="#cta" class="nav-cta">Start your first week</a>
+</nav>
+
+<!-- Progress sidebar -->
+<div class="progress-track" id="progressTrack">
+  <div class="progress-dot" onclick="scrollToDay(0)"><span class="tooltip">Monday - Install</span></div>
+  <div class="progress-line"></div>
+  <div class="progress-dot" onclick="scrollToDay(1)"><span class="tooltip">Tuesday - Patterns</span></div>
+  <div class="progress-line"></div>
+  <div class="progress-dot" onclick="scrollToDay(2)"><span class="tooltip">Wednesday - Team</span></div>
+  <div class="progress-line"></div>
+  <div class="progress-dot" onclick="scrollToDay(3)"><span class="tooltip">Thursday - Workflows</span></div>
+  <div class="progress-line"></div>
+  <div class="progress-dot" onclick="scrollToDay(4)"><span class="tooltip">Friday - Results</span></div>
+</div>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-badge">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+    No setup calls. No onboarding team. Just install and go.
+  </div>
+  <h1>From install to first results<br>in <span>7 days</span></h1>
+  <p>Here's exactly what happens when your team starts using Go2. No mystery. No "results may vary." Just a clear, day-by-day walkthrough.</p>
+  <div class="hero-week" id="heroWeek">
+    <div class="hero-day">Mon</div>
+    <div class="hero-day">Tue</div>
+    <div class="hero-day">Wed</div>
+    <div class="hero-day">Thu</div>
+    <div class="hero-day">Fri</div>
+  </div>
+  <div class="scroll-indicator">
+    <span>Scroll to begin</span>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+  </div>
+</section>
+
+<!-- Timeline -->
+<div id="timeline">
+
+<!-- DAY 1 — MONDAY -->
+<section class="day-section" data-day="0">
+  <div class="day-inner">
+    <div class="day-content">
+      <div class="day-marker">
+        <div class="day-number">1</div>
+        <div class="day-label">Monday</div>
+      </div>
+      <h2 class="day-title">Install in 5 minutes.<br>Go2 starts learning.</h2>
+      <p class="day-desc">No IT team required. Each employee runs a lightweight installer, and Go2 immediately begins observing how your team actually works. By end of day, it's mapped every app, workflow, and process your team touches.</p>
+      <div class="milestones">
+        <div class="milestone">
+          <div class="milestone-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </div>
+          <div class="milestone-text">
+            <strong>5-minute install per machine</strong>
+            <span>Lightweight agent, no admin privileges needed</span>
+          </div>
+        </div>
+        <div class="milestone">
+          <div class="milestone-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+          <div class="milestone-text">
+            <strong>Silent observation begins</strong>
+            <span>Go2 watches workflows without interrupting anyone</span>
+          </div>
+        </div>
+        <div class="milestone">
+          <div class="milestone-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+          </div>
+          <div class="milestone-text">
+            <strong>Workers see their personal dashboard</strong>
+            <span>Their own view — private, encouraging, zero Big Brother energy</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="day-visual">
+      <div class="visual-card">
+        <div class="visual-card-header">
+          <span class="dot"></span>
+          End of Day 1 — Apps Discovered
+        </div>
+        <div class="app-map">
+          <div class="app-tile">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+            Zoom
+          </div>
+          <div class="app-tile">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Gmail
+          </div>
+          <div class="app-tile">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7.5L14.5 2z"/></svg>
+            Sheets
+          </div>
+          <div class="app-tile">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            Slack
+          </div>
+          <div class="app-tile">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+            CRM
+          </div>
+          <div class="app-tile">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+            Calendar
+          </div>
+          <div class="app-tile">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Notion
+          </div>
+          <div class="app-tile">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            +14 more
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DAY 2 — TUESDAY -->
+<section class="day-section" data-day="1">
+  <div class="day-inner">
+    <div class="day-content">
+      <div class="day-marker">
+        <div class="day-number">2</div>
+        <div class="day-label">Tuesday</div>
+      </div>
+      <h2 class="day-title">AI identifies patterns.<br>Coaching begins.</h2>
+      <p class="day-desc">With a full day of data, Go2's AI starts connecting the dots. Workers receive their first personalized coaching suggestions — gentle nudges based on what the AI actually observed, not generic productivity advice.</p>
+      <div class="milestones">
+        <div class="milestone">
+          <div class="milestone-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div class="milestone-text">
+            <strong>First coaching suggestions appear</strong>
+            <span>Specific, actionable, based on real behavior</span>
+          </div>
+        </div>
+        <div class="milestone">
+          <div class="milestone-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          </div>
+          <div class="milestone-text">
+            <strong>Workers start engaging with their coach</strong>
+            <span>The AI learns what works for each person</span>
+          </div>
+        </div>
+        <div class="milestone">
+          <div class="milestone-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+          </div>
+          <div class="milestone-text">
+            <strong>Context switching patterns mapped</strong>
+            <span>Go2 sees which app-hopping is productive and which isn't</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="day-visual">
+      <div class="visual-card">
+        <div class="visual-card-header">
+          <span class="dot"></span>
+          Go2 AI Coach — Live
+        </div>
+        <div class="coaching-msg">
+          <div class="coaching-avatar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a7 7 0 017 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 017-7z"/></svg>
+          </div>
+          <div class="coaching-body">
+            "You switch between <strong>Slack, Sheets, CRM, and Gmail</strong> about <strong>23 times/hour</strong>. I've mapped a workflow that could cut that in half. Want to try it?"
+          </div>
+        </div>
+        <div style="padding: 0.5rem 0;">
+          <div class="coaching-stat">
+            <span class="coaching-stat-label">Context switches detected</span>
+            <span class="coaching-stat-value">23/hr</span>
+          </div>
+          <div class="coaching-stat">
+            <span class="coaching-stat-label">Suggested improvement</span>
+            <span class="coaching-stat-value" style="color: #10b981;">-52%</span>
+          </div>
+          <div class="coaching-stat">
+            <span class="coaching-stat-label">Tips delivered today</span>
+            <span class="coaching-stat-value">4</span>
+          </div>
+          <div class="coaching-stat">
+            <span class="coaching-stat-label">Tips accepted</span>
+            <span class="coaching-stat-value">3</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DAY 3 — WEDNESDAY -->
+<section class="day-section" data-day="2">
+  <div class="day-inner">
+    <div class="day-content">
+      <div class="day-marker">
+        <div class="day-number">3</div>
+        <div class="day-label">Wednesday</div>
+      </div>
+      <h2 class="day-title">Team patterns emerge.<br>Best methods spread.</h2>
+      <p class="day-desc">Go2 notices that 6 people do the same task 6 different ways. It identifies the fastest method and shares it with everyone. Your manager dashboard populates with the first team-level insights.</p>
+      <div class="milestones">
+        <div class="milestone">
+          <div class="milestone-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>
+          </div>
+          <div class="milestone-text">
+            <strong>Same task, 6 different methods found</strong>
+            <span>Go2 sees what individuals can't: team-wide patterns</span>
+          </div>
+        </div>
+        <div class="milestone">
+          <div class="milestone-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <div class="milestone-text">
+            <strong>Fastest method identified and shared</strong>
+            <span>Best practices spread organically through coaching</span>
+          </div>
+        </div>
+        <div class="milestone">
+          <div class="milestone-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+          </div>
+          <div class="milestone-text">
+            <strong>Manager dashboard goes live</strong>
+            <span>Team-level insights, not individual surveillance</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="day-visual">
+      <div class="visual-card">
+        <div class="visual-card-header">
+          <span class="dot"></span>
+          Team Pattern — Invoice Processing
+        </div>
+        <div class="pattern-grid">
+          <div class="pattern-person">
+            <div class="pattern-avatar">MK</div>
+            <div class="pattern-time">12 min</div>
+            <div class="pattern-label">avg / invoice</div>
+          </div>
+          <div class="pattern-person">
+            <div class="pattern-avatar">JR</div>
+            <div class="pattern-time">18 min</div>
+            <div class="pattern-label">avg / invoice</div>
+          </div>
+          <div class="pattern-person pattern-winner">
+            <div class="pattern-avatar" style="background: #bbf7d0; color: #166534;">SL</div>
+            <div class="pattern-time" style="color: #16a34a;">4 min</div>
+            <div class="pattern-label">avg / invoice</div>
+          </div>
+          <div class="pattern-person">
+            <div class="pattern-avatar">PT</div>
+            <div class="pattern-time">15 min</div>
+            <div class="pattern-label">avg / invoice</div>
+          </div>
+          <div class="pattern-person">
+            <div class="pattern-avatar">AC</div>
+            <div class="pattern-time">9 min</div>
+            <div class="pattern-label">avg / invoice</div>
+          </div>
+          <div class="pattern-person">
+            <div class="pattern-avatar">RN</div>
+            <div class="pattern-time">14 min</div>
+            <div class="pattern-label">avg / invoice</div>
+          </div>
+        </div>
+        <div class="pattern-insight">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <span><strong>SL uses a keyboard shortcut + template combo</strong> the others don't know about. Go2 is now coaching the team on SL's method.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DAY 4 — THURSDAY -->
+<section class="day-section" data-day="3">
+  <div class="day-inner">
+    <div class="day-content">
+      <div class="day-marker">
+        <div class="day-number">4</div>
+        <div class="day-label">Thursday</div>
+      </div>
+      <h2 class="day-title">Workflow maps are complete.<br>See how work really flows.</h2>
+      <p class="day-desc">For the first time, you can see exactly how work moves through your team — not how you think it moves, but how it actually moves. Plus, coaching adoption metrics show who's engaging and what's working.</p>
+      <div class="milestones">
+        <div class="milestone">
+          <div class="milestone-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div class="milestone-text">
+            <strong>Complete workflow maps ready</strong>
+            <span>Every process visualized: who does what, where, and how long</span>
+          </div>
+        </div>
+        <div class="milestone">
+          <div class="milestone-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+          </div>
+          <div class="milestone-text">
+            <strong>Coaching adoption rate visible</strong>
+            <span>See who's using suggestions and what's sticking</span>
+          </div>
+        </div>
+        <div class="milestone">
+          <div class="milestone-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          <div class="milestone-text">
+            <strong>Time sinks identified</strong>
+            <span>Go2 flags where hours are quietly disappearing</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="day-visual">
+      <div class="visual-card">
+        <div class="visual-card-header">
+          <span class="dot"></span>
+          Workflow Map — Client Onboarding
+        </div>
+        <div class="workflow-map">
+          <div class="wf-step">
+            <div class="wf-icon" style="background: #dbeafe;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </div>
+            <span class="wf-step-text">Receive client info via email</span>
+            <span class="wf-time">~8 min</span>
+          </div>
+          <div class="wf-step">
+            <div class="wf-icon" style="background: #fef3c7;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M14.5 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7.5L14.5 2z"/></svg>
+            </div>
+            <span class="wf-step-text">Manually enter into CRM</span>
+            <span class="wf-time" style="color: #ef4444; font-weight: 700;">~22 min</span>
+          </div>
+          <div class="wf-step">
+            <div class="wf-icon" style="background: #ede9fe;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+            </div>
+            <span class="wf-step-text">Schedule kickoff call</span>
+            <span class="wf-time">~5 min</span>
+          </div>
+          <div class="wf-step">
+            <div class="wf-icon" style="background: #d1fae5;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M14.5 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7.5L14.5 2z"/></svg>
+            </div>
+            <span class="wf-step-text">Create welcome packet</span>
+            <span class="wf-time">~15 min</span>
+          </div>
+          <div class="wf-step">
+            <div class="wf-icon" style="background: #fee2e2;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            </div>
+            <span class="wf-step-text">Notify team via Slack</span>
+            <span class="wf-time">~3 min</span>
+          </div>
+        </div>
+        <div class="adoption-bar">
+          <div class="adoption-label">Coaching Adoption Rate</div>
+          <div class="adoption-track">
+            <div class="adoption-fill"></div>
+          </div>
+          <div class="adoption-value">73%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DAY 5 — FRIDAY -->
+<section class="day-section" data-day="4">
+  <div class="day-inner">
+    <div class="day-content">
+      <div class="day-marker">
+        <div class="day-number">5</div>
+        <div class="day-label">Friday</div>
+      </div>
+      <h2 class="day-title">Your first weekly report.<br>Real numbers, real savings.</h2>
+      <p class="day-desc">Friday afternoon, you get a summary you've never had before: hours analyzed, coaching tips delivered, improvements measured, and — most importantly — exactly where the biggest automation opportunities are hiding.</p>
+      <div class="milestones">
+        <div class="milestone">
+          <div class="milestone-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M14.5 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div class="milestone-text">
+            <strong>Weekly summary delivered</strong>
+            <span>One-page report: hours, tips, improvements, opportunities</span>
+          </div>
+        </div>
+        <div class="milestone">
+          <div class="milestone-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </div>
+          <div class="milestone-text">
+            <strong>Automation opportunities ranked</strong>
+            <span>Top 5 tasks that can be partially or fully automated</span>
+          </div>
+        </div>
+        <div class="milestone">
+          <div class="milestone-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+          </div>
+          <div class="milestone-text">
+            <strong>ROI becomes real</strong>
+            <span>"Your team spent 87 hours on tasks Go2 can help with"</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="day-visual">
+      <div class="visual-card">
+        <div class="visual-card-header">
+          <span class="dot"></span>
+          Weekly Summary — Week 1
+        </div>
+        <div class="summary-grid">
+          <div class="summary-stat">
+            <div class="summary-stat-num">1,240</div>
+            <div class="summary-stat-label">Hours analyzed</div>
+          </div>
+          <div class="summary-stat">
+            <div class="summary-stat-num">156</div>
+            <div class="summary-stat-label">Coaching tips delivered</div>
+          </div>
+          <div class="summary-stat">
+            <div class="summary-stat-num">73%</div>
+            <div class="summary-stat-label">Tips adopted</div>
+          </div>
+          <div class="summary-stat">
+            <div class="summary-stat-num">87</div>
+            <div class="summary-stat-label">Hours recoverable</div>
+          </div>
+        </div>
+        <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; margin-top: 0.5rem;">Top Automation Opportunities</div>
+        <div class="top-opp">
+          <span class="top-opp-name">Manual data entry (CRM)</span>
+          <span class="top-opp-hours">31 hrs/wk</span>
+        </div>
+        <div class="top-opp">
+          <span class="top-opp-name">Report formatting</span>
+          <span class="top-opp-hours">19 hrs/wk</span>
+        </div>
+        <div class="top-opp">
+          <span class="top-opp-name">Status update meetings</span>
+          <span class="top-opp-hours">16 hrs/wk</span>
+        </div>
+        <div class="top-opp">
+          <span class="top-opp-name">Email template creation</span>
+          <span class="top-opp-hours">12 hrs/wk</span>
+        </div>
+        <div class="top-opp">
+          <span class="top-opp-name">File organization</span>
+          <span class="top-opp-hours">9 hrs/wk</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<!-- Week 2+ -->
+<section class="week2-section">
+  <div class="week2-inner">
+    <h2>Week 2+: The compounding effect</h2>
+    <p>Every day Go2 gets smarter. It learns your team's rhythms, discovers new patterns, and delivers increasingly precise coaching. The improvements compound — what starts as minutes saved becomes hours, then days.</p>
+
+    <div class="compound-graph">
+      <svg viewBox="0 0 400 200" fill="none">
+        <!-- Grid -->
+        <line x1="40" y1="20" x2="40" y2="170" stroke="#e2e8f0" stroke-width="1"/>
+        <line x1="40" y1="170" x2="380" y2="170" stroke="#e2e8f0" stroke-width="1"/>
+        <line x1="40" y1="132.5" x2="380" y2="132.5" stroke="#f1f5f9" stroke-width="1"/>
+        <line x1="40" y1="95" x2="380" y2="95" stroke="#f1f5f9" stroke-width="1"/>
+        <line x1="40" y1="57.5" x2="380" y2="57.5" stroke="#f1f5f9" stroke-width="1"/>
+        <line x1="40" y1="20" x2="380" y2="20" stroke="#f1f5f9" stroke-width="1"/>
+
+        <!-- Y axis labels -->
+        <text x="35" y="173" text-anchor="end" font-size="10" fill="#94a3b8">0</text>
+        <text x="35" y="135" text-anchor="end" font-size="10" fill="#94a3b8">25%</text>
+        <text x="35" y="98" text-anchor="end" font-size="10" fill="#94a3b8">50%</text>
+        <text x="35" y="60" text-anchor="end" font-size="10" fill="#94a3b8">75%</text>
+        <text x="35" y="23" text-anchor="end" font-size="10" fill="#94a3b8">100%</text>
+
+        <!-- X axis labels -->
+        <text x="82" y="188" text-anchor="middle" font-size="10" fill="#94a3b8">Wk 1</text>
+        <text x="150" y="188" text-anchor="middle" font-size="10" fill="#94a3b8">Wk 2</text>
+        <text x="218" y="188" text-anchor="middle" font-size="10" fill="#94a3b8">Wk 4</text>
+        <text x="286" y="188" text-anchor="middle" font-size="10" fill="#94a3b8">Wk 8</text>
+        <text x="354" y="188" text-anchor="middle" font-size="10" fill="#94a3b8">Wk 12</text>
+
+        <!-- Area fill -->
+        <path d="M82 158 L150 138 L218 105 L286 65 L354 35 L354 170 L82 170 Z" fill="url(#areaGrad)" opacity="0.15"/>
+
+        <!-- Line -->
+        <path d="M82 158 L150 138 L218 105 L286 65 L354 35" stroke="url(#lineGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+        <!-- Dots -->
+        <circle cx="82" cy="158" r="5" fill="#3b82f6" stroke="white" stroke-width="2"/>
+        <circle cx="150" cy="138" r="5" fill="#6366f1" stroke="white" stroke-width="2"/>
+        <circle cx="218" cy="105" r="5" fill="#8b5cf6" stroke="white" stroke-width="2"/>
+        <circle cx="286" cy="65" r="5" fill="#a855f7" stroke="white" stroke-width="2"/>
+        <circle cx="354" cy="35" r="5" fill="#c026d3" stroke="white" stroke-width="2"/>
+
+        <!-- Labels -->
+        <text x="82" y="150" text-anchor="middle" font-size="9" font-weight="700" fill="#3b82f6">8%</text>
+        <text x="150" y="130" text-anchor="middle" font-size="9" font-weight="700" fill="#6366f1">21%</text>
+        <text x="218" y="97" text-anchor="middle" font-size="9" font-weight="700" fill="#8b5cf6">43%</text>
+        <text x="286" y="57" text-anchor="middle" font-size="9" font-weight="700" fill="#a855f7">70%</text>
+        <text x="354" y="27" text-anchor="middle" font-size="9" font-weight="700" fill="#c026d3">90%</text>
+
+        <defs>
+          <linearGradient id="lineGrad" x1="82" y1="0" x2="354" y2="0" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#3b82f6"/>
+            <stop offset="1" stop-color="#c026d3"/>
+          </linearGradient>
+          <linearGradient id="areaGrad" x1="82" y1="0" x2="354" y2="0" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#3b82f6"/>
+            <stop offset="1" stop-color="#c026d3"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Chart label -->
+        <text x="210" y="12" text-anchor="middle" font-size="10" font-weight="600" fill="#64748b">Efficiency Improvement Over Time</text>
+      </svg>
+    </div>
+
+    <div class="compound-stats">
+      <div class="compound-stat">
+        <h3>3x</h3>
+        <p>More coaching tips adopted<br>by week 4</p>
+      </div>
+      <div class="compound-stat">
+        <h3>40%</h3>
+        <p>Average reduction in<br>manual busywork</p>
+      </div>
+      <div class="compound-stat">
+        <h3>~1M</h3>
+        <p>Workers' data training<br>Go2's AI models</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section" id="cta">
+  <div class="cta-inner">
+    <h2>Start your first week</h2>
+    <p>Five minutes to install. Five days to see results. No setup calls, no onboarding projects, no IT tickets. Just a smarter team by Friday.</p>
+    <a href="#" class="cta-btn">
+      Start your first week
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+    </a>
+    <p class="cta-note">Lightweight desktop agent. Works with every app your team already uses.</p>
+  </div>
+</section>
+
+<script>
+// Scroll-based animations
+const daySections = document.querySelectorAll('.day-section');
+const progressDots = document.querySelectorAll('.progress-dot');
+const progressLines = document.querySelectorAll('.progress-line');
+const navDots = document.querySelectorAll('.nav-day-dot');
+const nav = document.getElementById('nav');
+const heroWeek = document.getElementById('heroWeek');
+const heroDays = heroWeek.querySelectorAll('.hero-day');
+
+let heroAnimated = false;
+
+function updateOnScroll() {
+  const scrollY = window.scrollY;
+  const windowH = window.innerHeight;
+
+  // Show nav after hero
+  if (scrollY > windowH * 0.6) {
+    nav.classList.add('show');
+  } else {
+    nav.classList.remove('show');
+  }
+
+  // Hero day animation
+  if (!heroAnimated && scrollY < windowH * 0.3) {
+    heroAnimated = true;
+    heroDays.forEach((d, i) => {
+      setTimeout(() => d.classList.add('active'), 200 + i * 150);
+    });
+  }
+
+  // Day sections visibility & progress
+  let activeIndex = -1;
+  daySections.forEach((section, i) => {
+    const rect = section.getBoundingClientRect();
+    const inView = rect.top < windowH * 0.65 && rect.bottom > windowH * 0.35;
+    if (inView) {
+      section.classList.add('visible');
+      activeIndex = i;
+    }
+  });
+
+  // Update progress dots and nav dots
+  progressDots.forEach((dot, i) => {
+    dot.classList.toggle('active', i <= activeIndex);
+  });
+  progressLines.forEach((line, i) => {
+    line.classList.toggle('filled', i < activeIndex);
+  });
+  navDots.forEach((dot, i) => {
+    dot.classList.toggle('active', i === activeIndex);
+  });
+}
+
+function scrollToDay(index) {
+  const section = daySections[index];
+  if (section) {
+    section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+// Animate counters when Day 5 visual comes into view
+let countersAnimated = false;
+function animateCounters() {
+  if (countersAnimated) return;
+  const day5 = daySections[4];
+  if (!day5) return;
+  const rect = day5.getBoundingClientRect();
+  if (rect.top < window.innerHeight * 0.7) {
+    countersAnimated = true;
+    const nums = day5.querySelectorAll('.summary-stat-num');
+    const targets = [1240, 156, 73, 87];
+    const suffixes = ['', '', '%', ''];
+    nums.forEach((el, i) => {
+      let start = 0;
+      const end = targets[i];
+      const duration = 1200;
+      const startTime = performance.now();
+      function step(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.round(start + (end - start) * eased);
+        el.textContent = current.toLocaleString() + suffixes[i];
+        if (progress < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    });
+  }
+}
+
+window.addEventListener('scroll', () => {
+  requestAnimationFrame(() => {
+    updateOnScroll();
+    animateCounters();
+  });
+}, { passive: true });
+
+// Initial run
+updateOnScroll();
+
+// Hero animation on load
+setTimeout(() => {
+  heroDays.forEach((d, i) => {
+    setTimeout(() => d.classList.add('active'), 300 + i * 200);
+  });
+}, 500);
+</script>
+
+</body>
+</html>
