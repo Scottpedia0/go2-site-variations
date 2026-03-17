@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The AI Gap</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #050510;
+    color: #e8e8f0;
+    overflow-x: hidden;
+  }
+
+  /* Nav */
+  .nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    padding: 1.5rem 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(180deg, rgba(5,5,16,0.9) 0%, transparent 100%);
+  }
+
+  .nav .logo {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: white;
+    text-decoration: none;
+    letter-spacing: -0.03em;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 2rem;
+  }
+
+  .nav-links a {
+    color: rgba(255,255,255,0.5);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: white; }
+
+  /* Hero with canyon */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    padding: 2rem;
+  }
+
+  /* Starfield background */
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.4), transparent),
+      radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.3), transparent),
+      radial-gradient(1px 1px at 50% 10%, rgba(255,255,255,0.5), transparent),
+      radial-gradient(1px 1px at 70% 80%, rgba(255,255,255,0.2), transparent),
+      radial-gradient(1px 1px at 90% 30%, rgba(255,255,255,0.4), transparent),
+      radial-gradient(1px 1px at 15% 90%, rgba(255,255,255,0.3), transparent),
+      radial-gradient(1px 1px at 85% 50%, rgba(255,255,255,0.2), transparent),
+      radial-gradient(1px 1px at 45% 45%, rgba(255,255,255,0.4), transparent),
+      radial-gradient(1px 1px at 65% 15%, rgba(255,255,255,0.3), transparent),
+      radial-gradient(1px 1px at 25% 75%, rgba(255,255,255,0.2), transparent);
+    pointer-events: none;
+  }
+
+  .hero-label {
+    font-size: 0.8rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    margin-bottom: 2rem;
+  }
+
+  .hero h1 {
+    font-size: clamp(3rem, 8vw, 8rem);
+    font-weight: 900;
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    margin-bottom: 1rem;
+    position: relative;
+  }
+
+  .hero h1 .gap-text {
+    display: inline-block;
+    background: linear-gradient(180deg, #fff 0%, #ff4444 50%, #ff0000 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    font-size: 1.3rem;
+    color: rgba(255,255,255,0.5);
+    max-width: 600px;
+    line-height: 1.7;
+    margin-bottom: 3rem;
+  }
+
+  /* The Canyon - CSS Art */
+  .canyon-scene {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+    padding: 6rem 2rem;
+  }
+
+  .canyon {
+    position: relative;
+    height: 500px;
+    display: flex;
+    align-items: stretch;
+  }
+
+  .cliff {
+    flex: 1;
+    position: relative;
+  }
+
+  .cliff-left {
+    background: linear-gradient(135deg, #1a1a3e 0%, #12122a 60%, transparent 60%);
+    clip-path: polygon(0 0, 100% 0, 65% 100%, 0 100%);
+    z-index: 2;
+  }
+
+  .cliff-left::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 40%;
+    background: linear-gradient(90deg, transparent, rgba(255,50,50,0.05));
+  }
+
+  .cliff-right {
+    background: linear-gradient(225deg, #1a1a3e 0%, #12122a 60%, transparent 60%);
+    clip-path: polygon(35% 0, 100% 0, 100% 100%, 0 100%);
+    z-index: 2;
+  }
+
+  .cliff-right::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 40%;
+    background: linear-gradient(270deg, transparent, rgba(255,50,50,0.05));
+  }
+
+  /* The gap / chasm */
+  .chasm {
+    position: absolute;
+    left: 30%;
+    right: 30%;
+    top: 0;
+    bottom: 0;
+    z-index: 1;
+  }
+
+  .chasm-glow {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 100%;
+    background: linear-gradient(180deg,
+      transparent 0%,
+      rgba(255,30,30,0.02) 40%,
+      rgba(255,30,30,0.08) 70%,
+      rgba(255,50,0,0.15) 90%,
+      rgba(255,80,0,0.2) 100%
+    );
+  }
+
+  /* Fog in the chasm */
+  .chasm-fog {
+    position: absolute;
+    bottom: 20%;
+    left: -20%;
+    right: -20%;
+    height: 80px;
+    background: linear-gradient(90deg, transparent, rgba(255,100,50,0.06), transparent);
+    filter: blur(20px);
+    animation: drift 8s ease-in-out infinite alternate;
+  }
+
+  @keyframes drift {
+    from { transform: translateX(-20px); opacity: 0.5; }
+    to { transform: translateX(20px); opacity: 1; }
+  }
+
+  /* Cliff labels */
+  .cliff-label {
+    position: absolute;
+    z-index: 10;
+    text-align: center;
+  }
+
+  .cliff-label.left {
+    top: 15%;
+    left: 8%;
+  }
+
+  .cliff-label.right {
+    top: 15%;
+    right: 8%;
+  }
+
+  .cliff-label h3 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+
+  .cliff-label p {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.4);
+  }
+
+  .cliff-label.left h3 { color: #ff6b6b; }
+  .cliff-label.right h3 { color: #4ecdc4; }
+
+  /* Stats floating in the gap */
+  .floating-stats {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 5;
+  }
+
+  .float-stat {
+    position: absolute;
+    text-align: center;
+    animation: float 4s ease-in-out infinite;
+  }
+
+  .float-stat:nth-child(1) { top: 25%; left: 50%; transform: translateX(-50%); animation-delay: 0s; }
+  .float-stat:nth-child(2) { top: 45%; left: 40%; transform: translateX(-50%); animation-delay: 1s; }
+  .float-stat:nth-child(3) { top: 65%; left: 55%; transform: translateX(-50%); animation-delay: 2s; }
+  .float-stat:nth-child(4) { top: 80%; left: 48%; transform: translateX(-50%); animation-delay: 0.5s; }
+
+  .float-stat .number {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: rgba(255,100,100,0.8);
+    text-shadow: 0 0 30px rgba(255,50,50,0.3);
+  }
+
+  .float-stat .desc {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-10px); }
+  }
+
+  /* The bridge section */
+  .bridge-section {
+    position: relative;
+    padding: 6rem 2rem;
+    text-align: center;
+    background: linear-gradient(180deg, #050510 0%, #0a0a20 50%, #050510 100%);
+  }
+
+  .bridge-section h2 {
+    font-size: clamp(2rem, 5vw, 4rem);
+    font-weight: 800;
+    margin-bottom: 1rem;
+    letter-spacing: -0.03em;
+  }
+
+  .bridge-section h2 .bridge-accent {
+    background: linear-gradient(135deg, #4ecdc4, #45b7aa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .bridge-section .bridge-sub {
+    font-size: 1.15rem;
+    color: rgba(255,255,255,0.5);
+    max-width: 650px;
+    margin: 0 auto 4rem;
+    line-height: 1.7;
+  }
+
+  /* Bridge visual */
+  .bridge-visual {
+    max-width: 900px;
+    margin: 0 auto 4rem;
+    position: relative;
+    height: 200px;
+  }
+
+  .bridge-svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Bridge pillars */
+  .pillar-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .pillar-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    text-align: left;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .pillar-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #4ecdc4, #45b7aa);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .pillar-card:hover {
+    border-color: rgba(78,205,196,0.2);
+    background: rgba(78,205,196,0.03);
+    transform: translateY(-4px);
+  }
+
+  .pillar-card:hover::before { opacity: 1; }
+
+  .pillar-card .pillar-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(78,205,196,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+  }
+
+  .pillar-card h3 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+
+  .pillar-card p {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.4);
+    line-height: 1.6;
+  }
+
+  /* Waze analogy */
+  .waze-section {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 6rem 2rem;
+    text-align: center;
+  }
+
+  .waze-section h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+
+  .waze-section p {
+    font-size: 1.1rem;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.8;
+    margin-bottom: 2rem;
+  }
+
+  .waze-diagram {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin: 3rem 0;
+  }
+
+  .waze-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .waze-step .circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    border: 2px solid rgba(78,205,196,0.3);
+    background: rgba(78,205,196,0.05);
+  }
+
+  .waze-step span {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.4);
+  }
+
+  .waze-arrow {
+    font-size: 1.5rem;
+    color: rgba(78,205,196,0.3);
+  }
+
+  /* Stats section */
+  .stats-section {
+    padding: 4rem 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+  }
+
+  .stat-block {
+    text-align: center;
+    padding: 2rem;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
+  }
+
+  .stat-block .big-num {
+    font-size: 3rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #4ecdc4, #fff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .stat-block .big-label {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.35);
+    margin-top: 0.5rem;
+  }
+
+  /* CTA */
+  .final-cta {
+    text-align: center;
+    padding: 8rem 2rem;
+    position: relative;
+  }
+
+  .final-cta::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at center bottom, rgba(78,205,196,0.08), transparent 60%);
+    pointer-events: none;
+  }
+
+  .final-cta h2 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    margin-bottom: 1rem;
+    letter-spacing: -0.03em;
+    position: relative;
+  }
+
+  .final-cta p {
+    font-size: 1.1rem;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 2.5rem;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+    position: relative;
+  }
+
+  .cta-btn {
+    display: inline-block;
+    padding: 1.1rem 3rem;
+    background: linear-gradient(135deg, #4ecdc4, #45b7aa);
+    color: #050510;
+    text-decoration: none;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 1.05rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+  }
+
+  .cta-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 40px rgba(78,205,196,0.3);
+  }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 3rem 2rem;
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.2);
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+
+  @media (max-width: 768px) {
+    .canyon { height: 350px; }
+    .cliff-label h3 { font-size: 1.1rem; }
+    .float-stat .number { font-size: 1.8rem; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .pillar-cards { grid-template-columns: 1fr; }
+    .nav { padding: 1rem 1.5rem; }
+    .nav-links { gap: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="#" class="logo">Go2</a>
+  <div class="nav-links">
+    <a href="#">Product</a>
+    <a href="#">About</a>
+    <a href="#">Contact</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-label">The uncomfortable truth about enterprise AI</div>
+  <h1><span class="gap-text">The AI Gap</span></h1>
+  <p class="hero-sub">Between what AI promises and what AI delivers lies a chasm. 95% of companies fall in. Go2 is the bridge.</p>
+</section>
+
+<!-- Canyon visualization -->
+<div class="canyon-scene">
+  <div class="canyon">
+    <!-- Left cliff: AI Promise -->
+    <div class="cliff cliff-left"></div>
+
+    <!-- The chasm -->
+    <div class="chasm">
+      <div class="chasm-glow"></div>
+      <div class="chasm-fog"></div>
+
+      <!-- Stats floating in the void -->
+      <div class="floating-stats">
+        <div class="float-stat">
+          <div class="number">95%</div>
+          <div class="desc">AI pilots fail</div>
+        </div>
+        <div class="float-stat">
+          <div class="number">$2B+</div>
+          <div class="desc">Wasted annually</div>
+        </div>
+        <div class="float-stat">
+          <div class="number">5%</div>
+          <div class="desc">Create real value</div>
+        </div>
+        <div class="float-stat">
+          <div class="number">0</div>
+          <div class="desc">Work context given to AI</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right cliff: AI Reality -->
+    <div class="cliff cliff-right"></div>
+
+    <!-- Labels -->
+    <div class="cliff-label left">
+      <h3>AI Promise</h3>
+      <p>"Transform everything"</p>
+    </div>
+    <div class="cliff-label right">
+      <h3>AI Reality</h3>
+      <p>"Where do we even start?"</p>
+    </div>
+  </div>
+</div>
+
+<!-- Bridge section -->
+<section class="bridge-section">
+  <h2>Go2 is <span class="bridge-accent">the bridge</span></h2>
+  <p class="bridge-sub">AI fails because it doesn't know how your company works. Go2 captures that intelligence through Cowork.ai, then makes every AI tool smarter with it. We don't replace your AI. We make it work.</p>
+
+  <!-- Bridge visual - simple SVG -->
+  <div class="bridge-visual">
+    <svg class="bridge-svg" viewBox="0 0 900 200" preserveAspectRatio="xMidYMid meet">
+      <!-- Left cliff -->
+      <rect x="0" y="80" width="250" height="120" fill="#1a1a3e" rx="4"/>
+      <text x="125" y="130" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="14" font-family="Inter">AI POTENTIAL</text>
+
+      <!-- Right cliff -->
+      <rect x="650" y="80" width="250" height="120" fill="#1a1a3e" rx="4"/>
+      <text x="775" y="130" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="14" font-family="Inter">AI RESULTS</text>
+
+      <!-- Bridge -->
+      <rect x="240" y="90" width="420" height="16" rx="4" fill="url(#bridgeGrad)" opacity="0.9"/>
+      <text x="450" y="82" text-anchor="middle" fill="#4ecdc4" font-size="16" font-weight="700" font-family="Inter">GO2</text>
+
+      <!-- Support pillars -->
+      <line x1="350" y1="106" x2="350" y2="180" stroke="rgba(78,205,196,0.2)" stroke-width="2"/>
+      <line x1="450" y1="106" x2="450" y2="200" stroke="rgba(78,205,196,0.3)" stroke-width="2"/>
+      <line x1="550" y1="106" x2="550" y2="180" stroke="rgba(78,205,196,0.2)" stroke-width="2"/>
+
+      <!-- Pillar labels -->
+      <text x="350" y="170" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="9" font-family="Inter">CAPTURE</text>
+      <text x="450" y="195" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="9" font-family="Inter">INTELLIGENCE</text>
+      <text x="550" y="170" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="9" font-family="Inter">ACTIVATE</text>
+
+      <defs>
+        <linearGradient id="bridgeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color:#4ecdc4;stop-opacity:0.3"/>
+          <stop offset="50%" style="stop-color:#4ecdc4;stop-opacity:1"/>
+          <stop offset="100%" style="stop-color:#4ecdc4;stop-opacity:0.3"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+
+  <div class="pillar-cards">
+    <div class="pillar-card">
+      <div class="pillar-icon">&#x1f4bb;</div>
+      <h3>Cowork.ai Desktop Agent</h3>
+      <p>A desktop agent for ALL workers that captures how work actually happens. Not surveillance. Real-time coaching that workers love. 89% satisfaction rate.</p>
+    </div>
+    <div class="pillar-card">
+      <div class="pillar-icon">&#x1f9e0;</div>
+      <h3>Work Intelligence Graph</h3>
+      <p>2M+ worker profiles. Process maps discovered automatically. Tribal knowledge captured. The data your AI has been missing.</p>
+    </div>
+    <div class="pillar-card">
+      <div class="pillar-icon">&#x1f517;</div>
+      <h3>AI Sidecar</h3>
+      <p>We don't replace Claude or ChatGPT. We sidecar them with work context. Your existing AI tools become 10x more effective overnight.</p>
+    </div>
+    <div class="pillar-card">
+      <div class="pillar-icon">&#x1f310;</div>
+      <h3>Open Source Training</h3>
+      <p>Open source agent training tools. Build AI agents that understand how your company actually works. No black box. No lock-in.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Waze analogy -->
+<section class="waze-section">
+  <h2>The Waze Model for Work</h2>
+  <p>Every Waze driver contributes a little data. In return, everyone gets smarter routing. Go2 applies the same model to work. Workers contribute. Everyone benefits. That's why they love it.</p>
+
+  <div class="waze-diagram">
+    <div class="waze-step">
+      <div class="circle">&#x1f464;</div>
+      <span>Workers contribute data</span>
+    </div>
+    <div class="waze-arrow">&#x2192;</div>
+    <div class="waze-step">
+      <div class="circle">&#x1f9e9;</div>
+      <span>Go2 builds intelligence</span>
+    </div>
+    <div class="waze-arrow">&#x2192;</div>
+    <div class="waze-step">
+      <div class="circle">&#x2728;</div>
+      <span>Everyone gets smarter</span>
+    </div>
+  </div>
+</section>
+
+<!-- Stats -->
+<section class="stats-section">
+  <div class="stats-row">
+    <div class="stat-block">
+      <div class="big-num">$60M+</div>
+      <div class="big-label">Revenue</div>
+    </div>
+    <div class="stat-block">
+      <div class="big-num">2M+</div>
+      <div class="big-label">Worker profiles</div>
+    </div>
+    <div class="stat-block">
+      <div class="big-num">89%</div>
+      <div class="big-label">Worker satisfaction</div>
+    </div>
+    <div class="stat-block">
+      <div class="big-num">40+</div>
+      <div class="big-label">Hrs/week automatable</div>
+    </div>
+  </div>
+</section>
+
+<!-- Final CTA -->
+<section class="final-cta">
+  <h2>Stop falling into the gap.</h2>
+  <p>Your AI doesn't need more features. It needs to understand how your company actually works.</p>
+  <a href="#" class="cta-btn">Bridge the Gap</a>
+</section>
+
+<footer>
+  &copy; 2025 Go2. The infrastructure that makes AI work.
+</footer>
+
+</body>
+</html>

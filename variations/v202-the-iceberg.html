@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 - The Iceberg</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --deep-ocean: #0A1628;
+    --ocean-mid: #0F2847;
+    --ocean-light: #1A3A5C;
+    --surface: #2E6B9E;
+    --ice-white: #E8F4FD;
+    --ice-blue: #B8D8EB;
+    --foam: #F0F8FF;
+    --glow: #4ECDC4;
+    --glow-dim: rgba(78, 205, 196, 0.3);
+    --warning: #FF6B6B;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--deep-ocean);
+    color: var(--ice-white);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Nav */
+  nav {
+    position: fixed; top: 0; width: 100%; z-index: 100;
+    padding: 1.5rem 3rem;
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(10, 22, 40, 0.85);
+    backdrop-filter: blur(15px);
+    border-bottom: 1px solid rgba(78, 205, 196, 0.1);
+  }
+  .logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.5rem; font-weight: 700;
+    background: linear-gradient(135deg, var(--glow), var(--ice-blue));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .nav-right { display: flex; gap: 2rem; align-items: center; }
+  .nav-right a {
+    color: var(--ice-blue); text-decoration: none;
+    font-size: 0.85rem; font-weight: 400; opacity: 0.8;
+    transition: opacity 0.3s;
+  }
+  .nav-right a:hover { opacity: 1; }
+  .nav-btn {
+    padding: 0.6rem 1.8rem; border-radius: 6px;
+    background: var(--glow); color: var(--deep-ocean);
+    font-weight: 600; font-size: 0.8rem;
+    text-decoration: none; transition: all 0.3s;
+  }
+  .nav-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px var(--glow-dim); }
+
+  /* Hero / Waterline */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  /* Water surface effect */
+  .waterline {
+    position: absolute; top: 50%; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(78, 205, 196, 0.1) 10%,
+      rgba(78, 205, 196, 0.4) 30%,
+      rgba(78, 205, 196, 0.6) 50%,
+      rgba(78, 205, 196, 0.4) 70%,
+      rgba(78, 205, 196, 0.1) 90%,
+      transparent 100%
+    );
+    z-index: 2;
+  }
+  .waterline::before {
+    content: '';
+    position: absolute; top: -60px; left: 0; right: 0;
+    height: 60px;
+    background: linear-gradient(to bottom, transparent, rgba(46, 107, 158, 0.08));
+  }
+  .waterline::after {
+    content: '';
+    position: absolute; bottom: -80px; left: 0; right: 0;
+    height: 80px;
+    background: linear-gradient(to bottom, rgba(15, 40, 71, 0.3), transparent);
+  }
+
+  /* Wave animation */
+  .wave-container {
+    position: absolute; top: calc(50% - 30px); left: 0; right: 0;
+    height: 60px; overflow: hidden; z-index: 1;
+  }
+  .wave {
+    position: absolute; width: 200%; height: 100%;
+    animation: wave 8s linear infinite;
+    opacity: 0.15;
+  }
+  .wave svg { width: 50%; height: 100%; }
+  @keyframes wave {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* Above water */
+  .above-water {
+    position: relative; z-index: 3;
+    padding-bottom: 12vh;
+  }
+  .above-label {
+    font-size: 0.7rem; letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--glow); margin-bottom: 2rem; opacity: 0.7;
+  }
+  .above-water h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-weight: 300; line-height: 1.3;
+    max-width: 700px; margin: 0 auto 1.5rem;
+  }
+  .above-items {
+    display: flex; gap: 2rem; justify-content: center;
+    flex-wrap: wrap; margin-top: 2rem;
+  }
+  .above-item {
+    padding: 0.8rem 1.5rem; border-radius: 100px;
+    background: rgba(46, 107, 158, 0.3);
+    border: 1px solid rgba(78, 205, 196, 0.15);
+    font-size: 0.85rem; color: var(--ice-blue);
+  }
+
+  /* Below water */
+  .below-water {
+    position: relative; z-index: 3;
+    padding-top: 12vh;
+  }
+  .below-label {
+    font-size: 0.7rem; letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--warning); margin-bottom: 1.5rem; opacity: 0.8;
+  }
+  .below-water p {
+    font-size: 1.1rem; color: rgba(232, 244, 253, 0.6);
+    max-width: 600px; margin: 0 auto;
+  }
+  .below-items {
+    display: flex; gap: 1.5rem; justify-content: center;
+    flex-wrap: wrap; margin-top: 2rem;
+  }
+  .below-item {
+    padding: 0.8rem 1.5rem; border-radius: 100px;
+    background: rgba(255, 107, 107, 0.08);
+    border: 1px solid rgba(255, 107, 107, 0.2);
+    font-size: 0.85rem; color: rgba(255, 107, 107, 0.8);
+  }
+
+  /* Iceberg Visual Section */
+  .iceberg-section {
+    padding: 8rem 3rem;
+    position: relative;
+  }
+  .iceberg-visual {
+    max-width: 1000px; margin: 0 auto;
+    position: relative;
+  }
+
+  /* CSS Iceberg */
+  .iceberg-shape {
+    width: 100%; max-width: 600px; margin: 0 auto;
+    position: relative;
+  }
+  .ice-above {
+    width: 200px; height: 120px; margin: 0 auto;
+    background: linear-gradient(180deg, var(--ice-white) 0%, var(--ice-blue) 100%);
+    clip-path: polygon(20% 100%, 50% 0%, 80% 100%);
+    position: relative; z-index: 2;
+    opacity: 0.9;
+  }
+  .ice-waterline-bar {
+    width: 100%; height: 3px; margin: 0 auto;
+    background: linear-gradient(90deg, transparent, var(--glow), transparent);
+    position: relative; z-index: 3;
+  }
+  .ice-below {
+    width: 500px; max-width: 90vw; height: 400px; margin: 0 auto;
+    background: linear-gradient(180deg, rgba(26, 58, 92, 0.8) 0%, rgba(15, 40, 71, 0.6) 40%, rgba(10, 22, 40, 0.4) 100%);
+    clip-path: polygon(5% 0%, 95% 0%, 80% 30%, 90% 60%, 70% 85%, 50% 100%, 30% 85%, 10% 60%, 20% 30%);
+    position: relative; z-index: 1;
+    border: 1px solid rgba(78, 205, 196, 0.1);
+  }
+
+  /* Iceberg labels */
+  .iceberg-labels {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+  }
+  .ib-label {
+    position: absolute; font-size: 0.8rem;
+    padding: 0.4rem 1rem; border-radius: 4px;
+    white-space: nowrap;
+    animation: labelPulse 4s ease-in-out infinite;
+  }
+  .ib-label.above {
+    color: var(--deep-ocean); background: rgba(232, 244, 253, 0.9);
+    font-weight: 500;
+  }
+  .ib-label.below {
+    color: var(--glow); background: rgba(78, 205, 196, 0.1);
+    border: 1px solid rgba(78, 205, 196, 0.2);
+  }
+  @keyframes labelPulse {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; }
+  }
+
+  /* Submarine / Go2 */
+  .submarine-section {
+    padding: 8rem 3rem; text-align: center;
+    background: linear-gradient(180deg, var(--deep-ocean) 0%, #061220 100%);
+  }
+  .submarine-section h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 400; margin-bottom: 1.5rem;
+    line-height: 1.3;
+  }
+  .submarine-section h2 span { color: var(--glow); }
+  .submarine-section > p {
+    color: rgba(232, 244, 253, 0.6);
+    max-width: 650px; margin: 0 auto 4rem;
+    font-size: 1.05rem; line-height: 1.8;
+  }
+
+  /* Deep layers */
+  .depth-layers {
+    max-width: 800px; margin: 0 auto;
+    display: flex; flex-direction: column; gap: 0;
+  }
+  .depth-layer {
+    display: grid; grid-template-columns: 100px 1fr;
+    gap: 2rem; align-items: center;
+    padding: 2.5rem 2rem;
+    border-left: 2px solid rgba(78, 205, 196, 0.1);
+    position: relative;
+    transition: all 0.4s;
+  }
+  .depth-layer:hover {
+    background: rgba(78, 205, 196, 0.03);
+    border-left-color: var(--glow);
+  }
+  .depth-layer::before {
+    content: '';
+    position: absolute; left: -6px; top: 50%;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--deep-ocean);
+    border: 2px solid rgba(78, 205, 196, 0.3);
+    transition: all 0.3s;
+  }
+  .depth-layer:hover::before {
+    border-color: var(--glow);
+    box-shadow: 0 0 12px var(--glow-dim);
+  }
+  .depth-meter {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.7rem; letter-spacing: 0.15em;
+    color: var(--glow); opacity: 0.6;
+    text-transform: uppercase;
+  }
+  .depth-content h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.2rem; font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+  .depth-content p {
+    font-size: 0.9rem; color: rgba(232, 244, 253, 0.5);
+    line-height: 1.7;
+  }
+
+  /* Stats */
+  .deep-stats {
+    padding: 6rem 3rem;
+    background: #061220;
+  }
+  .deep-stats-grid {
+    max-width: 1000px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+  }
+  .deep-stat {
+    text-align: center; padding: 2rem;
+    border: 1px solid rgba(78, 205, 196, 0.08);
+    border-radius: 12px;
+    background: rgba(78, 205, 196, 0.02);
+    transition: all 0.4s;
+  }
+  .deep-stat:hover {
+    border-color: rgba(78, 205, 196, 0.2);
+    transform: translateY(-4px);
+  }
+  .deep-stat .val {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.5rem; font-weight: 700;
+    color: var(--glow); display: block;
+    margin-bottom: 0.5rem;
+  }
+  .deep-stat .desc {
+    font-size: 0.8rem; color: rgba(232, 244, 253, 0.4);
+    line-height: 1.5;
+  }
+
+  /* Waze analogy */
+  .waze-section {
+    padding: 8rem 3rem; text-align: center;
+    background: linear-gradient(180deg, #061220 0%, var(--deep-ocean) 100%);
+  }
+  .waze-section h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+    font-weight: 400; max-width: 700px;
+    margin: 0 auto 1.5rem; line-height: 1.35;
+  }
+  .waze-section p {
+    color: rgba(232, 244, 253, 0.5);
+    max-width: 550px; margin: 0 auto 1rem;
+    font-size: 1rem; line-height: 1.8;
+  }
+
+  /* CTA */
+  .cta-section {
+    padding: 8rem 3rem; text-align: center;
+    background: var(--deep-ocean);
+    border-top: 1px solid rgba(78, 205, 196, 0.1);
+  }
+  .cta-section h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 400; margin-bottom: 1.5rem;
+  }
+  .cta-section p {
+    color: rgba(232, 244, 253, 0.5);
+    margin-bottom: 2.5rem; font-size: 1rem;
+  }
+  .cta-primary {
+    display: inline-block; padding: 1rem 3rem;
+    background: var(--glow); color: var(--deep-ocean);
+    font-weight: 600; font-size: 0.9rem;
+    text-decoration: none; border-radius: 8px;
+    transition: all 0.3s;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .cta-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px var(--glow-dim);
+  }
+
+  footer {
+    padding: 3rem; text-align: center;
+    font-size: 0.75rem; color: rgba(232, 244, 253, 0.25);
+    border-top: 1px solid rgba(78, 205, 196, 0.05);
+  }
+
+  /* Bubbles */
+  .bubble {
+    position: absolute; border-radius: 50%;
+    background: rgba(78, 205, 196, 0.05);
+    border: 1px solid rgba(78, 205, 196, 0.08);
+    animation: rise 10s ease-in infinite;
+  }
+  @keyframes rise {
+    0% { opacity: 0; transform: translateY(0) scale(1); }
+    20% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-200px) scale(0.5); }
+  }
+
+  /* Fade in */
+  .reveal {
+    opacity: 0; transform: translateY(40px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 768px) {
+    .above-items, .below-items { flex-direction: column; align-items: center; }
+    .deep-stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .depth-layer { grid-template-columns: 1fr; gap: 0.5rem; }
+    .ice-below { width: 300px; height: 250px; }
+    .ice-above { width: 140px; height: 80px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">GO2</div>
+  <div class="nav-right">
+    <a href="#depth">Go Deep</a>
+    <a href="#stats">Proof</a>
+    <a href="#cta" class="nav-btn">Dive In</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <!-- Bubbles -->
+  <div class="bubble" style="width:8px;height:8px;bottom:48%;left:20%;animation-delay:0s;"></div>
+  <div class="bubble" style="width:5px;height:5px;bottom:45%;left:60%;animation-delay:2s;"></div>
+  <div class="bubble" style="width:6px;height:6px;bottom:43%;left:75%;animation-delay:4s;"></div>
+  <div class="bubble" style="width:4px;height:4px;bottom:46%;left:35%;animation-delay:6s;"></div>
+
+  <div class="above-water">
+    <div class="above-label">What everyone sees</div>
+    <h1>AI chatbots. Copilots. Automation promises.</h1>
+    <div class="above-items">
+      <span class="above-item">ChatGPT</span>
+      <span class="above-item">Claude</span>
+      <span class="above-item">Copilot</span>
+      <span class="above-item">RPA Bots</span>
+    </div>
+  </div>
+
+  <div class="waterline"></div>
+  <div class="wave-container">
+    <div class="wave">
+      <svg viewBox="0 0 1200 60" preserveAspectRatio="none">
+        <path d="M0,30 C200,10 400,50 600,30 C800,10 1000,50 1200,30" fill="none" stroke="rgba(78,205,196,0.15)" stroke-width="1.5"/>
+      </svg>
+      <svg viewBox="0 0 1200 60" preserveAspectRatio="none">
+        <path d="M0,30 C200,10 400,50 600,30 C800,10 1000,50 1200,30" fill="none" stroke="rgba(78,205,196,0.15)" stroke-width="1.5"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="below-water">
+    <div class="below-label">What 95% of companies are missing</div>
+    <p>The real data about how work actually happens. The tribal knowledge. The process maps that exist only in people's heads.</p>
+    <div class="below-items">
+      <span class="below-item">Work patterns</span>
+      <span class="below-item">Process maps</span>
+      <span class="below-item">Tribal knowledge</span>
+      <span class="below-item">Training data</span>
+      <span class="below-item">Automation targets</span>
+    </div>
+  </div>
+</section>
+
+<!-- Iceberg Visual -->
+<section class="iceberg-section">
+  <div class="iceberg-visual reveal">
+    <div class="iceberg-shape" style="position:relative;">
+      <div class="ice-above"></div>
+      <div class="ice-waterline-bar"></div>
+      <div class="ice-below"></div>
+      <div class="iceberg-labels">
+        <span class="ib-label above" style="top:5%;left:65%;">AI Tools</span>
+        <span class="ib-label below" style="top:40%;left:5%;">Workflows</span>
+        <span class="ib-label below" style="top:55%;right:5%;">Tribal Knowledge</span>
+        <span class="ib-label below" style="top:70%;left:10%;">Process Data</span>
+        <span class="ib-label below" style="top:82%;right:15%;">Training Data</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Go2 = The Submarine -->
+<section class="submarine-section" id="depth">
+  <h2 class="reveal">Go2 is the submarine<br>that <span>maps what's below</span></h2>
+  <p class="reveal">Through Cowork.ai, a desktop agent that works alongside every employee, Go2 captures the invisible infrastructure that makes AI actually work.</p>
+
+  <div class="depth-layers reveal">
+    <div class="depth-layer">
+      <div class="depth-meter">Surface</div>
+      <div class="depth-content">
+        <h3>Cowork.ai Desktop Agent</h3>
+        <p>Runs silently alongside every worker. No workflow changes. No surveys. Just quiet observation and real-time coaching that 89% of workers love.</p>
+      </div>
+    </div>
+    <div class="depth-layer">
+      <div class="depth-meter">100m</div>
+      <div class="depth-content">
+        <h3>Process Discovery</h3>
+        <p>Automatically maps how work really happens. Not how the handbook says it should. Every workaround, shortcut, and undocumented process, captured.</p>
+      </div>
+    </div>
+    <div class="depth-layer">
+      <div class="depth-meter">500m</div>
+      <div class="depth-content">
+        <h3>Automation Intelligence</h3>
+        <p>40+ hours per week of automatable tasks, identified with certainty. Not guesswork. Real data from real workflows.</p>
+      </div>
+    </div>
+    <div class="depth-layer">
+      <div class="depth-meter">1000m</div>
+      <div class="depth-content">
+        <h3>AI Training Data</h3>
+        <p>The holy grail: real process data that trains AI agents for your specific business. Open-source tools to build, train, and deploy.</p>
+      </div>
+    </div>
+    <div class="depth-layer">
+      <div class="depth-meter">Deep</div>
+      <div class="depth-content">
+        <h3>Institutional Intelligence</h3>
+        <p>Your company's collective knowledge, no longer trapped in people's heads. Preserved, searchable, teachable. The foundation everything else builds on.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats -->
+<section class="deep-stats" id="stats">
+  <div class="deep-stats-grid reveal">
+    <div class="deep-stat">
+      <span class="val">95%</span>
+      <span class="desc">AI pilots fail without work data (MIT)</span>
+    </div>
+    <div class="deep-stat">
+      <span class="val">2M+</span>
+      <span class="desc">Worker profiles mapped by Go2</span>
+    </div>
+    <div class="deep-stat">
+      <span class="val">$60M+</span>
+      <span class="desc">Revenue proving the model works</span>
+    </div>
+    <div class="deep-stat">
+      <span class="val">89%</span>
+      <span class="desc">Worker satisfaction rate</span>
+    </div>
+  </div>
+</section>
+
+<!-- Waze Analogy -->
+<section class="waze-section reveal">
+  <h2>Waze didn't build roads.<br>It mapped them. Then everyone drove smarter.</h2>
+  <p>Go2 works the same way. Every worker contributes work data. Every AI tool in the organization gets smarter. Your competitive moat deepens with every passing day.</p>
+  <p>We sidecar your existing AI tools. Claude, ChatGPT, whatever you use. We don't replace them. We give them the data they need to actually deliver.</p>
+</section>
+
+<!-- CTA -->
+<section class="cta-section" id="cta">
+  <h2 class="reveal">Ready to see what's below<br>your waterline?</h2>
+  <p class="reveal">The companies winning with AI already know.</p>
+  <a href="#" class="cta-primary reveal">Explore the Depths</a>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2 &middot; Mapping the invisible infrastructure of work</p>
+</footer>
+
+<script>
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
