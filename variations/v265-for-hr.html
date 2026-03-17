@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The HR/People Ops View</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#faf8f5;--surface:#ffffff;--card:#ffffff;--border:#e8e2d9;--text:#2d2a26;--muted:#8a857d;--accent:#e07c4a;--accent2:#d4603c;--green:#4caf7d;--red:#d4603c;--blue:#5b8fc9;--purple:#8b6bb5;--warm:#f4ede4}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(250,248,245,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 40px;display:flex;justify-content:space-between;align-items:center}
+.nav-logo{font-size:20px;font-weight:800;color:var(--accent)}
+.nav-logo span{color:var(--text);font-weight:300;font-size:14px;margin-left:8px}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:13px;margin-left:28px;font-weight:500;transition:color 0.2s}
+.nav-links a:hover{color:var(--accent)}
+
+/* Hero */
+.hero{min-height:100vh;display:flex;align-items:center;padding:120px 60px 80px;position:relative;background:linear-gradient(135deg,var(--bg) 0%,var(--warm) 100%)}
+.hero-content{max-width:580px}
+.hero-badge{display:inline-block;padding:6px 16px;background:rgba(224,124,74,0.1);border-radius:20px;color:var(--accent);font-size:12px;font-weight:600;margin-bottom:24px}
+.hero h1{font-size:clamp(32px,4.5vw,52px);font-weight:800;line-height:1.15;margin-bottom:20px;color:var(--text)}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p{font-size:17px;color:var(--muted);line-height:1.8;margin-bottom:36px}
+.btn{padding:14px 28px;font-size:14px;font-weight:600;border:none;cursor:pointer;border-radius:8px;transition:all 0.2s;text-decoration:none;display:inline-block}
+.btn-accent{background:var(--accent);color:white}
+.btn-accent:hover{background:var(--accent2);transform:translateY(-1px)}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border);margin-left:12px;border-radius:8px}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Satisfaction Showcase */
+.sat-section{padding:80px 40px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.sat-inner{max-width:1200px;margin:0 auto;text-align:center}
+.sat-number{font-size:120px;font-weight:800;color:var(--accent);line-height:1}
+.sat-label{font-size:20px;color:var(--muted);margin-top:8px;margin-bottom:32px}
+.sat-context{font-size:15px;color:var(--muted);max-width:600px;margin:0 auto;line-height:1.8}
+
+.sat-comparison{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:48px;max-width:800px;margin-left:auto;margin-right:auto}
+.sat-comp-item{text-align:center}
+.sat-comp-bar{height:120px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:8px}
+.sat-comp-fill{width:48px;border-radius:6px 6px 0 0;transition:height 1.5s ease}
+.sat-comp-val{font-size:20px;font-weight:700;margin-bottom:4px}
+.sat-comp-name{font-size:12px;color:var(--muted)}
+
+/* Section Styling */
+.sec-label{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:8px}
+.sec-title{font-size:32px;font-weight:800;margin-bottom:12px;color:var(--text)}
+.sec-desc{color:var(--muted);font-size:15px;max-width:560px;margin-bottom:48px;line-height:1.8}
+
+/* Engagement Dashboard */
+.engage-section{padding:100px 40px;max-width:1400px;margin:0 auto}
+.engage-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:40px}
+.engage-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:28px;transition:all 0.3s}
+.engage-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,0.06)}
+.engage-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px}
+.icon-orange{background:rgba(224,124,74,0.1)}
+.icon-green{background:rgba(76,175,125,0.1)}
+.icon-blue{background:rgba(91,143,201,0.1)}
+.icon-purple{background:rgba(139,107,181,0.1)}
+.engage-title{font-size:16px;font-weight:700;margin-bottom:8px}
+.engage-desc{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:16px}
+.engage-metric{display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid var(--border);font-size:13px}
+.engage-metric span:last-child{font-weight:700;color:var(--accent)}
+
+/* Employee Journey */
+.journey-section{padding:80px 40px;background:var(--warm)}
+.journey-inner{max-width:1200px;margin:0 auto}
+.journey-timeline{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-top:40px}
+.journey-step{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;text-align:center;position:relative;transition:all 0.3s}
+.journey-step:hover{transform:translateY(-4px);box-shadow:0 8px 30px rgba(0,0,0,0.06)}
+.journey-step::after{content:'\2192';position:absolute;right:-14px;top:50%;transform:translateY(-50%);font-size:18px;color:var(--muted)}
+.journey-step:last-child::after{display:none}
+.journey-day{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:12px}
+.journey-title{font-size:14px;font-weight:700;margin-bottom:8px}
+.journey-desc{font-size:12px;color:var(--muted);line-height:1.6}
+.journey-emoji{font-size:28px;margin-bottom:8px}
+
+/* Coaching Showcase */
+.coach-section{padding:100px 40px;max-width:1200px;margin:0 auto}
+.coach-demo{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:40px;margin-top:40px;position:relative;overflow:hidden}
+.coach-header{display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.coach-avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:18px}
+.coach-name{font-weight:700;font-size:16px}
+.coach-role{font-size:12px;color:var(--muted)}
+.coach-messages{display:flex;flex-direction:column;gap:16px}
+.coach-msg{max-width:80%;padding:16px 20px;border-radius:16px;font-size:14px;line-height:1.7;animation:fadeIn 0.5s ease}
+.coach-msg.ai{background:rgba(224,124,74,0.08);border:1px solid rgba(224,124,74,0.15);align-self:flex-start;border-bottom-left-radius:4px}
+.coach-msg.user{background:var(--warm);border:1px solid var(--border);align-self:flex-end;border-bottom-right-radius:4px}
+.coach-msg .msg-label{font-size:11px;font-weight:600;color:var(--accent);margin-bottom:4px}
+.coach-actions{display:flex;gap:8px;margin-top:8px}
+.coach-action{padding:6px 14px;background:rgba(224,124,74,0.1);border:1px solid rgba(224,124,74,0.2);border-radius:6px;font-size:12px;color:var(--accent);cursor:pointer;transition:all 0.2s}
+.coach-action:hover{background:var(--accent);color:white}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* Survey Results */
+.survey-section{padding:80px 40px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.survey-inner{max-width:1000px;margin:0 auto}
+.survey-question{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px}
+.survey-q{font-size:15px;font-weight:600;margin-bottom:16px}
+.survey-bar-outer{height:12px;background:var(--warm);border-radius:6px;overflow:hidden;margin-bottom:8px;position:relative}
+.survey-bar-inner{height:100%;border-radius:6px;transition:width 1.5s ease}
+.survey-bar-green{background:linear-gradient(90deg,#81c784,#4caf7d)}
+.survey-bar-orange{background:linear-gradient(90deg,#ffb74d,var(--accent))}
+.survey-stats{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+
+/* Testimonials */
+.test-section{padding:100px 40px;max-width:1200px;margin:0 auto}
+.test-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:40px}
+.test-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:28px;transition:all 0.3s}
+.test-card:hover{transform:translateY(-4px);box-shadow:0 8px 30px rgba(0,0,0,0.06)}
+.test-quote{font-size:15px;line-height:1.8;font-style:italic;color:var(--text);margin-bottom:20px}
+.test-author{display:flex;align-items:center;gap:12px}
+.test-avatar{width:40px;height:40px;border-radius:50%;background:var(--warm);display:flex;align-items:center;justify-content:center;font-size:16px}
+.test-info .test-name{font-size:14px;font-weight:700}
+.test-info .test-role{font-size:12px;color:var(--muted)}
+
+/* Privacy Section */
+.privacy-section{padding:80px 40px;background:var(--warm)}
+.privacy-inner{max-width:1000px;margin:0 auto}
+.privacy-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:40px}
+.privacy-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px}
+.privacy-card h3{font-size:16px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.privacy-card p{font-size:13px;color:var(--muted);line-height:1.7}
+
+/* Metrics Row */
+.metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;padding:60px 40px;max-width:1200px;margin:0 auto}
+.metric-item{text-align:center;padding:24px}
+.metric-num{font-size:40px;font-weight:800;color:var(--accent)}
+.metric-label{font-size:13px;color:var(--muted);margin-top:4px}
+
+/* CTA */
+.cta{padding:120px 40px;text-align:center;background:linear-gradient(135deg,var(--warm) 0%,var(--bg) 100%)}
+.cta h2{font-size:36px;font-weight:800;margin-bottom:16px}
+.cta h2 em{font-style:normal;color:var(--accent)}
+.cta p{font-size:16px;color:var(--muted);max-width:500px;margin:0 auto 32px;line-height:1.8}
+
+footer{padding:40px;text-align:center;font-size:12px;color:var(--muted);border-top:1px solid var(--border);background:var(--surface)}
+
+@media(max-width:900px){
+.engage-grid,.test-grid{grid-template-columns:1fr}
+.journey-timeline{grid-template-columns:1fr}
+.journey-step::after{display:none}
+.sat-comparison{grid-template-columns:1fr 1fr}
+.privacy-grid{grid-template-columns:1fr}
+.metrics-row{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">Go2 <span>People & Culture</span></div>
+  <div class="nav-links">
+    <a href="#engagement">Engagement</a>
+    <a href="#coaching">Coaching</a>
+    <a href="#surveys">Survey Data</a>
+    <a href="#privacy">Privacy</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">Built for People Leaders</div>
+    <h1>The productivity tool your employees <em>actually want</em>.</h1>
+    <p>Go2 isn't monitoring software dressed up. It's a personal AI coach that employees love because it makes their work life better. 89% satisfaction. Unprompted.</p>
+    <a class="btn btn-accent" href="#engagement">See the Data</a>
+    <a class="btn btn-outline" href="#coaching">Experience the Coaching</a>
+  </div>
+</section>
+
+<section class="sat-section">
+  <div class="sat-inner">
+    <div class="sat-number" id="satNum">0</div>
+    <div class="sat-label">Employee Satisfaction Rate</div>
+    <div class="sat-context">Not just tolerated. Loved. Employees report that Go2 makes them better at their jobs, reduces busywork, and gives them back time for meaningful work.</div>
+
+    <div class="sat-comparison" id="satBars">
+      <div class="sat-comp-item">
+        <div class="sat-comp-bar"><div class="sat-comp-fill" style="height:0%;background:var(--accent)" data-h="89%"></div></div>
+        <div class="sat-comp-val" style="color:var(--accent)">89%</div>
+        <div class="sat-comp-name">Go2</div>
+      </div>
+      <div class="sat-comp-item">
+        <div class="sat-comp-bar"><div class="sat-comp-fill" style="height:0%;background:#ccc" data-h="34%"></div></div>
+        <div class="sat-comp-val">34%</div>
+        <div class="sat-comp-name">Time Doctor</div>
+      </div>
+      <div class="sat-comp-item">
+        <div class="sat-comp-bar"><div class="sat-comp-fill" style="height:0%;background:#ccc" data-h="28%"></div></div>
+        <div class="sat-comp-val">28%</div>
+        <div class="sat-comp-name">Hubstaff</div>
+      </div>
+      <div class="sat-comp-item">
+        <div class="sat-comp-bar"><div class="sat-comp-fill" style="height:0%;background:#ccc" data-h="19%"></div></div>
+        <div class="sat-comp-val">19%</div>
+        <div class="sat-comp-name">Teramind</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="metrics-row">
+  <div class="metric-item"><div class="metric-num">2M+</div><div class="metric-label">Employees using Go2</div></div>
+  <div class="metric-item"><div class="metric-num">73%</div><div class="metric-label">Say Go2 reduces stress</div></div>
+  <div class="metric-item"><div class="metric-num">-31%</div><div class="metric-label">Burnout indicators</div></div>
+  <div class="metric-item"><div class="metric-num">4.7/5</div><div class="metric-label">Coaching helpfulness</div></div>
+</div>
+
+<section class="engage-section" id="engagement">
+  <div class="sec-label">Engagement Intelligence</div>
+  <div class="sec-title">Real engagement data. Not surveys.</div>
+  <div class="sec-desc">Go2 measures engagement through actual work patterns, not annual surveys that arrive 6 months too late.</div>
+
+  <div class="engage-grid">
+    <div class="engage-card">
+      <div class="engage-icon icon-green">&#128150;</div>
+      <div class="engage-title">Engagement Score</div>
+      <div class="engage-desc">Real-time composite of collaboration patterns, focus time, and work satisfaction signals. Updates daily.</div>
+      <div class="engage-metric"><span>Company average</span><span>8.4/10</span></div>
+      <div class="engage-metric"><span>Trend (90 day)</span><span style="color:var(--green)">+1.2</span></div>
+      <div class="engage-metric"><span>Industry benchmark</span><span>6.8/10</span></div>
+    </div>
+    <div class="engage-card">
+      <div class="engage-icon icon-orange">&#127793;</div>
+      <div class="engage-title">Burnout Prevention</div>
+      <div class="engage-desc">AI detects early burnout signals from work patterns. Alerts managers before it becomes a problem, not after.</div>
+      <div class="engage-metric"><span>At-risk employees</span><span>12 (3%)</span></div>
+      <div class="engage-metric"><span>Interventions this month</span><span>8</span></div>
+      <div class="engage-metric"><span>Prevented turnover</span><span>23 this year</span></div>
+    </div>
+    <div class="engage-card">
+      <div class="engage-icon icon-blue">&#128101;</div>
+      <div class="engage-title">Team Dynamics</div>
+      <div class="engage-desc">Understand collaboration patterns, meeting culture, and team health. Identify isolated employees and siloed teams.</div>
+      <div class="engage-metric"><span>Collaboration score</span><span>87/100</span></div>
+      <div class="engage-metric"><span>Meeting burden</span><span>-34% since Go2</span></div>
+      <div class="engage-metric"><span>Cross-team connections</span><span>+52%</span></div>
+    </div>
+    <div class="engage-card">
+      <div class="engage-icon icon-purple">&#127919;</div>
+      <div class="engage-title">Growth & Development</div>
+      <div class="engage-desc">Track skill development, learning engagement, and career progression signals. Personalized growth paths.</div>
+      <div class="engage-metric"><span>Skills developing</span><span>2.3 per person</span></div>
+      <div class="engage-metric"><span>Learning time</span><span>3.4 hrs/week</span></div>
+      <div class="engage-metric"><span>Promotion readiness</span><span>47 employees</span></div>
+    </div>
+    <div class="engage-card">
+      <div class="engage-icon icon-green">&#9201;</div>
+      <div class="engage-title">Work-Life Balance</div>
+      <div class="engage-desc">Monitor after-hours work patterns and encourage healthy boundaries. Employees choose their own preferences.</div>
+      <div class="engage-metric"><span>After-hours work</span><span style="color:var(--green)">-42%</span></div>
+      <div class="engage-metric"><span>Weekend work</span><span style="color:var(--green)">-58%</span></div>
+      <div class="engage-metric"><span>Focus time</span><span style="color:var(--green)">+3.1 hrs/day</span></div>
+    </div>
+    <div class="engage-card">
+      <div class="engage-icon icon-orange">&#128200;</div>
+      <div class="engage-title">Retention Predictor</div>
+      <div class="engage-desc">AI predicts flight risk 90 days before an employee starts looking. Gives managers actionable retention insights.</div>
+      <div class="engage-metric"><span>Prediction accuracy</span><span>87%</span></div>
+      <div class="engage-metric"><span>Early interventions</span><span>34 this quarter</span></div>
+      <div class="engage-metric"><span>Saved hires (est.)</span><span>$2.4M/year</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="journey-section">
+  <div class="journey-inner">
+    <div class="sec-label">Employee Experience</div>
+    <div class="sec-title">The employee journey with Go2.</div>
+    <div class="sec-desc">From day one, Go2 is an ally, not a watcher. Here's what employees experience.</div>
+
+    <div class="journey-timeline">
+      <div class="journey-step">
+        <div class="journey-emoji">&#128075;</div>
+        <div class="journey-day">Day 1</div>
+        <div class="journey-title">Welcome</div>
+        <div class="journey-desc">2-minute setup. Go2 introduces itself as a personal productivity coach. Employee controls their data.</div>
+      </div>
+      <div class="journey-step">
+        <div class="journey-emoji">&#128161;</div>
+        <div class="journey-day">Week 1</div>
+        <div class="journey-title">First Insights</div>
+        <div class="journey-desc">Go2 shares personalized insights: "You're most focused from 9-11am. Want me to protect that time?"</div>
+      </div>
+      <div class="journey-step">
+        <div class="journey-emoji">&#129302;</div>
+        <div class="journey-day">Week 2-3</div>
+        <div class="journey-title">AI Coaching</div>
+        <div class="journey-desc">Context-aware suggestions start flowing. "This report takes you 3 hours. Here's a template that takes 40 minutes."</div>
+      </div>
+      <div class="journey-step">
+        <div class="journey-emoji">&#128640;</div>
+        <div class="journey-day">Month 2</div>
+        <div class="journey-title">Automation</div>
+        <div class="journey-desc">"I noticed you copy data between these 3 spreadsheets every Monday. I can automate that. Want me to?"</div>
+      </div>
+      <div class="journey-step">
+        <div class="journey-emoji">&#11088;</div>
+        <div class="journey-day">Ongoing</div>
+        <div class="journey-title">Champion</div>
+        <div class="journey-desc">Employee becomes a Go2 advocate. "I can't imagine working without it." Satisfaction score: 89%.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="coach-section" id="coaching">
+  <div class="sec-label">AI Coaching Experience</div>
+  <div class="sec-title">This is what employees actually see.</div>
+  <div class="sec-desc">Go2's coaching is conversational, helpful, and completely under the employee's control.</div>
+
+  <div class="coach-demo" id="coachDemo">
+    <div class="coach-header">
+      <div class="coach-avatar">G2</div>
+      <div><div class="coach-name">Go2 AI Coach</div><div class="coach-role">Personal Productivity Partner</div></div>
+    </div>
+    <div class="coach-messages" id="coachMessages">
+      <div class="coach-msg ai">
+        <div class="msg-label">Go2 Coach</div>
+        Hey Sarah! I noticed something interesting this week. You spent about 6 hours in meetings on Tuesday alone, and your focus time dropped to just 45 minutes. That's unusual for you. Would you like some suggestions?
+        <div class="coach-actions">
+          <div class="coach-action" onclick="addCoachMsg('yes')">Yes, help me!</div>
+          <div class="coach-action" onclick="addCoachMsg('tell')">Tell me more</div>
+          <div class="coach-action" onclick="addCoachMsg('dismiss')">Not now</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="survey-section" id="surveys">
+  <div class="survey-inner">
+    <div class="sec-label">Employee Survey Results</div>
+    <div class="sec-title">What employees say about Go2.</div>
+    <div class="sec-desc">Anonymous survey data from 2,400+ employees across 140 companies.</div>
+
+    <div id="surveyQuestions">
+      <div class="survey-question">
+        <div class="survey-q">"Go2 makes me better at my job."</div>
+        <div class="survey-bar-outer"><div class="survey-bar-inner survey-bar-green" style="width:0%" data-w="91%"></div></div>
+        <div class="survey-stats"><span>91% agree or strongly agree</span><span>n=2,400</span></div>
+      </div>
+      <div class="survey-question">
+        <div class="survey-q">"I feel respected and trusted with Go2."</div>
+        <div class="survey-bar-outer"><div class="survey-bar-inner survey-bar-green" style="width:0%" data-w="87%"></div></div>
+        <div class="survey-stats"><span>87% agree or strongly agree</span><span>n=2,400</span></div>
+      </div>
+      <div class="survey-question">
+        <div class="survey-q">"Go2's coaching suggestions are actually helpful."</div>
+        <div class="survey-bar-outer"><div class="survey-bar-inner survey-bar-green" style="width:0%" data-w="84%"></div></div>
+        <div class="survey-stats"><span>84% agree or strongly agree</span><span>n=2,400</span></div>
+      </div>
+      <div class="survey-question">
+        <div class="survey-q">"I would recommend Go2 to a colleague."</div>
+        <div class="survey-bar-outer"><div class="survey-bar-inner survey-bar-green" style="width:0%" data-w="89%"></div></div>
+        <div class="survey-stats"><span>89% agree or strongly agree</span><span>n=2,400</span></div>
+      </div>
+      <div class="survey-question">
+        <div class="survey-q">"Go2 reduced my busywork."</div>
+        <div class="survey-bar-outer"><div class="survey-bar-inner survey-bar-orange" style="width:0%" data-w="78%"></div></div>
+        <div class="survey-stats"><span>78% agree or strongly agree</span><span>n=2,400</span></div>
+      </div>
+      <div class="survey-question">
+        <div class="survey-q">"I trust Go2 with my data."</div>
+        <div class="survey-bar-outer"><div class="survey-bar-inner survey-bar-green" style="width:0%" data-w="82%"></div></div>
+        <div class="survey-stats"><span>82% agree or strongly agree</span><span>n=2,400</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="test-section">
+  <div class="sec-label">In Their Words</div>
+  <div class="sec-title">From real employees.</div>
+
+  <div class="test-grid">
+    <div class="test-card">
+      <div class="test-quote">"I was skeptical at first. Another tracking tool? But Go2 actually made my life easier. It caught that I was doing the same data entry in two places and automated it. That saved me 4 hours a week."</div>
+      <div class="test-author"><div class="test-avatar">&#128105;</div><div class="test-info"><div class="test-name">Sarah M.</div><div class="test-role">Customer Success Manager</div></div></div>
+    </div>
+    <div class="test-card">
+      <div class="test-quote">"My manager told me the company was rolling out Go2 and I braced myself. Three months later, I'm the one evangelizing it to other teams. The coaching is like having a really smart mentor on call."</div>
+      <div class="test-author"><div class="test-avatar">&#128104;</div><div class="test-info"><div class="test-name">James K.</div><div class="test-role">Senior Developer</div></div></div>
+    </div>
+    <div class="test-card">
+      <div class="test-quote">"What surprised me most was the burnout detection. Go2 noticed I was working late every night and suggested I talk to my manager about workload. My manager didn't even know. It literally saved me from quitting."</div>
+      <div class="test-author"><div class="test-avatar">&#128105;</div><div class="test-info"><div class="test-name">Lisa T.</div><div class="test-role">Marketing Analyst</div></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="privacy-section" id="privacy">
+  <div class="privacy-inner">
+    <div class="sec-label">Privacy & Trust</div>
+    <div class="sec-title">Built on trust, not surveillance.</div>
+    <div class="sec-desc">Go2 was designed from day one to earn employee trust. Here's how we do it.</div>
+
+    <div class="privacy-grid">
+      <div class="privacy-card">
+        <h3>&#128274; Employee-Controlled Data</h3>
+        <p>Employees see all their own data. They can pause tracking, exclude apps, and export their data anytime. Full transparency.</p>
+      </div>
+      <div class="privacy-card">
+        <h3>&#128683; No Keystroke Logging</h3>
+        <p>We never log keystrokes, record screens, or monitor communications content. We analyze work patterns, not surveillance data.</p>
+      </div>
+      <div class="privacy-card">
+        <h3>&#129504; Aggregate Insights for Managers</h3>
+        <p>Managers see team-level patterns, not individual surveillance. No "who spent how long on what website" dashboards.</p>
+      </div>
+      <div class="privacy-card">
+        <h3>&#128737; GDPR & Privacy First</h3>
+        <p>Full GDPR, CCPA compliance. Right to deletion. Data minimization. Privacy-by-design architecture. Annual third-party audit.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="sec-label">Get Started</div>
+  <h2>Your employees will <em>thank you</em>.</h2>
+  <p>Start with a pilot team. See the satisfaction data yourself. No long-term commitment. Month-to-month pricing.</p>
+  <a class="btn btn-accent" href="#">Start Employee Pilot</a>
+  <a class="btn btn-outline" href="#">Download HR Guide</a>
+</section>
+
+<footer>&copy; 2026 Go2. People-first productivity. Always.</footer>
+
+<script>
+// Satisfaction counter
+let satCounted=false;
+const satObs=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting && !satCounted){
+      satCounted=true;
+      let n=0;
+      const timer=setInterval(()=>{
+        n++;
+        document.getElementById('satNum').textContent=n+'%';
+        if(n>=89)clearInterval(timer);
+      },20);
+      // Animate bars
+      document.querySelectorAll('.sat-comp-fill').forEach(f=>{
+        setTimeout(()=>{f.style.height=f.dataset.h},300);
+      });
+    }
+  });
+},{threshold:0.3});
+document.querySelectorAll('.sat-section').forEach(el=>satObs.observe(el));
+
+// Survey bars animation
+const surveyObs=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.querySelectorAll('.survey-bar-inner').forEach(bar=>{
+        setTimeout(()=>{bar.style.width=bar.dataset.w},200);
+      });
+    }
+  });
+},{threshold:0.2});
+document.querySelectorAll('.survey-section').forEach(el=>surveyObs.observe(el));
+
+// Coach conversation
+const responses={
+  yes:[
+    {type:'user',text:'Yes, help me!'},
+    {type:'ai',text:'Great! Here are three quick wins for next week:\n\n1. I can auto-decline your 4pm recurring meeting on Tuesdays - you haven\'t spoken in it for 3 weeks and the notes are shared anyway.\n\n2. Block 9-11am as focus time. That\'s when your best code gets written based on your commit patterns.\n\n3. The weekly status report you write on Fridays? I can auto-generate 80% of it from your Jira activity. Just review and send.\n\nWant me to set any of these up?'}
+  ],
+  tell:[
+    {type:'user',text:'Tell me more about Tuesday\'s meetings.'},
+    {type:'ai',text:'Sure! Here\'s the breakdown:\n\n- 9:00am: Sprint standup (15 min) - You actively participate. Keep this.\n- 10:00am: Design review (1 hr) - You contribute regularly. Keep.\n- 11:00am: All-hands (1 hr) - Recorded, you can watch at 2x speed. Potential save: 45 min.\n- 1:00pm: Cross-team sync (45 min) - You spoke for 2 minutes in the last 3 sessions.\n- 2:30pm: 1:1 with manager (30 min) - Important. Keep.\n- 4:00pm: Project status (1 hr) - You haven\'t spoken in 3 weeks.\n\nI estimate you could reclaim 1.75 hours on Tuesdays without missing anything important.'}
+  ],
+  dismiss:[
+    {type:'user',text:'Not right now, thanks.'},
+    {type:'ai',text:'No problem! I\'ll check in next week. Remember, you can always ask me anything by typing here. Have a great rest of your day, Sarah!'}
+  ]
+};
+function addCoachMsg(type){
+  const msgs=document.getElementById('coachMessages');
+  const resp=responses[type];
+  if(!resp)return;
+  document.querySelectorAll('.coach-actions').forEach(a=>a.remove());
+  resp.forEach((m,i)=>{
+    setTimeout(()=>{
+      const div=document.createElement('div');
+      div.className='coach-msg '+(m.type==='ai'?'ai':'user');
+      div.innerHTML=(m.type==='ai'?'<div class="msg-label">Go2 Coach</div>':'')+m.text.replace(/\n/g,'<br>');
+      msgs.appendChild(div);
+      div.scrollIntoView({behavior:'smooth',block:'end'});
+    },i*800);
+  });
+}
+
+// Smooth scroll
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    e.preventDefault();
+    const t=document.querySelector(a.getAttribute('href'));
+    if(t)t.scrollIntoView({behavior:'smooth'});
+  });
+});
+</script>
+</body>
+</html>

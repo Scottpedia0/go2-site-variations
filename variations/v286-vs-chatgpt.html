@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Why ChatGPT Alone Isn't Enough | Go2 Sidecar</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--card:#12121a;--border:#1e1e2e;--accent:#6366f1;--accent2:#ec4899;--green:#10b981;--red:#ef4444;--text:#e2e8f0;--muted:#64748b;--gpt:#74aa9c;--go2:#6366f1}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.6}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;position:relative}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 40% 40%,rgba(116,170,156,0.06),transparent 50%),radial-gradient(ellipse at 60% 60%,rgba(99,102,241,0.08),transparent 50%)}
+.hero-content{position:relative;z-index:1}
+.hero-stat{font-size:4rem;font-weight:800;background:linear-gradient(135deg,var(--red),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+.hero-stat-label{color:var(--muted);font-size:1.1rem;margin-bottom:32px}
+.hero h1{font-size:clamp(2.2rem,5vw,3.8rem);font-weight:800;line-height:1.1;margin-bottom:24px}
+.gradient{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:1.15rem;color:var(--muted);max-width:640px;margin:0 auto 40px}
+.btn{display:inline-block;padding:14px 40px;border-radius:50px;font-weight:700;font-size:1rem;transition:all 0.3s;border:none;cursor:pointer}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(99,102,241,0.3)}
+
+.section{padding:100px 0}
+.section-title{font-size:2.5rem;font-weight:800;text-align:center;margin-bottom:16px}
+.section-sub{text-align:center;color:var(--muted);font-size:1.1rem;margin-bottom:60px;max-width:640px;margin-left:auto;margin-right:auto}
+
+/* Chat Simulation */
+.chat-section{padding:80px 0}
+.chat-container{max-width:1000px;margin:0 auto}
+.chat-prompt-bar{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px 32px;margin-bottom:40px;text-align:center}
+.chat-prompt-label{font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px}
+.chat-prompts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.chat-prompt-btn{padding:10px 20px;border-radius:50px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-size:0.9rem;transition:all 0.3s}
+.chat-prompt-btn:hover{border-color:var(--accent)}
+.chat-prompt-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+.chat-split{display:grid;grid-template-columns:1fr 1fr;gap:32px}
+.chat-window{background:var(--card);border:1px solid var(--border);border-radius:20px;overflow:hidden}
+.chat-header{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.chat-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.9rem;font-weight:700}
+.gpt-avatar{background:rgba(116,170,156,0.2);color:var(--gpt)}
+.go2-avatar{background:rgba(99,102,241,0.2);color:var(--accent)}
+.chat-name{font-weight:600;font-size:0.9rem}
+.chat-badge{font-size:0.7rem;padding:2px 8px;border-radius:10px;margin-left:8px}
+.gpt-badge{background:rgba(116,170,156,0.1);color:var(--gpt)}
+.go2-badge{background:rgba(99,102,241,0.1);color:var(--accent)}
+.chat-body{padding:24px;min-height:350px;max-height:450px;overflow-y:auto}
+.chat-msg{margin-bottom:16px;display:flex;gap:10px}
+.chat-msg.user{justify-content:flex-end}
+.chat-msg.user .msg-bubble{background:rgba(99,102,241,0.15);border-radius:16px 16px 4px 16px}
+.msg-bubble{max-width:85%;padding:12px 16px;border-radius:16px 16px 16px 4px;font-size:0.85rem;line-height:1.6}
+.chat-msg.ai .msg-bubble{background:rgba(255,255,255,0.04)}
+.msg-bubble .highlight{color:var(--green);font-weight:600}
+.msg-bubble .weak{color:var(--muted);font-style:italic}
+.chat-quality{padding:12px 24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.quality-label{font-size:0.75rem;color:var(--muted)}
+.quality-bar{width:120px;height:6px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden}
+.quality-fill{height:100%;border-radius:3px;transition:width 0.6s}
+.gpt-quality .quality-fill{background:var(--orange,#f59e0b);width:35%}
+.go2-quality .quality-fill{background:var(--green);width:92%}
+.quality-score{font-size:0.75rem;font-weight:700}
+
+/* Why Section */
+.why-section{padding:80px 0}
+.why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1000px;margin:0 auto}
+.why-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;transition:all 0.3s}
+.why-card:hover{border-color:var(--accent);transform:translateY(-4px)}
+.why-icon{font-size:2rem;margin-bottom:12px}
+.why-title{font-weight:700;margin-bottom:8px}
+.why-desc{font-size:0.85rem;color:var(--muted);line-height:1.6}
+
+/* The Sidecar Concept */
+.sidecar{padding:80px 0}
+.sidecar-visual{max-width:800px;margin:0 auto;position:relative}
+.sidecar-diagram{display:flex;align-items:center;justify-content:center;gap:40px;margin-bottom:40px;flex-wrap:wrap}
+.sidecar-box{padding:32px;border-radius:20px;text-align:center;min-width:200px}
+.sidecar-ai{background:rgba(116,170,156,0.06);border:1px solid rgba(116,170,156,0.15)}
+.sidecar-plus{font-size:2rem;font-weight:800;color:var(--accent)}
+.sidecar-go2{background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.2)}
+.sidecar-equals{font-size:2rem;font-weight:800;color:var(--green)}
+.sidecar-result{background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(99,102,241,0.08));border:2px solid rgba(16,185,129,0.3)}
+.sidecar-name{font-weight:700;font-size:1.1rem;margin-bottom:4px}
+.sidecar-desc{font-size:0.8rem;color:var(--muted)}
+.sidecar-features{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;max-width:700px;margin:0 auto}
+.sidecar-feature{padding:16px;background:var(--card);border:1px solid var(--border);border-radius:12px;font-size:0.85rem;display:flex;gap:10px;align-items:flex-start}
+
+/* Stats */
+.stats-section{padding:80px 0}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;max-width:1000px;margin:0 auto}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;text-align:center;transition:all 0.3s}
+.stat-card:hover{border-color:var(--accent);transform:translateY(-4px)}
+.stat-number{font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-label{font-size:0.85rem;color:var(--muted);margin-top:4px}
+
+.cta{padding:100px 0;text-align:center}
+.cta h2{font-size:2.5rem;font-weight:800;margin-bottom:16px}
+.cta p{color:var(--muted);font-size:1.1rem;margin-bottom:40px}
+
+@media(max-width:768px){
+.chat-split{grid-template-columns:1fr}
+.why-grid{grid-template-columns:1fr}
+.stats-grid{grid-template-columns:1fr 1fr}
+.sidecar-diagram{flex-direction:column;gap:16px}
+.sidecar-features{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<section class="hero">
+<div class="hero-content">
+<div class="hero-stat">95%</div>
+<div class="hero-stat-label">of enterprise AI deployments fail to deliver expected value</div>
+<h1>ChatGPT Is Brilliant.<br>But It Doesn't Know <span class="gradient">Your Company</span>.</h1>
+<p>Without context, AI gives generic answers. Go2 sidecars ChatGPT and Claude with your company's actual workflows, data, and tribal knowledge. Same question. Wildly different answers.</p>
+<button class="btn btn-primary" onclick="document.querySelector('.chat-section').scrollIntoView({behavior:'smooth'})">See the Difference</button>
+</div>
+</section>
+
+<section class="chat-section">
+<div class="container">
+<h2 class="section-title">Same Question. Different Worlds.</h2>
+<p class="section-sub">Click a question to see ChatGPT alone vs ChatGPT + Go2. Same AI. Radically different answers.</p>
+<div class="chat-container">
+<div class="chat-prompt-bar">
+<div class="chat-prompt-label">Select a question your employee might ask</div>
+<div class="chat-prompts">
+<button class="chat-prompt-btn active" onclick="showChat(0,this)">How do I onboard a client?</button>
+<button class="chat-prompt-btn" onclick="showChat(1,this)">What's our refund policy?</button>
+<button class="chat-prompt-btn" onclick="showChat(2,this)">How should I prioritize my tasks?</button>
+<button class="chat-prompt-btn" onclick="showChat(3,this)">Draft an email to a prospect</button>
+</div>
+</div>
+<div class="chat-split">
+<div class="chat-window">
+<div class="chat-header">
+<div class="chat-avatar gpt-avatar">G</div>
+<div class="chat-name">ChatGPT <span class="chat-badge gpt-badge">Alone</span></div>
+</div>
+<div class="chat-body" id="gpt-chat"></div>
+<div class="chat-quality gpt-quality">
+<div class="quality-label">Answer Relevance</div>
+<div class="quality-bar"><div class="quality-fill" id="gpt-quality-fill"></div></div>
+<div class="quality-score" id="gpt-score" style="color:#f59e0b">35%</div>
+</div>
+</div>
+<div class="chat-window">
+<div class="chat-header">
+<div class="chat-avatar go2-avatar">G</div>
+<div class="chat-name">ChatGPT <span class="chat-badge go2-badge">+ Go2 Sidecar</span></div>
+</div>
+<div class="chat-body" id="go2-chat"></div>
+<div class="chat-quality go2-quality">
+<div class="quality-label">Answer Relevance</div>
+<div class="quality-bar"><div class="quality-fill" id="go2-quality-fill"></div></div>
+<div class="quality-score" id="go2-score" style="color:var(--green)">94%</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<section class="why-section">
+<div class="container">
+<h2 class="section-title">Why 95% of AI Fails Without Context</h2>
+<p class="section-sub">AI is only as good as the context it has. Without Go2, it's flying blind.</p>
+<div class="why-grid">
+<div class="why-card"><div class="why-icon">🌐</div><div class="why-title">Generic Training Data</div><div class="why-desc">ChatGPT was trained on the internet. It knows general best practices but nothing about YOUR company's specific processes, tools, and culture.</div></div>
+<div class="why-card"><div class="why-icon">🏢</div><div class="why-title">No Company Context</div><div class="why-desc">It doesn't know your tech stack, your customers, your pricing, your internal workflows, or who to talk to when things go wrong.</div></div>
+<div class="why-card"><div class="why-icon">👤</div><div class="why-title">No Personal Context</div><div class="why-desc">It doesn't know the employee's role, their current projects, their skill level, or what they were working on 5 minutes ago.</div></div>
+<div class="why-card"><div class="why-icon">📚</div><div class="why-title">No Tribal Knowledge</div><div class="why-desc">Every company has unwritten rules. "Always CC Sarah on enterprise deals." "Use the old API for client X." ChatGPT doesn't know any of this.</div></div>
+<div class="why-card"><div class="why-icon">🔄</div><div class="why-title">No Workflow Memory</div><div class="why-desc">Each conversation starts from zero. It can't remember that the employee automated their reports last week or what shortcuts they use.</div></div>
+<div class="why-card"><div class="why-icon">📈</div><div class="why-title">No Learning Loop</div><div class="why-desc">ChatGPT doesn't improve based on what works in YOUR company. It can't learn from your best performers and coach everyone else.</div></div>
+</div>
+</div>
+</section>
+
+<section class="sidecar">
+<div class="container">
+<h2 class="section-title">The Sidecar Effect</h2>
+<p class="section-sub">Go2 doesn't replace ChatGPT or Claude. It supercharges them with your company's DNA.</p>
+<div class="sidecar-visual">
+<div class="sidecar-diagram">
+<div class="sidecar-box sidecar-ai"><div class="sidecar-name" style="color:var(--gpt)">ChatGPT / Claude</div><div class="sidecar-desc">World knowledge. Reasoning. Language.</div></div>
+<div class="sidecar-plus">+</div>
+<div class="sidecar-box sidecar-go2"><div class="sidecar-name" style="color:var(--accent)">Go2 Context</div><div class="sidecar-desc">Your workflows. Your data. Your culture.</div></div>
+<div class="sidecar-equals">=</div>
+<div class="sidecar-box sidecar-result"><div class="sidecar-name" style="color:var(--green)">AI That Actually Works</div><div class="sidecar-desc">Specific. Relevant. Actionable. Yours.</div></div>
+</div>
+<div class="sidecar-features">
+<div class="sidecar-feature"><span>🔗</span> Injects real-time workflow context into every AI conversation</div>
+<div class="sidecar-feature"><span>📝</span> Feeds auto-generated SOPs and documentation to AI</div>
+<div class="sidecar-feature"><span>👥</span> Shares best practices from top performers across the org</div>
+<div class="sidecar-feature"><span>🎯</span> Personalizes AI responses based on role, project, and history</div>
+<div class="sidecar-feature"><span>🧠</span> Captures AI interactions to improve future responses</div>
+<div class="sidecar-feature"><span>⚡</span> Graduates frequent AI queries into automated agents</div>
+</div>
+</div>
+</div>
+</section>
+
+<section class="stats-section">
+<div class="container">
+<h2 class="section-title">The Numbers</h2>
+<div class="stats-grid">
+<div class="stat-card"><div class="stat-number">10x</div><div class="stat-label">More relevant AI answers with Go2 context</div></div>
+<div class="stat-card"><div class="stat-number">89%</div><div class="stat-label">Employee satisfaction with AI + Go2</div></div>
+<div class="stat-card"><div class="stat-number">2M+</div><div class="stat-label">Workers using Go2-enhanced AI</div></div>
+<div class="stat-card"><div class="stat-number">95%</div><div class="stat-label">AI fails without company context</div></div>
+</div>
+</div>
+</section>
+
+<section class="cta">
+<div class="container">
+<h2>Don't Replace AI.<br><span class="gradient">Supercharge It.</span></h2>
+<p>Go2 is the missing layer between generic AI and your company's actual needs. Make ChatGPT and Claude work like they were built for your organization.</p>
+<button class="btn btn-primary">Add Go2 to Your AI Stack</button>
+<p style="margin-top:16px;font-size:0.85rem;color:var(--muted)">Works with ChatGPT, Claude, and any LLM. $15/user/month.</p>
+</div>
+</section>
+
+<script>
+const chats=[
+{
+question:"How do I onboard a new client?",
+gpt:[
+{role:'user',text:'How do I onboard a new client?'},
+{role:'ai',text:'Here are some general best practices for client onboarding:\n\n1. <span class="weak">Send a welcome email</span>\n2. <span class="weak">Schedule a kickoff meeting</span>\n3. <span class="weak">Gather requirements</span>\n4. <span class="weak">Set up their account</span>\n5. <span class="weak">Provide training materials</span>\n\nWould you like me to elaborate on any of these steps?'}
+],
+go2:[
+{role:'user',text:'How do I onboard a new client?'},
+{role:'ai',text:'Based on your company\'s onboarding process (last updated 3 days ago by Sarah Chen):\n\n1. <span class="highlight">Create account in Salesforce using the "Enterprise" template</span> (your client is enterprise-tier based on the contract in DocuSign)\n2. <span class="highlight">Send welcome email using Template #7 in HubSpot</span> — personalize the industry section (they\'re in fintech)\n3. <span class="highlight">Book kickoff with their team + your CSM (Jake) within 48 hours</span>\n4. <span class="highlight">Run the API setup wizard — their tech team prefers REST over GraphQL</span> (noted in the sales handoff)\n5. <span class="highlight">Share the fintech-specific training deck</span> (not the generic one — Sarah updated it last week)\n\nShall I auto-generate the welcome email and book the kickoff?'}
+],
+gptScore:35,go2Score:94
+},
+{
+question:"What's our refund policy?",
+gpt:[
+{role:'user',text:"What's our refund policy?"},
+{role:'ai',text:'<span class="weak">Refund policies vary by company. Generally, you should:\n\n1. Check your company\'s terms of service\n2. Review the specific contract with the customer\n3. Consult with your manager or legal team\n4. Document the refund request\n\nWould you like help drafting a refund policy?</span>'}
+],
+go2:[
+{role:'user',text:"What's our refund policy?"},
+{role:'ai',text:'Your company\'s refund policy (v3.2, updated Jan 2024):\n\n<span class="highlight">Standard: Full refund within 30 days, pro-rated after.</span>\n<span class="highlight">Enterprise: Per contract terms — check Salesforce for this specific client\'s agreement.</span>\n<span class="highlight">Annual plans: Refund first 60 days, credit-only after (approved by VP Sales).</span>\n\nFor the client you\'re looking at (Acme Corp):\n<span class="highlight">They\'re on an annual enterprise plan, 4 months in. Per their contract, they\'re eligible for account credit only. Talk to Jake (their CSM) before processing — he has context on the relationship.</span>\n\nShall I pull up their specific contract terms?'}
+],
+gptScore:20,go2Score:97
+},
+{
+question:"How should I prioritize my tasks today?",
+gpt:[
+{role:'user',text:'How should I prioritize my tasks today?'},
+{role:'ai',text:'<span class="weak">Here\'s a common prioritization framework:\n\n1. Use the Eisenhower Matrix (Urgent vs Important)\n2. Identify your top 3 priorities\n3. Block time for deep work\n4. Handle quick tasks first (2-minute rule)\n5. Review and adjust throughout the day\n\nWould you like me to explain any of these methods in detail?</span>'}
+],
+go2:[
+{role:'user',text:'How should I prioritize my tasks today?'},
+{role:'ai',text:'Based on your calendar, Slack messages, and current projects:\n\n<span class="highlight">URGENT: The Acme Corp proposal is due by 3pm — you\'re 70% done. Estimated 2 hours to finish.</span>\n<span class="highlight">HIGH: Sarah pinged you about the Q1 report data discrepancy. She needs it before her 2pm meeting.</span>\n<span class="highlight">MEDIUM: 3 support tickets assigned to you (avg response time target: 4 hours, you have 6 hours).</span>\n<span class="highlight">LOW: Team standup notes from yesterday — I\'ve already auto-summarized them for you.</span>\n\nRecommended order: Acme proposal (9-11am) -> Sarah\'s data fix (11-11:30am) -> Support tickets (after lunch).\n\nI noticed you spend ~45 min/day on report formatting. Want me to automate that?'}
+],
+gptScore:25,go2Score:96
+},
+{
+question:"Draft an email to a prospect",
+gpt:[
+{role:'user',text:'Draft an outreach email to a prospect in the healthcare space'},
+{role:'ai',text:'<span class="weak">Subject: [Your Company] - Healthcare Solutions\n\nDear [Prospect Name],\n\nI hope this email finds you well. I\'m reaching out because [Your Company] offers solutions that can help healthcare organizations like yours improve efficiency and patient outcomes.\n\nOur platform provides:\n- [Feature 1]\n- [Feature 2]\n- [Feature 3]\n\nI\'d love to schedule a 15-minute call to discuss how we can help your organization.\n\nBest regards,\n[Your Name]</span>\n\n<span class="weak">(Note: Please customize the brackets with your specific information.)</span>'}
+],
+go2:[
+{role:'user',text:'Draft an outreach email to a prospect in the healthcare space'},
+{role:'ai',text:'Based on your company\'s messaging, the prospect\'s profile (Dr. Williams, CTO at MedFlow), and what\'s worked in past healthcare deals:\n\n<span class="highlight">Subject: MedFlow\'s EHR workflow — we found 6 hours/week of savings</span>\n\n<span class="highlight">Dr. Williams,</span>\n\n<span class="highlight">I noticed MedFlow recently expanded to 3 new clinics (congrats!). When healthcare orgs scale like this, EHR data entry typically becomes a 6+ hour/week bottleneck per provider.</span>\n\n<span class="highlight">We helped Clearview Health (similar size, similar EHR stack) automate 80% of their documentation workflow. Their providers now spend 23 more minutes per day with patients.</span>\n\n<span class="highlight">Would a 12-minute demo make sense? I can show you exactly what we\'d automate in your Epic environment.</span>\n\n<span class="highlight">— [Your name]</span>\n\nThis follows your team\'s "specific pain + social proof + micro-ask" template that has a 34% reply rate.'}
+],
+gptScore:30,go2Score:92
+}
+];
+
+function showChat(idx,btn){
+document.querySelectorAll('.chat-prompt-btn').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+const c=chats[idx];
+const gptEl=document.getElementById('gpt-chat');
+const go2El=document.getElementById('go2-chat');
+gptEl.innerHTML='';go2El.innerHTML='';
+c.gpt.forEach((m,i)=>{
+setTimeout(()=>{
+gptEl.innerHTML+=`<div class="chat-msg ${m.role==='user'?'user':'ai'}"><div class="msg-bubble">${m.text}</div></div>`;
+gptEl.scrollTop=gptEl.scrollHeight;
+},i*400);
+});
+c.go2.forEach((m,i)=>{
+setTimeout(()=>{
+go2El.innerHTML+=`<div class="chat-msg ${m.role==='user'?'user':'ai'}"><div class="msg-bubble">${m.text}</div></div>`;
+go2El.scrollTop=go2El.scrollHeight;
+},i*400);
+});
+const gqf=document.getElementById('gpt-quality-fill');
+const goqf=document.getElementById('go2-quality-fill');
+gqf.style.width=c.gptScore+'%';
+goqf.style.width=c.go2Score+'%';
+document.getElementById('gpt-score').textContent=c.gptScore+'%';
+document.getElementById('go2-score').textContent=c.go2Score+'%';
+}
+showChat(0,document.querySelector('.chat-prompt-btn'));
+</script>
+</body>
+</html>
