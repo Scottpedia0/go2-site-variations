@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 vs. Time Trackers — They Watch. We Coach.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg-primary: #0a0a0a; --bg-secondary: #111111; --bg-card: #161616; --bg-card-hover: #1c1c1c;
+  --text-primary: #f0f0f0; --text-secondary: #999; --text-muted: #666;
+  --accent: #e63926; --accent-hover: #ff4d3a; --accent-orange: #f47b20;
+  --accent-gradient: linear-gradient(135deg, #e63926, #f47b20);
+  --border: #222; --border-light: #2a2a2a;
+  --font: 'Inter', -apple-system, sans-serif; --max-width: 1200px; --transition: 0.25s ease;
+}
+html { scroll-behavior: smooth; }
+body { font-family: var(--font); background: var(--bg-primary); color: var(--text-primary); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+.container { max-width: var(--max-width); margin: 0 auto; padding: 0 24px; }
+
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: rgba(10,10,10,0.92); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 0 24px; }
+nav .nav-inner { max-width: var(--max-width); margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 64px; }
+nav .logo { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; }
+nav .logo span { color: var(--accent); }
+nav .nav-links { display: flex; gap: 32px; align-items: center; }
+nav .nav-links a { font-size: 0.875rem; font-weight: 500; color: var(--text-secondary); transition: color var(--transition); }
+nav .nav-links a:hover, nav .nav-links a.active { color: var(--text-primary); }
+nav .nav-cta { background: var(--accent); color: #fff; padding: 8px 20px; border-radius: 6px; font-size: 0.875rem; font-weight: 600; transition: background var(--transition); }
+nav .nav-cta:hover { background: var(--accent-hover); }
+.hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; background: none; border: none; padding: 4px; }
+.hamburger span { display: block; width: 24px; height: 2px; background: var(--text-primary); transition: var(--transition); }
+@media (max-width: 768px) {
+  .hamburger { display: flex; }
+  nav .nav-links { position: fixed; top: 64px; left: 0; right: 0; background: rgba(10,10,10,0.97); backdrop-filter: blur(20px); flex-direction: column; padding: 24px; gap: 20px; border-bottom: 1px solid var(--border); transform: translateY(-120%); transition: transform 0.3s ease; }
+  nav .nav-links.open { transform: translateY(0); }
+}
+
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 32px; border-radius: 8px; font-size: 1rem; font-weight: 600; transition: all var(--transition); cursor: pointer; border: none; font-family: var(--font); }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 8px 30px rgba(230,57,38,0.3); }
+.btn-secondary { background: transparent; color: var(--text-primary); border: 1px solid var(--border-light); }
+.btn-secondary:hover { border-color: var(--text-muted); background: var(--bg-card); }
+.btn-large { padding: 18px 40px; font-size: 1.1rem; }
+
+.section { padding: 120px 0; }
+.section-label { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; color: var(--accent); margin-bottom: 16px; }
+.section-title { font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 20px; }
+.section-subtitle { font-size: 1.125rem; color: var(--text-secondary); max-width: 640px; line-height: 1.7; }
+.glow-line { height: 1px; background: linear-gradient(90deg, transparent, var(--accent), var(--accent-orange), transparent); margin: 0 auto; max-width: 600px; }
+
+footer { border-top: 1px solid var(--border); padding: 60px 24px; margin-top: 120px; }
+footer .footer-inner { max-width: var(--max-width); margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px; }
+footer .footer-brand .logo { font-size: 1.3rem; font-weight: 800; margin-bottom: 12px; }
+footer .footer-brand .logo span { color: var(--accent); }
+footer .footer-brand p { color: var(--text-muted); font-size: 0.875rem; max-width: 280px; }
+footer .footer-col h4 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 16px; }
+footer .footer-col a { display: block; color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 10px; transition: color var(--transition); }
+footer .footer-col a:hover { color: var(--text-primary); }
+footer .footer-bottom { max-width: var(--max-width); margin: 40px auto 0; padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; color: var(--text-muted); font-size: 0.8rem; }
+@media (max-width: 768px) { footer .footer-inner { grid-template-columns: 1fr 1fr; } footer .footer-bottom { flex-direction: column; gap: 8px; } }
+@media (max-width: 480px) { footer .footer-inner { grid-template-columns: 1fr; } }
+
+/* VS PAGE STYLES */
+.page-hero {
+  padding: 160px 0 100px;
+  position: relative;
+}
+.page-hero::before {
+  content: '';
+  position: absolute;
+  top: -100px; left: 50%; transform: translateX(-50%);
+  width: 800px; height: 400px;
+  background: radial-gradient(ellipse, rgba(230,57,38,0.06), transparent 70%);
+  pointer-events: none;
+}
+.page-hero h1 {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  margin-bottom: 24px;
+}
+.page-hero h1 .highlight {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.page-hero .lead {
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  max-width: 700px;
+  line-height: 1.7;
+}
+
+/* COMPETITOR CALLOUT */
+.competitors-intro {
+  background: var(--bg-secondary);
+  padding: 80px 0;
+}
+.competitor-logos {
+  display: flex;
+  gap: 40px;
+  flex-wrap: wrap;
+  margin-top: 32px;
+}
+.comp-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 28px;
+  transition: all var(--transition);
+}
+.comp-item:hover { border-color: var(--text-muted); }
+.comp-item .comp-name {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.comp-item .comp-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* COMPARISON TABLE */
+.comparison-table-wrapper {
+  overflow-x: auto;
+  margin-top: 48px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+}
+.comparison-table thead th {
+  background: var(--bg-card);
+  padding: 20px 16px;
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+}
+.comparison-table thead th:first-child { padding-left: 24px; }
+.comparison-table thead th.go2-col {
+  color: var(--accent);
+  background: rgba(230,57,38,0.05);
+}
+.comparison-table tbody td {
+  padding: 16px;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.comparison-table tbody td:first-child {
+  font-weight: 600;
+  color: var(--text-primary);
+  padding-left: 24px;
+  min-width: 200px;
+}
+.comparison-table tbody td.go2-col {
+  color: var(--text-primary);
+  font-weight: 500;
+  background: rgba(230,57,38,0.03);
+}
+.comparison-table tbody tr:hover td { background: var(--bg-card); }
+.comparison-table tbody tr:hover td.go2-col { background: rgba(230,57,38,0.06); }
+
+.check { color: #22c55e; font-weight: 700; }
+.cross { color: #ef4444; font-weight: 700; }
+.partial { color: #f59e0b; font-weight: 700; }
+.go2-advantage { color: var(--accent); font-weight: 700; }
+
+/* PUNCHLINE */
+.punchline {
+  background: var(--bg-secondary);
+  text-align: center;
+  padding: 120px 0;
+}
+.punchline h2 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  margin-bottom: 24px;
+}
+.punchline h2 .highlight {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.punchline p {
+  font-size: 1.125rem;
+  color: var(--text-secondary);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+/* PRICING COMPARISON */
+.pricing-compare {
+  margin-top: 48px;
+}
+.price-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 20px 0;
+  align-items: center;
+}
+.price-row.header {
+  border-bottom: 2px solid var(--border-light);
+  padding-bottom: 12px;
+  margin-bottom: 8px;
+}
+.price-row .pr-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.price-row .pr-value {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+.price-row .pr-value.go2 {
+  color: var(--accent);
+  font-weight: 600;
+}
+.price-row.header .pr-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.price-row.header .pr-value {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+.price-row.header .pr-value.go2 { color: var(--accent); }
+
+/* WHAT THEY DO */
+.what-they-do-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-top: 48px;
+}
+.wtd-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+}
+.wtd-card h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.wtd-card .wtd-tagline {
+  font-size: 0.8rem;
+  color: var(--accent);
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+.wtd-card ul {
+  list-style: none;
+}
+.wtd-card ul li {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.5;
+}
+.wtd-card ul li:last-child { border-bottom: none; }
+
+@media (max-width: 900px) { .what-they-do-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .what-they-do-grid { grid-template-columns: 1fr; } }
+
+/* GAP CALLOUTS */
+.gap-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 48px;
+}
+.gap-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px;
+  border-top: 3px solid var(--accent);
+}
+.gap-card h4 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.gap-card p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.gap-card .gap-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+
+@media (max-width: 768px) { .gap-cards { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="logo"><a href="index.html">go<span>2</span></a></div>
+    <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="product.html">Product</a>
+      <a href="vs-time-trackers.html" class="active">vs. Time Trackers</a>
+      <a href="automation.html">Automation</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="pricing.html" class="nav-cta">Get Started</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="page-hero">
+  <div class="container">
+    <span class="section-label">The Comparison</span>
+    <h1>They watch.<br><span class="highlight">We coach.</span></h1>
+    <p class="lead">Hubstaff, Time Doctor, ActivTrak, Teramind — they've been around for years. They capture activity. They generate reports. And after all of it, your team is still losing 14 hours a week. Here's why.</p>
+  </div>
+</section>
+
+<div class="glow-line"></div>
+
+<!-- WHAT THEY DO -->
+<section class="section">
+  <div class="container">
+    <span class="section-label">Know the field</span>
+    <h2 class="section-title">Here's what they actually do</h2>
+    <p class="section-subtitle">Each of these tools has a different angle. None of them have generative AI coaching. None of them close the loop from insight to action.</p>
+    <div class="what-they-do-grid">
+      <div class="wtd-card">
+        <h4>Hubstaff</h4>
+        <div class="wtd-tagline">Time tracking + screenshots</div>
+        <ul>
+          <li>Random screenshots every 10 min</li>
+          <li>GPS tracking for field teams</li>
+          <li>Activity levels via mouse/keyboard</li>
+          <li>Basic project time allocation</li>
+          <li>Payroll integration</li>
+          <li>No AI analysis. No coaching.</li>
+        </ul>
+      </div>
+      <div class="wtd-card">
+        <h4>Time Doctor</h4>
+        <div class="wtd-tagline">Distraction alerts + reports</div>
+        <ul>
+          <li>Website/app usage monitoring</li>
+          <li>Distraction alerts (pop-up warnings)</li>
+          <li>Screencasts and screenshots</li>
+          <li>Client/project billing</li>
+          <li>Payroll features</li>
+          <li>No contextual understanding.</li>
+        </ul>
+      </div>
+      <div class="wtd-card">
+        <h4>ActivTrak</h4>
+        <div class="wtd-tagline">Workforce analytics</div>
+        <ul>
+          <li>Application usage dashboards</li>
+          <li>Productivity scoring</li>
+          <li>Team comparison reports</li>
+          <li>Website categorization</li>
+          <li>Location-based insights</li>
+          <li>Analytics only. No intervention.</li>
+        </ul>
+      </div>
+      <div class="wtd-card">
+        <h4>Teramind</h4>
+        <div class="wtd-tagline">Security + surveillance</div>
+        <ul>
+          <li>Keystroke logging</li>
+          <li>Email/chat content monitoring</li>
+          <li>Screen recording (continuous)</li>
+          <li>DLP and insider threat detection</li>
+          <li>Behavioral rules engine</li>
+          <li>Heavy surveillance. Trust-destroying.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURE COMPARISON -->
+<section class="section" style="background: var(--bg-secondary);">
+  <div class="container">
+    <span class="section-label">Feature-by-Feature</span>
+    <h2 class="section-title">The capability gap</h2>
+    <p class="section-subtitle">Every row tells the same story. They measure. We transform.</p>
+    <div class="comparison-table-wrapper">
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Capability</th>
+            <th>Hubstaff</th>
+            <th>Time Doctor</th>
+            <th>ActivTrak</th>
+            <th>Teramind</th>
+            <th class="go2-col">Go2</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Activity tracking</td>
+            <td><span class="check">Yes</span></td>
+            <td><span class="check">Yes</span></td>
+            <td><span class="check">Yes</span></td>
+            <td><span class="check">Yes</span></td>
+            <td class="go2-col"><span class="check">Yes</span> + context</td>
+          </tr>
+          <tr>
+            <td>Screenshots</td>
+            <td><span class="check">Yes</span></td>
+            <td><span class="check">Yes</span></td>
+            <td><span class="cross">No</span></td>
+            <td><span class="check">Yes</span> (continuous)</td>
+            <td class="go2-col"><span class="cross">No</span> — not needed</td>
+          </tr>
+          <tr>
+            <td>Generative AI coaching</td>
+            <td><span class="cross">No</span></td>
+            <td><span class="cross">No</span></td>
+            <td><span class="cross">No</span></td>
+            <td><span class="cross">No</span></td>
+            <td class="go2-col"><span class="go2-advantage">Yes</span></td>
+          </tr>
+          <tr>
+            <td>Real-time nudges to workers</td>
+            <td><span class="cross">No</span></td>
+            <td><span class="partial">Basic</span> (idle alerts)</td>
+            <td><span class="cross">No</span></td>
+            <td><span class="partial">Rule-based</span></td>
+            <td class="go2-col"><span class="go2-advantage">AI-generated, contextual</span></td>
+          </tr>
+          <tr>
+            <td>Workflow mapping</td>
+            <td><span class="cross">No</span></td>
+            <td><span class="cross">No</span></td>
+            <td><span class="partial">Basic</span></td>
+            <td><span class="cross">No</span></td>
+            <td class="go2-col"><span class="go2-advantage">Full auto-discovery</span></td>
+          </tr>
+          <tr>
+            <td>Process automation</td>
+            <td><span class="cross">No</span></td>
+            <td><span class="cross">No</span></td>
+            <td><span class="cross">No</span></td>
+            <td><span class="cross">No</span></td>
+            <td class="go2-col"><span class="go2-advantage">AI agent deployment</span></td>
+          </tr>
+          <tr>
+            <td>Privacy-first architecture</td>
+            <td><span class="cross">No</span></td>
+            <td><span class="cross">No</span></td>
+            <td><span class="partial">Partial</span></td>
+            <td><span class="cross">No</span> (keystroke logging)</td>
+            <td class="go2-col"><span class="go2-advantage">Yes</span> — managers see aggregates only</td>
+          </tr>
+          <tr>
+            <td>Content monitoring</td>
+            <td><span class="partial">Screenshots</span></td>
+            <td><span class="partial">Screenshots</span></td>
+            <td><span class="cross">No</span></td>
+            <td><span class="check">Yes</span> (email, chat, files)</td>
+            <td class="go2-col"><span class="cross">Never</span> — content-blind</td>
+          </tr>
+          <tr>
+            <td>Focus quality scoring</td>
+            <td><span class="cross">No</span></td>
+            <td><span class="cross">No</span></td>
+            <td><span class="partial">Basic</span></td>
+            <td><span class="cross">No</span></td>
+            <td class="go2-col"><span class="go2-advantage">AI-scored with recommendations</span></td>
+          </tr>
+          <tr>
+            <td>Training data scale</td>
+            <td>N/A</td>
+            <td>N/A</td>
+            <td>N/A</td>
+            <td>N/A</td>
+            <td class="go2-col"><span class="go2-advantage">~1M workers</span></td>
+          </tr>
+          <tr>
+            <td>Meeting optimization</td>
+            <td><span class="cross">No</span></td>
+            <td><span class="cross">No</span></td>
+            <td><span class="partial">Reporting only</span></td>
+            <td><span class="cross">No</span></td>
+            <td class="go2-col"><span class="go2-advantage">AI restructure suggestions</span></td>
+          </tr>
+          <tr>
+            <td>Employee experience</td>
+            <td>Surveillance feel</td>
+            <td>Pop-up shaming</td>
+            <td>Passive tracking</td>
+            <td>Invasive monitoring</td>
+            <td class="go2-col"><span class="go2-advantage">Private coaching ally</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- GAP CALLOUTS -->
+<section class="section">
+  <div class="container">
+    <span class="section-label">The Gap</span>
+    <h2 class="section-title">What none of them can do</h2>
+    <p class="section-subtitle">These aren't incremental features. They're category-defining capabilities that require generative AI at the core.</p>
+    <div class="gap-cards">
+      <div class="gap-card">
+        <div class="gap-label">Capability gap #1</div>
+        <h4>Generate coaching in context</h4>
+        <p>Every time tracker can tell you "Sarah used Slack for 3 hours." None of them can say "Sarah's Slack usage spikes during her peak focus window — here's a restructure that would recover 6 hours of deep work per week." That requires generative AI. They don't have it.</p>
+      </div>
+      <div class="gap-card">
+        <div class="gap-label">Capability gap #2</div>
+        <h4>Map and automate workflows</h4>
+        <p>Time trackers record activity. Go2 watches activity long enough to understand the underlying process, map it, identify the repetitive steps, and deploy AI agents to handle them. The tracker shows you a problem. Go2 eliminates it.</p>
+      </div>
+      <div class="gap-card">
+        <div class="gap-label">Capability gap #3</div>
+        <h4>Coach without surveilling</h4>
+        <p>The entire time tracker category is built on the assumption that managers need to see what individuals do. Go2 is built on the opposite assumption: workers coach themselves when they have the right data. Managers lead with team-level intelligence.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING COMPARISON -->
+<section class="section" style="background: var(--bg-secondary);">
+  <div class="container">
+    <span class="section-label">Pricing Comparison</span>
+    <h2 class="section-title">What you pay. What you get.</h2>
+    <p class="section-subtitle">Time trackers are cheaper because they do less. The question is whether "less" is enough.</p>
+    <div class="pricing-compare">
+      <div class="price-row header">
+        <div class="pr-label">Tool</div>
+        <div class="pr-value">Price (per user/mo)</div>
+        <div class="pr-value go2">What you get</div>
+      </div>
+      <div class="price-row">
+        <div class="pr-label">Hubstaff</div>
+        <div class="pr-value">$7 - $25</div>
+        <div class="pr-value">Time tracking, screenshots, basic reporting</div>
+      </div>
+      <div class="price-row">
+        <div class="pr-label">Time Doctor</div>
+        <div class="pr-value">$7 - $20</div>
+        <div class="pr-value">Distraction alerts, screenshots, payroll</div>
+      </div>
+      <div class="price-row">
+        <div class="pr-label">ActivTrak</div>
+        <div class="pr-value">$10 - $17</div>
+        <div class="pr-value">Analytics dashboards, productivity scoring</div>
+      </div>
+      <div class="price-row">
+        <div class="pr-label">Teramind</div>
+        <div class="pr-value">$15 - $30</div>
+        <div class="pr-value">Full surveillance, DLP, screen recording</div>
+      </div>
+      <div class="price-row" style="border-bottom: 2px solid var(--accent); padding: 24px 0; margin-top: 8px;">
+        <div class="pr-label" style="color: var(--accent); font-size: 1.1rem;">Go2</div>
+        <div class="pr-value go2" style="font-size: 1.1rem;">$35 - $55</div>
+        <div class="pr-value go2">AI coaching, workflow mapping, agent deployment, aggregated insights</div>
+      </div>
+    </div>
+    <p style="margin-top: 32px; color: var(--text-muted); font-size: 0.9rem; max-width: 600px;">Go2 costs more because it does more. The ROI equation: if Go2 recovers even 2 hours per worker per week at a $50/hr blended rate, that's $400/mo in recovered productivity. For $35-55/mo.</p>
+  </div>
+</section>
+
+<!-- PUNCHLINE -->
+<section class="punchline">
+  <div class="container">
+    <div class="glow-line" style="margin-bottom: 60px;"></div>
+    <h2>They watch.<br><span class="highlight">We coach.</span></h2>
+    <p>Time trackers are surveillance tools dressed up as productivity software. Go2 is a coaching engine that makes your team genuinely better. There is no comparison.</p>
+    <br><br>
+    <a href="pricing.html" class="btn btn-primary btn-large">Start Free Trial</a>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="logo">go<span>2</span></div>
+      <p>AI productivity coaching for teams that want to work better, not just be watched.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <a href="product.html">How It Works</a>
+      <a href="vs-time-trackers.html">vs. Time Trackers</a>
+      <a href="automation.html">Automation</a>
+      <a href="pricing.html">Pricing</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="#">About</a>
+      <a href="#">Blog</a>
+      <a href="#">Careers</a>
+      <a href="#">Contact</a>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="#">Security</a>
+      <a href="#">GDPR</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>&copy; 2026 Go2. All rights reserved.</span>
+    <span>Built with certainty.</span>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The Automation Factory</title>
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --surface2: #1e1e1e;
+    --border: #2a2a2a;
+    --grid: #1a1a1a;
+    --orange: #e8760a;
+    --amber: #f5a623;
+    --amber-dim: #a06b10;
+    --text: #e0e0e0;
+    --text-dim: #888;
+    --text-bright: #ffffff;
+    --blueprint: #1a2a3a;
+    --blueprint-line: #2a4a6a;
+    --mono: 'Courier New', 'Consolas', monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* Blueprint grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      linear-gradient(rgba(42,74,106,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(42,74,106,0.06) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  section, header, footer { position: relative; z-index: 1; }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(13,13,13,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .nav-logo {
+    font-family: var(--mono);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--orange);
+    text-decoration: none;
+    letter-spacing: 2px;
+  }
+
+  .nav-links { display: flex; gap: 2rem; align-items: center; }
+  .nav-links a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--amber); }
+
+  .nav-cta {
+    background: var(--orange) !important;
+    color: var(--bg) !important;
+    padding: 0.5rem 1.2rem;
+    border-radius: 4px;
+    font-weight: 700 !important;
+  }
+  .nav-cta:hover { background: var(--amber) !important; }
+
+  .nav-toggle { display: none; background: none; border: none; color: var(--text); font-size: 1.5rem; cursor: pointer; }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8rem 2rem 4rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 800px; height: 800px;
+    background: radial-gradient(circle, rgba(232,118,10,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-content {
+    max-width: 900px;
+    text-align: center;
+  }
+
+  .hero-tag {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--orange);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .hero-tag::before, .hero-tag::after {
+    content: '///';
+    color: var(--amber-dim);
+  }
+
+  .hero h1 {
+    font-family: var(--sans);
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    color: var(--text-bright);
+    line-height: 1.15;
+    margin-bottom: 1.5rem;
+  }
+
+  .hero h1 .stat {
+    color: var(--orange);
+    font-family: var(--mono);
+  }
+
+  .hero-sub {
+    font-size: 1.15rem;
+    color: var(--text-dim);
+    max-width: 680px;
+    margin: 0 auto 2.5rem;
+    line-height: 1.7;
+  }
+
+  .hero-sub strong { color: var(--text); }
+
+  .hero-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    background: var(--orange);
+    color: var(--bg);
+    padding: 0.9rem 2rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: var(--mono);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+  .btn-primary:hover { background: var(--amber); transform: translateY(-1px); }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text);
+    padding: 0.9rem 2rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 1rem;
+    font-family: var(--mono);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+  .btn-secondary:hover { border-color: var(--orange); color: var(--orange); }
+
+  /* FACTORY COUNTER */
+  .factory-counter {
+    margin-top: 3rem;
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+    flex-wrap: wrap;
+  }
+  .counter-item {
+    text-align: center;
+  }
+  .counter-num {
+    font-family: var(--mono);
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--orange);
+  }
+  .counter-label {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-top: 0.3rem;
+  }
+
+  /* SECTION STYLES */
+  .section {
+    padding: 6rem 2rem;
+  }
+
+  .section-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .section-tag {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--orange);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  .section-title {
+    font-size: clamp(1.5rem, 3.5vw, 2.4rem);
+    font-weight: 800;
+    color: var(--text-bright);
+    margin-bottom: 1rem;
+    line-height: 1.2;
+  }
+
+  .section-desc {
+    color: var(--text-dim);
+    max-width: 600px;
+    font-size: 1.05rem;
+    line-height: 1.7;
+    margin-bottom: 3rem;
+  }
+
+  /* THE ASSEMBLY LINE — PIPELINE */
+  .pipeline-section {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .pipeline {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    position: relative;
+    margin-top: 2rem;
+  }
+
+  .pipeline-step {
+    padding: 2rem;
+    position: relative;
+    border-right: 1px dashed var(--border);
+  }
+  .pipeline-step:last-child { border-right: none; }
+
+  .step-number {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--amber-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  .step-icon {
+    width: 56px; height: 56px;
+    border: 2px solid var(--orange);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1.2rem;
+    position: relative;
+    background: var(--bg);
+  }
+
+  .step-icon::after {
+    content: '';
+    position: absolute;
+    top: -6px; right: -6px;
+    width: 12px; height: 12px;
+    background: var(--orange);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .pipeline-step:nth-child(1) .step-icon::after { animation-delay: 0s; }
+  .pipeline-step:nth-child(2) .step-icon::after { animation-delay: 0.5s; }
+  .pipeline-step:nth-child(3) .step-icon::after { animation-delay: 1s; }
+  .pipeline-step:nth-child(4) .step-icon::after { animation-delay: 1.5s; }
+
+  .step-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-bright);
+    margin-bottom: 0.6rem;
+  }
+
+  .step-desc {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .pipeline-arrow {
+    display: none;
+  }
+
+  /* CONVEYOR BELT VISUAL */
+  .conveyor {
+    margin-top: 3rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1.5rem 2rem;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .conveyor-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--amber-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  .conveyor-track {
+    display: flex;
+    gap: 1rem;
+    animation: scroll 20s linear infinite;
+  }
+
+  .conveyor-item {
+    flex-shrink: 0;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.8rem 1.2rem;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    white-space: nowrap;
+    position: relative;
+  }
+
+  .conveyor-item.automated {
+    border-color: var(--orange);
+    color: var(--orange);
+  }
+  .conveyor-item.automated::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: -1px; right: -1px; bottom: -1px;
+    border-radius: 4px;
+    background: rgba(232,118,10,0.05);
+    pointer-events: none;
+  }
+
+  @keyframes scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* WHAT GETS AUTOMATED */
+  .auto-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+
+  .auto-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1.8rem;
+    transition: border-color 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .auto-card:hover { border-color: var(--orange); }
+
+  .auto-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--orange);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .auto-card:hover::before { opacity: 1; }
+
+  .auto-card-dept {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--amber-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+  }
+
+  .auto-card h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-bright);
+    margin-bottom: 0.6rem;
+  }
+
+  .auto-card p {
+    font-size: 0.88rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin-bottom: 1rem;
+  }
+
+  .auto-card-stat {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--orange);
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--border);
+  }
+
+  /* AGENT EXAMPLES */
+  .agents-section {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .agent-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .agent-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2rem;
+    display: flex;
+    gap: 1.5rem;
+    transition: border-color 0.3s;
+  }
+  .agent-card:hover { border-color: var(--orange); }
+
+  .agent-icon {
+    width: 48px; height: 48px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+    background: var(--surface);
+  }
+
+  .agent-info { flex: 1; }
+
+  .agent-name {
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-bright);
+    margin-bottom: 0.2rem;
+  }
+
+  .agent-status {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: #4a9;
+    margin-bottom: 0.7rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .agent-status::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: #4a9;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .agent-desc {
+    font-size: 0.88rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin-bottom: 0.8rem;
+  }
+
+  .agent-tasks {
+    list-style: none;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+  .agent-tasks li {
+    padding: 0.25rem 0;
+    padding-left: 1rem;
+    position: relative;
+  }
+  .agent-tasks li::before {
+    content: '>';
+    position: absolute;
+    left: 0;
+    color: var(--orange);
+  }
+
+  /* BLUEPRINT DIAGRAM */
+  .blueprint {
+    background: var(--blueprint);
+    border: 1px solid var(--blueprint-line);
+    border-radius: 6px;
+    padding: 3rem 2rem;
+    margin-top: 3rem;
+    text-align: center;
+    position: relative;
+  }
+
+  .blueprint-title {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--blueprint-line);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+  }
+
+  .blueprint-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .bp-node {
+    background: rgba(42,74,106,0.3);
+    border: 1px solid var(--blueprint-line);
+    border-radius: 4px;
+    padding: 0.8rem 1.2rem;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--text);
+  }
+
+  .bp-node.active {
+    border-color: var(--orange);
+    color: var(--orange);
+    background: rgba(232,118,10,0.08);
+  }
+
+  .bp-arrow {
+    font-family: var(--mono);
+    color: var(--blueprint-line);
+    font-size: 1.2rem;
+  }
+
+  /* HOW IT WORKS */
+  .how-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+
+  .how-card {
+    text-align: center;
+    padding: 2rem;
+  }
+
+  .how-num {
+    font-family: var(--mono);
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--surface2);
+    line-height: 1;
+    margin-bottom: 1rem;
+    -webkit-text-stroke: 1px var(--border);
+  }
+
+  .how-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-bright);
+    margin-bottom: 0.6rem;
+  }
+
+  .how-desc {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  /* PRICING */
+  .pricing-section {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .price-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2.5rem;
+    position: relative;
+    transition: border-color 0.3s;
+  }
+  .price-card:hover { border-color: var(--orange); }
+
+  .price-card.featured {
+    border-color: var(--orange);
+  }
+
+  .price-card.featured::before {
+    content: 'MOST POPULAR';
+    position: absolute;
+    top: -12px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--orange);
+    color: var(--bg);
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    padding: 0.3rem 1rem;
+    border-radius: 3px;
+    font-weight: 700;
+  }
+
+  .price-tier {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--orange);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .price-name {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text-bright);
+    margin-bottom: 0.5rem;
+  }
+
+  .price-amount {
+    font-family: var(--mono);
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-bright);
+    margin-bottom: 0.2rem;
+  }
+  .price-amount span {
+    font-size: 1rem;
+    color: var(--text-dim);
+    font-weight: 400;
+  }
+
+  .price-desc {
+    font-size: 0.88rem;
+    color: var(--text-dim);
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+  }
+
+  .price-features {
+    list-style: none;
+    margin-bottom: 2rem;
+  }
+  .price-features li {
+    padding: 0.5rem 0;
+    font-size: 0.9rem;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+  .price-features li:last-child { border-bottom: none; }
+  .price-check {
+    color: var(--orange);
+    font-weight: 700;
+    flex-shrink: 0;
+    font-family: var(--mono);
+  }
+
+  .price-cta {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 0.9rem;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+  }
+
+  .price-cta.primary {
+    background: var(--orange);
+    color: var(--bg);
+    border: none;
+  }
+  .price-cta.primary:hover { background: var(--amber); }
+
+  .price-cta.secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .price-cta.secondary:hover { border-color: var(--orange); color: var(--orange); }
+
+  .pricing-note {
+    text-align: center;
+    margin-top: 2.5rem;
+    padding: 1.5rem 2rem;
+    background: rgba(232,118,10,0.06);
+    border: 1px solid rgba(232,118,10,0.15);
+    border-radius: 6px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .pricing-note p {
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    color: var(--amber);
+    line-height: 1.6;
+  }
+
+  /* TERMINAL CTA */
+  .terminal-section {
+    text-align: center;
+    padding: 8rem 2rem;
+  }
+
+  .terminal-window {
+    max-width: 640px;
+    margin: 0 auto 3rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    text-align: left;
+  }
+
+  .terminal-bar {
+    background: var(--surface2);
+    padding: 0.6rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .terminal-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--border);
+  }
+  .terminal-dot:nth-child(1) { background: #ff5f57; }
+  .terminal-dot:nth-child(2) { background: #ffbd2e; }
+  .terminal-dot:nth-child(3) { background: #28c840; }
+
+  .terminal-body {
+    padding: 1.5rem;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    line-height: 1.8;
+  }
+
+  .terminal-line {
+    color: var(--text-dim);
+  }
+  .terminal-line .prompt { color: var(--orange); }
+  .terminal-line .cmd { color: var(--text-bright); }
+  .terminal-line .output { color: #4a9; }
+  .terminal-line .comment { color: #555; }
+
+  .final-cta-title {
+    font-size: clamp(1.5rem, 3vw, 2.2rem);
+    font-weight: 800;
+    color: var(--text-bright);
+    margin-bottom: 1rem;
+  }
+
+  .final-cta-sub {
+    color: var(--text-dim);
+    font-size: 1.05rem;
+    margin-bottom: 2rem;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* FOOTER */
+  footer {
+    padding: 3rem 2rem;
+    border-top: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .footer-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .footer-brand {
+    font-family: var(--mono);
+    font-size: 1rem;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 2rem;
+  }
+  .footer-links a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--orange); }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .pipeline { grid-template-columns: 1fr 1fr; }
+    .pipeline-step { border-right: none; border-bottom: 1px dashed var(--border); }
+    .auto-grid { grid-template-columns: 1fr 1fr; }
+    .agent-grid { grid-template-columns: 1fr; }
+    .how-grid { grid-template-columns: 1fr; gap: 1rem; }
+  }
+
+  @media (max-width: 640px) {
+    nav { padding: 0 1rem; }
+    .nav-links { display: none; }
+    .nav-links.open {
+      display: flex;
+      flex-direction: column;
+      position: absolute;
+      top: 60px; left: 0; right: 0;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem;
+      gap: 1rem;
+    }
+    .nav-toggle { display: block; }
+
+    .hero { padding: 7rem 1.5rem 3rem; }
+    .section { padding: 4rem 1.5rem; }
+    .pipeline { grid-template-columns: 1fr; }
+    .auto-grid { grid-template-columns: 1fr; }
+    .pricing-grid { grid-template-columns: 1fr; }
+    .factory-counter { gap: 1.5rem; }
+
+    .blueprint-flow {
+      flex-direction: column;
+    }
+    .bp-arrow { transform: rotate(90deg); }
+
+    .footer-inner { flex-direction: column; text-align: center; }
+    .footer-links { justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">GO2</a>
+  <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">&#9776;</button>
+  <div class="nav-links">
+    <a href="#pipeline">How It Works</a>
+    <a href="#automations">Automations</a>
+    <a href="#agents">Agents</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#start" class="nav-cta">Get Started</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-tag">Automation Discovery Engine</div>
+    <h1>
+      Your team does <span class="stat">10,000</span> things a week.<br>
+      <span class="stat">4,000</span> of them could be automated.<br>
+      Go2 finds which ones and builds the bots.
+    </h1>
+    <p class="hero-sub">
+      Go2 maps every workflow in your business, identifies repetitive work,
+      builds automation playbooks, and deploys <strong>AI agents</strong> to handle them.
+      Humans do creative work. Machines do the rest.
+    </p>
+    <div class="hero-actions">
+      <a href="#start" class="btn-primary">START DISCOVERY</a>
+      <a href="#pipeline" class="btn-secondary">SEE THE PIPELINE</a>
+    </div>
+    <div class="factory-counter">
+      <div class="counter-item">
+        <div class="counter-num">40%</div>
+        <div class="counter-label">Avg. tasks automatable</div>
+      </div>
+      <div class="counter-item">
+        <div class="counter-num">2 FTE</div>
+        <div class="counter-label">Work eliminated in 6 mo</div>
+      </div>
+      <div class="counter-item">
+        <div class="counter-num">14 days</div>
+        <div class="counter-label">First agent deployed</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PIPELINE -->
+<section class="section pipeline-section" id="pipeline">
+  <div class="section-inner">
+    <div class="section-tag">// The Assembly Line</div>
+    <h2 class="section-title">From manual work to autonomous agents<br>in four stages</h2>
+    <p class="section-desc">Every automation starts with understanding. Go2 captures real work, maps the patterns, engineers the solution, and deploys agents that run 24/7.</p>
+
+    <div class="pipeline">
+      <div class="pipeline-step">
+        <div class="step-number">Stage 01 / Capture</div>
+        <div class="step-icon">&#9881;</div>
+        <div class="step-title">Work Capture</div>
+        <div class="step-desc">Go2 observes how your team actually works. Every click, every handoff, every repeated sequence is logged and timestamped. No surveys. No guessing.</div>
+      </div>
+      <div class="pipeline-step">
+        <div class="step-number">Stage 02 / Map</div>
+        <div class="step-icon">&#9673;</div>
+        <div class="step-title">Workflow Mapping</div>
+        <div class="step-desc">AI assembles raw activity into structured workflow maps. You see exactly what your team does, how long it takes, and where the repetition lives.</div>
+      </div>
+      <div class="pipeline-step">
+        <div class="step-number">Stage 03 / Engineer</div>
+        <div class="step-icon">&#9670;</div>
+        <div class="step-title">Automation Engineering</div>
+        <div class="step-desc">Go2 designs automation playbooks for every repetitive workflow. Each playbook specifies triggers, logic, integrations, and edge cases. Human-reviewed, machine-built.</div>
+      </div>
+      <div class="pipeline-step">
+        <div class="step-number">Stage 04 / Deploy</div>
+        <div class="step-icon">&#9654;</div>
+        <div class="step-title">Agent Deployment</div>
+        <div class="step-desc">AI agents built on open-source frameworks go live. They handle the work autonomously, report exceptions, and improve over time. Your team focuses on what matters.</div>
+      </div>
+    </div>
+
+    <!-- Blueprint diagram -->
+    <div class="blueprint">
+      <div class="blueprint-title">/// System Architecture</div>
+      <div class="blueprint-flow">
+        <div class="bp-node">Employee Activity</div>
+        <div class="bp-arrow">&rarr;</div>
+        <div class="bp-node active">Go2 Capture Layer</div>
+        <div class="bp-arrow">&rarr;</div>
+        <div class="bp-node active">Workflow Engine</div>
+        <div class="bp-arrow">&rarr;</div>
+        <div class="bp-node active">Automation AI</div>
+        <div class="bp-arrow">&rarr;</div>
+        <div class="bp-node">Agent Fleet</div>
+        <div class="bp-arrow">&rarr;</div>
+        <div class="bp-node">Work Done</div>
+      </div>
+    </div>
+
+    <!-- Conveyor belt -->
+    <div class="conveyor">
+      <div class="conveyor-label">/// Live Automation Queue</div>
+      <div class="conveyor-track">
+        <div class="conveyor-item">Invoice data entry</div>
+        <div class="conveyor-item automated">&#x2713; Lead follow-up emails</div>
+        <div class="conveyor-item">Weekly report compilation</div>
+        <div class="conveyor-item automated">&#x2713; PTO request routing</div>
+        <div class="conveyor-item">Vendor quote comparison</div>
+        <div class="conveyor-item automated">&#x2713; Meeting scheduling</div>
+        <div class="conveyor-item">Customer onboarding docs</div>
+        <div class="conveyor-item automated">&#x2713; Expense categorization</div>
+        <div class="conveyor-item">Inventory reorder alerts</div>
+        <div class="conveyor-item automated">&#x2713; Status update pings</div>
+        <!-- Duplicate for seamless loop -->
+        <div class="conveyor-item">Invoice data entry</div>
+        <div class="conveyor-item automated">&#x2713; Lead follow-up emails</div>
+        <div class="conveyor-item">Weekly report compilation</div>
+        <div class="conveyor-item automated">&#x2713; PTO request routing</div>
+        <div class="conveyor-item">Vendor quote comparison</div>
+        <div class="conveyor-item automated">&#x2713; Meeting scheduling</div>
+        <div class="conveyor-item">Customer onboarding docs</div>
+        <div class="conveyor-item automated">&#x2713; Expense categorization</div>
+        <div class="conveyor-item">Inventory reorder alerts</div>
+        <div class="conveyor-item automated">&#x2713; Status update pings</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT GETS AUTOMATED -->
+<section class="section" id="automations">
+  <div class="section-inner">
+    <div class="section-tag">// Automation Targets</div>
+    <h2 class="section-title">Specific work that agents take over</h2>
+    <p class="section-desc">These aren't hypotheticals. These are the actual task categories Go2 identifies and automates across typical SMBs.</p>
+
+    <div class="auto-grid">
+      <div class="auto-card">
+        <div class="auto-card-dept">Sales</div>
+        <h3>Lead Qualification &amp; Follow-Up</h3>
+        <p>Agent scores inbound leads, sends personalized follow-up sequences, books meetings on rep calendars. Reps only talk to qualified prospects.</p>
+        <div class="auto-card-stat">~12 hrs/week recovered per rep</div>
+      </div>
+      <div class="auto-card">
+        <div class="auto-card-dept">Finance</div>
+        <h3>Invoice Processing &amp; Reconciliation</h3>
+        <p>Agent extracts data from invoices (any format), matches to POs, flags discrepancies, routes approvals. Closes the books faster.</p>
+        <div class="auto-card-stat">~8 hrs/week recovered</div>
+      </div>
+      <div class="auto-card">
+        <div class="auto-card-dept">Operations</div>
+        <h3>Report Generation &amp; Distribution</h3>
+        <p>Agent pulls data from your tools, assembles weekly/monthly reports, formats them to your specs, distributes to stakeholders. Every Monday at 8am.</p>
+        <div class="auto-card-stat">~6 hrs/week recovered</div>
+      </div>
+      <div class="auto-card">
+        <div class="auto-card-dept">HR</div>
+        <h3>Employee Onboarding Workflows</h3>
+        <p>Agent provisions accounts, sends welcome sequences, schedules orientation meetings, tracks completion of day-1 checklists. Zero manual coordination.</p>
+        <div class="auto-card-stat">~4 hrs saved per new hire</div>
+      </div>
+      <div class="auto-card">
+        <div class="auto-card-dept">Support</div>
+        <h3>Ticket Triage &amp; Routing</h3>
+        <p>Agent categorizes incoming tickets, pulls relevant context from your knowledge base, routes to the right team, drafts initial responses for review.</p>
+        <div class="auto-card-stat">~60% tickets auto-handled</div>
+      </div>
+      <div class="auto-card">
+        <div class="auto-card-dept">Procurement</div>
+        <h3>Vendor Communication &amp; Ordering</h3>
+        <p>Agent monitors inventory levels, generates purchase orders, sends to approved vendors, tracks delivery status, updates your systems on receipt.</p>
+        <div class="auto-card-stat">~10 hrs/week recovered</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEPLOYED AGENTS -->
+<section class="section agents-section" id="agents">
+  <div class="section-inner">
+    <div class="section-tag">// Agent Fleet</div>
+    <h2 class="section-title">Meet the agents Go2 deploys</h2>
+    <p class="section-desc">Built on open-source frameworks. Running in your environment. Each agent is purpose-built for a specific workflow and improves with every execution.</p>
+
+    <div class="agent-grid">
+      <div class="agent-card">
+        <div class="agent-icon">&#9993;</div>
+        <div class="agent-info">
+          <div class="agent-name">Outreach Agent</div>
+          <div class="agent-status">ACTIVE</div>
+          <div class="agent-desc">Handles multi-step outbound sequences across email and LinkedIn. Personalizes messages based on prospect data, handles replies, books meetings.</div>
+          <ul class="agent-tasks">
+            <li>Prospect research &amp; enrichment</li>
+            <li>Sequence personalization</li>
+            <li>Reply classification &amp; routing</li>
+            <li>Calendar booking</li>
+          </ul>
+        </div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-icon">&#128196;</div>
+        <div class="agent-info">
+          <div class="agent-name">Doc Processing Agent</div>
+          <div class="agent-status">ACTIVE</div>
+          <div class="agent-desc">Ingests documents in any format, extracts structured data, validates against your schemas, and pushes clean data to downstream systems.</div>
+          <ul class="agent-tasks">
+            <li>PDF / image / email parsing</li>
+            <li>Field extraction &amp; validation</li>
+            <li>Exception flagging</li>
+            <li>System-of-record updates</li>
+          </ul>
+        </div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-icon">&#128202;</div>
+        <div class="agent-info">
+          <div class="agent-name">Reporting Agent</div>
+          <div class="agent-status">ACTIVE</div>
+          <div class="agent-desc">Connects to your data sources, runs scheduled queries, builds formatted reports, and distributes via email or Slack on your cadence.</div>
+          <ul class="agent-tasks">
+            <li>Multi-source data aggregation</li>
+            <li>Template-based formatting</li>
+            <li>Scheduled distribution</li>
+            <li>Anomaly detection &amp; alerts</li>
+          </ul>
+        </div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-icon">&#128274;</div>
+        <div class="agent-info">
+          <div class="agent-name">Operations Agent</div>
+          <div class="agent-status">ACTIVE</div>
+          <div class="agent-desc">Monitors operational workflows, handles routine approvals and escalations, keeps systems in sync, and prevents things from falling through the cracks.</div>
+          <ul class="agent-tasks">
+            <li>Approval routing &amp; follow-up</li>
+            <li>Cross-system sync</li>
+            <li>SLA monitoring</li>
+            <li>Escalation management</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS (simple) -->
+<section class="section">
+  <div class="section-inner" style="text-align: center;">
+    <div class="section-tag" style="text-align: center;">// Getting Started</div>
+    <h2 class="section-title" style="text-align: center; margin-left: auto; margin-right: auto;">Three steps. First agent live in two weeks.</h2>
+
+    <div class="how-grid">
+      <div class="how-card">
+        <div class="how-num">01</div>
+        <div class="how-title">Install &amp; Capture</div>
+        <div class="how-desc">Deploy Go2 across your team. The capture layer runs silently, mapping how work actually gets done. No workflow interviews. No process documentation required.</div>
+      </div>
+      <div class="how-card">
+        <div class="how-num">02</div>
+        <div class="how-title">Review Automation Map</div>
+        <div class="how-desc">Within one week, Go2 delivers your Automation Map: every repetitive workflow ranked by hours recoverable, automation complexity, and ROI. You pick what to automate first.</div>
+      </div>
+      <div class="how-card">
+        <div class="how-num">03</div>
+        <div class="how-title">Deploy Agents</div>
+        <div class="how-desc">Go2 builds and deploys agents for your selected workflows. They run in your environment, report exceptions to your team, and continuously improve.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="section pricing-section" id="pricing">
+  <div class="section-inner">
+    <div class="section-tag">// Investment</div>
+    <h2 class="section-title">Scale your output, not your headcount</h2>
+    <p class="section-desc">The average Go2 customer automates enough work to eliminate 2 full-time positions worth of repetitive tasks within 6 months.</p>
+
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="price-tier">Tier 01</div>
+        <div class="price-name">Discovery</div>
+        <div class="price-amount">$29 <span>/user/mo</span></div>
+        <p class="price-desc">Capture every workflow. See exactly where automation will hit hardest.</p>
+        <ul class="price-features">
+          <li><span class="price-check">+</span> Full activity capture</li>
+          <li><span class="price-check">+</span> AI workflow mapping</li>
+          <li><span class="price-check">+</span> Automation opportunity scoring</li>
+          <li><span class="price-check">+</span> ROI projections per workflow</li>
+          <li><span class="price-check">+</span> Weekly automation reports</li>
+          <li><span class="price-check">+</span> Productivity coaching insights</li>
+        </ul>
+        <a href="#start" class="price-cta secondary">Start Discovery</a>
+      </div>
+      <div class="price-card featured">
+        <div class="price-tier">Tier 02</div>
+        <div class="price-name">Deploy</div>
+        <div class="price-amount">$49 <span>/user/mo</span></div>
+        <p class="price-desc">Everything in Discovery, plus agents that do the work.</p>
+        <ul class="price-features">
+          <li><span class="price-check">+</span> Everything in Discovery</li>
+          <li><span class="price-check">+</span> AI agent deployment</li>
+          <li><span class="price-check">+</span> Automation engineering</li>
+          <li><span class="price-check">+</span> Custom playbook builder</li>
+          <li><span class="price-check">+</span> Open-source agent framework</li>
+          <li><span class="price-check">+</span> Dedicated automation engineer</li>
+        </ul>
+        <a href="#start" class="price-cta primary">Deploy Agents</a>
+      </div>
+    </div>
+
+    <div class="pricing-note">
+      <p>The average Go2 customer automates enough work to eliminate<br><strong>2 full-time positions</strong> worth of repetitive tasks within 6 months.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TERMINAL CTA -->
+<section class="terminal-section" id="start">
+  <div class="terminal-window">
+    <div class="terminal-bar">
+      <div class="terminal-dot"></div>
+      <div class="terminal-dot"></div>
+      <div class="terminal-dot"></div>
+    </div>
+    <div class="terminal-body">
+      <div class="terminal-line"><span class="prompt">go2 $</span> <span class="cmd">scan --team-size 30</span></div>
+      <div class="terminal-line"><span class="comment"># Analyzing 10,247 weekly task instances...</span></div>
+      <div class="terminal-line"><span class="output">Found 4,102 automatable tasks across 6 departments</span></div>
+      <div class="terminal-line"><span class="output">Estimated recovery: 847 hours/month</span></div>
+      <div class="terminal-line"><span class="output">Top target: Invoice processing (312 instances/week)</span></div>
+      <div class="terminal-line">&nbsp;</div>
+      <div class="terminal-line"><span class="prompt">go2 $</span> <span class="cmd">deploy --agent invoice-processor</span></div>
+      <div class="terminal-line"><span class="output">Agent deployed. Monitoring for exceptions.</span></div>
+      <div class="terminal-line"><span class="prompt">go2 $</span> <span class="cmd blink">_</span></div>
+    </div>
+  </div>
+
+  <h2 class="final-cta-title">Stop hiring for work machines should do.</h2>
+  <p class="final-cta-sub">Start with Discovery. See your automation map in 7 days. Deploy your first agent in 14.</p>
+  <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+    <a href="#" class="btn-primary">START FREE TRIAL</a>
+    <a href="#" class="btn-secondary">BOOK A DEMO</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">GO2.IO</div>
+    <div class="footer-links">
+      <a href="#">Product</a>
+      <a href="#">Docs</a>
+      <a href="#">Pricing</a>
+      <a href="#">Blog</a>
+      <a href="#">Contact</a>
+    </div>
+    <div style="font-size: 0.8rem; color: var(--text-dim);">&copy; 2026 Go2. All rights reserved.</div>
+  </div>
+</footer>
+
+<style>
+  .blink { animation: blinker 1s step-end infinite; }
+  @keyframes blinker { 50% { opacity: 0; } }
+</style>
+
+</body>
+</html>

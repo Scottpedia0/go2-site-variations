@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — See Where the Work Goes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #000;
+  color: #fff;
+}
+
+.slide {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 40px;
+  scroll-snap-align: start;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Dark slides */
+.slide--dark {
+  background: #0a0a0a;
+  color: #fff;
+}
+
+/* Light slides */
+.slide--light {
+  background: #f5f5f7;
+  color: #1d1d1f;
+}
+
+/* Accent slides */
+.slide--accent {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: #fff;
+}
+
+.slide--gradient {
+  background: linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 100%);
+  color: #fff;
+}
+
+.slide--cta {
+  background: #fff;
+  color: #0a0a0a;
+}
+
+.slide__inner {
+  max-width: 1100px;
+  width: 100%;
+  text-align: center;
+}
+
+/* Typography */
+.headline {
+  font-size: clamp(2.5rem, 7vw, 6rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin-bottom: 0;
+}
+
+.headline--huge {
+  font-size: clamp(3rem, 9vw, 8rem);
+}
+
+.headline--medium {
+  font-size: clamp(2rem, 5vw, 4rem);
+}
+
+.subline {
+  font-size: clamp(1.1rem, 2.5vw, 1.6rem);
+  font-weight: 400;
+  line-height: 1.5;
+  opacity: 0.7;
+  margin-top: 28px;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.subline--bright { opacity: 1; }
+
+.stat-number {
+  font-size: clamp(5rem, 15vw, 14rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.label {
+  font-size: clamp(0.75rem, 1.2vw, 0.9rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  opacity: 0.5;
+  margin-bottom: 20px;
+}
+
+/* Emphasis colors */
+.text-blue {
+  color: #4facfe;
+}
+.text-red {
+  color: #ff6b6b;
+}
+.text-green {
+  color: #51cf66;
+}
+.text-orange {
+  color: #ffa94d;
+}
+.text-gradient {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Strikethrough style */
+.struck {
+  text-decoration: line-through;
+  opacity: 0.35;
+}
+
+/* Slide-specific layouts */
+
+/* Slide 2: breakdown bars */
+.breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 48px;
+  max-width: 700px;
+  width: 100%;
+}
+
+.breakdown__row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.breakdown__bar {
+  height: 48px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  font-weight: 600;
+  font-size: clamp(0.8rem, 1.5vw, 1rem);
+  white-space: nowrap;
+  color: #fff;
+}
+
+.breakdown__label {
+  font-size: clamp(0.85rem, 1.3vw, 1rem);
+  font-weight: 500;
+  opacity: 0.6;
+  min-width: 140px;
+  text-align: right;
+}
+
+/* Slide 3: failed solutions */
+.failures {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  margin-top: 48px;
+  max-width: 800px;
+  text-align: left;
+}
+
+.failure {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.failure__icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 107, 107, 0.15);
+  border-radius: 12px;
+  color: #ff6b6b;
+  font-weight: 700;
+}
+
+.failure__text {
+  font-size: clamp(1rem, 2vw, 1.3rem);
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+.failure__text strong {
+  font-weight: 700;
+  color: #ff6b6b;
+}
+
+/* Slide 7: coaching examples */
+.coaching-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  margin-top: 48px;
+  max-width: 800px;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .coaching-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.coaching-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 28px;
+  text-align: left;
+}
+
+.coaching-card__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #4facfe;
+  margin-bottom: 12px;
+}
+
+.coaching-card__insight {
+  font-size: clamp(0.95rem, 1.5vw, 1.15rem);
+  line-height: 1.5;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.coaching-card__action {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  opacity: 0.6;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding-top: 12px;
+}
+
+/* Slide 8: dual view */
+.dual-view {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+  margin-top: 48px;
+  max-width: 900px;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .dual-view {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.view-panel {
+  border-radius: 16px;
+  padding: 32px;
+  text-align: left;
+}
+
+.view-panel--manager {
+  background: rgba(79, 172, 254, 0.08);
+  border: 1px solid rgba(79, 172, 254, 0.2);
+}
+
+.view-panel--worker {
+  background: rgba(81, 207, 102, 0.08);
+  border: 1px solid rgba(81, 207, 102, 0.2);
+}
+
+.view-panel__title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 20px;
+}
+
+.view-panel--manager .view-panel__title { color: #4facfe; }
+.view-panel--worker .view-panel__title { color: #51cf66; }
+
+.view-panel__list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.view-panel__list li {
+  font-size: clamp(0.9rem, 1.4vw, 1.05rem);
+  line-height: 1.5;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.view-panel__list li::before {
+  content: '';
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-top: 8px;
+}
+
+.view-panel--manager .view-panel__list li::before { background: #4facfe; }
+.view-panel--worker .view-panel__list li::before { background: #51cf66; }
+
+/* Slide 9: timeline */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 48px;
+  max-width: 700px;
+  width: 100%;
+  position: relative;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 24px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, #4facfe, #51cf66, #ffa94d);
+}
+
+.timeline__step {
+  display: flex;
+  gap: 24px;
+  padding: 24px 0;
+  text-align: left;
+}
+
+.timeline__dot {
+  width: 50px;
+  height: 50px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.1rem;
+  z-index: 1;
+}
+
+.timeline__step:nth-child(1) .timeline__dot { background: #4facfe; color: #000; }
+.timeline__step:nth-child(2) .timeline__dot { background: #00d2ff; color: #000; }
+.timeline__step:nth-child(3) .timeline__dot { background: #51cf66; color: #000; }
+.timeline__step:nth-child(4) .timeline__dot { background: #ffa94d; color: #000; }
+
+.timeline__content h3 {
+  font-size: clamp(1.1rem, 2vw, 1.4rem);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.timeline__content p {
+  font-size: clamp(0.85rem, 1.3vw, 1rem);
+  opacity: 0.6;
+  line-height: 1.5;
+}
+
+/* Pricing */
+.pricing-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  margin-top: 48px;
+  max-width: 800px;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .pricing-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.pricing-card {
+  border-radius: 20px;
+  padding: 40px 32px;
+  text-align: left;
+  position: relative;
+}
+
+.pricing-card--core {
+  background: #fff;
+  color: #1d1d1f;
+}
+
+.pricing-card--agents {
+  background: linear-gradient(135deg, #1a1a2e, #0f3460);
+  color: #fff;
+  border: 2px solid #4facfe;
+}
+
+.pricing-card__name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 16px;
+}
+
+.pricing-card--agents .pricing-card__name { color: #4facfe; }
+
+.pricing-card__price {
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.pricing-card__price span {
+  font-size: 1rem;
+  font-weight: 400;
+  opacity: 0.5;
+}
+
+.pricing-card__desc {
+  margin-top: 16px;
+  font-size: 1rem;
+  line-height: 1.6;
+  opacity: 0.7;
+}
+
+.pricing-card__features {
+  list-style: none;
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pricing-card__features li {
+  font-size: 0.95rem;
+  line-height: 1.4;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.pricing-card__features li::before {
+  content: '\2713';
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.pricing-card--core .pricing-card__features li::before { color: #1d1d1f; }
+.pricing-card--agents .pricing-card__features li::before { color: #4facfe; }
+
+.badge {
+  position: absolute;
+  top: -12px;
+  right: 24px;
+  background: #4facfe;
+  color: #000;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 6px 14px;
+  border-radius: 20px;
+}
+
+/* CTA button */
+.cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #0a0a0a;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  font-weight: 600;
+  padding: 18px 40px;
+  border-radius: 60px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  margin-top: 36px;
+}
+
+.cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+
+.cta-btn--light {
+  background: #fff;
+  color: #0a0a0a;
+}
+
+.cta-btn--blue {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: #000;
+}
+
+.cta-btn__arrow {
+  font-size: 1.2em;
+  transition: transform 0.2s;
+}
+
+.cta-btn:hover .cta-btn__arrow {
+  transform: translateX(4px);
+}
+
+/* Divider line */
+.divider {
+  width: 60px;
+  height: 3px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 2px;
+  margin: 24px auto 0;
+}
+
+.slide--light .divider {
+  background: rgba(0,0,0,0.15);
+}
+
+/* Scroll indicator */
+.scroll-hint {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.4;
+  animation: pulse-down 2s ease-in-out infinite;
+}
+
+.scroll-hint__text {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+.scroll-hint__icon {
+  width: 24px;
+  height: 24px;
+}
+
+@keyframes pulse-down {
+  0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.4; }
+  50% { transform: translateX(-50%) translateY(6px); opacity: 0.7; }
+}
+
+/* Nav */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 20px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.3s;
+}
+
+.nav--scrolled {
+  background: rgba(10, 10, 10, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.nav__logo {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+  text-decoration: none;
+}
+
+.nav__cta {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #000;
+  background: #fff;
+  padding: 10px 22px;
+  border-radius: 40px;
+  text-decoration: none;
+  transition: transform 0.2s;
+}
+
+.nav__cta:hover {
+  transform: scale(1.05);
+}
+
+/* Slide dot nav */
+.dot-nav {
+  position: fixed;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dot-nav__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.3s;
+  padding: 0;
+}
+
+.dot-nav__dot--active {
+  background: #4facfe;
+  transform: scale(1.3);
+}
+
+@media (max-width: 768px) {
+  .slide { padding: 48px 24px; }
+  .dot-nav { display: none; }
+  .breakdown__label { min-width: 100px; font-size: 0.8rem; }
+  .breakdown__bar { height: 36px; font-size: 0.75rem; }
+  .timeline::before { left: 18px; }
+  .timeline__dot { width: 38px; height: 38px; font-size: 0.9rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav" id="nav">
+  <a href="#" class="nav__logo">Go2</a>
+  <a href="#cta" class="nav__cta">Get Started</a>
+</nav>
+
+<!-- Dot Nav -->
+<div class="dot-nav" id="dotNav"></div>
+
+<!-- Slide 1: The Hook -->
+<section class="slide slide--dark" data-slide="0">
+  <div class="slide__inner">
+    <p class="label">The productivity gap</p>
+    <h1 class="headline headline--huge">Your team works 40 hours.<br>You're getting <span class="text-gradient">26.</span></h1>
+  </div>
+  <div class="scroll-hint">
+    <span class="scroll-hint__text">Scroll</span>
+    <svg class="scroll-hint__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+  </div>
+</section>
+
+<!-- Slide 2: The Gap -->
+<section class="slide slide--light" data-slide="1">
+  <div class="slide__inner">
+    <h2 class="headline headline--medium">Where do the other <span class="text-red">14 hours</span> go?</h2>
+    <div class="breakdown">
+      <div class="breakdown__row">
+        <span class="breakdown__label">Context switching</span>
+        <div class="breakdown__bar" style="width: 55%; background: #ff6b6b;">4.2 hrs/week</div>
+      </div>
+      <div class="breakdown__row">
+        <span class="breakdown__label">Duplicate work</span>
+        <div class="breakdown__bar" style="width: 42%; background: #e64980;">3.1 hrs/week</div>
+      </div>
+      <div class="breakdown__row">
+        <span class="breakdown__label">Waiting on others</span>
+        <div class="breakdown__bar" style="width: 38%; background: #be4bdb;">2.8 hrs/week</div>
+      </div>
+      <div class="breakdown__row">
+        <span class="breakdown__label">Manual busywork</span>
+        <div class="breakdown__bar" style="width: 35%; background: #7950f2;">2.5 hrs/week</div>
+      </div>
+      <div class="breakdown__row">
+        <span class="breakdown__label">Unclear priorities</span>
+        <div class="breakdown__bar" style="width: 20%; background: #4c6ef5;">1.4 hrs/week</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 3: Failed Solutions -->
+<section class="slide slide--dark" data-slide="2">
+  <div class="slide__inner">
+    <h2 class="headline">Time trackers tried to<br>answer this. <span class="text-red">They failed.</span></h2>
+    <div class="failures">
+      <div class="failure">
+        <div class="failure__icon">&times;</div>
+        <div class="failure__text"><strong>Screenshot surveillance</strong> breeds resentment and mouse-jiggling. You get compliance, not insight.</div>
+      </div>
+      <div class="failure">
+        <div class="failure__icon">&times;</div>
+        <div class="failure__text"><strong>Manual time logs</strong> are fiction. People round up, forget, and categorize wrong. The data is useless.</div>
+      </div>
+      <div class="failure">
+        <div class="failure__icon">&times;</div>
+        <div class="failure__text"><strong>Activity dashboards</strong> measure mouse clicks and keystrokes. Being busy isn't the same as doing the right work.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 4: The Insight -->
+<section class="slide slide--accent" data-slide="3">
+  <div class="slide__inner">
+    <p class="label">The insight</p>
+    <h2 class="headline">The answer isn't<br><span class="struck">watching people.</span><br>It's <span class="text-gradient">understanding work.</span></h2>
+    <p class="subline">Productivity isn't about who's at their desk. It's about how work flows through your team -- where it stalls, where it repeats, where humans do what software should.</p>
+  </div>
+</section>
+
+<!-- Slide 5: What Go2 Does -->
+<section class="slide slide--light" data-slide="4">
+  <div class="slide__inner">
+    <p class="label" style="color: #4facfe;">Introducing Go2</p>
+    <h2 class="headline headline--medium" style="color: #0a0a0a;">Go2 captures how work<br><em>actually</em> happens.</h2>
+    <p class="subline" style="color: #1d1d1f;">A lightweight desktop agent observes workflows across every app your team uses. No manual logging. No surveillance theater. Just a quiet AI that learns your team's real patterns.</p>
+    <div class="divider"></div>
+  </div>
+</section>
+
+<!-- Slide 6: AI Capabilities -->
+<section class="slide slide--dark" data-slide="5">
+  <div class="slide__inner">
+    <h2 class="headline">AI finds the waste.<br><span class="text-blue">Coaches the fix.</span><br><span class="text-green">Maps the automation.</span></h2>
+    <p class="subline">Three layers, one platform. Go2 doesn't just show you a dashboard -- it tells your team what to change and then automates the repetitive parts.</p>
+  </div>
+</section>
+
+<!-- Slide 7: Coaching Examples -->
+<section class="slide slide--gradient" data-slide="6">
+  <div class="slide__inner">
+    <p class="label">Real coaching, delivered in-app</p>
+    <h2 class="headline headline--medium">Your team gets a personal<br>productivity coach.</h2>
+    <div class="coaching-cards">
+      <div class="coaching-card">
+        <div class="coaching-card__label">Context Switch Alert</div>
+        <div class="coaching-card__insight">"You've switched between Slack and your spreadsheet 23 times today. Try batching Slack to 3 check-ins."</div>
+        <div class="coaching-card__action">Result: 45 min/day recovered on average</div>
+      </div>
+      <div class="coaching-card">
+        <div class="coaching-card__label">Workflow Pattern</div>
+        <div class="coaching-card__insight">"This weekly report takes you 2.5 hours to build. 80% of the steps are copy-paste between two systems."</div>
+        <div class="coaching-card__action">Result: Flagged for automation -- now takes 10 min</div>
+      </div>
+      <div class="coaching-card">
+        <div class="coaching-card__label">Meeting Load</div>
+        <div class="coaching-card__insight">"You have 6 hours of meetings on Tuesdays. Your deep work output drops 70% on those days."</div>
+        <div class="coaching-card__action">Result: Consolidated to 3 hours, protected focus blocks</div>
+      </div>
+      <div class="coaching-card">
+        <div class="coaching-card__label">Duplicate Work</div>
+        <div class="coaching-card__insight">"3 people on your team are maintaining separate versions of the same client tracker."</div>
+        <div class="coaching-card__action">Result: Unified into one source of truth</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 8: Manager vs Worker View -->
+<section class="slide slide--dark" data-slide="7">
+  <div class="slide__inner">
+    <p class="label">Two perspectives, both empowered</p>
+    <h2 class="headline headline--medium">Same data. Different value.</h2>
+    <div class="dual-view">
+      <div class="view-panel view-panel--manager">
+        <div class="view-panel__title">What managers see</div>
+        <ul class="view-panel__list">
+          <li>Team-level workflow bottlenecks</li>
+          <li>Processes ripe for automation</li>
+          <li>Time allocation across projects</li>
+          <li>Capacity forecasting</li>
+          <li>ROI on tool investments</li>
+          <li>Never: individual surveillance</li>
+        </ul>
+      </div>
+      <div class="view-panel view-panel--worker">
+        <div class="view-panel__title">What team members see</div>
+        <ul class="view-panel__list">
+          <li>Personal productivity insights</li>
+          <li>Focus time recommendations</li>
+          <li>Workflow shortcuts discovered by AI</li>
+          <li>Meeting load analysis</li>
+          <li>Skills growth opportunities</li>
+          <li>Full control over their own data</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 9: 90-Day Transformation -->
+<section class="slide slide--accent" data-slide="8">
+  <div class="slide__inner">
+    <p class="label">The 90-day transformation</p>
+    <h2 class="headline headline--medium">First it learns. Then it coaches.<br>Then <span class="text-gradient">agents take over.</span></h2>
+    <div class="timeline">
+      <div class="timeline__step">
+        <div class="timeline__dot">1</div>
+        <div class="timeline__content">
+          <h3>Week 1-2: Observe</h3>
+          <p>Go2 quietly maps every workflow, tool switch, and process across your team. Zero disruption.</p>
+        </div>
+      </div>
+      <div class="timeline__step">
+        <div class="timeline__dot">2</div>
+        <div class="timeline__content">
+          <h3>Week 3-4: Coach</h3>
+          <p>AI coaching kicks in. Each person gets personalized nudges to eliminate waste and protect focus time.</p>
+        </div>
+      </div>
+      <div class="timeline__step">
+        <div class="timeline__dot">3</div>
+        <div class="timeline__content">
+          <h3>Month 2: Automate</h3>
+          <p>Go2 identifies repetitive workflows and builds automation proposals. You approve, it deploys.</p>
+        </div>
+      </div>
+      <div class="timeline__step">
+        <div class="timeline__dot">4</div>
+        <div class="timeline__content">
+          <h3>Month 3+: Agents</h3>
+          <p>AI agents take over the busywork entirely. Data entry, report generation, routine coordination -- handled.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 10: Pricing -->
+<section class="slide slide--dark" data-slide="9">
+  <div class="slide__inner">
+    <p class="label">Simple pricing</p>
+    <h2 class="headline headline--medium">Invest in your team,<br>not another dashboard.</h2>
+    <div class="pricing-grid">
+      <div class="pricing-card pricing-card--core">
+        <div class="pricing-card__name">Go2 Core</div>
+        <div class="pricing-card__price">$29 <span>/user/mo</span></div>
+        <p class="pricing-card__desc">Workflow capture, AI coaching, and productivity insights for every team member.</p>
+        <ul class="pricing-card__features">
+          <li>Automatic workflow mapping</li>
+          <li>Personal AI coaching</li>
+          <li>Team-level analytics</li>
+          <li>Focus time protection</li>
+          <li>Unlimited integrations</li>
+        </ul>
+      </div>
+      <div class="pricing-card pricing-card--agents">
+        <div class="badge">Most Popular</div>
+        <div class="pricing-card__name">Go2 + Agents</div>
+        <div class="pricing-card__price">$49 <span>/user/mo</span></div>
+        <p class="pricing-card__desc">Everything in Core, plus AI agents that automate the repetitive work Go2 discovers.</p>
+        <ul class="pricing-card__features">
+          <li>Everything in Core</li>
+          <li>AI workflow agents</li>
+          <li>Automated report building</li>
+          <li>Cross-app data sync</li>
+          <li>Custom agent creation</li>
+          <li>Priority support</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 11: CTA -->
+<section class="slide slide--cta" data-slide="10" id="cta">
+  <div class="slide__inner">
+    <h2 class="headline headline--huge" style="color: #0a0a0a;">Get those<br>14 hours back.</h2>
+    <p class="subline subline--bright" style="color: #1d1d1f;">Start your free pilot. See exactly where your team's time goes -- and get it back.</p>
+    <a href="#" class="cta-btn cta-btn--blue">
+      Start Free Pilot
+      <span class="cta-btn__arrow">&rarr;</span>
+    </a>
+    <p style="margin-top: 20px; font-size: 0.85rem; opacity: 0.5; color: #1d1d1f;">No credit card required. Results in 14 days.</p>
+  </div>
+</section>
+
+<script>
+// Nav scroll effect
+const nav = document.getElementById('nav');
+const slides = document.querySelectorAll('.slide');
+
+// Build dot nav
+const dotNav = document.getElementById('dotNav');
+slides.forEach((_, i) => {
+  const dot = document.createElement('button');
+  dot.className = 'dot-nav__dot';
+  dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
+  dot.addEventListener('click', () => {
+    slides[i].scrollIntoView({ behavior: 'smooth' });
+  });
+  dotNav.appendChild(dot);
+});
+
+const dots = dotNav.querySelectorAll('.dot-nav__dot');
+
+// Intersection Observer for active slide
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const idx = parseInt(entry.target.dataset.slide);
+      dots.forEach((d, i) => d.classList.toggle('dot-nav__dot--active', i === idx));
+
+      // Toggle nav background on light slides
+      const isLight = entry.target.classList.contains('slide--light') || entry.target.classList.contains('slide--cta');
+      if (isLight) {
+        nav.style.background = 'rgba(245, 245, 247, 0.85)';
+        nav.querySelector('.nav__logo').style.color = '#0a0a0a';
+        nav.querySelector('.nav__cta').style.color = '#fff';
+        nav.querySelector('.nav__cta').style.background = '#0a0a0a';
+      } else {
+        nav.style.background = idx > 0 ? 'rgba(10, 10, 10, 0.85)' : 'transparent';
+        nav.querySelector('.nav__logo').style.color = '#fff';
+        nav.querySelector('.nav__cta').style.color = '#000';
+        nav.querySelector('.nav__cta').style.background = '#fff';
+      }
+    }
+  });
+}, { threshold: 0.55 });
+
+slides.forEach(s => observer.observe(s));
+
+// Hide scroll hint after first scroll
+let scrolled = false;
+window.addEventListener('scroll', () => {
+  if (!scrolled && window.scrollY > 50) {
+    scrolled = true;
+    const hint = document.querySelector('.scroll-hint');
+    if (hint) hint.style.opacity = '0';
+  }
+}, { passive: true });
+</script>
+</body>
+</html>

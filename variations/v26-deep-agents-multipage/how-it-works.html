@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How It Works — Go2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a0a0f;
+  --bg-card: #12121a;
+  --bg-card-hover: #1a1a26;
+  --border: rgba(255,255,255,0.06);
+  --text: #e8e8ed;
+  --text-dim: #8888a0;
+  --text-muted: #55556a;
+  --accent-1: #6366f1;
+  --accent-2: #8b5cf6;
+  --accent-3: #a78bfa;
+  --gradient-1: linear-gradient(135deg, #6366f1, #8b5cf6, #a78bfa);
+  --gradient-2: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  padding: 0 2rem;
+  background: rgba(10,10,15,0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px;
+}
+.nav-logo {
+  font-size: 1.5rem; font-weight: 800;
+  background: var(--gradient-1); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.nav-links { display: flex; gap: 2rem; align-items: center; }
+.nav-links a {
+  font-size: 0.875rem; font-weight: 500; color: var(--text-dim);
+  transition: color 0.2s;
+}
+.nav-links a:hover, .nav-links a.active { color: var(--text); }
+.nav-cta {
+  padding: 0.5rem 1.25rem; border-radius: 8px;
+  background: var(--accent-1); color: white !important;
+  font-weight: 600; font-size: 0.8125rem;
+  transition: opacity 0.2s;
+}
+.nav-cta:hover { opacity: 0.9; }
+.mobile-menu { display: none; background: none; border: none; color: var(--text); cursor: pointer; }
+
+section { padding: 6rem 2rem; }
+.container { max-width: 1200px; margin: 0 auto; }
+.section-label {
+  font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--accent-3); margin-bottom: 1rem;
+}
+.section-title {
+  font-size: clamp(2rem, 4vw, 3rem); font-weight: 800;
+  line-height: 1.12; letter-spacing: -0.02em; margin-bottom: 1rem;
+}
+.section-desc {
+  font-size: 1.1rem; color: var(--text-dim); max-width: 640px; line-height: 1.7;
+}
+.gradient { background: var(--gradient-2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+.page-hero {
+  padding: 10rem 2rem 4rem;
+  position: relative;
+}
+.page-hero::before {
+  content: '';
+  position: absolute; top: -100px; left: 50%; transform: translateX(-50%);
+  width: 700px; height: 600px;
+  background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+.page-hero .container { position: relative; z-index: 1; }
+.page-hero h1 {
+  font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 800;
+  line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 1.5rem;
+}
+
+/* Capture Section */
+.capture-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4rem;
+  margin-top: 3rem; align-items: start;
+}
+.capture-visual {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 20px; overflow: hidden;
+  position: sticky; top: 100px;
+}
+.capture-header {
+  padding: 1rem 1.5rem;
+  background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.capture-dot { width: 10px; height: 10px; border-radius: 50%; }
+.capture-dot:nth-child(1) { background: #ff5f57; }
+.capture-dot:nth-child(2) { background: #ffbd2e; }
+.capture-dot:nth-child(3) { background: #28c840; }
+.capture-body { padding: 2rem; }
+.capture-log {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.75rem; line-height: 2;
+}
+.log-time { color: var(--text-muted); }
+.log-app { color: var(--accent-3); }
+.log-action { color: var(--text-dim); }
+.log-detail { color: var(--text); font-weight: 500; }
+.capture-text h3 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; margin-top: 2rem; }
+.capture-text h3:first-child { margin-top: 0; }
+.capture-text p { color: var(--text-dim); font-size: 1rem; line-height: 1.8; margin-bottom: 1rem; }
+.capture-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; }
+.capture-list li {
+  display: flex; align-items: flex-start; gap: 0.75rem;
+  font-size: 0.9375rem; color: var(--text-dim); line-height: 1.5;
+}
+.capture-list li::before {
+  content: '';
+  width: 6px; height: 6px; border-radius: 50%; background: var(--accent-1);
+  flex-shrink: 0; margin-top: 0.5rem;
+}
+
+/* Coaching Section */
+.coaching-bg { background: #0d0d14; }
+.coaching-examples {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;
+  margin-top: 3rem;
+}
+.notif-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 0; overflow: hidden;
+}
+.notif-header {
+  padding: 0.75rem 1.25rem;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.notif-header-left { display: flex; align-items: center; gap: 0.5rem; }
+.notif-icon {
+  width: 24px; height: 24px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem;
+}
+.notif-brand { font-size: 0.75rem; font-weight: 700; }
+.notif-time { font-size: 0.6875rem; color: var(--text-muted); }
+.notif-body { padding: 1.25rem; }
+.notif-title { font-size: 0.9375rem; font-weight: 600; margin-bottom: 0.5rem; }
+.notif-text { font-size: 0.8125rem; color: var(--text-dim); line-height: 1.6; }
+.notif-actions {
+  display: flex; gap: 0.5rem; margin-top: 1rem;
+}
+.notif-btn {
+  padding: 0.35rem 0.75rem; border-radius: 6px;
+  font-size: 0.6875rem; font-weight: 600;
+  border: 1px solid var(--border); background: rgba(255,255,255,0.04);
+  color: var(--text-dim); cursor: pointer;
+}
+.notif-btn.primary { background: var(--accent-1); color: white; border-color: var(--accent-1); }
+
+/* Views Section */
+.views-tabs {
+  display: flex; gap: 0.5rem; margin-top: 3rem; margin-bottom: 2rem;
+}
+.view-tab {
+  padding: 0.5rem 1.25rem; border-radius: 8px;
+  font-size: 0.875rem; font-weight: 600;
+  background: rgba(255,255,255,0.04); color: var(--text-dim);
+  border: 1px solid var(--border); cursor: pointer;
+  transition: all 0.2s;
+}
+.view-tab.active { background: var(--accent-1); color: white; border-color: var(--accent-1); }
+.view-panel {
+  display: none;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 2.5rem;
+}
+.view-panel.active { display: block; }
+.view-feature {
+  display: flex; gap: 1.5rem; padding: 1.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.view-feature:last-child { border-bottom: none; }
+.view-feature-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  background: rgba(99,102,241,0.1);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 1rem;
+}
+.view-feature h4 { font-size: 0.9375rem; font-weight: 600; margin-bottom: 0.25rem; }
+.view-feature p { font-size: 0.875rem; color: var(--text-dim); line-height: 1.6; }
+
+/* Privacy */
+.privacy-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;
+  margin-top: 3rem;
+}
+.privacy-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 2rem;
+}
+.privacy-card .icon {
+  width: 48px; height: 48px; border-radius: 14px;
+  background: rgba(20,184,166,0.1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.25rem; margin-bottom: 1.25rem;
+}
+.privacy-card h3 { font-size: 1.125rem; font-weight: 700; margin-bottom: 0.5rem; }
+.privacy-card p { font-size: 0.875rem; color: var(--text-dim); line-height: 1.6; }
+
+/* Architecture */
+.arch-diagram {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 3rem; margin-top: 3rem;
+}
+.arch-layers { display: flex; flex-direction: column; gap: 1.5rem; }
+.arch-layer {
+  display: flex; align-items: center; gap: 1.5rem;
+  padding: 1.25rem 1.5rem; border-radius: 12px;
+  border: 1px solid var(--border);
+}
+.arch-layer-label {
+  width: 120px; flex-shrink: 0;
+  font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--accent-3);
+}
+.arch-layer-content { flex: 1; }
+.arch-layer-content p { font-size: 0.875rem; color: var(--text-dim); }
+.arch-nodes {
+  display: flex; gap: 0.75rem; flex-wrap: wrap;
+}
+.arch-node {
+  padding: 0.35rem 0.75rem; border-radius: 6px;
+  font-size: 0.75rem; font-weight: 600;
+  background: rgba(99,102,241,0.08); color: var(--accent-3);
+  border: 1px solid rgba(99,102,241,0.15);
+}
+.arch-arrow {
+  text-align: center; color: var(--text-muted); font-size: 1.25rem;
+}
+
+/* CTA & Footer */
+.bottom-cta {
+  text-align: center; padding: 8rem 2rem;
+  position: relative;
+}
+.bottom-cta::before {
+  content: '';
+  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+.bottom-cta h2 {
+  font-size: clamp(2rem, 4vw, 3rem); font-weight: 800;
+  margin-bottom: 1rem; position: relative;
+}
+.bottom-cta p { color: var(--text-dim); font-size: 1.1rem; margin-bottom: 2.5rem; position: relative; }
+.btn-primary {
+  display: inline-block;
+  padding: 0.875rem 2rem; border-radius: 12px;
+  background: var(--accent-1); color: white;
+  font-weight: 600; font-size: 0.9375rem;
+  border: none; cursor: pointer;
+  transition: all 0.2s; position: relative;
+}
+.btn-primary:hover { background: #5558e6; transform: translateY(-1px); }
+.btn-secondary {
+  display: inline-block;
+  padding: 0.875rem 2rem; border-radius: 12px;
+  background: rgba(255,255,255,0.05); color: var(--text);
+  font-weight: 600; font-size: 0.9375rem;
+  border: 1px solid var(--border); cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-secondary:hover { background: rgba(255,255,255,0.08); }
+.hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; position: relative; }
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 3rem 2rem;
+}
+.footer-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.footer-logo {
+  font-weight: 800; font-size: 1.25rem;
+  background: var(--gradient-1); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.footer-links { display: flex; gap: 2rem; }
+.footer-links a { font-size: 0.875rem; color: var(--text-muted); transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy { font-size: 0.8125rem; color: var(--text-muted); }
+
+@media (max-width: 900px) {
+  .capture-grid { grid-template-columns: 1fr; }
+  .coaching-examples { grid-template-columns: 1fr; }
+  .privacy-grid { grid-template-columns: 1fr; }
+  .nav-links { display: none; }
+  .mobile-menu { display: block; }
+  .footer-inner { flex-direction: column; gap: 1.5rem; text-align: center; }
+  .capture-visual { position: static; }
+  .arch-layer { flex-direction: column; align-items: flex-start; }
+  .arch-layer-label { width: auto; }
+}
+@media (max-width: 600px) {
+  .page-hero { padding: 7rem 1.25rem 3rem; }
+  section { padding: 4rem 1.25rem; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">Go2</a>
+    <div class="nav-links">
+      <a href="how-it-works.html" class="active">How It Works</a>
+      <a href="agents.html">AI Agents</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="#" class="nav-cta">Get Early Access</a>
+    </div>
+    <button class="mobile-menu" onclick="document.querySelector('.nav-links').style.display = document.querySelector('.nav-links').style.display === 'flex' ? 'none' : 'flex'">
+      <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    </button>
+  </div>
+</nav>
+
+<section class="page-hero">
+  <div class="container">
+    <div class="section-label">How It Works</div>
+    <h1>A quiet engine that watches,<br><span class="gradient">learns, and coaches</span></h1>
+    <p class="section-desc">Go2's desktop agent captures how work happens, coaches workers in real time, and maps every process in your organization. Here's exactly what's happening under the hood.</p>
+  </div>
+</section>
+
+<!-- Capture Engine -->
+<section>
+  <div class="container">
+    <div class="section-label">The Capture Engine</div>
+    <div class="section-title">Observing work as it actually happens</div>
+    <p class="section-desc">A lightweight desktop agent runs in the background. No browser extensions. No API integrations to configure. It sees what your worker sees.</p>
+    <div class="capture-grid">
+      <div class="capture-text">
+        <h3>What gets captured</h3>
+        <p>The agent observes application usage, workflow sequences, time spent on tasks, context switches, and interaction patterns. It doesn't record keystrokes or read message content. It understands work at the task and process level.</p>
+        <ul class="capture-list">
+          <li>Which applications are used and in what sequence</li>
+          <li>How long each task and sub-task takes</li>
+          <li>Where workers switch between tools or get stuck</li>
+          <li>Patterns of copy-paste, data entry, and form filling</li>
+          <li>Deviations from the most efficient observed paths</li>
+        </ul>
+
+        <h3>How it processes data</h3>
+        <p>Raw observations are processed locally on the worker's machine first. Only structured workflow data leaves the device. Screen content is analyzed for task identification, then discarded. The AI builds a workflow graph, not a surveillance feed.</p>
+
+        <h3>The lightweight footprint</h3>
+        <p>The agent uses less than 1% CPU and under 80MB of RAM. Workers consistently report forgetting it's there within the first day. It doesn't slow down their machine, doesn't interfere with their applications, and doesn't require any behavior changes.</p>
+      </div>
+      <div class="capture-visual">
+        <div class="capture-header">
+          <span class="capture-dot"></span>
+          <span class="capture-dot"></span>
+          <span class="capture-dot"></span>
+          <span style="font-size:0.75rem; color:var(--text-muted); margin-left:0.5rem;">Go2 Agent — Activity Stream</span>
+        </div>
+        <div class="capture-body">
+          <div class="capture-log">
+            <div><span class="log-time">09:14:22</span> <span class="log-app">Excel</span> <span class="log-action">opened</span> <span class="log-detail">quarterly_report.xlsx</span></div>
+            <div><span class="log-time">09:14:38</span> <span class="log-app">Chrome</span> <span class="log-action">tab switch</span> <span class="log-detail">Internal CRM</span></div>
+            <div><span class="log-time">09:14:45</span> <span class="log-app">CRM</span> <span class="log-action">search</span> <span class="log-detail">account lookup</span></div>
+            <div><span class="log-time">09:15:12</span> <span class="log-app">CRM</span> <span class="log-action">copy</span> <span class="log-detail">revenue figures</span></div>
+            <div><span class="log-time">09:15:18</span> <span class="log-app">Excel</span> <span class="log-action">paste</span> <span class="log-detail">cell B14</span></div>
+            <div><span class="log-time">09:15:22</span> <span class="log-app">Chrome</span> <span class="log-action">tab switch</span> <span class="log-detail">Internal CRM</span></div>
+            <div><span class="log-time">09:15:30</span> <span class="log-app">CRM</span> <span class="log-action">navigate</span> <span class="log-detail">next account</span></div>
+            <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
+              <span style="color:var(--accent-3); font-size:0.6875rem; font-weight:600;">PATTERN DETECTED</span><br>
+              <span style="color:var(--text-dim); font-size:0.75rem;">CRM → Excel copy-paste loop identified</span><br>
+              <span style="color:var(--text-dim); font-size:0.75rem;">Occurs 47x/day across 12 workers</span><br>
+              <span style="color:var(--accent-1); font-size:0.75rem; font-weight:600;">Automation candidate: HIGH</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Coaching Engine -->
+<section class="coaching-bg">
+  <div class="container">
+    <div class="section-label">The Coaching Engine</div>
+    <div class="section-title">Real-time guidance, not surveillance</div>
+    <p class="section-desc">When the AI identifies a faster path, a better tool, or a common mistake, it shows the worker a gentle notification. Here's what those actually look like.</p>
+    <div class="coaching-examples">
+      <div class="notif-card">
+        <div class="notif-header">
+          <div class="notif-header-left">
+            <div class="notif-icon" style="background:rgba(99,102,241,0.15);">&#x1f4a1;</div>
+            <span class="notif-brand" style="color:var(--accent-3);">Go2 Coach</span>
+          </div>
+          <span class="notif-time">Just now</span>
+        </div>
+        <div class="notif-body">
+          <div class="notif-title">Faster way to do this</div>
+          <div class="notif-text">You're manually copying data from the CRM to your spreadsheet. 8 of your teammates use the CRM's built-in export feature, which takes about 30 seconds vs. your current 4 minutes. Want to see how?</div>
+          <div class="notif-actions">
+            <button class="notif-btn primary">Show me</button>
+            <button class="notif-btn">Not now</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="notif-card">
+        <div class="notif-header">
+          <div class="notif-header-left">
+            <div class="notif-icon" style="background:rgba(20,184,166,0.15);">&#x2705;</div>
+            <span class="notif-brand" style="color:#14b8a6;">Go2 Coach</span>
+          </div>
+          <span class="notif-time">2 min ago</span>
+        </div>
+        <div class="notif-body">
+          <div class="notif-title">Nice improvement this week</div>
+          <div class="notif-text">Your invoice processing time dropped 22% since Monday. You're now in the top quartile of the team for this task. The shortcut you started using for validation checks is making a real difference.</div>
+          <div class="notif-actions">
+            <button class="notif-btn">Thanks</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="notif-card">
+        <div class="notif-header">
+          <div class="notif-header-left">
+            <div class="notif-icon" style="background:rgba(251,191,36,0.15);">&#x26a0;&#xfe0f;</div>
+            <span class="notif-brand" style="color:#fbbf24;">Go2 Coach</span>
+          </div>
+          <span class="notif-time">Just now</span>
+        </div>
+        <div class="notif-body">
+          <div class="notif-title">Common mistake ahead</div>
+          <div class="notif-text">Heads up — when processing international orders, there's a tax field on the second tab that 40% of the team forgets. It causes a rejection downstream. Worth double-checking before you submit.</div>
+          <div class="notif-actions">
+            <button class="notif-btn primary">Show me the field</button>
+            <button class="notif-btn">Got it</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="notif-card">
+        <div class="notif-header">
+          <div class="notif-header-left">
+            <div class="notif-icon" style="background:rgba(236,72,153,0.15);">&#x1f3af;</div>
+            <span class="notif-brand" style="color:#ec4899;">Go2 Coach</span>
+          </div>
+          <span class="notif-time">10 min ago</span>
+        </div>
+        <div class="notif-body">
+          <div class="notif-title">Focus check</div>
+          <div class="notif-text">You've switched between 6 apps in the last 3 minutes. When working on report compilation, your most productive sessions tend to involve staying in Excel for 15-20 minute blocks. Want to try a focus block?</div>
+          <div class="notif-actions">
+            <button class="notif-btn primary">Start 20min focus</button>
+            <button class="notif-btn">I'm fine</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:2.5rem;">
+      <p style="color:var(--text-dim); font-size:0.9375rem; max-width:700px; line-height:1.7;">
+        Coaching notifications are contextual, infrequent, and dismissible. The AI learns each worker's preferences — if someone consistently dismisses a type of notification, it stops showing it. The goal is a helpful teammate, not an intrusive overseer.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- What Workers vs Managers See -->
+<section>
+  <div class="container">
+    <div class="section-label">Two Perspectives</div>
+    <div class="section-title">Different views for different roles</div>
+    <p class="section-desc">Workers and managers see entirely different interfaces. Workers get coaching. Managers get insights. Neither sees the other's view.</p>
+
+    <div class="views-tabs">
+      <button class="view-tab active" onclick="switchView('worker')">What Workers See</button>
+      <button class="view-tab" onclick="switchView('manager')">What Managers See</button>
+    </div>
+
+    <div class="view-panel active" id="worker-view">
+      <div class="view-feature">
+        <div class="view-feature-icon">&#x1f4a1;</div>
+        <div>
+          <h4>Contextual coaching tips</h4>
+          <p>Gentle suggestions when the AI spots a faster approach, based on what top performers do. Workers can dismiss, snooze, or engage with any tip. The AI learns their preferences over time.</p>
+        </div>
+      </div>
+      <div class="view-feature">
+        <div class="view-feature-icon">&#x1f4c8;</div>
+        <div>
+          <h4>Personal productivity dashboard</h4>
+          <p>Their own metrics, trends, and improvements. How their task times compare to their own baseline (not to other workers). Celebrating progress, identifying focus areas.</p>
+        </div>
+      </div>
+      <div class="view-feature">
+        <div class="view-feature-icon">&#x1f3af;</div>
+        <div>
+          <h4>Focus mode controls</h4>
+          <p>Workers can activate focus blocks, pause notifications, or tell the coach they're doing deep work. They're in control of when and how the AI interacts with them.</p>
+        </div>
+      </div>
+      <div class="view-feature">
+        <div class="view-feature-icon">&#x1f512;</div>
+        <div>
+          <h4>Privacy controls</h4>
+          <p>Workers can see exactly what data is being captured, pause recording during personal time, and flag activities as private. Full transparency about what the system observes.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="view-panel" id="manager-view">
+      <div class="view-feature">
+        <div class="view-feature-icon">&#x1f4ca;</div>
+        <div>
+          <h4>Aggregated team insights</h4>
+          <p>Team-level metrics: average task times, workflow efficiency trends, tool adoption rates. No individual worker data unless the worker opts in to share their improvements.</p>
+        </div>
+      </div>
+      <div class="view-feature">
+        <div class="view-feature-icon">&#x1f5fa;</div>
+        <div>
+          <h4>Process maps</h4>
+          <p>Visual maps of how work flows through the team. Where bottlenecks are. Where different workers take different paths for the same task. Which processes have the most variance.</p>
+        </div>
+      </div>
+      <div class="view-feature">
+        <div class="view-feature-icon">&#x1f916;</div>
+        <div>
+          <h4>Automation opportunities</h4>
+          <p>Ranked list of tasks that are candidates for AI agent deployment. Estimated time savings, implementation complexity, and ROI projections for each one.</p>
+        </div>
+      </div>
+      <div class="view-feature">
+        <div class="view-feature-icon">&#x1f4cb;</div>
+        <div>
+          <h4>Coaching effectiveness</h4>
+          <p>How coaching is impacting team performance. Which tips are being adopted. Where workers are improving fastest. Aggregate engagement without individual tracking.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Privacy Architecture -->
+<section class="coaching-bg">
+  <div class="container">
+    <div class="section-label">Privacy Architecture</div>
+    <div class="section-title">Built for trust from the ground up</div>
+    <p class="section-desc">Privacy isn't a feature we bolted on. It's the architecture. Here's how we ensure Go2 is a tool workers welcome, not resist.</p>
+    <div class="privacy-grid">
+      <div class="privacy-card">
+        <div class="icon">&#x1f4bb;</div>
+        <h3>Local-first processing</h3>
+        <p>Screen content is analyzed on the worker's device. Only structured workflow data (app names, task types, timing) leaves the machine. No screenshots stored. No content transmitted.</p>
+      </div>
+      <div class="privacy-card">
+        <div class="icon">&#x1f6e1;</div>
+        <h3>Aggregate-only manager views</h3>
+        <p>Managers see team-level data. They cannot drill down to individual workers' screens, activities, or browsing. Individual data stays with the individual.</p>
+      </div>
+      <div class="privacy-card">
+        <div class="icon">&#x23f8;</div>
+        <h3>Worker pause controls</h3>
+        <p>Workers can pause observation at any time. Personal time, sensitive work, private browsing — they control when the agent is active. No justification required.</p>
+      </div>
+      <div class="privacy-card">
+        <div class="icon">&#x1f510;</div>
+        <h3>End-to-end encryption</h3>
+        <p>All data in transit and at rest is encrypted. SOC 2 Type II compliant. GDPR and CCPA ready. Your data never trains models for other customers.</p>
+      </div>
+      <div class="privacy-card">
+        <div class="icon">&#x1f4dd;</div>
+        <h3>Data retention you control</h3>
+        <p>Set retention periods per data type. Auto-delete after 30, 60, or 90 days. Export or purge individual worker data at any time. Your data, your rules.</p>
+      </div>
+      <div class="privacy-card">
+        <div class="icon">&#x2705;</div>
+        <h3>Consent-first rollout</h3>
+        <p>Workers see exactly what Go2 does before they start. No hidden monitoring. Full opt-in transparency. We provide rollout communication templates to make the conversation easy.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Technical Architecture -->
+<section>
+  <div class="container">
+    <div class="section-label">Under the Hood</div>
+    <div class="section-title">Technical architecture</div>
+    <p class="section-desc">A simplified view of how data flows through the Go2 system.</p>
+    <div class="arch-diagram">
+      <div class="arch-layers">
+        <div class="arch-layer">
+          <div class="arch-layer-label">Device Layer</div>
+          <div class="arch-layer-content">
+            <div class="arch-nodes">
+              <span class="arch-node">Desktop Agent</span>
+              <span class="arch-node">Local ML Engine</span>
+              <span class="arch-node">Privacy Filter</span>
+              <span class="arch-node">Coaching Panel</span>
+            </div>
+          </div>
+        </div>
+        <div class="arch-arrow">&#x2193;</div>
+        <div class="arch-layer">
+          <div class="arch-layer-label">Transport</div>
+          <div class="arch-layer-content">
+            <div class="arch-nodes">
+              <span class="arch-node">TLS 1.3 Encrypted</span>
+              <span class="arch-node">Structured Data Only</span>
+              <span class="arch-node">No Raw Content</span>
+            </div>
+          </div>
+        </div>
+        <div class="arch-arrow">&#x2193;</div>
+        <div class="arch-layer">
+          <div class="arch-layer-label">Cloud Layer</div>
+          <div class="arch-layer-content">
+            <div class="arch-nodes">
+              <span class="arch-node">Workflow Engine</span>
+              <span class="arch-node">Pattern Recognition</span>
+              <span class="arch-node">Coaching AI</span>
+              <span class="arch-node">Process Mapper</span>
+            </div>
+          </div>
+        </div>
+        <div class="arch-arrow">&#x2193;</div>
+        <div class="arch-layer">
+          <div class="arch-layer-label">Agent Layer</div>
+          <div class="arch-layer-content">
+            <div class="arch-nodes">
+              <span class="arch-node">Agent Builder</span>
+              <span class="arch-node">Shadow Testing</span>
+              <span class="arch-node">Production Runtime</span>
+              <span class="arch-node">Human Escalation</span>
+            </div>
+          </div>
+        </div>
+        <div class="arch-arrow">&#x2193;</div>
+        <div class="arch-layer">
+          <div class="arch-layer-label">Output Layer</div>
+          <div class="arch-layer-content">
+            <div class="arch-nodes">
+              <span class="arch-node">Worker Dashboard</span>
+              <span class="arch-node">Manager Insights</span>
+              <span class="arch-node">Audit Logs</span>
+              <span class="arch-node">API</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="bottom-cta">
+  <h2>See it running on<br><span class="gradient">your team's workflows</span></h2>
+  <p>We'll walk you through a live demo with real coaching examples and process maps.</p>
+  <div class="hero-actions">
+    <a href="#" class="btn-primary">Schedule a Demo</a>
+    <a href="agents.html" class="btn-secondary">Learn About AI Agents</a>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">Go2</div>
+    <div class="footer-links">
+      <a href="how-it-works.html">How It Works</a>
+      <a href="agents.html">AI Agents</a>
+      <a href="pricing.html">Pricing</a>
+    </div>
+    <div class="footer-copy">&copy; 2026 Go2. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+function switchView(view) {
+  document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+  if (view === 'worker') {
+    document.querySelectorAll('.view-tab')[0].classList.add('active');
+    document.getElementById('worker-view').classList.add('active');
+  } else {
+    document.querySelectorAll('.view-tab')[1].classList.add('active');
+    document.getElementById('manager-view').classList.add('active');
+  }
+}
+</script>
+
+</body>
+</html>

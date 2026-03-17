@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Agents — Go2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a0a0f;
+  --bg-card: #12121a;
+  --bg-card-hover: #1a1a26;
+  --border: rgba(255,255,255,0.06);
+  --text: #e8e8ed;
+  --text-dim: #8888a0;
+  --text-muted: #55556a;
+  --accent-1: #6366f1;
+  --accent-2: #8b5cf6;
+  --accent-3: #a78bfa;
+  --gradient-1: linear-gradient(135deg, #6366f1, #8b5cf6, #a78bfa);
+  --gradient-2: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+  --gradient-subtle: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.08));
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  padding: 0 2rem;
+  background: rgba(10,10,15,0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px;
+}
+.nav-logo {
+  font-size: 1.5rem; font-weight: 800;
+  background: var(--gradient-1); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.nav-links { display: flex; gap: 2rem; align-items: center; }
+.nav-links a {
+  font-size: 0.875rem; font-weight: 500; color: var(--text-dim);
+  transition: color 0.2s;
+}
+.nav-links a:hover, .nav-links a.active { color: var(--text); }
+.nav-cta {
+  padding: 0.5rem 1.25rem; border-radius: 8px;
+  background: var(--accent-1); color: white !important;
+  font-weight: 600; font-size: 0.8125rem;
+  transition: opacity 0.2s;
+}
+.nav-cta:hover { opacity: 0.9; }
+.mobile-menu { display: none; background: none; border: none; color: var(--text); cursor: pointer; }
+
+section { padding: 6rem 2rem; }
+.container { max-width: 1200px; margin: 0 auto; }
+.section-label {
+  font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--accent-3); margin-bottom: 1rem;
+}
+.section-title {
+  font-size: clamp(2rem, 4vw, 3rem); font-weight: 800;
+  line-height: 1.12; letter-spacing: -0.02em; margin-bottom: 1rem;
+}
+.section-desc {
+  font-size: 1.1rem; color: var(--text-dim); max-width: 640px; line-height: 1.7;
+}
+.gradient { background: var(--gradient-2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+/* Page Hero */
+.page-hero {
+  padding: 10rem 2rem 4rem;
+  position: relative;
+}
+.page-hero::before {
+  content: '';
+  position: absolute; top: -100px; left: 50%; transform: translateX(-50%);
+  width: 700px; height: 600px;
+  background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+.page-hero .container { position: relative; z-index: 1; }
+.page-hero h1 {
+  font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 800;
+  line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 1.5rem;
+}
+.page-hero .section-desc { margin-bottom: 0; max-width: 700px; }
+
+/* What Are Agents */
+.what-agents {
+  background: #0d0d14;
+}
+.what-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4rem;
+  margin-top: 3rem; align-items: start;
+}
+.what-text p { color: var(--text-dim); font-size: 1.05rem; line-height: 1.8; margin-bottom: 1.5rem; }
+.what-text h3 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; margin-top: 2rem; }
+.definition-box {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 2.5rem; position: sticky; top: 100px;
+}
+.definition-box h3 {
+  font-size: 1.125rem; font-weight: 700; margin-bottom: 1.5rem;
+  color: var(--accent-3);
+}
+.def-item {
+  padding: 1rem 0; border-bottom: 1px solid var(--border);
+}
+.def-item:last-child { border-bottom: none; }
+.def-item dt { font-weight: 600; font-size: 0.9375rem; margin-bottom: 0.25rem; }
+.def-item dd { font-size: 0.875rem; color: var(--text-dim); }
+
+/* Agent Examples */
+.examples-grid {
+  display: grid; grid-template-columns: 1fr; gap: 1.5rem;
+  margin-top: 3rem;
+}
+.example-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 0;
+  display: grid; grid-template-columns: 280px 1fr; overflow: hidden;
+  transition: border-color 0.3s;
+}
+.example-card:hover { border-color: rgba(99,102,241,0.2); }
+.example-side {
+  padding: 2.5rem;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; justify-content: center;
+}
+.example-emoji { font-size: 2.5rem; margin-bottom: 1rem; }
+.example-side h3 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; }
+.example-side .industry {
+  font-size: 0.75rem; font-weight: 600; color: var(--accent-3);
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.example-main { padding: 2.5rem; }
+.example-main h4 { font-size: 0.9375rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--text); }
+.example-main p { font-size: 0.9375rem; color: var(--text-dim); line-height: 1.7; margin-bottom: 1.5rem; }
+.example-stats {
+  display: flex; gap: 2rem;
+}
+.example-stat-value { font-size: 1.5rem; font-weight: 800; color: var(--text); }
+.example-stat-label { font-size: 0.75rem; color: var(--text-muted); }
+
+/* Timeline */
+.timeline {
+  margin-top: 3rem;
+  position: relative;
+}
+.timeline::before {
+  content: '';
+  position: absolute; left: 24px; top: 0; bottom: 0; width: 2px;
+  background: linear-gradient(180deg, var(--accent-1), var(--accent-2), transparent);
+}
+.timeline-item {
+  display: flex; gap: 2rem; padding-bottom: 3rem;
+  position: relative;
+}
+.timeline-dot {
+  width: 50px; height: 50px; border-radius: 50%;
+  background: var(--bg-card); border: 2px solid var(--accent-1);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 0.875rem; color: var(--accent-3);
+  flex-shrink: 0; position: relative; z-index: 1;
+}
+.timeline-content {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 2rem; flex: 1;
+}
+.timeline-content h3 { font-size: 1.125rem; font-weight: 700; margin-bottom: 0.5rem; }
+.timeline-content p { font-size: 0.9375rem; color: var(--text-dim); line-height: 1.7; }
+.timeline-week {
+  font-size: 0.75rem; font-weight: 600; color: var(--accent-3);
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;
+}
+
+/* Open Source */
+.oss-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;
+  margin-top: 3rem;
+}
+.oss-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 2rem;
+}
+.oss-card h3 { font-size: 1.125rem; font-weight: 700; margin-bottom: 0.5rem; }
+.oss-card p { font-size: 0.875rem; color: var(--text-dim); line-height: 1.6; margin-bottom: 1rem; }
+.oss-tag {
+  display: inline-block;
+  padding: 0.2rem 0.6rem; border-radius: 6px;
+  font-size: 0.6875rem; font-weight: 600;
+  background: rgba(99,102,241,0.1); color: var(--accent-3);
+}
+
+/* Principles */
+.principles-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px;
+  background: var(--border); border-radius: 20px; overflow: hidden;
+  margin-top: 3rem;
+}
+.principle {
+  background: var(--bg-card); padding: 2.5rem;
+}
+.principle h3 { font-size: 1.125rem; font-weight: 700; margin-bottom: 0.5rem; }
+.principle p { font-size: 0.9375rem; color: var(--text-dim); line-height: 1.7; }
+.principle-icon { font-size: 1.5rem; margin-bottom: 1rem; }
+
+/* CTA */
+.bottom-cta {
+  text-align: center; padding: 8rem 2rem;
+  position: relative;
+}
+.bottom-cta::before {
+  content: '';
+  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+.bottom-cta h2 {
+  font-size: clamp(2rem, 4vw, 3rem); font-weight: 800;
+  margin-bottom: 1rem; position: relative;
+}
+.bottom-cta p { color: var(--text-dim); font-size: 1.1rem; margin-bottom: 2.5rem; position: relative; }
+.btn-primary {
+  display: inline-block;
+  padding: 0.875rem 2rem; border-radius: 12px;
+  background: var(--accent-1); color: white;
+  font-weight: 600; font-size: 0.9375rem;
+  border: none; cursor: pointer;
+  transition: all 0.2s; position: relative;
+}
+.btn-primary:hover { background: #5558e6; transform: translateY(-1px); }
+.btn-secondary {
+  display: inline-block;
+  padding: 0.875rem 2rem; border-radius: 12px;
+  background: rgba(255,255,255,0.05); color: var(--text);
+  font-weight: 600; font-size: 0.9375rem;
+  border: 1px solid var(--border); cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-secondary:hover { background: rgba(255,255,255,0.08); }
+.hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; position: relative; }
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 3rem 2rem;
+}
+.footer-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.footer-logo {
+  font-weight: 800; font-size: 1.25rem;
+  background: var(--gradient-1); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.footer-links { display: flex; gap: 2rem; }
+.footer-links a { font-size: 0.875rem; color: var(--text-muted); transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy { font-size: 0.8125rem; color: var(--text-muted); }
+
+@media (max-width: 900px) {
+  .what-grid { grid-template-columns: 1fr; }
+  .example-card { grid-template-columns: 1fr; }
+  .example-side { border-right: none; border-bottom: 1px solid var(--border); }
+  .oss-grid { grid-template-columns: 1fr; }
+  .principles-grid { grid-template-columns: 1fr; }
+  .nav-links { display: none; }
+  .mobile-menu { display: block; }
+  .footer-inner { flex-direction: column; gap: 1.5rem; text-align: center; }
+  .definition-box { position: static; }
+}
+@media (max-width: 600px) {
+  .page-hero { padding: 7rem 1.25rem 3rem; }
+  section { padding: 4rem 1.25rem; }
+  .example-stats { flex-direction: column; gap: 1rem; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">Go2</a>
+    <div class="nav-links">
+      <a href="how-it-works.html">How It Works</a>
+      <a href="agents.html" class="active">AI Agents</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="#" class="nav-cta">Get Early Access</a>
+    </div>
+    <button class="mobile-menu" onclick="document.querySelector('.nav-links').style.display = document.querySelector('.nav-links').style.display === 'flex' ? 'none' : 'flex'">
+      <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    </button>
+  </div>
+</nav>
+
+<section class="page-hero">
+  <div class="container">
+    <div class="section-label">AI Agents</div>
+    <h1>Agents that learned from<br><span class="gradient">watching your team work</span></h1>
+    <p class="section-desc">Not chatbots. Not generic automation templates. Purpose-built AI agents trained on observed human workflows, deployed on open-source frameworks, and continuously improved by real data from your operations.</p>
+  </div>
+</section>
+
+<section class="what-agents">
+  <div class="container">
+    <div class="what-grid">
+      <div class="what-text">
+        <div class="section-label">The Concept</div>
+        <div class="section-title">What is a Go2 AI Agent?</div>
+        <p>A Go2 AI Agent is an autonomous software worker that performs specific tasks your human workers currently do. It's not a macro. It's not a chatbot waiting for prompts. It's a continuously running process that handles work end-to-end.</p>
+        <p>What makes Go2 agents different from every other AI automation tool is how they're built. Traditional automation requires a human to manually define every step, every rule, every exception. That takes months and misses the edge cases.</p>
+        <p>Go2 agents are built from observed behavior. Our desktop agent watches how thousands of your workers actually perform a task. It captures every variant, every workaround, every judgment call. Then we train an agent that handles the straightforward cases autonomously and escalates the ambiguous ones to a human.</p>
+
+        <h3>What agents can do today</h3>
+        <p>Agents excel at work that is repetitive, rule-based, and high-volume. Think: copying data between systems, processing standard documents, generating routine reports, triaging incoming requests, formatting and sending templated communications.</p>
+
+        <h3>What agents can't do (yet)</h3>
+        <p>Agents don't replace human judgment, creativity, relationship-building, or novel problem-solving. They handle the 37% of work time that our data shows is spent on repetitive, predictable tasks. They free your people to spend 100% of their time on the work that actually requires a human brain.</p>
+      </div>
+      <div class="definition-box">
+        <h3>Key Properties of a Go2 Agent</h3>
+        <dl>
+          <div class="def-item">
+            <dt>Observation-Trained</dt>
+            <dd>Built from real workflow data, not manual programming. Captures how work actually happens, including edge cases.</dd>
+          </div>
+          <div class="def-item">
+            <dt>Human-Supervised</dt>
+            <dd>Humans approve outputs, review exceptions, and can override any decision. Confidence thresholds determine autonomy level.</dd>
+          </div>
+          <div class="def-item">
+            <dt>Continuously Learning</dt>
+            <dd>The same observation engine that built the agent keeps improving it. As humans handle new edge cases, the agent learns from them.</dd>
+          </div>
+          <div class="def-item">
+            <dt>Open-Source Foundation</dt>
+            <dd>Built on proven frameworks like CrewAI, AutoGen, and LangGraph. No vendor lock-in. You can inspect, modify, and own the agent code.</dd>
+          </div>
+          <div class="def-item">
+            <dt>Auditable</dt>
+            <dd>Every action is logged with reasoning. Full audit trail for compliance. You can see exactly why an agent made every decision.</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="section-label">Real Examples</div>
+    <div class="section-title">Agents in the field</div>
+    <p class="section-desc">These are representative examples of agents we've deployed. Each was built from observed workflows, not designed from scratch.</p>
+    <div class="examples-grid">
+      <div class="example-card">
+        <div class="example-side">
+          <div class="example-emoji">&#x1f4cb;</div>
+          <div class="industry">Healthcare Administration</div>
+          <h3>Claims Processing Agent</h3>
+        </div>
+        <div class="example-main">
+          <h4>The Problem</h4>
+          <p>Claims processors spent 65% of their time on straightforward claims that followed predictable patterns. But the remaining 35% required genuine expertise. The entire team was bottlenecked by volume.</p>
+          <h4>What Go2 Observed</h4>
+          <p>Over 8 weeks, our desktop agent captured how 40 processors handled claims. We identified 12 distinct processing patterns covering 89% of all claims. We mapped every validation check, cross-reference step, and approval path.</p>
+          <h4>The Agent</h4>
+          <p>A claims processing agent that handles pattern-matched claims end-to-end. When confidence is below threshold, it prepares the claim with pre-populated fields and routes to a human with a summary of what needs review.</p>
+          <div class="example-stats">
+            <div><div class="example-stat-value">73%</div><div class="example-stat-label">Claims handled autonomously</div></div>
+            <div><div class="example-stat-value">4.2x</div><div class="example-stat-label">Throughput increase</div></div>
+            <div><div class="example-stat-value">99.4%</div><div class="example-stat-label">Accuracy rate</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-side">
+          <div class="example-emoji">&#x1f4e7;</div>
+          <div class="industry">E-Commerce</div>
+          <h3>Customer Response Agent</h3>
+        </div>
+        <div class="example-main">
+          <h4>The Problem</h4>
+          <p>A support team of 120 agents handled thousands of tickets daily. Analysis showed 58% of responses followed similar patterns, but each agent had their own style, creating inconsistency and training overhead.</p>
+          <h4>What Go2 Observed</h4>
+          <p>We captured 6 weeks of support workflows across the full team. The AI identified the top performers, mapped their response strategies, and catalogued how they handled each category of issue differently from average performers.</p>
+          <h4>The Agent</h4>
+          <p>A response drafting agent that writes initial replies matching the company's best performers' tone and approach. Agents review and send with one click for routine issues. Complex issues get a suggested approach with context pulled from similar past resolutions.</p>
+          <div class="example-stats">
+            <div><div class="example-stat-value">58%</div><div class="example-stat-label">Responses auto-drafted</div></div>
+            <div><div class="example-stat-value">-41%</div><div class="example-stat-label">Average response time</div></div>
+            <div><div class="example-stat-value">+12pts</div><div class="example-stat-label">CSAT improvement</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="example-card">
+        <div class="example-side">
+          <div class="example-emoji">&#x1f4ca;</div>
+          <div class="industry">Financial Services</div>
+          <h3>Compliance Reporting Agent</h3>
+        </div>
+        <div class="example-main">
+          <h4>The Problem</h4>
+          <p>Compliance officers spent 3 days per week compiling reports from multiple systems. The work was tedious, error-prone, and kept highly skilled professionals from actual compliance analysis.</p>
+          <h4>What Go2 Observed</h4>
+          <p>Over 5 weeks, we mapped how 8 compliance officers gathered data from 6 different systems, cross-referenced records, applied formatting rules, and validated outputs. We captured 23 different report variants and their specific requirements.</p>
+          <h4>The Agent</h4>
+          <p>A report compilation agent that pulls data from all source systems, applies the correct formatting and validation rules per report type, and produces draft reports. Officers review final outputs, focusing their expertise on interpretation rather than data gathering.</p>
+          <div class="example-stats">
+            <div><div class="example-stat-value">3 days</div><div class="example-stat-label">Saved per officer per week</div></div>
+            <div><div class="example-stat-value">23</div><div class="example-stat-label">Report types automated</div></div>
+            <div><div class="example-stat-value">0</div><div class="example-stat-label">Compliance violations since deployment</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="background: #0d0d14;">
+  <div class="container">
+    <div class="section-label">Deployment Timeline</div>
+    <div class="section-title">From install to deployed agent: 12 weeks</div>
+    <p class="section-desc">The timeline varies by complexity, but here's the typical path from zero to your first production agent.</p>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-dot">1</div>
+        <div class="timeline-content">
+          <div class="timeline-week">Weeks 1-2: Observation</div>
+          <h3>Desktop agent deployed, data collection begins</h3>
+          <p>Lightweight agent installs on worker machines. Captures application usage, workflow patterns, and task sequences. Workers see a small coaching panel. Privacy controls are configured per your policies. No workflow changes required.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot">2</div>
+        <div class="timeline-content">
+          <div class="timeline-week">Weeks 3-4: Pattern Recognition</div>
+          <h3>AI identifies repetitive workflows and coaching opportunities</h3>
+          <p>With enough data, the AI starts identifying patterns. You see your first workflow maps and automation candidates. Real-time coaching begins for workers, showing them faster paths discovered across the team. Managers get their first insights dashboard.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot">3</div>
+        <div class="timeline-content">
+          <div class="timeline-week">Weeks 5-8: Agent Development</div>
+          <h3>First agents built and tested in shadow mode</h3>
+          <p>We select the highest-impact automation candidates and build agents using the observed workflow data. Agents run in shadow mode first, processing work in parallel with humans so we can compare outputs. Edge cases are identified and handled. Confidence thresholds are calibrated.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot">4</div>
+        <div class="timeline-content">
+          <div class="timeline-week">Weeks 9-10: Supervised Deployment</div>
+          <h3>Agents handle real work with human approval</h3>
+          <p>Agents start processing real tasks. Every output is reviewed by a human before it's finalized. This builds trust, catches remaining edge cases, and lets the agent learn from human corrections. Accuracy is measured against the shadow mode baseline.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot">5</div>
+        <div class="timeline-content">
+          <div class="timeline-week">Weeks 11-12: Autonomous Operation</div>
+          <h3>Agents operate independently on high-confidence work</h3>
+          <p>Tasks above the confidence threshold are handled fully autonomously. Below-threshold work is routed to humans with agent-prepared context. Continuous monitoring ensures quality stays high. The observation engine keeps running, feeding improvements back into the agent.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="section-label">Open Source Foundation</div>
+    <div class="section-title">Built on frameworks you can trust</div>
+    <p class="section-desc">Go2 agents are built on leading open-source AI agent frameworks. No black boxes. No vendor lock-in. Your agents, your code, your infrastructure.</p>
+    <div class="oss-grid">
+      <div class="oss-card">
+        <h3>CrewAI</h3>
+        <p>Framework for orchestrating multiple AI agents working together on complex tasks. Perfect for workflows that require hand-offs between different specialized roles.</p>
+        <span class="oss-tag">Multi-agent orchestration</span>
+      </div>
+      <div class="oss-card">
+        <h3>AutoGen</h3>
+        <p>Microsoft's framework for building conversational AI agents. Used for agents that need to interact with humans in natural language and handle nuanced decision-making.</p>
+        <span class="oss-tag">Conversational agents</span>
+      </div>
+      <div class="oss-card">
+        <h3>LangGraph</h3>
+        <p>Framework for building stateful, multi-step agent workflows with precise control over execution flow. Ideal for complex, branching processes with conditional logic.</p>
+        <span class="oss-tag">Stateful workflows</span>
+      </div>
+    </div>
+    <div style="margin-top:2rem;">
+      <p style="color:var(--text-dim); font-size:0.9375rem; max-width:700px; line-height:1.7;">
+        We select the right framework for each agent based on the workflow it needs to handle. Simple, linear workflows might use a lightweight custom agent. Complex, multi-step processes with branching logic use LangGraph. Tasks requiring multiple specialized agents working together use CrewAI. You get the source code, the training data mapping, and full documentation.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section style="background: #0d0d14;">
+  <div class="container">
+    <div class="section-label">Design Principles</div>
+    <div class="section-title">How we think about AI agents</div>
+    <div class="principles-grid">
+      <div class="principle">
+        <div class="principle-icon">&#x1f6e1;</div>
+        <h3>Human-in-the-loop by default</h3>
+        <p>Every agent starts with full human oversight. Autonomy is earned through demonstrated accuracy. You control the confidence thresholds. An agent never gets more freedom than your team is comfortable with.</p>
+      </div>
+      <div class="principle">
+        <div class="principle-icon">&#x1f50d;</div>
+        <h3>Fully auditable decisions</h3>
+        <p>Every agent action is logged with reasoning. Why did it choose path A over path B? What data did it reference? Full audit trails for compliance, debugging, and trust-building. No black box decisions.</p>
+      </div>
+      <div class="principle">
+        <div class="principle-icon">&#x1f504;</div>
+        <h3>Continuous improvement loop</h3>
+        <p>The same observation engine that built the agent keeps improving it. When humans correct an agent's work, that correction becomes training data. When processes change, agents adapt. No manual retraining required.</p>
+      </div>
+      <div class="principle">
+        <div class="principle-icon">&#x1f527;</div>
+        <h3>Graceful degradation</h3>
+        <p>When an agent encounters something it hasn't seen before, it doesn't guess. It routes the task to a human with full context about what it does and doesn't understand. No silent failures. No confident wrong answers.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="bottom-cta">
+  <h2>Ready to see what your team's<br>workflows look like as <span class="gradient">AI agents</span>?</h2>
+  <p>We'll show you the automation potential hiding in your current operations.</p>
+  <div class="hero-actions">
+    <a href="#" class="btn-primary">Request a Demo</a>
+    <a href="pricing.html" class="btn-secondary">View Pricing</a>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">Go2</div>
+    <div class="footer-links">
+      <a href="how-it-works.html">How It Works</a>
+      <a href="agents.html">AI Agents</a>
+      <a href="pricing.html">Pricing</a>
+    </div>
+    <div class="footer-copy">&copy; 2026 Go2. All rights reserved.</div>
+  </div>
+</footer>
+
+</body>
+</html>

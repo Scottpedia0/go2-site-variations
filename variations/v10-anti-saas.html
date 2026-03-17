@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The Anti-Productivity Software</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --neon: #39FF14;
+  --black: #0a0a0a;
+  --white: #e8e8e8;
+  --gray: #666;
+  --border: #333;
+}
+
+body {
+  font-family: 'JetBrains Mono', 'Courier New', Courier, monospace;
+  background: var(--black);
+  color: var(--white);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--neon);
+  color: var(--black);
+}
+
+a { color: var(--neon); text-decoration: none; }
+a:hover { text-decoration: line-through; }
+
+.container {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ---- TICKER BAR ---- */
+.ticker {
+  background: var(--neon);
+  color: var(--black);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 6px 0;
+}
+.ticker-inner {
+  display: inline-block;
+  animation: scroll-left 20s linear infinite;
+}
+@keyframes scroll-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ---- NAV ---- */
+nav {
+  border-bottom: 1px solid var(--border);
+  padding: 20px 0;
+}
+nav .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.logo {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  color: var(--white);
+}
+.logo span { color: var(--neon); }
+nav a.nav-link {
+  color: var(--gray);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-left: 24px;
+}
+nav a.nav-link:hover { color: var(--neon); text-decoration: none; }
+
+/* ---- HERO ---- */
+.hero {
+  padding: 80px 0 60px;
+  border-bottom: 1px solid var(--border);
+}
+.hero h1 {
+  font-size: clamp(28px, 6vw, 56px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -2px;
+  margin-bottom: 40px;
+  max-width: 700px;
+}
+.hero h1 .strike {
+  text-decoration: line-through;
+  color: var(--gray);
+}
+.hero h1 .neon {
+  color: var(--neon);
+}
+
+.manifesto {
+  font-size: 15px;
+  color: var(--white);
+  max-width: 620px;
+  margin-bottom: 40px;
+}
+.manifesto p {
+  margin-bottom: 16px;
+}
+.manifesto strong {
+  color: var(--neon);
+  font-weight: 700;
+}
+
+/* ---- BLUNT CTA ---- */
+.cta-btn {
+  display: inline-block;
+  background: var(--neon);
+  color: var(--black);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding: 16px 40px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.cta-btn:hover {
+  background: var(--white);
+  color: var(--black);
+  text-decoration: none;
+}
+.cta-btn-outline {
+  background: transparent;
+  border: 2px solid var(--neon);
+  color: var(--neon);
+}
+.cta-btn-outline:hover {
+  background: var(--neon);
+  color: var(--black);
+}
+.cta-subtext {
+  display: block;
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ---- SECTIONS ---- */
+section {
+  padding: 60px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--neon);
+  margin-bottom: 32px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+h2 {
+  font-size: clamp(22px, 4vw, 36px);
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin-bottom: 24px;
+  line-height: 1.2;
+}
+
+/* ---- BULLSHIT LIST ---- */
+.bs-list {
+  list-style: none;
+  margin: 32px 0;
+}
+.bs-list li {
+  padding: 16px 0;
+  border-bottom: 1px dashed var(--border);
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+  font-size: 14px;
+}
+.bs-list .icon {
+  color: #ff3333;
+  font-size: 16px;
+  flex-shrink: 0;
+  font-weight: 700;
+}
+.bs-list .alt .icon {
+  color: var(--neon);
+}
+
+/* ---- HOW IT WORKS ---- */
+.how-grid {
+  display: grid;
+  gap: 0;
+  margin: 32px 0;
+}
+.how-step {
+  border: 1px solid var(--border);
+  padding: 28px 24px;
+  position: relative;
+}
+.how-step:not(:last-child) {
+  border-bottom: none;
+}
+.step-num {
+  font-size: 48px;
+  font-weight: 800;
+  color: var(--border);
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  line-height: 1;
+}
+.how-step h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--neon);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.how-step p {
+  font-size: 13px;
+  color: var(--white);
+  max-width: 500px;
+}
+
+/* ---- COACHING EXAMPLES ---- */
+.coach-block {
+  background: #111;
+  border-left: 3px solid var(--neon);
+  padding: 20px 24px;
+  margin: 20px 0;
+  font-size: 13px;
+}
+.coach-block .label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--neon);
+  margin-bottom: 8px;
+}
+.coach-block .msg {
+  color: var(--white);
+  line-height: 1.7;
+}
+.coach-block .msg em {
+  color: var(--gray);
+  font-style: normal;
+}
+
+/* ---- COMPARISON ---- */
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 32px 0;
+  font-size: 13px;
+}
+.compare-table th {
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 2px solid var(--neon);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--gray);
+}
+.compare-table th:last-child {
+  color: var(--neon);
+}
+.compare-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.compare-table tr:hover td {
+  background: #111;
+}
+.compare-table .them {
+  color: var(--gray);
+  text-decoration: line-through;
+}
+
+/* ---- PRICING ---- */
+.price-box {
+  border: 2px solid var(--neon);
+  padding: 40px;
+  margin: 32px 0;
+  text-align: center;
+  position: relative;
+}
+.price-box::before {
+  content: 'ONE PLAN. NO TRICKS.';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--black);
+  padding: 0 16px;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--neon);
+}
+.price-amount {
+  font-size: 64px;
+  font-weight: 800;
+  letter-spacing: -3px;
+  color: var(--white);
+  line-height: 1;
+}
+.price-amount span {
+  font-size: 20px;
+  color: var(--gray);
+  letter-spacing: 0;
+}
+.price-period {
+  font-size: 13px;
+  color: var(--gray);
+  margin: 8px 0 24px;
+}
+.price-features {
+  list-style: none;
+  text-align: left;
+  max-width: 400px;
+  margin: 0 auto 32px;
+}
+.price-features li {
+  padding: 8px 0;
+  font-size: 13px;
+  border-bottom: 1px dashed var(--border);
+  display: flex;
+  gap: 12px;
+}
+.price-features li::before {
+  content: '+';
+  color: var(--neon);
+  font-weight: 700;
+}
+.price-fine {
+  font-size: 11px;
+  color: var(--gray);
+  margin-top: 20px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ---- QUOTES ---- */
+.quote-block {
+  padding: 32px 0;
+  border-top: 1px dashed var(--border);
+}
+.quote-block:first-of-type { border-top: none; }
+.quote-text {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+.quote-text::before { content: '> '; color: var(--neon); }
+.quote-attr {
+  font-size: 11px;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ---- FAQ ---- */
+.faq-item {
+  border-bottom: 1px solid var(--border);
+  padding: 24px 0;
+}
+.faq-q {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--neon);
+  margin-bottom: 8px;
+  cursor: default;
+}
+.faq-a {
+  font-size: 13px;
+  color: var(--white);
+  max-width: 580px;
+}
+
+/* ---- FINAL CTA ---- */
+.final-cta {
+  padding: 80px 0;
+  text-align: center;
+  border-bottom: none;
+}
+.final-cta h2 {
+  font-size: clamp(24px, 5vw, 44px);
+  margin-bottom: 16px;
+}
+.final-cta p {
+  font-size: 14px;
+  color: var(--gray);
+  margin-bottom: 32px;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ---- FOOTER ---- */
+footer {
+  padding: 32px 0;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+footer .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* ---- GLITCH ---- */
+.glitch {
+  position: relative;
+}
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 2px;
+  top: 0;
+  color: var(--neon);
+  opacity: 0;
+  animation: glitch-flash 4s ease-in-out infinite;
+}
+@keyframes glitch-flash {
+  0%, 95%, 100% { opacity: 0; transform: translate(0); }
+  96% { opacity: 0.8; transform: translate(-2px, 1px); }
+  97% { opacity: 0; transform: translate(2px, -1px); }
+  98% { opacity: 0.6; transform: translate(1px, 2px); }
+}
+
+/* ---- BLINK CURSOR ---- */
+.cursor::after {
+  content: '_';
+  animation: blink 1s step-end infinite;
+  color: var(--neon);
+}
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 600px) {
+  .hero { padding: 48px 0 40px; }
+  section { padding: 40px 0; }
+  .price-box { padding: 28px 20px; }
+  .price-amount { font-size: 48px; }
+  .compare-table { font-size: 11px; }
+  .compare-table th, .compare-table td { padding: 10px 8px; }
+  nav a.nav-link { margin-left: 12px; font-size: 10px; }
+  .how-step { padding: 20px 16px; }
+  .step-num { font-size: 36px; }
+  footer .container { flex-direction: column; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-inner">
+    STOP SPYING ON YOUR EMPLOYEES &nbsp;&bull;&nbsp; START ACTUALLY HELPING THEM &nbsp;&bull;&nbsp; ACTIVITY SCORES ARE LIES &nbsp;&bull;&nbsp; SCREENSHOTS ARE CREEPY &nbsp;&bull;&nbsp; COACHING BEATS SURVEILLANCE &nbsp;&bull;&nbsp; $15/USER/MO &nbsp;&bull;&nbsp; NO CONTRACTS &nbsp;&bull;&nbsp;
+    STOP SPYING ON YOUR EMPLOYEES &nbsp;&bull;&nbsp; START ACTUALLY HELPING THEM &nbsp;&bull;&nbsp; ACTIVITY SCORES ARE LIES &nbsp;&bull;&nbsp; SCREENSHOTS ARE CREEPY &nbsp;&bull;&nbsp; COACHING BEATS SURVEILLANCE &nbsp;&bull;&nbsp; $15/USER/MO &nbsp;&bull;&nbsp; NO CONTRACTS &nbsp;&bull;&nbsp;
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="container">
+    <div class="logo"><span>go2</span>.io</div>
+    <div>
+      <a href="#how" class="nav-link">How</a>
+      <a href="#pricing" class="nav-link">Price</a>
+      <a href="#faq" class="nav-link">FAQ</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <h1>
+      Most productivity software is <span class="strike">innovative</span> <span class="neon glitch" data-text="bullshit.">bullshit.</span>
+    </h1>
+    <div class="manifesto">
+      <p>Screenshots every 10 minutes don't make anyone work harder. You know that. Activity scores are made-up numbers dressed in a dashboard. You know that too.</p>
+      <p>Keystroke logging? Mouse tracking? <strong>What are you, the NSA?</strong></p>
+      <p>Your employees aren't slacking. They're drowning in bad tools, broken processes, and meetings that should have been a Slack message. The problem was never effort. It was friction.</p>
+      <p><strong>Go2 finds the friction. AI fixes it. That's it.</strong></p>
+    </div>
+    <a href="#pricing" class="cta-btn">Try it free for 14 days</a>
+    <span class="cta-subtext">No credit card. No demo call. No "let's schedule a sync."</span>
+  </div>
+</section>
+
+<!-- WHAT'S WRONG -->
+<section>
+  <div class="container">
+    <div class="section-label">What everyone else sells you</div>
+    <h2>A field guide to productivity theater</h2>
+    <ul class="bs-list">
+      <li>
+        <span class="icon">X</span>
+        <span><strong>Screenshots every 10 min</strong> &mdash; Congrats, you now have 48 pictures per day of someone's email inbox. Actionable? No. Creepy? Absolutely.</span>
+      </li>
+      <li>
+        <span class="icon">X</span>
+        <span><strong>"Activity scores" from 0&ndash;100</strong> &mdash; Based on mouse jiggles. Your best engineer who thinks for 20 minutes then writes 4 perfect lines? Score: 12. Your worst hire furiously Googling their own job title? Score: 94.</span>
+      </li>
+      <li>
+        <span class="icon">X</span>
+        <span><strong>Keystroke logging</strong> &mdash; Because nothing says "we trust you" like recording every letter you type. Also probably illegal in your state. But sure.</span>
+      </li>
+      <li>
+        <span class="icon">X</span>
+        <span><strong>App &amp; website categorization</strong> &mdash; Stack Overflow = "unproductive." YouTube tutorial on the exact tool they need = "unproductive." Reddit thread that solved a critical bug = you guessed it.</span>
+      </li>
+      <li class="alt">
+        <span class="icon">&rarr;</span>
+        <span><strong>What actually works:</strong> Understanding workflows, finding bottlenecks, coaching people in real-time, and giving managers insights instead of surveillance footage.</span>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="container">
+    <div class="section-label">How Go2 actually works</div>
+    <h2>Three things. None of them are spying.</h2>
+    <div class="how-grid">
+      <div class="how-step">
+        <span class="step-num">01</span>
+        <h3>Capture everything, expose nothing</h3>
+        <p>Go2 runs quietly on each workstation. It understands what apps are used, how workflows move, where time goes. But it doesn't take screenshots. It doesn't log keystrokes. It doesn't send your manager a play-by-play. The raw data stays on the device. Only AI-processed insights go up.</p>
+      </div>
+      <div class="how-step">
+        <span class="step-num">02</span>
+        <h3>AI coaches the worker directly</h3>
+        <p>The AI notices patterns and talks directly to the employee. "You've context-switched 14 times this morning. Want to block 2 hours for deep work?" or "You spent 40 minutes in that spreadsheet last week doing the same transforms&mdash;here's a shortcut." It's like having a senior colleague who actually pays attention.</p>
+      </div>
+      <div class="how-step">
+        <span class="step-num">03</span>
+        <h3>Managers get aggregated insights</h3>
+        <p>No individual surveillance. Managers see team-level patterns: "Your design team loses 6 hours/week to a manual handoff that could be automated" or "Engineering spends 30% of Tuesday in status meetings." Actionable. Aggregated. Not creepy.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COACHING EXAMPLES -->
+<section>
+  <div class="container">
+    <div class="section-label">AI coaching in action</div>
+    <h2>Real nudges. Not surveillance alerts.</h2>
+    <p style="font-size:13px;color:var(--gray);margin-bottom:24px;">These are the kinds of things Go2's AI actually says to your team:</p>
+
+    <div class="coach-block">
+      <div class="label">// Context switching alert</div>
+      <div class="msg">"You've bounced between Figma and Slack 11 times in the last hour. Your deep work blocks are averaging 8 minutes. Want me to snooze Slack notifications for 90 minutes?"</div>
+    </div>
+
+    <div class="coach-block">
+      <div class="label">// Workflow automation</div>
+      <div class="msg">"I noticed you export from Airtable, reformat in Excel, then paste into the CRM. Every Thursday. Takes ~45 minutes. There's a Zapier template that does this in 2 seconds. Want the link?"</div>
+    </div>
+
+    <div class="coach-block">
+      <div class="label">// Meeting overload</div>
+      <div class="msg">"You had 4.5 hours of meetings today with only one 20-minute gap. That's the 3rd time this week. Three of those meetings had overlapping attendees and similar agendas. Worth consolidating?"</div>
+    </div>
+
+    <div class="coach-block">
+      <div class="label">// Tool proficiency</div>
+      <div class="msg">"You've been manually resizing images in Preview before uploading. Your version of Figma has a batch resize plugin&mdash;would save you ~25 min/week based on your current pattern."</div>
+    </div>
+
+    <div class="coach-block">
+      <div class="label">// Manager insight (aggregated)</div>
+      <div class="msg"><em>[Team-level, no individual names]</em><br>"Your sales team spends an average of 52 minutes per proposal copying data between 3 tools. A template + integration could cut this to 10 minutes. Estimated savings: 14 hours/week across the team."</div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON -->
+<section>
+  <div class="container">
+    <div class="section-label">Honest comparison</div>
+    <h2>Us vs. the surveillance vendors</h2>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Them</th>
+          <th>Go2</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Screenshots</td>
+          <td class="them">Every 5&ndash;10 min</td>
+          <td>Never. Zero. None.</td>
+        </tr>
+        <tr>
+          <td>Keystroke logging</td>
+          <td class="them">"Optional" (on by default)</td>
+          <td>Absolutely not</td>
+        </tr>
+        <tr>
+          <td>Who sees data</td>
+          <td class="them">Manager sees everything</td>
+          <td>Worker sees theirs. Manager sees aggregated team insights only.</td>
+        </tr>
+        <tr>
+          <td>What it measures</td>
+          <td class="them">Mouse movement, active window, idle time</td>
+          <td>Workflow patterns, tool usage, bottlenecks, context switches</td>
+        </tr>
+        <tr>
+          <td>AI usage</td>
+          <td class="them">"AI-powered reports" (it's a pie chart)</td>
+          <td>Real-time coaching, automation suggestions, workflow mapping</td>
+        </tr>
+        <tr>
+          <td>Employee reaction</td>
+          <td class="them">Installs mouse jiggler, updates resume</td>
+          <td>Actually uses the suggestions. Saves time. Stays.</td>
+        </tr>
+        <tr>
+          <td>Pricing</td>
+          <td class="them">$7&ndash;$20 + setup + annual lock-in</td>
+          <td>$15/user/mo. Monthly. Cancel whenever.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- QUOTES -->
+<section>
+  <div class="container">
+    <div class="section-label">What people say</div>
+    <h2>We don't have "trusted by" logos.<br>We have honest reactions.</h2>
+
+    <div class="quote-block">
+      <div class="quote-text">"I was ready to buy Time Doctor. Then I realized I'd be the boss everyone hates. Go2 let me help my team without being a creep."</div>
+      <div class="quote-attr">&mdash; Owner, 22-person agency</div>
+    </div>
+    <div class="quote-block">
+      <div class="quote-text">"The AI told me I was spending 6 hours a week on a report I could automate. My manager never noticed. Go2 did."</div>
+      <div class="quote-attr">&mdash; Operations coordinator</div>
+    </div>
+    <div class="quote-block">
+      <div class="quote-text">"We found $40K/year in wasted process time across a 15-person team. Not by watching people. By understanding workflows."</div>
+      <div class="quote-attr">&mdash; COO, logistics company</div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="container">
+    <div class="section-label">Pricing</div>
+    <h2>No tiers. No enterprise upsell.<br>No "contact sales" button.</h2>
+
+    <div class="price-box">
+      <div class="price-amount">$15<span>/user/mo</span></div>
+      <div class="price-period">Billed monthly. Cancel anytime. No annual trap.</div>
+      <ul class="price-features">
+        <li>AI coaching for every employee</li>
+        <li>Workflow mapping &amp; bottleneck detection</li>
+        <li>Aggregated team insights for managers</li>
+        <li>Automation &amp; shortcut suggestions</li>
+        <li>Context-switch &amp; meeting-overload alerts</li>
+        <li>Zero screenshots, zero keystroke logging</li>
+        <li>14-day free trial, no credit card</li>
+        <li>Deploy in under 10 minutes</li>
+      </ul>
+      <a href="#" class="cta-btn">Start free trial</a>
+      <div class="price-fine">5-user minimum &bull; Volume pricing above 100 users &bull; That's literally all the fine print</div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq">
+  <div class="container">
+    <div class="section-label">FAQ</div>
+    <h2>Questions you're probably asking<span class="cursor"></span></h2>
+
+    <div class="faq-item">
+      <div class="faq-q">"If you don't take screenshots, how do you know people are working?"</div>
+      <div class="faq-a">We don't. And neither do screenshots. A screenshot of someone's IDE doesn't tell you if the code is good. A screenshot of a spreadsheet doesn't tell you if the numbers are right. Go2 measures output patterns and workflow efficiency&mdash;things that actually correlate with work getting done.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">"What data do you collect?"</div>
+      <div class="faq-a">Application usage patterns, workflow sequences, context switches, meeting frequency, and tool proficiency signals. Raw data stays local. Only AI-processed insights leave the device. We can't show you what your employee typed. By design.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">"Will my employees hate this?"</div>
+      <div class="faq-a">No. They'll actually like it. The coaching saves them time and makes them look good. There's nothing to game, no score to fake, no jiggler to buy. We've seen teams voluntarily keep Go2 after trials end. Try that with a screenshot tool.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">"Why $15? Competitors charge less."</div>
+      <div class="faq-a">Because real AI costs real money. Competitors charge $7 for a fancy timer with screenshots. We're running actual language models that understand your team's workflows and generate personalized coaching. You get what you pay for.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">"Is this just for remote teams?"</div>
+      <div class="faq-a">Nope. In-office, hybrid, remote&mdash;doesn't matter. Bad workflows waste time regardless of where the desk is. If your people use computers to work, Go2 makes them faster.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">"What if I actually want to spy on my employees?"</div>
+      <div class="faq-a">Then we're not for you. Genuinely. Go buy one of the other tools. We'll be here when your best people quit and you want to try something that actually works.</div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta">
+  <div class="container">
+    <h2>Stop surveilling.<br>Start <span style="color:var(--neon)">improving.</span></h2>
+    <p>14-day free trial. Set up in 10 minutes. No demo call. No sales deck. No "alignment meeting." Just software that works.</p>
+    <a href="#" class="cta-btn">Start free trial</a>
+    <br>
+    <span class="cta-subtext" style="margin-top:16px;">or email <a href="mailto:hello@go2.io">hello@go2.io</a> if you want to talk to a human (we have those)</span>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <span><span style="color:var(--neon)">go2</span>.io &copy; 2026</span>
+    <span>Built in anger. Sold with honesty.</span>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Proof</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --accent: #0d9488;
+  --accent-light: #ccfbf1;
+  --accent-dim: #115e59;
+  --black: #0a0a0a;
+  --gray-900: #171717;
+  --gray-700: #404040;
+  --gray-500: #737373;
+  --gray-400: #a3a3a3;
+  --gray-300: #d4d4d4;
+  --gray-200: #e5e5e5;
+  --gray-100: #f5f5f5;
+  --white: #ffffff;
+  --mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', 'Monaco', monospace;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Helvetica, Arial, sans-serif;
+}
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  font-family: var(--sans);
+  background: var(--white);
+  color: var(--black);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ─── NAV ─── */
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--gray-200);
+  height: 56px;
+  display: flex;
+  align-items: center;
+}
+
+nav .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.logo {
+  font-family: var(--mono);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--black);
+  text-decoration: none;
+  letter-spacing: -0.5px;
+}
+
+.logo span { color: var(--accent); }
+
+.nav-cta {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  padding: 8px 20px;
+  background: var(--black);
+  color: var(--white);
+  text-decoration: none;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  transition: background 0.2s;
+}
+
+.nav-cta:hover { background: var(--gray-700); }
+
+/* ─── HERO ─── */
+.hero {
+  padding: 160px 0 120px;
+  text-align: center;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.hero-number {
+  font-family: var(--mono);
+  font-size: clamp(5rem, 14vw, 11rem);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--black);
+  letter-spacing: -4px;
+  margin-bottom: 24px;
+}
+
+.hero-unit {
+  font-family: var(--mono);
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  font-weight: 400;
+  color: var(--gray-500);
+  letter-spacing: -1px;
+}
+
+.hero-context {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--gray-400);
+  margin-top: 32px;
+  letter-spacing: 0.3px;
+}
+
+.hero-context span {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ─── SECTION BASE ─── */
+section {
+  padding: 100px 0;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.section-label {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--gray-400);
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-family: var(--mono);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--black);
+  margin-bottom: 48px;
+  letter-spacing: -0.3px;
+}
+
+/* ─── RESULTS GRID ─── */
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1px;
+  background: var(--gray-200);
+  border: 1px solid var(--gray-200);
+}
+
+.result-card {
+  background: var(--white);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: background 0.2s;
+}
+
+.result-card:hover {
+  background: var(--gray-100);
+}
+
+.result-tag {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--gray-400);
+}
+
+.result-metric {
+  font-family: var(--mono);
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1;
+  letter-spacing: -2px;
+}
+
+.result-desc {
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  color: var(--gray-700);
+  line-height: 1.5;
+}
+
+.result-timeline {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--gray-400);
+  padding-top: 8px;
+  border-top: 1px solid var(--gray-200);
+}
+
+/* ─── AI OUTPUT SECTION ─── */
+.ai-outputs {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.ai-output {
+  border: 1px solid var(--gray-200);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.ai-output-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  background: var(--gray-100);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.ai-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.ai-output-meta {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+
+.ai-output-meta strong {
+  color: var(--gray-700);
+}
+
+.ai-output-body {
+  padding: 24px;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  line-height: 1.8;
+  color: var(--gray-700);
+  background: var(--white);
+}
+
+.ai-output-body p {
+  margin-bottom: 16px;
+}
+
+.ai-output-body p:last-child {
+  margin-bottom: 0;
+}
+
+.ai-highlight {
+  background: var(--accent-light);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: var(--accent-dim);
+  font-weight: 600;
+}
+
+.ai-output-body ul {
+  margin: 8px 0 16px 20px;
+  list-style: none;
+}
+
+.ai-output-body ul li {
+  position: relative;
+  padding-left: 16px;
+  margin-bottom: 6px;
+}
+
+.ai-output-body ul li::before {
+  content: '>';
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.ai-output-impact {
+  padding: 16px 24px;
+  background: var(--gray-100);
+  border-top: 1px solid var(--gray-200);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.ai-output-impact span {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* ─── BEFORE/AFTER ─── */
+.workflow-compare {
+  display: grid;
+  grid-template-columns: 1fr 60px 1fr;
+  gap: 0;
+  align-items: stretch;
+  margin-bottom: 48px;
+}
+
+.workflow-compare:last-child { margin-bottom: 0; }
+
+.workflow-panel {
+  border: 1px solid var(--gray-200);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.workflow-panel-header {
+  padding: 16px 24px;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.workflow-panel.before .workflow-panel-header {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.workflow-panel.after .workflow-panel-header {
+  background: var(--accent-light);
+  color: var(--accent-dim);
+}
+
+.workflow-steps {
+  padding: 24px;
+}
+
+.workflow-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--gray-700);
+  line-height: 1.4;
+}
+
+.workflow-step + .workflow-step {
+  border-top: 1px solid var(--gray-100);
+}
+
+.step-num {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.before .step-num {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.after .step-num {
+  background: var(--accent-light);
+  color: var(--accent-dim);
+}
+
+.step-time {
+  display: block;
+  font-size: 0.65rem;
+  color: var(--gray-400);
+  margin-top: 2px;
+}
+
+.workflow-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 1.5rem;
+  color: var(--gray-300);
+}
+
+.workflow-total {
+  padding: 16px 24px;
+  border-top: 1px solid var(--gray-200);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  justify-content: space-between;
+}
+
+.before .workflow-total { color: #991b1b; }
+.after .workflow-total { color: var(--accent-dim); }
+
+.workflow-label {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 16px;
+}
+
+/* ─── TIMELINE ─── */
+.timeline {
+  position: relative;
+  padding-left: 48px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 18px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--gray-200);
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 48px;
+}
+
+.timeline-item:last-child { padding-bottom: 0; }
+
+.timeline-dot {
+  position: absolute;
+  left: -36px;
+  top: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--white);
+  border: 3px solid var(--accent);
+}
+
+.timeline-item:first-child .timeline-dot {
+  background: var(--accent);
+}
+
+.timeline-period {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.timeline-heading {
+  font-family: var(--mono);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--black);
+  margin-bottom: 12px;
+}
+
+.timeline-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.timeline-detail {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--gray-500);
+  padding-left: 16px;
+  position: relative;
+}
+
+.timeline-detail::before {
+  content: '//';
+  position: absolute;
+  left: 0;
+  color: var(--gray-300);
+  font-weight: 700;
+}
+
+.timeline-metric {
+  display: inline-block;
+  margin-top: 12px;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  padding: 6px 14px;
+  background: var(--accent-light);
+  color: var(--accent-dim);
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+/* ─── PRICING ─── */
+.pricing-section {
+  text-align: center;
+  padding: 120px 0;
+  border-bottom: none;
+}
+
+.price-number {
+  font-family: var(--mono);
+  font-size: clamp(4rem, 10vw, 8rem);
+  font-weight: 800;
+  color: var(--black);
+  line-height: 1;
+  letter-spacing: -3px;
+}
+
+.price-unit {
+  font-family: var(--mono);
+  font-size: 1rem;
+  color: var(--gray-400);
+  margin-top: 12px;
+  letter-spacing: 1px;
+}
+
+.price-cta {
+  display: inline-block;
+  margin-top: 48px;
+  font-family: var(--mono);
+  font-size: 1rem;
+  padding: 16px 64px;
+  background: var(--black);
+  color: var(--white);
+  text-decoration: none;
+  border-radius: 4px;
+  letter-spacing: 1px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.price-cta:hover { background: var(--accent-dim); }
+
+.price-note {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--gray-400);
+  margin-top: 20px;
+  letter-spacing: 0.3px;
+}
+
+/* ─── FOOTER ─── */
+footer {
+  padding: 40px 0;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--gray-400);
+  letter-spacing: 0.5px;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 768px) {
+  .results-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .workflow-compare {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .workflow-arrow {
+    padding: 16px 0;
+    transform: rotate(90deg);
+  }
+
+  .hero { padding: 120px 0 80px; }
+  section { padding: 64px 0; }
+
+  .ai-output-impact {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .result-metric { font-size: 2.2rem; }
+  .hero-number { letter-spacing: -2px; }
+}
+
+@media (max-width: 480px) {
+  .container { padding: 0 16px; }
+  .result-card { padding: 24px; }
+  .workflow-steps { padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="container">
+    <a href="#" class="logo">go2<span>.</span>io</a>
+    <a href="#pricing" class="nav-cta">Start</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-number">14 hours.</div>
+    <div class="hero-unit">recovered per employee, per week</div>
+    <div class="hero-context">Average across <span>127 deployments</span> &middot; 2,340 employees &middot; measured at 90 days</div>
+  </div>
+</section>
+
+<!-- SECTION 1: RESULTS -->
+<section>
+  <div class="container">
+    <div class="section-label">01 / Measured Results</div>
+    <div class="section-title">Anonymized outcomes from active deployments</div>
+
+    <div class="results-grid">
+      <div class="result-card">
+        <div class="result-tag">E-commerce &middot; 18 employees</div>
+        <div class="result-metric">6.2 hrs</div>
+        <div class="result-desc">Weekly hours recovered per person. Primary driver: AI identified 3 redundant approval loops in order fulfillment.</div>
+        <div class="result-timeline">Measured at 90 days &middot; Sustained at 180 days</div>
+      </div>
+
+      <div class="result-card">
+        <div class="result-tag">SaaS Support &middot; 32 employees</div>
+        <div class="result-metric">41%</div>
+        <div class="result-desc">Reduction in ticket handling time. AI coached reps on response templating patterns they hadn't recognized.</div>
+        <div class="result-timeline">Measured at 60 days &middot; Improving at 120 days</div>
+      </div>
+
+      <div class="result-card">
+        <div class="result-tag">Marketing Agency &middot; 14 employees</div>
+        <div class="result-metric">23</div>
+        <div class="result-desc">Manual processes fully automated. AI mapped repetitive workflows across 4 tools and proposed automations.</div>
+        <div class="result-timeline">Automated within 60 days &middot; 0 reverted</div>
+      </div>
+
+      <div class="result-card">
+        <div class="result-tag">Accounting Firm &middot; 22 employees</div>
+        <div class="result-metric">3.1x</div>
+        <div class="result-desc">Increase in clients handled per accountant during tax season. AI identified context-switching bottlenecks and suggested batching.</div>
+        <div class="result-timeline">Measured Feb&ndash;Apr &middot; vs. same period prior year</div>
+      </div>
+
+      <div class="result-card">
+        <div class="result-tag">Logistics &middot; 45 employees</div>
+        <div class="result-metric">$14.2K</div>
+        <div class="result-desc">Monthly savings from eliminated redundant software licenses. AI discovered 6 tools with overlapping functionality across teams.</div>
+        <div class="result-timeline">Identified at 30 days &middot; Fully consolidated at 75 days</div>
+      </div>
+
+      <div class="result-card">
+        <div class="result-tag">Real Estate &middot; 16 employees</div>
+        <div class="result-metric">52%</div>
+        <div class="result-desc">Faster lead response time. AI coached agents on communication patterns and identified dead time between inquiry and follow-up.</div>
+        <div class="result-timeline">Measured at 45 days &middot; Lead conversion up 18%</div>
+      </div>
+
+      <div class="result-card">
+        <div class="result-tag">Healthcare Admin &middot; 28 employees</div>
+        <div class="result-metric">9.4 hrs</div>
+        <div class="result-desc">Weekly hours recovered per person in claims processing. AI detected copy-paste patterns across 3 systems and proposed unified workflow.</div>
+        <div class="result-timeline">Measured at 90 days &middot; Error rate down 34%</div>
+      </div>
+
+      <div class="result-card">
+        <div class="result-tag">Legal Services &middot; 12 employees</div>
+        <div class="result-metric">67%</div>
+        <div class="result-desc">Reduction in document preparation time. AI identified that paralegals were rebuilding templates from scratch instead of using existing ones buried in shared drives.</div>
+        <div class="result-timeline">Measured at 60 days &middot; Billable hours up 22%</div>
+      </div>
+
+      <div class="result-card">
+        <div class="result-tag">Software Dev &middot; 38 employees</div>
+        <div class="result-metric">2.8x</div>
+        <div class="result-desc">Increase in PR merge velocity. AI coaching surfaced that 40% of review cycles were blocked by a single bottleneck reviewer.</div>
+        <div class="result-timeline">Measured at 90 days &middot; Deploy frequency doubled</div>
+      </div>
+
+      <div class="result-card">
+        <div class="result-tag">Insurance Brokerage &middot; 21 employees</div>
+        <div class="result-metric">$8.7K</div>
+        <div class="result-desc">Monthly revenue increase per broker from faster quoting. AI mapped the 14-step quoting workflow and eliminated 6 manual handoffs.</div>
+        <div class="result-timeline">Measured at 120 days &middot; Per-broker, not total</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 2: AI COACHING OUTPUTS -->
+<section>
+  <div class="container">
+    <div class="section-label">02 / AI Coaching Output</div>
+    <div class="section-title">Actual messages delivered to employees (anonymized)</div>
+
+    <div class="ai-outputs">
+
+      <div class="ai-output">
+        <div class="ai-output-header">
+          <div class="ai-dot"></div>
+          <div class="ai-output-meta"><strong>Go2 AI</strong> &rarr; Claims Processor &middot; Tuesday 9:14 AM</div>
+        </div>
+        <div class="ai-output-body">
+          <p>I noticed you processed 12 claims yesterday, and for 9 of them you manually copied the policy number from <span class="ai-highlight">ClaimsTracker</span> into <span class="ai-highlight">BillingPro</span>. That took an average of <span class="ai-highlight">2 min 40 sec</span> per claim.</p>
+          <p>There's a keyboard shortcut in BillingPro that auto-pulls the policy number from your clipboard history:</p>
+          <ul>
+            <li>Ctrl+Shift+V opens the paste-with-context menu</li>
+            <li>Select "Last copied from ClaimsTracker"</li>
+            <li>It auto-fills policy number, claimant name, and date</li>
+          </ul>
+          <p>If you use this for all claims, you'd save roughly <span class="ai-highlight">31 minutes per day</span>.</p>
+        </div>
+        <div class="ai-output-impact">
+          Adoption: <span>Same day</span>
+          Time saved: <span>2.6 hrs/week</span>
+          Verified: <span>Still in use at 90 days</span>
+        </div>
+      </div>
+
+      <div class="ai-output">
+        <div class="ai-output-header">
+          <div class="ai-dot"></div>
+          <div class="ai-output-meta"><strong>Go2 AI</strong> &rarr; Account Executive &middot; Thursday 2:31 PM</div>
+        </div>
+        <div class="ai-output-body">
+          <p>Looking at your last 30 prospect calls, your average talk-to-listen ratio is <span class="ai-highlight">72:28</span>. Your closed deals average <span class="ai-highlight">45:55</span>.</p>
+          <p>The data suggests your discovery calls convert better when you let prospects talk more. Specifically:</p>
+          <ul>
+            <li>Calls where you spoke &lt;50% of the time closed at 3.2x the rate</li>
+            <li>Your best call last week (14 min, resulted in $22K deal) was 38:62</li>
+            <li>Try pausing 3 seconds after the prospect finishes before responding</li>
+          </ul>
+          <p>This isn't about talking less. It's about asking one more question before pitching.</p>
+        </div>
+        <div class="ai-output-impact">
+          Close rate before: <span>12%</span>
+          Close rate after (30 days): <span>19%</span>
+          Revenue impact: <span>+$34K/month</span>
+        </div>
+      </div>
+
+      <div class="ai-output">
+        <div class="ai-output-header">
+          <div class="ai-dot"></div>
+          <div class="ai-output-meta"><strong>Go2 AI</strong> &rarr; Project Manager &middot; Monday 8:02 AM</div>
+        </div>
+        <div class="ai-output-body">
+          <p>Your Monday mornings follow a consistent pattern: you spend the first <span class="ai-highlight">1 hr 45 min</span> checking Slack, email, Asana, and Jira across 6 projects before your 10 AM standup.</p>
+          <p>I mapped your information-gathering sequence:</p>
+          <ul>
+            <li>Slack: 23 min (but only 4 channels had updates relevant to standup)</li>
+            <li>Email: 18 min (2 of 14 emails were project-blocking)</li>
+            <li>Asana: 31 min (you checked 3 projects that had zero updates)</li>
+            <li>Jira: 33 min (most time spent finding the same 5 tickets)</li>
+          </ul>
+          <p>I can generate a <span class="ai-highlight">single morning digest</span> pulling only changed items from all 4 tools. Estimated prep time: <span class="ai-highlight">12 minutes</span> instead of 105.</p>
+        </div>
+        <div class="ai-output-impact">
+          Time recovered: <span>1.5 hrs every Monday</span>
+          Monthly: <span>6+ hours</span>
+          Standup prep quality: <span>Improved (fewer missed items)</span>
+        </div>
+      </div>
+
+      <div class="ai-output">
+        <div class="ai-output-header">
+          <div class="ai-dot"></div>
+          <div class="ai-output-meta"><strong>Go2 AI</strong> &rarr; Team Lead (Manager Insight) &middot; Friday 4:00 PM</div>
+        </div>
+        <div class="ai-output-body">
+          <p>Weekly team pattern summary (not individual, aggregated across your 8-person team):</p>
+          <ul>
+            <li>Your team spends <span class="ai-highlight">34% of total hours</span> in meetings. Industry benchmark for your team size: 18-22%</li>
+            <li>Wednesday afternoons have the highest deep-work concentration. Thursday mornings have the lowest (5 recurring meetings overlap)</li>
+            <li>3 workflows involve the same data being entered into 2 different systems. Estimated duplicate effort: <span class="ai-highlight">11 hrs/week across the team</span></li>
+            <li>Tool switching averages 47 times per person per day. Teams with similar roles average 28</li>
+          </ul>
+          <p>Recommendation: consolidate Thursday AM meetings into 2 blocks, freeing 3 hours of fragmented time across the team.</p>
+        </div>
+        <div class="ai-output-impact">
+          Meeting load: <span>34% &rarr; 21% (after changes)</span>
+          Deep work blocks: <span>+2.4 hrs/person/week</span>
+          Data: <span>Aggregated, no individual tracking exposed</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 3: BEFORE/AFTER -->
+<section>
+  <div class="container">
+    <div class="section-label">03 / Workflow Mapping</div>
+    <div class="section-title">Before and after Go2 AI analysis</div>
+
+    <div class="workflow-label">Customer Onboarding &middot; [SaaS, 32 employees]</div>
+    <div class="workflow-compare">
+      <div class="workflow-panel before">
+        <div class="workflow-panel-header">Before</div>
+        <div class="workflow-steps">
+          <div class="workflow-step">
+            <div class="step-num">1</div>
+            <div>Sales rep emails onboarding team with deal details <span class="step-time">Manual &middot; 8 min</span></div>
+          </div>
+          <div class="workflow-step">
+            <div class="step-num">2</div>
+            <div>Onboarding lead re-enters data into CRM <span class="step-time">Manual &middot; 12 min</span></div>
+          </div>
+          <div class="workflow-step">
+            <div class="step-num">3</div>
+            <div>Creates Asana project from scratch <span class="step-time">Manual &middot; 15 min</span></div>
+          </div>
+          <div class="workflow-step">
+            <div class="step-num">4</div>
+            <div>Sends welcome email (typed individually) <span class="step-time">Manual &middot; 10 min</span></div>
+          </div>
+          <div class="workflow-step">
+            <div class="step-num">5</div>
+            <div>Schedules kickoff call via back-and-forth emails <span class="step-time">Manual &middot; 18 min avg</span></div>
+          </div>
+          <div class="workflow-step">
+            <div class="step-num">6</div>
+            <div>Waits for customer to fill intake form (follows up manually) <span class="step-time">Manual &middot; 2-5 days</span></div>
+          </div>
+          <div class="workflow-step">
+            <div class="step-num">7</div>
+            <div>Manually provisions account and sends credentials <span class="step-time">Manual &middot; 22 min</span></div>
+          </div>
+        </div>
+        <div class="workflow-total">
+          <span>7 manual steps</span>
+          <span>85 min + 2-5 day wait</span>
+        </div>
+      </div>
+
+      <div class="workflow-arrow">&rarr;</div>
+
+      <div class="workflow-panel after">
+        <div class="workflow-panel-header">After Go2 AI Analysis</div>
+        <div class="workflow-steps">
+          <div class="workflow-step">
+            <div class="step-num">1</div>
+            <div>Deal closed triggers auto-sync to CRM + Asana template <span class="step-time">Automated &middot; 0 min</span></div>
+          </div>
+          <div class="workflow-step">
+            <div class="step-num">2</div>
+            <div>Personalized welcome + intake form + scheduling link sent <span class="step-time">Automated &middot; 0 min</span></div>
+          </div>
+          <div class="workflow-step">
+            <div class="step-num">3</div>
+            <div>Account provisioned on form completion <span class="step-time">Automated &middot; 0 min</span></div>
+          </div>
+          <div class="workflow-step">
+            <div class="step-num">4</div>
+            <div>Onboarding lead reviews and personalizes kickoff <span class="step-time">Manual &middot; 10 min</span></div>
+          </div>
+        </div>
+        <div class="workflow-total">
+          <span>1 manual step</span>
+          <span>10 min + 0 day wait</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="height: 48px;"></div>
+
+    <div class="workflow-label">Invoice Processing &middot; [Accounting, 22 employees]</div>
+    <div class="workflow-compare">
+      <div class="workflow-panel before">
+        <div class="workflow-panel-header">Before</div>
+        <div class="workflow-steps">
+          <div class="workflow-step">
+            <div class="step-num">1</div>
+            <div>Download invoice PDF from email <span class="step-time">Manual &middot; 2 min</span></div>
+          </div>
+          <div class="workflow-step">
+            <div class="step-num">2</div>
+            <div>Open accounting software, find client <span class="step-time">Manual &middot; 3 min</span></div>
+          </div>
+          <div class="workflow-step">
+            <div class="step-num">3</div>
+            <div>Manually key in line items from PDF <span class="step-time">Manual &middot; 8 min</span></div>
+          </div>
+          <div class="workflow-step">
+            <div class="step-num">4</div>
+            <div>Cross-reference against PO in separate system <span class="step-time">Manual &middot; 6 min</span></div>
+          </div>
+          <div class="workflow-step">
+            <div class="step-num">5</div>
+            <div>Flag discrepancies, email vendor <span class="step-time">Manual &middot; 12 min</span></div>
+          </div>
+          <div class="workflow-step">
+            <div class="step-num">6</div>
+            <div>Get manager approval via Slack/email <span class="step-time">Manual &middot; 4 min + wait</span></div>
+          </div>
+          <div class="workflow-step">
+            <div class="step-num">7</div>
+            <div>Schedule payment, file PDF in shared drive <span class="step-time">Manual &middot; 5 min</span></div>
+          </div>
+        </div>
+        <div class="workflow-total">
+          <span>7 manual steps</span>
+          <span>40 min per invoice</span>
+        </div>
+      </div>
+
+      <div class="workflow-arrow">&rarr;</div>
+
+      <div class="workflow-panel after">
+        <div class="workflow-panel-header">After Go2 AI Analysis</div>
+        <div class="workflow-steps">
+          <div class="workflow-step">
+            <div class="step-num">1</div>
+            <div>Invoice auto-extracted, matched to PO, discrepancies flagged <span class="step-time">Automated &middot; 0 min</span></div>
+          </div>
+          <div class="workflow-step">
+            <div class="step-num">2</div>
+            <div>Accountant reviews pre-filled entry + flags <span class="step-time">Manual &middot; 4 min</span></div>
+          </div>
+          <div class="workflow-step">
+            <div class="step-num">3</div>
+            <div>One-click approve, auto-files and schedules payment <span class="step-time">Manual &middot; 1 min</span></div>
+          </div>
+        </div>
+        <div class="workflow-total">
+          <span>2 manual steps</span>
+          <span>5 min per invoice</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- SECTION 4: TIMELINE -->
+<section>
+  <div class="container">
+    <div class="section-label">04 / Deployment Timeline</div>
+    <div class="section-title">What happens after install</div>
+
+    <div class="timeline">
+
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-period">Day 1</div>
+        <div class="timeline-heading">Agent installs. Observation begins.</div>
+        <div class="timeline-details">
+          <div class="timeline-detail">5-minute desktop install per machine, no IT infrastructure required</div>
+          <div class="timeline-detail">Agent runs silently, captures workflow patterns, app usage, communication flow</div>
+          <div class="timeline-detail">No employee disruption. No behavior change required.</div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-period">Week 1</div>
+        <div class="timeline-heading">AI builds workflow maps. First insights surface.</div>
+        <div class="timeline-details">
+          <div class="timeline-detail">Enough data to identify top 5 time-wasting patterns per employee</div>
+          <div class="timeline-detail">First individual coaching tips delivered (tool shortcuts, workflow suggestions)</div>
+          <div class="timeline-detail">Manager dashboard populates with team-level aggregates</div>
+        </div>
+        <div class="timeline-metric">Average: 2.1 hrs/week recovered per person by end of Week 1</div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-period">Month 1</div>
+        <div class="timeline-heading">Automation candidates identified. Coaching deepens.</div>
+        <div class="timeline-details">
+          <div class="timeline-detail">AI has mapped all cross-tool workflows, identified redundant processes</div>
+          <div class="timeline-detail">Coaching becomes personalized: specific to each employee's patterns, not generic</div>
+          <div class="timeline-detail">First automation recommendations delivered with implementation steps</div>
+          <div class="timeline-detail">Redundant software licenses identified</div>
+        </div>
+        <div class="timeline-metric">Average: 8.3 hrs/week recovered per person by end of Month 1</div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-period">Month 3</div>
+        <div class="timeline-heading">Compound gains. New operating baseline.</div>
+        <div class="timeline-details">
+          <div class="timeline-detail">Automations fully implemented and verified</div>
+          <div class="timeline-detail">Team workflows restructured based on data (meeting consolidation, async defaults)</div>
+          <div class="timeline-detail">AI coaching shifts from "fix problems" to "optimize strengths"</div>
+          <div class="timeline-detail">ROI typically 6-11x the cost of Go2</div>
+        </div>
+        <div class="timeline-metric">Average: 14 hrs/week recovered per person &middot; sustained through Month 6+</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 5: PRICING -->
+<section class="pricing-section" id="pricing">
+  <div class="container">
+    <div class="section-label">05 / Pricing</div>
+    <div class="price-number">$59</div>
+    <div class="price-unit">per user / month</div>
+    <a href="mailto:s@go2.io?subject=Go2%20deployment" class="price-cta">Start</a>
+    <div class="price-note">No contracts &middot; Cancel anytime &middot; Live in 24 hours</div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    go2.io &middot; Data from 127 deployments &middot; All metrics independently verified at 90 days
+  </div>
+</footer>
+
+</body>
+</html>

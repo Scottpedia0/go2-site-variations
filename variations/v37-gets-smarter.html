@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The Only Software That Gets Smarter Every Day</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --blue:#3b82f6;--indigo:#6366f1;--purple:#8b5cf6;--violet:#a78bfa;
+  --deep:#1e1b4b;--dark:#0f172a;--gray50:#f8fafc;--gray100:#f1f5f9;
+  --gray200:#e2e8f0;--gray400:#94a3b8;--gray500:#64748b;--gray600:#475569;
+  --gray700:#334155;--gray800:#1e293b;--gray900:#0f172a;
+  --gradient:linear-gradient(135deg,var(--blue),var(--indigo),var(--purple));
+}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--gray800);background:#fff;overflow-x:hidden;line-height:1.6}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--gray200);transition:box-shadow .3s}
+nav.scrolled{box-shadow:0 1px 12px rgba(0,0,0,.08)}
+.nav-inner{max-width:1200px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-weight:800;font-size:1.5rem;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-links{display:flex;gap:32px;align-items:center}
+.nav-links a{text-decoration:none;color:var(--gray600);font-size:.9rem;font-weight:500;transition:color .2s}
+.nav-links a:hover{color:var(--indigo)}
+.nav-cta{background:var(--gradient);color:#fff!important;-webkit-text-fill-color:#fff!important;padding:8px 20px;border-radius:8px;font-weight:600;transition:opacity .2s}
+.nav-cta:hover{opacity:.9}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:linear-gradient(180deg,#f0f4ff 0%,#fff 100%);padding:100px 24px 80px}
+.hero-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.hero-bg .orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.25;animation:float 12s ease-in-out infinite}
+.orb-1{width:500px;height:500px;background:var(--blue);top:-100px;right:-100px;animation-delay:0s}
+.orb-2{width:400px;height:400px;background:var(--purple);bottom:-80px;left:-80px;animation-delay:-4s}
+.orb-3{width:300px;height:300px;background:var(--indigo);top:40%;left:50%;animation-delay:-8s}
+@keyframes float{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-20px) scale(1.05)}66%{transform:translate(-20px,15px) scale(.95)}}
+
+.hero-content{max-width:900px;text-align:center;position:relative;z-index:2}
+.hero-badge{display:inline-block;background:linear-gradient(135deg,rgba(59,130,246,.1),rgba(139,92,246,.1));border:1px solid rgba(99,102,241,.2);border-radius:100px;padding:6px 20px;font-size:.85rem;font-weight:600;color:var(--indigo);margin-bottom:24px}
+.hero h1{font-size:clamp(2.5rem,6vw,4.2rem);font-weight:800;line-height:1.1;margin-bottom:24px;color:var(--gray900)}
+.hero h1 .gradient-text{background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-sub{font-size:1.2rem;color:var(--gray500);max-width:640px;margin:0 auto 40px;line-height:1.7}
+
+.hero-timeline-mini{display:flex;align-items:center;justify-content:center;gap:0;margin:0 auto 48px;max-width:700px;flex-wrap:wrap}
+.htm-step{display:flex;align-items:center;gap:8px;padding:12px 20px;position:relative}
+.htm-step .day{font-weight:800;font-size:1rem;white-space:nowrap}
+.htm-step .action{font-size:.9rem;color:var(--gray500);white-space:nowrap}
+.htm-step:nth-child(1) .day{color:var(--blue)}
+.htm-step:nth-child(2) .day{color:var(--indigo)}
+.htm-step:nth-child(3) .day{color:var(--purple)}
+.htm-arrow{width:40px;height:2px;background:var(--gray200);position:relative;flex-shrink:0}
+.htm-arrow::after{content:'';position:absolute;right:-1px;top:-4px;border:5px solid transparent;border-left:6px solid var(--gray300)}
+
+.hero-ctas{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;border-radius:12px;font-size:1rem;font-weight:600;text-decoration:none;transition:all .25s;cursor:pointer;border:none}
+.btn-primary{background:var(--gradient);color:#fff;box-shadow:0 4px 24px rgba(99,102,241,.3)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(99,102,241,.4)}
+.btn-secondary{background:var(--gray100);color:var(--gray700);border:1px solid var(--gray200)}
+.btn-secondary:hover{background:var(--gray200)}
+
+/* SECTIONS */
+section{padding:100px 24px}
+.section-inner{max-width:1100px;margin:0 auto}
+.section-label{display:inline-block;font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--indigo);margin-bottom:12px}
+.section-title{font-size:clamp(2rem,4vw,3rem);font-weight:800;color:var(--gray900);margin-bottom:16px;line-height:1.2}
+.section-desc{font-size:1.1rem;color:var(--gray500);max-width:600px;line-height:1.7}
+
+/* INTELLIGENCE CURVE */
+.curve-section{background:var(--gray50)}
+.curve-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;margin-top:48px}
+.curve-chart{background:#fff;border-radius:20px;padding:40px;box-shadow:0 1px 4px rgba(0,0,0,.06);border:1px solid var(--gray200)}
+.chart-container{position:relative;width:100%;height:300px}
+.chart-svg{width:100%;height:100%}
+.curve-line{fill:none;stroke:url(#curveGrad);stroke-width:3;stroke-linecap:round;stroke-dasharray:500;stroke-dashoffset:500;transition:stroke-dashoffset 2s ease-out}
+.curve-line.animated{stroke-dashoffset:0}
+.curve-fill{fill:url(#curveFillGrad);opacity:0;transition:opacity 1.5s ease-out .5s}
+.curve-fill.animated{opacity:.3}
+.flat-line{fill:none;stroke:var(--gray300);stroke-width:2;stroke-dasharray:6,4}
+.chart-label{font-size:.75rem;fill:var(--gray400);font-weight:500}
+.chart-label-bold{font-size:.8rem;fill:var(--gray700);font-weight:700}
+.chart-axis{stroke:var(--gray200);stroke-width:1}
+.chart-legend{display:flex;gap:24px;margin-top:20px;justify-content:center}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--gray500)}
+.legend-dot{width:12px;height:3px;border-radius:2px}
+.legend-go2{background:var(--gradient)}
+.legend-trad{background:var(--gray300)}
+.curve-points{display:flex;flex-direction:column;gap:20px}
+.curve-point{display:flex;gap:16px;align-items:flex-start}
+.curve-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.curve-icon-1{background:rgba(59,130,246,.1);color:var(--blue)}
+.curve-icon-2{background:rgba(99,102,241,.1);color:var(--indigo)}
+.curve-icon-3{background:rgba(139,92,246,.1);color:var(--purple)}
+.curve-point h4{font-weight:700;color:var(--gray800);margin-bottom:4px}
+.curve-point p{font-size:.9rem;color:var(--gray500);line-height:1.6}
+
+/* TIMELINE */
+.timeline-section{background:#fff}
+.timeline{position:relative;margin-top:60px;padding-left:40px}
+.timeline::before{content:'';position:absolute;left:15px;top:0;bottom:0;width:3px;border-radius:3px;background:linear-gradient(180deg,var(--blue),var(--indigo),var(--purple))}
+.tl-item{position:relative;margin-bottom:60px;opacity:0;transform:translateY(30px);transition:all .6s ease-out}
+.tl-item.visible{opacity:1;transform:translateY(0)}
+.tl-dot{position:absolute;left:-33px;top:4px;width:20px;height:20px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px var(--blue)}
+.tl-item:nth-child(2) .tl-dot{box-shadow:0 0 0 2px var(--indigo)}
+.tl-item:nth-child(3) .tl-dot{box-shadow:0 0 0 2px #7c3aed}
+.tl-item:nth-child(4) .tl-dot{box-shadow:0 0 0 2px var(--purple)}
+.tl-dot-inner{width:100%;height:100%;border-radius:50%}
+.tl-item:nth-child(1) .tl-dot-inner{background:var(--blue)}
+.tl-item:nth-child(2) .tl-dot-inner{background:var(--indigo)}
+.tl-item:nth-child(3) .tl-dot-inner{background:#7c3aed}
+.tl-item:nth-child(4) .tl-dot-inner{background:var(--purple)}
+.tl-header{display:flex;align-items:baseline;gap:12px;margin-bottom:8px}
+.tl-day{font-size:1.4rem;font-weight:800}
+.tl-item:nth-child(1) .tl-day{color:var(--blue)}
+.tl-item:nth-child(2) .tl-day{color:var(--indigo)}
+.tl-item:nth-child(3) .tl-day{color:#7c3aed}
+.tl-item:nth-child(4) .tl-day{color:var(--purple)}
+.tl-tagline{font-size:1rem;color:var(--gray400);font-weight:500}
+.tl-title{font-size:1.5rem;font-weight:700;color:var(--gray900);margin-bottom:12px}
+.tl-desc{color:var(--gray500);margin-bottom:20px;line-height:1.7;max-width:600px}
+.tl-insights{display:flex;flex-wrap:wrap;gap:10px}
+.tl-tag{background:var(--gray100);border:1px solid var(--gray200);border-radius:8px;padding:6px 14px;font-size:.82rem;color:var(--gray600);font-weight:500}
+.tl-item:last-child{margin-bottom:0}
+
+/* CROSS-POLLINATION */
+.cross-section{background:var(--gray50)}
+.cross-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;margin-top:48px}
+.cross-visual{position:relative;height:400px;display:flex;align-items:center;justify-content:center}
+.cross-node{position:absolute;background:#fff;border-radius:16px;padding:16px 20px;box-shadow:0 2px 16px rgba(0,0,0,.08);border:1px solid var(--gray200);text-align:center;transition:transform .3s}
+.cross-node:hover{transform:scale(1.05)}
+.cross-node .cn-icon{font-size:1.5rem;margin-bottom:4px}
+.cross-node .cn-name{font-weight:700;font-size:.85rem;color:var(--gray800)}
+.cross-node .cn-role{font-size:.75rem;color:var(--gray400)}
+.cn-1{top:10%;left:50%;transform:translateX(-50%)}
+.cn-2{top:40%;left:5%}
+.cn-3{top:40%;right:5%}
+.cn-4{bottom:10%;left:50%;transform:translateX(-50%)}
+.cross-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:80px;height:80px;border-radius:50%;background:var(--gradient);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(99,102,241,.3);z-index:2}
+.cross-center span{color:#fff;font-weight:800;font-size:1.1rem}
+.cross-line{position:absolute;top:50%;left:50%;height:2px;background:linear-gradient(90deg,rgba(99,102,241,.15),rgba(99,102,241,.4));transform-origin:left center;z-index:1}
+.cross-content h3{font-size:1.8rem;font-weight:800;color:var(--gray900);margin-bottom:16px}
+.cross-content p{color:var(--gray500);line-height:1.7;margin-bottom:20px}
+.cross-example{background:#fff;border-radius:16px;padding:24px;border:1px solid var(--gray200);margin-top:12px}
+.cross-example .ce-label{font-size:.75rem;text-transform:uppercase;letter-spacing:1px;color:var(--indigo);font-weight:700;margin-bottom:8px}
+.cross-example p{color:var(--gray600);font-size:.95rem;margin-bottom:0;line-height:1.6}
+.ce-highlight{color:var(--indigo);font-weight:600}
+
+/* VALUE CHART */
+.value-section{background:#fff}
+.value-chart-wrap{margin-top:48px;background:var(--gray50);border-radius:24px;padding:48px;border:1px solid var(--gray200)}
+.value-chart-header{text-align:center;margin-bottom:32px}
+.value-chart-header h3{font-size:1.6rem;font-weight:800;color:var(--gray900);margin-bottom:8px}
+.value-chart-header p{color:var(--gray500);font-size:.95rem}
+.value-bars{display:flex;align-items:flex-end;justify-content:center;gap:32px;height:250px;padding:0 20px;margin-bottom:24px}
+.value-bar-group{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;max-width:160px}
+.value-bar{width:100%;border-radius:12px 12px 4px 4px;position:relative;min-height:20px;transition:height 1s ease-out;display:flex;align-items:flex-start;justify-content:center;padding-top:12px}
+.vb-cost{background:var(--gray200)}
+.vb-value{background:var(--gradient)}
+.value-bar span{font-size:.75rem;font-weight:700;color:#fff;white-space:nowrap}
+.vb-cost span{color:var(--gray500)}
+.value-label{font-size:.85rem;font-weight:600;color:var(--gray600);text-align:center}
+.value-month{font-size:.8rem;color:var(--gray400)}
+.value-bar-pair{display:flex;gap:6px;align-items:flex-end;width:100%;height:100%}
+.value-legend{display:flex;gap:24px;justify-content:center}
+.value-legend .legend-item{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--gray500)}
+.vl-cost{width:14px;height:14px;border-radius:4px;background:var(--gray200)}
+.vl-value{width:14px;height:14px;border-radius:4px;background:var(--gradient)}
+
+/* NETWORK EFFECTS */
+.network-section{background:var(--gray50)}
+.network-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:48px}
+.net-card{background:#fff;border-radius:20px;padding:32px;border:1px solid var(--gray200);transition:all .3s}
+.net-card:hover{transform:translateY(-4px);box-shadow:0 8px 32px rgba(0,0,0,.06)}
+.net-number{font-size:2.5rem;font-weight:800;margin-bottom:4px;line-height:1}
+.net-card:nth-child(1) .net-number{color:var(--blue)}
+.net-card:nth-child(2) .net-number{color:var(--indigo)}
+.net-card:nth-child(3) .net-number{color:var(--purple)}
+.net-card h4{font-size:1.1rem;font-weight:700;color:var(--gray800);margin-bottom:8px}
+.net-card p{font-size:.9rem;color:var(--gray500);line-height:1.6}
+
+/* MOAT */
+.moat-section{background:linear-gradient(180deg,#1e1b4b 0%,#0f172a 100%);color:#fff}
+.moat-section .section-label{color:var(--violet)}
+.moat-section .section-title{color:#fff}
+.moat-section .section-desc{color:rgba(255,255,255,.6)}
+.moat-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:48px}
+.moat-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:32px;transition:background .3s}
+.moat-card:hover{background:rgba(255,255,255,.08)}
+.moat-card .mc-label{font-size:.75rem;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:12px}
+.moat-card:nth-child(1) .mc-label{color:var(--blue)}
+.moat-card:nth-child(2) .mc-label{color:var(--indigo)}
+.moat-card:nth-child(3) .mc-label{color:#7c3aed}
+.moat-card:nth-child(4) .mc-label{color:var(--purple)}
+.moat-card h4{font-size:1.2rem;font-weight:700;color:#fff;margin-bottom:8px}
+.moat-card p{font-size:.9rem;color:rgba(255,255,255,.55);line-height:1.6}
+
+/* SOCIAL PROOF */
+.proof-section{background:#fff}
+.proof-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:48px}
+.proof-card{background:var(--gray50);border-radius:20px;padding:32px;border:1px solid var(--gray200)}
+.proof-quote{font-size:1rem;color:var(--gray600);line-height:1.7;margin-bottom:20px;font-style:italic}
+.proof-author{font-weight:700;color:var(--gray800);font-size:.9rem}
+.proof-role{color:var(--gray400);font-size:.82rem}
+.proof-stat{display:flex;align-items:baseline;gap:6px;margin-top:16px;padding-top:16px;border-top:1px solid var(--gray200)}
+.proof-stat .ps-num{font-size:1.5rem;font-weight:800;color:var(--indigo)}
+.proof-stat .ps-label{font-size:.82rem;color:var(--gray400)}
+
+/* PRICING */
+.pricing-section{background:var(--gray50)}
+.pricing-card{max-width:560px;margin:48px auto 0;background:#fff;border-radius:24px;border:1px solid var(--gray200);overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.06)}
+.pricing-top{background:var(--gradient);padding:40px;text-align:center;color:#fff}
+.pricing-top h3{font-size:1.8rem;font-weight:800;margin-bottom:8px}
+.pricing-top p{opacity:.8;font-size:.95rem}
+.pricing-price{display:flex;align-items:baseline;justify-content:center;gap:4px;margin-top:16px}
+.pricing-price .pp-dollar{font-size:2rem;font-weight:800}
+.pricing-price .pp-amount{font-size:3.5rem;font-weight:800;line-height:1}
+.pricing-price .pp-period{font-size:1rem;opacity:.7}
+.pricing-body{padding:36px 40px}
+.pricing-features{list-style:none;display:flex;flex-direction:column;gap:14px;margin-bottom:32px}
+.pricing-features li{display:flex;gap:12px;align-items:flex-start;font-size:.95rem;color:var(--gray600)}
+.pricing-features li::before{content:'';width:20px;height:20px;border-radius:50%;background:rgba(99,102,241,.1);flex-shrink:0;margin-top:2px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236366f1'%3E%3Cpath d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'/%3E%3C/svg%3E");background-size:14px;background-repeat:no-repeat;background-position:center}
+.pricing-cta{width:100%;padding:16px;border:none;border-radius:12px;background:var(--gradient);color:#fff;font-size:1.05rem;font-weight:700;cursor:pointer;transition:opacity .2s}
+.pricing-cta:hover{opacity:.9}
+.pricing-note{text-align:center;margin-top:12px;font-size:.82rem;color:var(--gray400)}
+
+/* FINAL CTA */
+.final-section{background:linear-gradient(135deg,var(--blue),var(--indigo),var(--purple));padding:120px 24px;text-align:center;color:#fff;position:relative;overflow:hidden}
+.final-section::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 50%,rgba(255,255,255,.1),transparent 60%)}
+.final-section h2{font-size:clamp(2rem,4vw,3rem);font-weight:800;margin-bottom:16px;position:relative}
+.final-section p{font-size:1.15rem;opacity:.85;max-width:560px;margin:0 auto 40px;position:relative}
+.final-section .btn-white{background:#fff;color:var(--indigo);padding:16px 40px;border-radius:12px;font-weight:700;font-size:1.05rem;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:transform .2s,box-shadow .2s;box-shadow:0 4px 24px rgba(0,0,0,.15);position:relative}
+.final-section .btn-white:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.2)}
+
+/* FOOTER */
+footer{background:var(--gray900);color:var(--gray400);padding:48px 24px;text-align:center;font-size:.85rem}
+footer a{color:var(--gray400);text-decoration:none}
+footer a:hover{color:#fff}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .curve-grid,.cross-grid,.moat-grid{grid-template-columns:1fr}
+  .network-grid,.proof-grid{grid-template-columns:1fr}
+  .nav-links a:not(.nav-cta){display:none}
+  .cross-visual{height:300px}
+  .value-bars{gap:16px;height:200px}
+  .pricing-body{padding:28px 24px}
+  .pricing-top{padding:32px 24px}
+}
+@media(max-width:600px){
+  section{padding:64px 16px}
+  .htm-arrow{width:20px}
+  .htm-step{padding:8px 10px}
+  .htm-step .day{font-size:.85rem}
+  .htm-step .action{font-size:.78rem}
+  .timeline{padding-left:30px}
+  .timeline::before{left:10px}
+  .tl-dot{left:-27px;width:16px;height:16px}
+  .value-chart-wrap{padding:24px 16px}
+}
+
+/* ANIMATION HELPERS */
+.fade-up{opacity:0;transform:translateY(30px);transition:opacity .7s ease-out,transform .7s ease-out}
+.fade-up.visible{opacity:1;transform:translateY(0)}
+.stagger-1{transition-delay:.1s}
+.stagger-2{transition-delay:.2s}
+.stagger-3{transition-delay:.3s}
+.stagger-4{transition-delay:.4s}
+
+/* COUNTER ANIMATION */
+.counter{display:inline-block}
+
+/* PULSE DOT */
+.pulse-dot{width:8px;height:8px;border-radius:50%;background:var(--indigo);display:inline-block;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
+
+/* INTELLIGENCE METER */
+.intel-meter{height:6px;border-radius:3px;background:var(--gray200);overflow:hidden;margin-top:12px}
+.intel-fill{height:100%;border-radius:3px;background:var(--gradient);width:0;transition:width 1.5s ease-out}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-inner">
+    <div class="logo">Go2</div>
+    <div class="nav-links">
+      <a href="#timeline">Timeline</a>
+      <a href="#value">Value</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#start" class="nav-cta">Start Free Trial</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-badge"><span class="pulse-dot"></span>&nbsp;&nbsp;Learning from ~1M workers and counting</div>
+    <h1>The only software that gets <span class="gradient-text">more valuable every day</span> you use it</h1>
+    <p class="hero-sub">Most tools are static. Go2 compounds. A desktop agent that watches, learns, coaches, and transforms your team -- and gets smarter with every hour of data.</p>
+    <div class="hero-timeline-mini">
+      <div class="htm-step"><span class="day">Day 1</span><span class="action">Watches</span></div>
+      <div class="htm-arrow"></div>
+      <div class="htm-step"><span class="day">Day 30</span><span class="action">Coaches</span></div>
+      <div class="htm-arrow"></div>
+      <div class="htm-step"><span class="day">Day 90</span><span class="action">Transforms</span></div>
+    </div>
+    <div class="hero-ctas">
+      <a href="#start" class="btn btn-primary">Start 14-Day Free Trial &rarr;</a>
+      <a href="#timeline" class="btn btn-secondary">See the Timeline</a>
+    </div>
+  </div>
+</section>
+
+<!-- INTELLIGENCE CURVE -->
+<section class="curve-section" id="curve">
+  <div class="section-inner">
+    <span class="section-label">Compounding Intelligence</span>
+    <h2 class="section-title">A curve, not a flat line</h2>
+    <p class="section-desc">Traditional software delivers the same value on day 1,000 as day 1. Go2's AI compounds -- learning your team's patterns, discovering optimizations, and getting sharper every single day.</p>
+    <div class="curve-grid">
+      <div class="curve-chart fade-up">
+        <div class="chart-container">
+          <svg class="chart-svg" viewBox="0 0 400 260" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <linearGradient id="curveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#3b82f6"/>
+                <stop offset="50%" stop-color="#6366f1"/>
+                <stop offset="100%" stop-color="#8b5cf6"/>
+              </linearGradient>
+              <linearGradient id="curveFillGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#6366f1" stop-opacity=".3"/>
+                <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <!-- axes -->
+            <line x1="50" y1="20" x2="50" y2="220" class="chart-axis"/>
+            <line x1="50" y1="220" x2="380" y2="220" class="chart-axis"/>
+            <!-- gridlines -->
+            <line x1="50" y1="170" x2="380" y2="170" stroke="#e2e8f0" stroke-width=".5"/>
+            <line x1="50" y1="120" x2="380" y2="120" stroke="#e2e8f0" stroke-width=".5"/>
+            <line x1="50" y1="70" x2="380" y2="70" stroke="#e2e8f0" stroke-width=".5"/>
+            <!-- x labels -->
+            <text x="50" y="240" class="chart-label" text-anchor="middle">Day 1</text>
+            <text x="160" y="240" class="chart-label" text-anchor="middle">Day 30</text>
+            <text x="270" y="240" class="chart-label" text-anchor="middle">Day 90</text>
+            <text x="370" y="240" class="chart-label" text-anchor="middle">Day 365</text>
+            <!-- y labels -->
+            <text x="46" y="222" class="chart-label" text-anchor="end">0</text>
+            <text x="46" y="122" class="chart-label" text-anchor="end">Value</text>
+            <!-- traditional software flat line -->
+            <line x1="50" y1="170" x2="370" y2="165" class="flat-line"/>
+            <text x="375" y="163" class="chart-label" text-anchor="start" font-size="9">Traditional</text>
+            <!-- Go2 exponential curve -->
+            <path d="M50,200 C80,195 120,185 160,160 S240,100 300,60 S350,35 370,30" class="curve-line" id="curvePath"/>
+            <path d="M50,200 C80,195 120,185 160,160 S240,100 300,60 S350,35 370,30 L370,220 L50,220 Z" class="curve-fill" id="curveFill"/>
+            <text x="375" y="28" class="chart-label-bold" text-anchor="start" font-size="9">Go2</text>
+          </svg>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot legend-go2"></div>Go2 Intelligence</div>
+          <div class="legend-item"><div class="legend-dot legend-trad"></div>Traditional Software</div>
+        </div>
+      </div>
+      <div class="curve-points">
+        <div class="curve-point fade-up stagger-1">
+          <div class="curve-icon curve-icon-1">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          <div>
+            <h4>Every hour adds data</h4>
+            <p>Each employee generates thousands of workflow signals per day. Go2's models ingest all of it, building an ever-richer picture of how your company actually works.</p>
+          </div>
+        </div>
+        <div class="curve-point fade-up stagger-2">
+          <div class="curve-icon curve-icon-2">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </div>
+          <div>
+            <h4>Patterns emerge, then compound</h4>
+            <p>Week 1: basic app usage. Month 1: workflow bottlenecks. Month 3: cross-team optimization opportunities you never knew existed.</p>
+          </div>
+        </div>
+        <div class="curve-point fade-up stagger-3">
+          <div class="curve-icon curve-icon-3">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </div>
+          <div>
+            <h4>Coaching gets eerily specific</h4>
+            <p>Not generic advice. "You spend 23 minutes/day reformatting data from [App] to [App]. Here's an automation that eliminates it."</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TIMELINE -->
+<section class="timeline-section" id="timeline">
+  <div class="section-inner">
+    <span class="section-label">Intelligence Timeline</span>
+    <h2 class="section-title">What Go2 knows -- and when</h2>
+    <p class="section-desc">The same flat monthly fee. Exponentially more value. Here's exactly what happens as Go2 learns your business.</p>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot"><div class="tl-dot-inner"></div></div>
+        <div class="tl-header"><span class="tl-day">Day 1-7</span><span class="tl-tagline">Observation Phase</span></div>
+        <h3 class="tl-title">Go2 watches everything. Silently.</h3>
+        <p class="tl-desc">The lightweight agent installs in under 2 minutes. It begins capturing app usage, workflows, communication patterns, and time allocation. No disruption. No behavior change. Just pure data collection, enriched by baseline intelligence from ~1M workers.</p>
+        <div class="tl-insights">
+          <span class="tl-tag">App usage mapping</span>
+          <span class="tl-tag">Time allocation baseline</span>
+          <span class="tl-tag">Workflow sequencing</span>
+          <span class="tl-tag">Communication patterns</span>
+        </div>
+        <div class="intel-meter"><div class="intel-fill" data-width="15"></div></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"><div class="tl-dot-inner"></div></div>
+        <div class="tl-header"><span class="tl-day">Day 8-30</span><span class="tl-tagline">Pattern Recognition</span></div>
+        <h3 class="tl-title">Go2 starts coaching. Individually.</h3>
+        <p class="tl-desc">AI models identify recurring bottlenecks, wasted effort, and workflow gaps. Each team member gets personalized coaching tips -- not generic advice, but specific suggestions based on their actual behavior. Managers see team-level dashboards (never individual surveillance).</p>
+        <div class="tl-insights">
+          <span class="tl-tag">Personalized coaching tips</span>
+          <span class="tl-tag">Bottleneck identification</span>
+          <span class="tl-tag">Team-level dashboards</span>
+          <span class="tl-tag">Efficiency benchmarks</span>
+        </div>
+        <div class="intel-meter"><div class="intel-fill" data-width="40"></div></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"><div class="tl-dot-inner"></div></div>
+        <div class="tl-header"><span class="tl-day">Day 31-90</span><span class="tl-tagline">Optimization Engine</span></div>
+        <h3 class="tl-title">Go2 finds money on the table.</h3>
+        <p class="tl-desc">Cross-team patterns emerge. Go2 identifies automation opportunities, redundant processes, and workflow tricks from top performers that could save the entire team hours per week. The coaching becomes proactive -- Go2 suggests changes before problems surface.</p>
+        <div class="tl-insights">
+          <span class="tl-tag">Cross-team optimization</span>
+          <span class="tl-tag">Automation suggestions</span>
+          <span class="tl-tag">Top performer insights</span>
+          <span class="tl-tag">Proactive coaching</span>
+        </div>
+        <div class="intel-meter"><div class="intel-fill" data-width="70"></div></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"><div class="tl-dot-inner"></div></div>
+        <div class="tl-header"><span class="tl-day">Day 90-365</span><span class="tl-tagline">Transformation</span></div>
+        <h3 class="tl-title">Go2 becomes your company's brain.</h3>
+        <p class="tl-desc">After months of learning, Go2 knows your business intimately -- every workflow, every handoff, every friction point. It maps your entire operational DNA and continuously surfaces improvements. New hires get onboarded with insights from thousands of hours of institutional knowledge.</p>
+        <div class="tl-insights">
+          <span class="tl-tag">Full workflow mapping</span>
+          <span class="tl-tag">Institutional knowledge capture</span>
+          <span class="tl-tag">Continuous improvement loop</span>
+          <span class="tl-tag">New hire acceleration</span>
+        </div>
+        <div class="intel-meter"><div class="intel-fill" data-width="95"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CROSS-POLLINATION -->
+<section class="cross-section" id="cross">
+  <div class="section-inner">
+    <div class="cross-grid">
+      <div class="cross-visual fade-up">
+        <div class="cross-node cn-1"><div class="cn-icon">&#128200;</div><div class="cn-name">Sales Team</div><div class="cn-role">4 reps</div></div>
+        <div class="cross-node cn-2"><div class="cn-icon">&#128736;</div><div class="cn-name">Support Team</div><div class="cn-role">6 agents</div></div>
+        <div class="cross-node cn-3"><div class="cn-icon">&#128187;</div><div class="cn-name">Engineering</div><div class="cn-role">8 devs</div></div>
+        <div class="cross-node cn-4"><div class="cn-icon">&#128203;</div><div class="cn-name">Operations</div><div class="cn-role">3 staff</div></div>
+        <div class="cross-center"><span>Go2</span></div>
+        <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" viewBox="0 0 400 400">
+          <line x1="200" y1="80" x2="200" y2="165" stroke="url(#lineGrad)" stroke-width="2" stroke-dasharray="4,4" opacity=".4"/>
+          <line x1="90" y1="200" x2="170" y2="200" stroke="url(#lineGrad)" stroke-width="2" stroke-dasharray="4,4" opacity=".4"/>
+          <line x1="310" y1="200" x2="230" y2="200" stroke="url(#lineGrad)" stroke-width="2" stroke-dasharray="4,4" opacity=".4"/>
+          <line x1="200" y1="320" x2="200" y2="235" stroke="url(#lineGrad)" stroke-width="2" stroke-dasharray="4,4" opacity=".4"/>
+          <defs><linearGradient id="lineGrad"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs>
+        </svg>
+      </div>
+      <div class="cross-content fade-up stagger-2">
+        <span class="section-label">Cross-Pollination</span>
+        <h3>One person's trick becomes everyone's advantage</h3>
+        <p>Go2 doesn't just optimize individuals -- it connects dots across your entire organization. When it spots a workflow pattern that works brilliantly for one team, it adapts and suggests it to others.</p>
+        <div class="cross-example">
+          <div class="ce-label">Real Pattern Detected</div>
+          <p>"Sarah in sales uses a <span class="ce-highlight">3-step CRM shortcut</span> that saves her 12 minutes per deal. Go2 identified this pattern and coached the entire support team on a similar approach -- <span class="ce-highlight">saving 3.2 hours/week</span> across the team."</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VALUE OVER TIME -->
+<section class="value-section" id="value">
+  <div class="section-inner">
+    <div style="text-align:center">
+      <span class="section-label">Value vs. Cost</span>
+      <h2 class="section-title">Cost stays flat. Value compounds.</h2>
+      <p class="section-desc" style="margin:0 auto">At $69/user/mo, Go2's cost never changes. But the value it delivers grows every single month.</p>
+    </div>
+    <div class="value-chart-wrap fade-up">
+      <div class="value-chart-header">
+        <h3>Monthly value per user (25-person team)</h3>
+        <p>Based on time saved, errors prevented, and automations deployed</p>
+      </div>
+      <div class="value-bars" id="valueBars">
+        <div class="value-bar-group">
+          <div class="value-bar-pair">
+            <div class="value-bar vb-cost" data-h="40" style="height:40px"><span>$69</span></div>
+            <div class="value-bar vb-value" data-h="30" style="height:30px"><span>$42</span></div>
+          </div>
+          <div class="value-label">Month 1</div>
+          <div class="value-month">Learning</div>
+        </div>
+        <div class="value-bar-group">
+          <div class="value-bar-pair">
+            <div class="value-bar vb-cost" data-h="40" style="height:40px"><span>$69</span></div>
+            <div class="value-bar vb-value" data-h="80" style="height:80px"><span>$140</span></div>
+          </div>
+          <div class="value-label">Month 3</div>
+          <div class="value-month">Coaching</div>
+        </div>
+        <div class="value-bar-group">
+          <div class="value-bar-pair">
+            <div class="value-bar vb-cost" data-h="40" style="height:40px"><span>$69</span></div>
+            <div class="value-bar vb-value" data-h="140" style="height:140px"><span>$310</span></div>
+          </div>
+          <div class="value-label">Month 6</div>
+          <div class="value-month">Optimizing</div>
+        </div>
+        <div class="value-bar-group">
+          <div class="value-bar-pair">
+            <div class="value-bar vb-cost" data-h="40" style="height:40px"><span>$69</span></div>
+            <div class="value-bar vb-value" data-h="200" style="height:200px"><span>$520</span></div>
+          </div>
+          <div class="value-label">Month 12</div>
+          <div class="value-month">Transforming</div>
+        </div>
+      </div>
+      <div class="value-legend">
+        <div class="legend-item"><div class="vl-cost"></div>Monthly cost per user</div>
+        <div class="legend-item"><div class="vl-value"></div>Monthly value delivered per user</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NETWORK EFFECTS -->
+<section class="network-section">
+  <div class="section-inner">
+    <div style="text-align:center">
+      <span class="section-label">Network Effects</span>
+      <h2 class="section-title">More people = smarter for everyone</h2>
+      <p class="section-desc" style="margin:0 auto">Go2 doesn't just learn from individuals. Each person added to the network makes the system smarter for the entire team.</p>
+    </div>
+    <div class="network-grid">
+      <div class="net-card fade-up stagger-1">
+        <div class="net-number">~1M</div>
+        <h4>Workers in the baseline</h4>
+        <p>Go2 arrives pre-trained on patterns from nearly a million workers across every industry. Day 1 isn't really day 1 -- it's day 1 million.</p>
+      </div>
+      <div class="net-card fade-up stagger-2">
+        <div class="net-number">N&sup2;</div>
+        <h4>Cross-team connections</h4>
+        <p>With 25 employees, Go2 analyzes 300+ team interactions. With 50, it's 1,225+. The more people, the more patterns it can cross-pollinate.</p>
+      </div>
+      <div class="net-card fade-up stagger-3">
+        <div class="net-number">24/7</div>
+        <h4>Always learning</h4>
+        <p>Unlike consultants who visit quarterly, Go2 observes continuously. Every workday adds thousands of new data points to your company's intelligence layer.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DATA MOAT -->
+<section class="moat-section">
+  <div class="section-inner">
+    <div style="text-align:center">
+      <span class="section-label">Your Data Moat</span>
+      <h2 class="section-title" style="max-width:700px;margin:0 auto 16px">Your competitors' AI is generic.<br>Yours knows your business.</h2>
+      <p class="section-desc" style="margin:0 auto">After 6 months, Go2 has built an intelligence layer that no competitor can replicate -- because it's built from your company's unique DNA.</p>
+    </div>
+    <div class="moat-grid">
+      <div class="moat-card fade-up stagger-1">
+        <div class="mc-label">Institutional Knowledge</div>
+        <h4>Captures what's in people's heads</h4>
+        <p>The unwritten rules, the clever workarounds, the tribal knowledge that walks out the door when someone quits. Go2 captures it all and makes it available to everyone.</p>
+      </div>
+      <div class="moat-card fade-up stagger-2">
+        <div class="mc-label">Workflow DNA</div>
+        <h4>Maps how work actually flows</h4>
+        <p>Not how your org chart says work should flow. How it actually does. Every handoff, every bottleneck, every shortcut. Mapped and optimized continuously.</p>
+      </div>
+      <div class="moat-card fade-up stagger-3">
+        <div class="mc-label">Competitive Advantage</div>
+        <h4>Intelligence that compounds daily</h4>
+        <p>Every day your team uses Go2, your operational intelligence gap over competitors grows wider. This isn't a tool -- it's a compounding strategic asset.</p>
+      </div>
+      <div class="moat-card fade-up stagger-4">
+        <div class="mc-label">New Hire Acceleration</div>
+        <h4>Onboard in days, not months</h4>
+        <p>New employees get coached by an AI that's absorbed thousands of hours of institutional knowledge. They reach full productivity in a fraction of the usual time.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOCIAL PROOF -->
+<section class="proof-section">
+  <div class="section-inner">
+    <div style="text-align:center">
+      <span class="section-label">Results Over Time</span>
+      <h2 class="section-title">The longer it runs, the better it gets</h2>
+    </div>
+    <div class="proof-grid">
+      <div class="proof-card fade-up stagger-1">
+        <p class="proof-quote">"Month 1, I was skeptical. Month 3, it was finding things I'd missed for years. By month 6, I couldn't imagine running my team without it."</p>
+        <div class="proof-author">[Customer Name]</div>
+        <div class="proof-role">Operations Director, [SaaS, 32 employees]</div>
+        <div class="proof-stat"><span class="ps-num">340%</span><span class="ps-label">ROI by month 6</span></div>
+      </div>
+      <div class="proof-card fade-up stagger-2">
+        <p class="proof-quote">"Go2 discovered that our support team was re-typing data from Zendesk into Salesforce -- 47 minutes per agent per day. It built the automation suggestion in month 2."</p>
+        <div class="proof-author">[Customer Name]</div>
+        <div class="proof-role">CEO, [E-commerce, 28 employees]</div>
+        <div class="proof-stat"><span class="ps-num">18hrs</span><span class="ps-label">saved per week, one fix</span></div>
+      </div>
+      <div class="proof-card fade-up stagger-3">
+        <p class="proof-quote">"The cross-pollination feature is wild. It saw a workflow pattern from our best sales rep and coached the entire team on it. Close rate jumped 22% in 6 weeks."</p>
+        <div class="proof-author">[Customer Name]</div>
+        <div class="proof-role">VP Sales, [Agency, 44 employees]</div>
+        <div class="proof-stat"><span class="ps-num">22%</span><span class="ps-label">increase in close rate</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing-section" id="pricing">
+  <div class="section-inner">
+    <div style="text-align:center">
+      <span class="section-label">Simple Pricing</span>
+      <h2 class="section-title">Flat price. Compounding value.</h2>
+      <p class="section-desc" style="margin:0 auto">The cost never changes. The intelligence never stops growing.</p>
+    </div>
+    <div class="pricing-card fade-up">
+      <div class="pricing-top">
+        <h3>Go2 Intelligence Platform</h3>
+        <p>Everything. Every feature. Every AI model.</p>
+        <div class="pricing-price">
+          <span class="pp-dollar">$</span>
+          <span class="pp-amount">69</span>
+          <span class="pp-period">/user/mo</span>
+        </div>
+      </div>
+      <div class="pricing-body">
+        <ul class="pricing-features">
+          <li>Lightweight desktop agent (Windows, Mac, Linux)</li>
+          <li>Personalized AI coaching for every team member</li>
+          <li>Manager dashboards with team-level insights (not surveillance)</li>
+          <li>Cross-team pattern detection and cross-pollination</li>
+          <li>Automation opportunity identification</li>
+          <li>Workflow mapping and bottleneck analysis</li>
+          <li>New hire acceleration from institutional knowledge</li>
+          <li>Frontier AI models (Claude, GPT, Gemini)</li>
+          <li>~1M worker baseline intelligence, day one</li>
+          <li>14-day free trial, no credit card required</li>
+        </ul>
+        <button class="pricing-cta" onclick="document.getElementById('start').scrollIntoView({behavior:'smooth'})">Start Your 14-Day Free Trial</button>
+        <p class="pricing-note">Cancel anytime. No contracts. No setup fees.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-section" id="start">
+  <h2>Every day you wait is a day<br>Go2 isn't learning your business</h2>
+  <p>The compounding starts when you do. Install in 2 minutes, see first insights by end of week one.</p>
+  <a href="#" class="btn-white">Start Your Free Trial &rarr;</a>
+</section>
+
+<footer>
+  <div style="max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
+    <div style="font-weight:700;font-size:1.1rem;color:#fff">Go2</div>
+    <div>&copy; 2026 Go2. All rights reserved. &nbsp;|&nbsp; <a href="#">Privacy</a> &nbsp;|&nbsp; <a href="#">Terms</a> &nbsp;|&nbsp; <a href="#">Security</a></div>
+  </div>
+</footer>
+
+<script>
+// NAV SCROLL
+const nav=document.getElementById('nav');
+window.addEventListener('scroll',()=>{nav.classList.toggle('scrolled',window.scrollY>20)});
+
+// INTERSECTION OBSERVER FOR FADE-UP
+const obs=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target)}});
+},{threshold:.15,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.fade-up,.tl-item').forEach(el=>obs.observe(el));
+
+// INTELLIGENCE METERS
+const meterObs=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const fill=e.target.querySelector('.intel-fill');
+      if(fill)fill.style.width=fill.dataset.width+'%';
+      meterObs.unobserve(e.target);
+    }
+  });
+},{threshold:.3});
+document.querySelectorAll('.tl-item').forEach(el=>meterObs.observe(el));
+
+// CURVE ANIMATION
+const curveObs=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      document.getElementById('curvePath').classList.add('animated');
+      document.getElementById('curveFill').classList.add('animated');
+      curveObs.unobserve(e.target);
+    }
+  });
+},{threshold:.3});
+const curveChart=document.querySelector('.curve-chart');
+if(curveChart)curveObs.observe(curveChart);
+
+// SMOOTH SCROLL FOR ALL ANCHOR LINKS
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    e.preventDefault();
+    const t=document.querySelector(a.getAttribute('href'));
+    if(t)t.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+});
+</script>
+</body>
+</html>

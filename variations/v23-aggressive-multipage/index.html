@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Stop Losing 14 Hours a Week</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ===== SHARED STYLES ===== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #111111;
+  --bg-card: #161616;
+  --bg-card-hover: #1c1c1c;
+  --text-primary: #f0f0f0;
+  --text-secondary: #999;
+  --text-muted: #666;
+  --accent: #e63926;
+  --accent-hover: #ff4d3a;
+  --accent-orange: #f47b20;
+  --accent-gradient: linear-gradient(135deg, #e63926, #f47b20);
+  --border: #222;
+  --border-light: #2a2a2a;
+  --font: 'Inter', -apple-system, sans-serif;
+  --max-width: 1200px;
+  --transition: 0.25s ease;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; text-decoration: none; }
+
+.container { max-width: var(--max-width); margin: 0 auto; padding: 0 24px; }
+
+/* NAV */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  background: rgba(10,10,10,0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+}
+nav .nav-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+nav .logo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+nav .logo span { color: var(--accent); }
+nav .nav-links { display: flex; gap: 32px; align-items: center; }
+nav .nav-links a {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: color var(--transition);
+}
+nav .nav-links a:hover, nav .nav-links a.active { color: var(--text-primary); }
+nav .nav-cta {
+  background: var(--accent);
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background var(--transition);
+}
+nav .nav-cta:hover { background: var(--accent-hover); }
+
+/* MOBILE NAV */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 4px;
+}
+.hamburger span {
+  display: block; width: 24px; height: 2px;
+  background: var(--text-primary);
+  transition: var(--transition);
+}
+
+@media (max-width: 768px) {
+  .hamburger { display: flex; }
+  nav .nav-links {
+    position: fixed; top: 64px; left: 0; right: 0;
+    background: rgba(10,10,10,0.97);
+    backdrop-filter: blur(20px);
+    flex-direction: column;
+    padding: 24px;
+    gap: 20px;
+    border-bottom: 1px solid var(--border);
+    transform: translateY(-120%);
+    transition: transform 0.3s ease;
+  }
+  nav .nav-links.open { transform: translateY(0); }
+  nav .nav-links a { font-size: 1rem; }
+}
+
+/* BUTTONS */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all var(--transition);
+  cursor: pointer;
+  border: none;
+  font-family: var(--font);
+}
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 30px rgba(230,57,38,0.3);
+}
+.btn-secondary {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+}
+.btn-secondary:hover {
+  border-color: var(--text-muted);
+  background: var(--bg-card);
+}
+.btn-large { padding: 18px 40px; font-size: 1.1rem; }
+
+/* FOOTER */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 60px 24px;
+  margin-top: 120px;
+}
+footer .footer-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 48px;
+}
+footer .footer-brand .logo { font-size: 1.3rem; font-weight: 800; margin-bottom: 12px; }
+footer .footer-brand .logo span { color: var(--accent); }
+footer .footer-brand p { color: var(--text-muted); font-size: 0.875rem; max-width: 280px; }
+footer .footer-col h4 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 16px; }
+footer .footer-col a { display: block; color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 10px; transition: color var(--transition); }
+footer .footer-col a:hover { color: var(--text-primary); }
+footer .footer-bottom {
+  max-width: var(--max-width);
+  margin: 40px auto 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 768px) {
+  footer .footer-inner { grid-template-columns: 1fr 1fr; }
+  footer .footer-bottom { flex-direction: column; gap: 8px; }
+}
+@media (max-width: 480px) {
+  footer .footer-inner { grid-template-columns: 1fr; }
+}
+
+/* SECTION UTILITIES */
+.section { padding: 120px 0; }
+.section-label {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.section-title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-bottom: 20px;
+}
+.section-subtitle {
+  font-size: 1.125rem;
+  color: var(--text-secondary);
+  max-width: 640px;
+  line-height: 1.7;
+}
+
+/* GLOW ACCENTS */
+.glow-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--accent-orange), transparent);
+  margin: 0 auto;
+  max-width: 600px;
+}
+
+/* ===== HOMEPAGE SPECIFIC ===== */
+
+/* HERO */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding-top: 64px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -200px;
+  right: -200px;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(230,57,38,0.08), transparent 70%);
+  pointer-events: none;
+}
+.hero-content { max-width: 800px; }
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: rgba(230,57,38,0.1);
+  border: 1px solid rgba(230,57,38,0.2);
+  border-radius: 100px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--accent);
+  margin-bottom: 32px;
+}
+.hero-eyebrow .dot {
+  width: 6px; height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.hero h1 {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  margin-bottom: 28px;
+}
+.hero h1 .highlight {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero p {
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  max-width: 600px;
+  line-height: 1.7;
+  margin-bottom: 40px;
+}
+.hero-actions { display: flex; gap: 16px; flex-wrap: wrap; }
+.hero-stats {
+  display: flex;
+  gap: 48px;
+  margin-top: 60px;
+  padding-top: 40px;
+  border-top: 1px solid var(--border);
+}
+.hero-stat .number {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat .number span { color: var(--accent); }
+.hero-stat .label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+@media (max-width: 640px) {
+  .hero-stats { flex-direction: column; gap: 24px; }
+}
+
+/* PROBLEM */
+.problem { background: var(--bg-secondary); }
+.problem-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 48px;
+}
+.problem-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px;
+  transition: all var(--transition);
+}
+.problem-card:hover {
+  border-color: var(--border-light);
+  background: var(--bg-card-hover);
+}
+.problem-card .icon {
+  width: 48px; height: 48px;
+  background: rgba(230,57,38,0.1);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  margin-bottom: 20px;
+}
+.problem-card h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  letter-spacing: -0.01em;
+}
+.problem-card p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .problem-grid { grid-template-columns: 1fr; }
+}
+
+/* COACHING PREVIEW */
+.coaching-preview { padding: 120px 0; }
+.coaching-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: center;
+  margin-top: 48px;
+}
+.coaching-visual {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  position: relative;
+}
+.coaching-notification {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 16px;
+  transition: all var(--transition);
+}
+.coaching-notification:hover {
+  border-left-color: var(--accent-orange);
+  transform: translateX(4px);
+}
+.coaching-notification .notif-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.coaching-notification .notif-icon {
+  width: 24px; height: 24px;
+  background: var(--accent-gradient);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+}
+.coaching-notification .notif-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.coaching-notification .notif-body {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.coaching-notification .notif-body strong { color: var(--text-primary); }
+.coaching-points { display: flex; flex-direction: column; gap: 24px; }
+.coaching-point h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.coaching-point p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .coaching-grid { grid-template-columns: 1fr; }
+}
+
+/* DIFFERENT SECTION */
+.different { background: var(--bg-secondary); }
+.different-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  margin-top: 48px;
+}
+.different-item { padding: 32px 0; border-top: 1px solid var(--border); }
+.different-item .label-old {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+.different-item .label-new {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+.different-item h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.different-item p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .different-row { grid-template-columns: 1fr; gap: 0; }
+}
+
+/* CTA SECTION */
+.cta-section {
+  padding: 120px 0;
+  text-align: center;
+}
+.cta-section h2 {
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  margin-bottom: 20px;
+}
+.cta-section p {
+  font-size: 1.125rem;
+  color: var(--text-secondary);
+  max-width: 500px;
+  margin: 0 auto 40px;
+}
+.cta-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <div class="logo">go<span>2</span></div>
+    <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="nav-links">
+      <a href="index.html" class="active">Home</a>
+      <a href="product.html">Product</a>
+      <a href="vs-time-trackers.html">vs. Time Trackers</a>
+      <a href="automation.html">Automation</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="pricing.html" class="nav-cta">Get Started</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-content">
+      <div class="hero-eyebrow">
+        <span class="dot"></span>
+        AI Productivity Coaching
+      </div>
+      <h1>Your team works 40 hours.<br>You're getting <span class="highlight">26.</span></h1>
+      <p>Time trackers couldn't fix it. They just watched. Go2 captures everything, understands context, and coaches your team in real time. The other 14 hours come back.</p>
+      <div class="hero-actions">
+        <a href="pricing.html" class="btn btn-primary btn-large">Start Free Trial</a>
+        <a href="product.html" class="btn btn-secondary btn-large">See How It Works</a>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="number">14<span>hrs</span></div>
+          <div class="label">Avg. hours recovered per worker/week</div>
+        </div>
+        <div class="hero-stat">
+          <div class="number">~1<span>M</span></div>
+          <div class="label">Workers in training data</div>
+        </div>
+        <div class="hero-stat">
+          <div class="number">0<span>%</span></div>
+          <div class="label">Individual surveillance to managers</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section class="problem section">
+  <div class="container">
+    <span class="section-label">The Problem</span>
+    <h2 class="section-title">You already know something's wrong</h2>
+    <p class="section-subtitle">Projects take longer than they should. Context switching kills focus. Nobody knows where the time actually goes. Your current tools show you this. They just can't fix it.</p>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="icon">34%</div>
+        <h3>Context switching eats a third of the day</h3>
+        <p>The average knowledge worker switches tools 1,200 times a day. Each switch costs cognitive load. By 2pm, deep work is functionally over.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">67%</div>
+        <h3>Two-thirds of meetings shouldn't exist</h3>
+        <p>Status updates. Alignment syncs. "Quick check-ins" that run 45 minutes. Your team is in meetings about work instead of doing work.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">5x</div>
+        <h3>Process friction multiplies quietly</h3>
+        <p>A 3-click task that should take 10 seconds takes 90 seconds because of bad tooling. Multiply by hundreds of employees, thousands of times a day.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="glow-line"></div>
+
+<!-- COACHING PREVIEW -->
+<section class="coaching-preview">
+  <div class="container">
+    <span class="section-label">What Workers See</span>
+    <h2 class="section-title">Not surveillance. Coaching.</h2>
+    <p class="section-subtitle">Go2 sends real-time nudges directly to workers. Helpful, contextual, and private. Managers never see individual data.</p>
+    <div class="coaching-grid">
+      <div class="coaching-visual">
+        <div class="coaching-notification">
+          <div class="notif-header">
+            <div class="notif-icon">G2</div>
+            <span class="notif-title">Go2 Coach</span>
+          </div>
+          <div class="notif-body">You've switched between Slack and your IDE <strong>23 times</strong> in the last hour. Try closing Slack for a 45-minute focus block — your commit rate is <strong>2.4x higher</strong> during uninterrupted stretches.</div>
+        </div>
+        <div class="coaching-notification">
+          <div class="notif-header">
+            <div class="notif-icon">G2</div>
+            <span class="notif-title">Go2 Coach</span>
+          </div>
+          <div class="notif-body">That expense report took you <strong>22 minutes</strong>. Teams using the auto-fill template finish in <strong>4 minutes</strong>. <strong><a href="#" style="color:var(--accent)">Try it next time &rarr;</a></strong></div>
+        </div>
+        <div class="coaching-notification">
+          <div class="notif-header">
+            <div class="notif-icon">G2</div>
+            <span class="notif-title">Go2 Coach</span>
+          </div>
+          <div class="notif-body">Your peak focus hours are <strong>9am-11:30am</strong>. Today you had 3 meetings in that window. Want me to suggest a calendar restructure to your manager?</div>
+        </div>
+      </div>
+      <div class="coaching-points">
+        <div class="coaching-point">
+          <h3>Context-aware</h3>
+          <p>Go2 knows what you're working on, what tools you're using, and when you're in flow. Nudges only come when they'll actually help.</p>
+        </div>
+        <div class="coaching-point">
+          <h3>Private by design</h3>
+          <p>Coaching goes directly to the worker. Managers get aggregated, anonymized insights about team patterns. Never individual surveillance.</p>
+        </div>
+        <div class="coaching-point">
+          <h3>Gets smarter</h3>
+          <p>Trained on patterns from nearly a million workers. Every interaction refines the model. Your team benefits from collective intelligence.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DIFFERENT -->
+<section class="different section">
+  <div class="container">
+    <span class="section-label">Old World vs. Go2</span>
+    <h2 class="section-title">Everything changes</h2>
+    <div class="different-row">
+      <div>
+        <div class="different-item">
+          <div class="label-old">Time Trackers</div>
+          <h3>Screenshot every 10 minutes</h3>
+          <p>A blurry screenshot of someone's desktop. That's the data. That's the insight. Congratulations.</p>
+        </div>
+        <div class="different-item">
+          <div class="label-old">Time Trackers</div>
+          <h3>Activity scores based on mouse movement</h3>
+          <p>If you jiggle your mouse, you're "productive." If you're thinking, you're idle. The metric is literally motion.</p>
+        </div>
+        <div class="different-item">
+          <div class="label-old">Time Trackers</div>
+          <h3>Reports nobody reads</h3>
+          <p>Weekly PDF dumps that get opened once and forgotten. No action, no change, no value.</p>
+        </div>
+      </div>
+      <div>
+        <div class="different-item">
+          <div class="label-new">Go2</div>
+          <h3>Full workflow understanding</h3>
+          <p>Continuous activity analysis across every tool. We know the task, the context, the friction points, and the fix.</p>
+        </div>
+        <div class="different-item">
+          <div class="label-new">Go2</div>
+          <h3>AI coaching in the moment</h3>
+          <p>Real-time nudges when they matter. Not a report next week — a suggestion right now, while you can still act on it.</p>
+        </div>
+        <div class="different-item">
+          <div class="label-new">Go2</div>
+          <h3>Workflow automation that acts</h3>
+          <p>We don't just identify waste. We build AI agents that eliminate it. Repetitive tasks get automated. Humans move to higher-value work.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="container">
+    <div class="glow-line" style="margin-bottom:60px;"></div>
+    <h2>Ready to stop guessing<br>where the time goes?</h2>
+    <p>14-day free trial. No credit card. Deploy in under an hour.</p>
+    <div class="cta-actions">
+      <a href="pricing.html" class="btn btn-primary btn-large">Start Free Trial</a>
+      <a href="product.html" class="btn btn-secondary btn-large">See the Product</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="logo">go<span>2</span></div>
+      <p>AI productivity coaching for teams that want to work better, not just be watched.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <a href="product.html">How It Works</a>
+      <a href="vs-time-trackers.html">vs. Time Trackers</a>
+      <a href="automation.html">Automation</a>
+      <a href="pricing.html">Pricing</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="#">About</a>
+      <a href="#">Blog</a>
+      <a href="#">Careers</a>
+      <a href="#">Contact</a>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="#">Security</a>
+      <a href="#">GDPR</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>&copy; 2026 Go2. All rights reserved.</span>
+    <span>Built with certainty.</span>
+  </div>
+</footer>
+
+</body>
+</html>

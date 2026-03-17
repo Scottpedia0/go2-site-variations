@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Your Company Brain</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --navy: #0a0e1a;
+  --navy-light: #111827;
+  --navy-mid: #1a2235;
+  --charcoal: #1e2a3a;
+  --accent: #3b82f6;
+  --accent-bright: #60a5fa;
+  --accent-glow: rgba(59, 130, 246, 0.15);
+  --text: #e2e8f0;
+  --text-dim: #94a3b8;
+  --text-bright: #f1f5f9;
+  --border: rgba(255,255,255,0.06);
+  --node-color: rgba(59, 130, 246, 0.3);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--navy);
+  color: var(--text);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* Neural Network Canvas */
+#neural-bg {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Layout */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Nav */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 16px 0;
+  background: rgba(10, 14, 26, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+
+nav .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-bright);
+  letter-spacing: -0.5px;
+}
+
+.logo span {
+  color: var(--accent);
+}
+
+.nav-links {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+  list-style: none;
+}
+
+.nav-links a {
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover { color: var(--text-bright); }
+
+.nav-cta {
+  background: var(--accent) !important;
+  color: white !important;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-weight: 600 !important;
+  transition: all 0.2s !important;
+}
+
+.nav-cta:hover {
+  background: var(--accent-bright) !important;
+  transform: translateY(-1px);
+}
+
+.mobile-menu {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 24px;
+  cursor: pointer;
+}
+
+/* Hero */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 120px 0 80px;
+  position: relative;
+}
+
+.hero-content {
+  max-width: 800px;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: var(--accent-glow);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent-bright);
+  margin-bottom: 32px;
+}
+
+.hero-badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.5); }
+}
+
+h1 {
+  font-size: clamp(40px, 5.5vw, 72px);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -2px;
+  color: var(--text-bright);
+  margin-bottom: 28px;
+}
+
+h1 .highlight {
+  background: linear-gradient(135deg, var(--accent), #818cf8, var(--accent-bright));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-sub {
+  font-size: clamp(18px, 2.2vw, 22px);
+  color: var(--text-dim);
+  line-height: 1.6;
+  max-width: 620px;
+  margin-bottom: 48px;
+  font-weight: 400;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 32px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  font-family: inherit;
+}
+
+.btn-primary:hover {
+  background: var(--accent-bright);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(59, 130, 246, 0.3);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 32px;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  font-family: inherit;
+}
+
+.btn-secondary:hover {
+  border-color: rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.05);
+}
+
+/* Brain Visualization */
+.brain-visual {
+  position: absolute;
+  right: -60px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 500px;
+  height: 500px;
+  opacity: 0.6;
+}
+
+/* Sections */
+section {
+  padding: 120px 0;
+}
+
+.section-label {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+
+h2 {
+  font-size: clamp(32px, 4vw, 48px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -1.5px;
+  color: var(--text-bright);
+  margin-bottom: 20px;
+}
+
+.section-desc {
+  font-size: 18px;
+  color: var(--text-dim);
+  max-width: 600px;
+  line-height: 1.7;
+}
+
+/* Problem Section */
+.problem-section {
+  border-top: 1px solid var(--border);
+}
+
+.problem-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  margin-top: 60px;
+  align-items: center;
+}
+
+.problem-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.problem-item {
+  display: flex;
+  gap: 16px;
+  padding: 24px;
+  background: rgba(239, 68, 68, 0.04);
+  border: 1px solid rgba(239, 68, 68, 0.1);
+  border-radius: 16px;
+  transition: all 0.3s;
+}
+
+.problem-item:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.problem-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 10px;
+  font-size: 18px;
+}
+
+.problem-item h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-bright);
+  margin-bottom: 4px;
+}
+
+.problem-item p {
+  font-size: 14px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.problem-visual {
+  position: relative;
+  height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brain-drain {
+  text-align: center;
+}
+
+.brain-drain .big-stat {
+  font-size: 96px;
+  font-weight: 900;
+  color: rgba(239, 68, 68, 0.7);
+  letter-spacing: -4px;
+  line-height: 1;
+}
+
+.brain-drain .stat-label {
+  font-size: 18px;
+  color: var(--text-dim);
+  margin-top: 12px;
+}
+
+.brain-drain .stat-source {
+  font-size: 13px;
+  color: rgba(148, 163, 184, 0.5);
+  margin-top: 8px;
+}
+
+/* How It Works */
+.how-section {
+  border-top: 1px solid var(--border);
+}
+
+.how-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  margin-top: 60px;
+}
+
+.how-step {
+  position: relative;
+  padding: 40px 32px;
+  background: linear-gradient(135deg, var(--navy-light), var(--navy-mid));
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  transition: all 0.3s;
+}
+
+.how-step:hover {
+  border-color: rgba(59, 130, 246, 0.2);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+
+.step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px; height: 48px;
+  background: var(--accent-glow);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 14px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent-bright);
+  margin-bottom: 24px;
+}
+
+.how-step h3 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-bright);
+  margin-bottom: 12px;
+  letter-spacing: -0.5px;
+}
+
+.how-step p {
+  font-size: 15px;
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+
+.step-detail {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--accent-bright);
+  font-weight: 500;
+}
+
+/* Capabilities */
+.capabilities-section {
+  border-top: 1px solid var(--border);
+}
+
+.cap-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  margin-top: 60px;
+}
+
+.cap-card {
+  padding: 40px;
+  background: var(--navy-light);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.cap-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.cap-card:hover {
+  border-color: rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
+}
+
+.cap-card:hover::before { opacity: 1; }
+
+.cap-icon {
+  width: 52px; height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-glow);
+  border-radius: 14px;
+  font-size: 24px;
+  margin-bottom: 24px;
+}
+
+.cap-card h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-bright);
+  margin-bottom: 10px;
+}
+
+.cap-card p {
+  font-size: 15px;
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+
+.cap-card .cap-example {
+  margin-top: 20px;
+  padding: 16px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text-dim);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  border: 1px solid var(--border);
+}
+
+.cap-example .prompt {
+  color: var(--accent-bright);
+}
+
+.cap-example .response {
+  color: var(--text);
+  margin-top: 8px;
+}
+
+/* Intelligence Layer */
+.intel-section {
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.intel-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-top: 60px;
+}
+
+.intel-card {
+  padding: 32px 24px;
+  background: var(--navy-light);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  text-align: center;
+  transition: all 0.3s;
+}
+
+.intel-card:hover {
+  border-color: rgba(59, 130, 246, 0.2);
+  transform: translateY(-4px);
+}
+
+.intel-stat {
+  font-size: 42px;
+  font-weight: 800;
+  color: var(--accent-bright);
+  letter-spacing: -1px;
+  margin-bottom: 8px;
+}
+
+.intel-label {
+  font-size: 14px;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+/* Timeline / Evolution */
+.evolution-section {
+  border-top: 1px solid var(--border);
+}
+
+.timeline {
+  margin-top: 60px;
+  position: relative;
+  padding-left: 40px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--accent), rgba(59, 130, 246, 0.1));
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 48px;
+  padding: 28px 32px;
+  background: var(--navy-light);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  transition: all 0.3s;
+}
+
+.timeline-item:hover {
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -33px;
+  top: 34px;
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+  border-radius: 50%;
+  border: 3px solid var(--navy);
+}
+
+.timeline-item .tl-period {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent-bright);
+  margin-bottom: 8px;
+}
+
+.timeline-item h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-bright);
+  margin-bottom: 8px;
+}
+
+.timeline-item p {
+  font-size: 15px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+/* Use Cases */
+.usecases-section {
+  border-top: 1px solid var(--border);
+}
+
+.usecase-tabs {
+  display: flex;
+  gap: 12px;
+  margin-top: 40px;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+
+.usecase-tab {
+  padding: 10px 24px;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-dim);
+  cursor: pointer;
+  background: transparent;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.usecase-tab.active,
+.usecase-tab:hover {
+  background: var(--accent-glow);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: var(--accent-bright);
+}
+
+.usecase-content {
+  display: none;
+  padding: 48px;
+  background: var(--navy-light);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+}
+
+.usecase-content.active { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+
+.usecase-content h3 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-bright);
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+}
+
+.usecase-content p {
+  font-size: 16px;
+  color: var(--text-dim);
+  line-height: 1.7;
+  margin-bottom: 24px;
+}
+
+.usecase-benefits {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.usecase-benefits li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.usecase-benefits li::before {
+  content: '';
+  width: 20px; height: 20px;
+  flex-shrink: 0;
+  background: var(--accent-glow);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 6px;
+  margin-top: 2px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2360a5fa'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'/%3E%3C/svg%3E");
+  background-size: 14px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.usecase-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+.usecase-diagram {
+  width: 100%;
+  padding: 32px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+}
+
+.diagram-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.diagram-row:last-child { margin-bottom: 0; }
+
+.diagram-node {
+  padding: 10px 16px;
+  background: var(--accent-glow);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--accent-bright);
+  font-weight: 500;
+  flex: 1;
+  text-align: center;
+}
+
+.diagram-arrow {
+  color: rgba(59, 130, 246, 0.4);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.diagram-center {
+  padding: 16px 24px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(129, 140, 248, 0.1));
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 12px;
+  font-size: 15px;
+  color: var(--text-bright);
+  font-weight: 600;
+  text-align: center;
+  margin: 20px 0;
+}
+
+/* Pricing */
+.pricing-section {
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.pricing-card {
+  max-width: 560px;
+  margin: 60px auto 0;
+  padding: 48px;
+  background: linear-gradient(135deg, var(--navy-light), var(--navy-mid));
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.pricing-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), #818cf8, var(--accent-bright));
+}
+
+.pricing-amount {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.pricing-dollar {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.pricing-number {
+  font-size: 64px;
+  font-weight: 900;
+  color: var(--text-bright);
+  letter-spacing: -2px;
+  line-height: 1;
+}
+
+.pricing-period {
+  font-size: 18px;
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.pricing-per {
+  font-size: 16px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.pricing-tagline {
+  font-size: 15px;
+  color: var(--accent-bright);
+  margin-bottom: 32px;
+  font-weight: 500;
+}
+
+.pricing-features {
+  list-style: none;
+  text-align: left;
+  margin-bottom: 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pricing-features li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.pricing-features li::before {
+  content: '';
+  width: 20px; height: 20px;
+  flex-shrink: 0;
+  background: var(--accent-glow);
+  border-radius: 50%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2360a5fa'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'/%3E%3C/svg%3E");
+  background-size: 12px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.pricing-cta {
+  width: 100%;
+  padding: 18px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.pricing-cta:hover {
+  background: var(--accent-bright);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(59, 130, 246, 0.3);
+}
+
+/* Comparison */
+.comparison-section {
+  border-top: 1px solid var(--border);
+}
+
+.comparison-table {
+  margin-top: 60px;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.comparison-table th,
+.comparison-table td {
+  padding: 18px 24px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  font-size: 15px;
+}
+
+.comparison-table thead th {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.comparison-table thead th:last-child {
+  color: var(--accent-bright);
+}
+
+.comparison-table td:first-child {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.comparison-table td:not(:first-child) {
+  color: var(--text-dim);
+  text-align: center;
+}
+
+.comparison-table td:last-child {
+  color: var(--accent-bright);
+  font-weight: 600;
+}
+
+.check-yes {
+  color: var(--accent-bright) !important;
+}
+
+.check-no {
+  color: rgba(148, 163, 184, 0.3) !important;
+}
+
+/* CTA Section */
+.cta-section {
+  border-top: 1px solid var(--border);
+  text-align: center;
+  padding: 140px 0;
+}
+
+.cta-section h2 {
+  margin-bottom: 24px;
+}
+
+.cta-section .section-desc {
+  margin: 0 auto 48px;
+  max-width: 560px;
+}
+
+/* Footer */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 60px 0 40px;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 48px;
+  margin-bottom: 48px;
+}
+
+.footer-brand .logo {
+  margin-bottom: 16px;
+  display: inline-block;
+}
+
+.footer-brand p {
+  font-size: 14px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  max-width: 280px;
+}
+
+.footer-col h4 {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.footer-col a {
+  display: block;
+  font-size: 14px;
+  color: var(--text-dim);
+  text-decoration: none;
+  margin-bottom: 10px;
+  transition: color 0.2s;
+}
+
+.footer-col a:hover { color: var(--text-bright); }
+
+.footer-bottom {
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: rgba(148, 163, 184, 0.5);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .brain-visual { display: none; }
+  .problem-grid { grid-template-columns: 1fr; }
+  .problem-visual { height: auto; padding: 40px 0; }
+  .how-steps { grid-template-columns: 1fr; }
+  .cap-grid { grid-template-columns: 1fr; }
+  .intel-grid { grid-template-columns: repeat(2, 1fr); }
+  .usecase-content.active { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+  .comparison-table { font-size: 13px; }
+  .comparison-table th, .comparison-table td { padding: 12px 16px; }
+}
+
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .mobile-menu { display: block; }
+  .hero { padding: 100px 0 60px; }
+  h1 { letter-spacing: -1px; }
+  section { padding: 80px 0; }
+  .pricing-card { padding: 32px 24px; }
+  .intel-grid { grid-template-columns: 1fr 1fr; }
+  .footer-grid { grid-template-columns: 1fr; gap: 32px; }
+  .footer-bottom { flex-direction: column; gap: 12px; text-align: center; }
+  .usecase-content.active { padding: 32px 24px; }
+}
+
+/* Animations */
+@keyframes float-in {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-in {
+  opacity: 0;
+  animation: float-in 0.8s ease forwards;
+}
+
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
+.delay-4 { animation-delay: 0.4s; }
+</style>
+</head>
+<body>
+
+<canvas id="neural-bg"></canvas>
+
+<!-- Navigation -->
+<nav>
+  <div class="container">
+    <div class="logo">Go<span>2</span></div>
+    <ul class="nav-links">
+      <li><a href="#how">How It Works</a></li>
+      <li><a href="#capabilities">Capabilities</a></li>
+      <li><a href="#usecases">Use Cases</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="#cta" class="nav-cta">Get Early Access</a></li>
+    </ul>
+    <button class="mobile-menu" onclick="document.querySelector('.nav-links').style.display = document.querySelector('.nav-links').style.display === 'flex' ? 'none' : 'flex'">&#9776;</button>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-content">
+      <div class="hero-badge animate-in">Organizational Intelligence Platform</div>
+      <h1 class="animate-in delay-1">
+        Your company has a brain.<br>
+        <span class="highlight">It's trapped inside your employees' heads.</span>
+      </h1>
+      <p class="hero-sub animate-in delay-2">
+        Go2 captures every workflow, every process, every shortcut across your entire team — then makes that collective intelligence available to everyone through AI that has shared memory of how your company actually operates.
+      </p>
+      <div class="hero-actions animate-in delay-3">
+        <a href="#cta" class="btn-primary">Start Building Your Company Brain &rarr;</a>
+        <a href="#how" class="btn-secondary">See How It Works</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Problem -->
+<section class="problem-section">
+  <div class="container">
+    <div class="section-label">The Problem</div>
+    <h2>Every company runs on<br>invisible knowledge</h2>
+    <p class="section-desc">The most valuable information in your organization isn't in your docs or wikis. It's in the habits, shortcuts, and instincts of the people who do the work.</p>
+
+    <div class="problem-grid">
+      <div class="problem-list">
+        <div class="problem-item">
+          <div class="problem-icon">&#128694;</div>
+          <div>
+            <h4>Someone quits. Their knowledge walks out.</h4>
+            <p>Years of institutional knowledge — the "how we actually do things here" — disappears in a two-week notice.</p>
+          </div>
+        </div>
+        <div class="problem-item">
+          <div class="problem-icon">&#128100;</div>
+          <div>
+            <h4>New hire. Six months to productivity.</h4>
+            <p>They have talent. What they don't have is context — the thousand unwritten rules your best people internalized over years.</p>
+          </div>
+        </div>
+        <div class="problem-item">
+          <div class="problem-icon">&#128196;</div>
+          <div>
+            <h4>Your best processes are undocumented.</h4>
+            <p>Nobody has time to write SOPs. The real playbook lives in muscle memory, Slack messages, and "ask Sarah, she knows."</p>
+          </div>
+        </div>
+        <div class="problem-item">
+          <div class="problem-icon">&#129302;</div>
+          <div>
+            <h4>AI tools are generic. They don't know your business.</h4>
+            <p>ChatGPT is brilliant — but it has no idea how YOUR company handles refunds, writes proposals, or onboards clients.</p>
+          </div>
+        </div>
+      </div>
+      <div class="problem-visual">
+        <div class="brain-drain">
+          <div class="big-stat">70%</div>
+          <div class="stat-label">of organizational knowledge<br>is undocumented</div>
+          <div class="stat-source">Industry research estimates</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="how-section" id="how">
+  <div class="container">
+    <div class="section-label">How It Works</div>
+    <h2>From invisible knowledge<br>to organizational intelligence</h2>
+    <p class="section-desc">Go2 learns by observing. No surveys, no documentation projects, no behavior change required. Your team works normally. Go2 builds the brain.</p>
+
+    <div class="how-steps">
+      <div class="how-step">
+        <div class="step-number">1</div>
+        <h3>Capture</h3>
+        <p>A lightweight desktop agent observes how your team works — the applications they use, the workflows they follow, the patterns that make your best people effective.</p>
+        <div class="step-detail">Always-on. Zero friction. Fully private.</div>
+      </div>
+      <div class="how-step">
+        <div class="step-number">2</div>
+        <h3>Model</h3>
+        <p>Go2 builds a living, evolving model of how your company operates. Not just what tools you use — but how information flows, how decisions get made, how work actually gets done.</p>
+        <div class="step-detail">Gets smarter every day.</div>
+      </div>
+      <div class="how-step">
+        <div class="step-number">3</div>
+        <h3>Amplify</h3>
+        <p>Frontier AI — Claude, GPT, Gemini — powered by your company's actual knowledge. Every employee gets an AI assistant that knows your business as well as your best people do.</p>
+        <div class="step-detail">Powered by the models you trust.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Capabilities -->
+<section class="capabilities-section" id="capabilities">
+  <div class="container">
+    <div class="section-label">Capabilities</div>
+    <h2>One brain. Infinite applications.</h2>
+    <p class="section-desc">Once Go2 understands how your company operates, the applications are limitless.</p>
+
+    <div class="cap-grid">
+      <div class="cap-card">
+        <div class="cap-icon">&#128161;</div>
+        <h3>Intelligent Coaching</h3>
+        <p>Real-time guidance based on how your best performers actually work. Not generic productivity tips — specific, contextual coaching drawn from your organization's own patterns.</p>
+        <div class="cap-example">
+          <div class="prompt">&gt; "How does the sales team usually handle enterprise objections on pricing?"</div>
+          <div class="response">Based on 47 successful enterprise deals, your top closers typically... [specific playbook from real patterns]</div>
+        </div>
+      </div>
+      <div class="cap-card">
+        <div class="cap-icon">&#128218;</div>
+        <h3>Living Documentation</h3>
+        <p>Go2 generates and maintains process documentation automatically. When workflows change, the docs update themselves. No more stale wikis or outdated SOPs.</p>
+        <div class="cap-example">
+          <div class="prompt">&gt; "Generate the onboarding checklist for new account managers"</div>
+          <div class="response">Here's the current 14-step process, updated 2 days ago based on how your team actually onboards... [auto-generated from observed patterns]</div>
+        </div>
+      </div>
+      <div class="cap-card">
+        <div class="cap-icon">&#9889;</div>
+        <h3>Accelerated Onboarding</h3>
+        <p>New employees get an AI that already knows every process, every shortcut, every "the way we do things here." Months of ramping compressed into days.</p>
+        <div class="cap-example">
+          <div class="prompt">&gt; "I need to submit a vendor approval request"</div>
+          <div class="response">Here's exactly how your team does this: Open [specific system], navigate to... [step-by-step from observed workflows]</div>
+        </div>
+      </div>
+      <div class="cap-card">
+        <div class="cap-icon">&#128202;</div>
+        <h3>Manager Intelligence</h3>
+        <p>Understand team dynamics, workflow bottlenecks, and process efficiency — not through surveillance, but through pattern analysis. See where knowledge gaps exist before they become problems.</p>
+        <div class="cap-example">
+          <div class="prompt">&gt; "Where are we losing the most time in our sprint process?"</div>
+          <div class="response">Analysis shows a 3.2 hour average gap between code review request and first review. The pattern suggests... [actionable insight]</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Intelligence Stats -->
+<section class="intel-section">
+  <div class="container">
+    <div class="section-label">The Compounding Effect</div>
+    <h2>Every interaction makes it smarter</h2>
+    <p class="section-desc" style="margin: 0 auto;">Go2 doesn't just store data. It builds understanding. Over time, the AI becomes the most knowledgeable entity in your organization.</p>
+
+    <div class="intel-grid">
+      <div class="intel-card">
+        <div class="intel-stat">Week 1</div>
+        <div class="intel-label">Basic tool usage and navigation patterns captured</div>
+      </div>
+      <div class="intel-card">
+        <div class="intel-stat">Month 1</div>
+        <div class="intel-label">Core workflows modeled, common processes documented</div>
+      </div>
+      <div class="intel-card">
+        <div class="intel-stat">Month 3</div>
+        <div class="intel-label">Deep organizational knowledge, cross-team patterns</div>
+      </div>
+      <div class="intel-card">
+        <div class="intel-stat">Month 6</div>
+        <div class="intel-label">Full company brain — ready for AI agent deployment</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Evolution Timeline -->
+<section class="evolution-section">
+  <div class="container">
+    <div class="section-label">The Roadmap</div>
+    <h2>From observation to automation</h2>
+    <p class="section-desc">Go2 evolves with your organization. What starts as intelligence becomes action.</p>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="tl-period">Phase 1 — Now</div>
+        <h3>Capture &amp; Coach</h3>
+        <p>Desktop agent captures workflows. AI coaches employees with contextual guidance. Managers get visibility into team patterns and knowledge gaps.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-period">Phase 2 — Coming Soon</div>
+        <h3>Document &amp; Accelerate</h3>
+        <p>Auto-generated process documentation. Intelligent onboarding that adapts to each new hire. Cross-team knowledge sharing powered by organizational memory.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-period">Phase 3 — The Vision</div>
+        <h3>Deploy AI Agents</h3>
+        <p>AI agents that can perform repetitive work — because they've learned from humans doing it. Not scripted bots. Agents with genuine understanding of your business context.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Use Cases -->
+<section class="usecases-section" id="usecases">
+  <div class="container">
+    <div class="section-label">Use Cases</div>
+    <h2>Built for how companies actually work</h2>
+
+    <div class="usecase-tabs">
+      <button class="usecase-tab active" onclick="showUsecase('onboarding')">New Hire Onboarding</button>
+      <button class="usecase-tab" onclick="showUsecase('retention')">Knowledge Retention</button>
+      <button class="usecase-tab" onclick="showUsecase('ops')">Ops Efficiency</button>
+      <button class="usecase-tab" onclick="showUsecase('ai')">AI That Knows You</button>
+    </div>
+
+    <div class="usecase-content active" id="uc-onboarding">
+      <div>
+        <h3>New hires productive in days, not months</h3>
+        <p>Stop relying on tribal knowledge and hallway conversations. Go2 gives every new employee an AI mentor that already knows how your company operates — every process, every tool, every unwritten rule.</p>
+        <ul class="usecase-benefits">
+          <li>Step-by-step guidance drawn from how your best people actually work</li>
+          <li>Instant answers to "how do we do X here?" without interrupting colleagues</li>
+          <li>Adaptive learning paths based on role and experience level</li>
+          <li>Zero documentation maintenance required</li>
+        </ul>
+      </div>
+      <div class="usecase-visual">
+        <div class="usecase-diagram">
+          <div class="diagram-row">
+            <div class="diagram-node">New Employee</div>
+            <div class="diagram-arrow">&rarr;</div>
+            <div class="diagram-node">Asks Question</div>
+          </div>
+          <div class="diagram-center">Go2 Company Brain</div>
+          <div class="diagram-row">
+            <div class="diagram-node">Contextual Answer</div>
+            <div class="diagram-arrow">&larr;</div>
+            <div class="diagram-node">Org Knowledge</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="usecase-content" id="uc-retention">
+      <div>
+        <h3>Knowledge survives turnover</h3>
+        <p>When your best people leave, their expertise stays. Go2 continuously captures institutional knowledge so it's never locked in a single person's head.</p>
+        <ul class="usecase-benefits">
+          <li>Automatic capture — no exit interviews or documentation sprints needed</li>
+          <li>Knowledge indexed by process, not person</li>
+          <li>Patterns from top performers preserved for the entire organization</li>
+          <li>Succession planning backed by actual workflow data</li>
+        </ul>
+      </div>
+      <div class="usecase-visual">
+        <div class="usecase-diagram">
+          <div class="diagram-row">
+            <div class="diagram-node">Expert Workflows</div>
+            <div class="diagram-arrow">&rarr;</div>
+            <div class="diagram-node">Captured Daily</div>
+          </div>
+          <div class="diagram-center">Organizational Memory</div>
+          <div class="diagram-row">
+            <div class="diagram-node">Employee Leaves</div>
+            <div class="diagram-arrow">&rarr;</div>
+            <div class="diagram-node">Knowledge Stays</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="usecase-content" id="uc-ops">
+      <div>
+        <h3>Find and fix workflow bottlenecks</h3>
+        <p>See where time is wasted, where processes break down, and where your team's best practices could be shared more widely. Not through surveys — through observed reality.</p>
+        <ul class="usecase-benefits">
+          <li>Identify the gap between best and average performers</li>
+          <li>Surface process bottlenecks before they become fires</li>
+          <li>Understand cross-team dependencies and handoff friction</li>
+          <li>Data-driven process improvement, not guesswork</li>
+        </ul>
+      </div>
+      <div class="usecase-visual">
+        <div class="usecase-diagram">
+          <div class="diagram-row">
+            <div class="diagram-node">Team Activity</div>
+            <div class="diagram-arrow">&rarr;</div>
+            <div class="diagram-node">Pattern Analysis</div>
+          </div>
+          <div class="diagram-center">Bottleneck Detection Engine</div>
+          <div class="diagram-row">
+            <div class="diagram-node">Insights</div>
+            <div class="diagram-arrow">&rarr;</div>
+            <div class="diagram-node">Optimized Ops</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="usecase-content" id="uc-ai">
+      <div>
+        <h3>AI that actually knows your business</h3>
+        <p>Every AI tool on the market gives you a generic model. Go2 gives you Claude, GPT, or Gemini — but with shared memory of how YOUR company operates. That's the difference between a smart intern and a 10-year veteran.</p>
+        <ul class="usecase-benefits">
+          <li>Uses frontier models (Claude, GPT, Gemini) you already trust</li>
+          <li>Grounded in your actual processes, not generic best practices</li>
+          <li>Gets smarter every day as more organizational data is captured</li>
+          <li>One AI brain, accessible to every employee</li>
+        </ul>
+      </div>
+      <div class="usecase-visual">
+        <div class="usecase-diagram">
+          <div class="diagram-row">
+            <div class="diagram-node">Claude</div>
+            <div class="diagram-node">GPT</div>
+            <div class="diagram-node">Gemini</div>
+          </div>
+          <div class="diagram-center">+ Your Company's Knowledge = Go2</div>
+          <div class="diagram-row">
+            <div class="diagram-node">Coaching</div>
+            <div class="diagram-node">Docs</div>
+            <div class="diagram-node">Agents</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Comparison -->
+<section class="comparison-section">
+  <div class="container">
+    <div class="section-label">Why Go2</div>
+    <h2>Not another AI tool.<br>The AI that knows you.</h2>
+
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Generic AI<br>(ChatGPT, etc.)</th>
+          <th>Knowledge Base<br>(Notion, Confluence)</th>
+          <th>Go2</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Knows your specific processes</td>
+          <td class="check-no">&#10005;</td>
+          <td class="check-no">Only if manually written</td>
+          <td class="check-yes">&#10003; Auto-captured</td>
+        </tr>
+        <tr>
+          <td>Learns from your best people</td>
+          <td class="check-no">&#10005;</td>
+          <td class="check-no">&#10005;</td>
+          <td class="check-yes">&#10003; Continuously</td>
+        </tr>
+        <tr>
+          <td>Stays current automatically</td>
+          <td class="check-no">&#10005;</td>
+          <td class="check-no">&#10005; Always stale</td>
+          <td class="check-yes">&#10003; Living model</td>
+        </tr>
+        <tr>
+          <td>Coaches employees contextually</td>
+          <td class="check-no">Generic only</td>
+          <td class="check-no">&#10005;</td>
+          <td class="check-yes">&#10003; Personalized</td>
+        </tr>
+        <tr>
+          <td>Survives employee turnover</td>
+          <td class="check-no">&#10005;</td>
+          <td class="check-no">Partially</td>
+          <td class="check-yes">&#10003; Fully captured</td>
+        </tr>
+        <tr>
+          <td>Path to AI agents</td>
+          <td class="check-no">&#10005;</td>
+          <td class="check-no">&#10005;</td>
+          <td class="check-yes">&#10003; Built on real workflows</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section class="pricing-section" id="pricing">
+  <div class="container">
+    <div class="section-label">Pricing</div>
+    <h2>One plan. Everything included.</h2>
+    <p class="section-desc" style="margin: 0 auto;">Less than what you'd pay for ChatGPT Pro alone — and this AI actually knows your business.</p>
+
+    <div class="pricing-card">
+      <div class="pricing-amount">
+        <span class="pricing-dollar">$</span>
+        <span class="pricing-number">89</span>
+      </div>
+      <div class="pricing-per">per user / month</div>
+      <div class="pricing-tagline">Everything your company brain needs</div>
+
+      <ul class="pricing-features">
+        <li>Desktop agent for macOS and Windows</li>
+        <li>Frontier AI integration (Claude, GPT, Gemini)</li>
+        <li>Real-time contextual coaching</li>
+        <li>Auto-generated process documentation</li>
+        <li>Manager insights and analytics dashboard</li>
+        <li>Knowledge retention and onboarding tools</li>
+        <li>SOC 2 compliant data handling</li>
+        <li>Dedicated onboarding support</li>
+      </ul>
+
+      <button class="pricing-cta" onclick="document.getElementById('cta').scrollIntoView({behavior:'smooth'})">Get Early Access</button>
+    </div>
+  </div>
+</section>
+
+<!-- Final CTA -->
+<section class="cta-section" id="cta">
+  <div class="container">
+    <div class="section-label">Get Started</div>
+    <h2>Stop losing what your<br>best people know</h2>
+    <p class="section-desc">Every day without Go2 is another day of institutional knowledge slipping through the cracks. Start building your company brain today.</p>
+    <div class="hero-actions" style="justify-content: center;">
+      <a href="mailto:s@go2.io?subject=Go2 Early Access" class="btn-primary">Request Early Access &rarr;</a>
+      <a href="mailto:s@go2.io?subject=Go2 Demo Request" class="btn-secondary">Book a Demo</a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="logo">Go<span>2</span></div>
+        <p>Organizational intelligence for the AI era. Capture what your people know. Make it available to everyone.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="#how">How It Works</a>
+        <a href="#capabilities">Capabilities</a>
+        <a href="#usecases">Use Cases</a>
+        <a href="#pricing">Pricing</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="#">About</a>
+        <a href="#">Blog</a>
+        <a href="#">Careers</a>
+        <a href="mailto:s@go2.io">Contact</a>
+      </div>
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <a href="#">Documentation</a>
+        <a href="#">Security</a>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 Go2. All rights reserved.</span>
+      <span>Built for the companies that refuse to lose what they know.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Neural network background
+const canvas = document.getElementById('neural-bg');
+const ctx = canvas.getContext('2d');
+let nodes = [];
+let animFrame;
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+function initNodes() {
+  nodes = [];
+  const count = Math.floor((canvas.width * canvas.height) / 25000);
+  for (let i = 0; i < count; i++) {
+    nodes.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      r: Math.random() * 2 + 1
+    });
+  }
+}
+
+function drawNetwork() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw connections
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const dx = nodes[i].x - nodes[j].x;
+      const dy = nodes[i].y - nodes[j].y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 150) {
+        ctx.beginPath();
+        ctx.moveTo(nodes[i].x, nodes[i].y);
+        ctx.lineTo(nodes[j].x, nodes[j].y);
+        ctx.strokeStyle = `rgba(59, 130, 246, ${0.06 * (1 - dist / 150)})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    }
+  }
+
+  // Draw nodes
+  for (const node of nodes) {
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, node.r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(59, 130, 246, 0.15)';
+    ctx.fill();
+
+    node.x += node.vx;
+    node.y += node.vy;
+
+    if (node.x < 0 || node.x > canvas.width) node.vx *= -1;
+    if (node.y < 0 || node.y > canvas.height) node.vy *= -1;
+  }
+
+  animFrame = requestAnimationFrame(drawNetwork);
+}
+
+window.addEventListener('resize', () => { resize(); initNodes(); });
+resize();
+initNodes();
+drawNetwork();
+
+// Use case tabs
+function showUsecase(id) {
+  document.querySelectorAll('.usecase-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.usecase-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('uc-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// Scroll animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.style.opacity = '1';
+      entry.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+document.querySelectorAll('.how-step, .cap-card, .intel-card, .timeline-item, .problem-item').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(20px)';
+  el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+  observer.observe(el);
+});
+</script>
+
+</body>
+</html>

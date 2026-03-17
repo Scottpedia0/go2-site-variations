@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Agents — Go2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: #1a1a2e; background: #fff; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+.nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid #e8eaed; }
+.nav-inner { max-width: 1120px; margin: 0 auto; padding: 0 24px; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+.nav-logo { font-weight: 800; font-size: 22px; color: #2563eb; letter-spacing: -0.5px; }
+.nav-links { display: flex; gap: 32px; align-items: center; }
+.nav-links a { font-size: 14px; font-weight: 500; color: #64748b; transition: color 0.2s; }
+.nav-links a:hover, .nav-links a.active { color: #1a1a2e; }
+.nav-cta { background: #2563eb; color: #fff !important; padding: 8px 20px; border-radius: 8px; font-weight: 600; font-size: 14px; transition: background 0.2s; }
+.nav-cta:hover { background: #1d4ed8; }
+.nav-toggle { display: none; background: none; border: none; cursor: pointer; padding: 4px; }
+.nav-toggle span { display: block; width: 20px; height: 2px; background: #1a1a2e; margin: 5px 0; }
+.section { padding: 96px 24px; }
+.container { max-width: 1120px; margin: 0 auto; }
+.section-label { font-size: 13px; font-weight: 600; color: #2563eb; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+.section-title { font-size: 36px; font-weight: 800; line-height: 1.15; letter-spacing: -0.5px; margin-bottom: 16px; }
+.section-subtitle { font-size: 18px; color: #64748b; max-width: 600px; line-height: 1.6; }
+.btn { display: inline-flex; align-items: center; padding: 14px 28px; border-radius: 10px; font-weight: 600; font-size: 15px; transition: all 0.2s; border: none; cursor: pointer; }
+.btn-primary { background: #2563eb; color: #fff; }
+.btn-primary:hover { background: #1d4ed8; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+.btn-secondary { background: #f1f5f9; color: #1a1a2e; }
+.btn-secondary:hover { background: #e2e8f0; }
+.footer { padding: 48px 24px; border-top: 1px solid #e8eaed; }
+.footer-inner { max-width: 1120px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px; }
+.footer-logo { font-weight: 800; font-size: 18px; color: #2563eb; }
+.footer-links { display: flex; gap: 24px; }
+.footer-links a { font-size: 14px; color: #94a3b8; transition: color 0.2s; }
+.footer-links a:hover { color: #1a1a2e; }
+.footer-copy { font-size: 13px; color: #94a3b8; width: 100%; text-align: center; margin-top: 24px; }
+
+.page-hero { padding: 140px 24px 72px; background: linear-gradient(180deg, #1a1a2e 0%, #1e293b 100%); color: #fff; }
+.page-hero h1 { font-size: 48px; font-weight: 800; line-height: 1.1; letter-spacing: -1.2px; margin-bottom: 16px; }
+.page-hero h1 span { color: #60a5fa; }
+.page-hero p { font-size: 20px; color: #94a3b8; max-width: 600px; line-height: 1.6; }
+.page-hero .section-label { color: #60a5fa; }
+
+/* Timeline */
+.timeline { position: relative; margin-top: 48px; }
+.timeline::before { content: ""; position: absolute; left: 24px; top: 0; bottom: 0; width: 2px; background: #e2e8f0; }
+.timeline-item { position: relative; padding-left: 72px; padding-bottom: 48px; }
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-dot { position: absolute; left: 14px; top: 4px; width: 22px; height: 22px; border-radius: 50%; background: #2563eb; border: 4px solid #eff6ff; }
+.timeline-phase { font-size: 12px; font-weight: 600; color: #2563eb; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.timeline-item h3 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.timeline-item p { font-size: 15px; color: #64748b; line-height: 1.7; max-width: 560px; }
+
+/* Agent Cards */
+.agent-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-top: 48px; }
+.agent-card { padding: 32px; border-radius: 16px; border: 1px solid #e8eaed; background: #fff; }
+.agent-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.agent-card p { font-size: 15px; color: #64748b; line-height: 1.6; margin-bottom: 16px; }
+.agent-tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 6px; background: #eff6ff; color: #2563eb; margin-right: 6px; }
+.agent-saves { margin-top: 12px; font-size: 13px; font-weight: 600; color: #16a34a; }
+
+/* Open Source */
+.oss-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 48px; }
+.oss-card { padding: 24px; border-radius: 12px; background: #f8fafc; border: 1px solid #e8eaed; text-align: center; }
+.oss-card h4 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.oss-card p { font-size: 13px; color: #64748b; }
+
+/* Vision */
+.vision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+
+.cta-section { background: #1a1a2e; color: #fff; text-align: center; }
+.cta-section .section-title { color: #fff; }
+.cta-section .section-subtitle { color: #94a3b8; margin: 0 auto 32px; }
+
+@media (max-width: 768px) {
+  .page-hero h1 { font-size: 32px; }
+  .section-title { font-size: 28px; }
+  .agent-grid, .oss-grid { grid-template-columns: 1fr; }
+  .vision-grid { grid-template-columns: 1fr; gap: 32px; }
+  .nav-links { display: none; position: absolute; top: 64px; left: 0; right: 0; background: #fff; flex-direction: column; padding: 24px; gap: 16px; border-bottom: 1px solid #e8eaed; }
+  .nav-links.open { display: flex; }
+  .nav-toggle { display: block; }
+  .section { padding: 64px 24px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">Go2</a>
+    <div class="nav-links" id="navLinks">
+      <a href="how-it-works.html">How It Works</a>
+      <a href="agents.html" class="active">AI Agents</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="results.html">Results</a>
+      <a href="#" class="nav-cta">Get Started</a>
+    </div>
+    <button class="nav-toggle" onclick="document.getElementById('navLinks').classList.toggle('open')" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="page-hero">
+  <div class="container">
+    <p class="section-label">AI Agents</p>
+    <h1>First we map how your<br>team works. <span>Then we<br>automate the rest.</span></h1>
+    <p>Go2 doesn't just find inefficiency — it deploys AI agents to eliminate it. Trained on your actual workflows, built on open-source frameworks, deployed by our automation engineers.</p>
+  </div>
+</section>
+
+<!-- Timeline: From Capture to Agents -->
+<section class="section">
+  <div class="container">
+    <p class="section-label">The Path</p>
+    <h2 class="section-title">From observation to automation</h2>
+    <p class="section-subtitle">Every AI agent deployment follows the same proven path. No guesswork.</p>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-phase">Week 1-2</div>
+        <h3>Capture &amp; Observe</h3>
+        <p>Go2 captures activity across your team — apps, workflows, patterns, repetitions. AI begins identifying processes that are performed repeatedly across multiple people.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-phase">Week 2-3</div>
+        <h3>Map &amp; Score</h3>
+        <p>Workflows are mapped step-by-step and scored for automation potential. Go2 identifies which processes are high-frequency, rule-based, and cross-application — the ideal candidates for AI agents.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-phase">Week 3-4</div>
+        <h3>Design &amp; Build</h3>
+        <p>Our automation engineers design AI agents tailored to your specific workflows. Not generic bots — agents trained on how your team actually works, using the tools you already have.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-phase">Week 4-5</div>
+        <h3>Deploy &amp; Monitor</h3>
+        <p>Agents are deployed alongside your team. They start in supervised mode — humans verify outputs before agents run autonomously. Go2 continuously monitors performance and accuracy.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-phase">Ongoing</div>
+        <h3>Optimize &amp; Expand</h3>
+        <p>As workflows evolve, agents adapt. Go2 continuously discovers new automation opportunities and deploys additional agents. The system gets smarter the longer it runs.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- What Agents Can Do -->
+<section class="section" style="background:#f8fafc;">
+  <div class="container">
+    <p class="section-label">Capabilities</p>
+    <h2 class="section-title">What AI agents can handle</h2>
+    <p class="section-subtitle">Any process that's repetitive, rule-based, and cross-application is a candidate. Here are the most common deployments.</p>
+    <div class="agent-grid">
+      <div class="agent-card">
+        <h3>Data Entry &amp; Migration</h3>
+        <p>Agents move data between systems — CRM to spreadsheet, email to database, form submissions to accounting software. No more copy-paste.</p>
+        <div><span class="agent-tag">Cross-app</span><span class="agent-tag">High frequency</span></div>
+        <div class="agent-saves">Typical savings: 8-15 hrs/week per team</div>
+      </div>
+      <div class="agent-card">
+        <h3>Report Generation</h3>
+        <p>Agents pull data from multiple sources, compile reports, format them to your standards, and deliver them on schedule. Weekly reports that took 3 hours now take 3 minutes.</p>
+        <div><span class="agent-tag">Multi-source</span><span class="agent-tag">Scheduled</span></div>
+        <div class="agent-saves">Typical savings: 4-8 hrs/week per team</div>
+      </div>
+      <div class="agent-card">
+        <h3>Ticket Routing &amp; Categorization</h3>
+        <p>Agents read incoming support tickets, categorize them by type and urgency, route them to the right team, and draft initial responses based on similar resolved tickets.</p>
+        <div><span class="agent-tag">NLP</span><span class="agent-tag">Real-time</span></div>
+        <div class="agent-saves">Typical savings: 12-20 hrs/week per team</div>
+      </div>
+      <div class="agent-card">
+        <h3>Invoice Processing</h3>
+        <p>Agents extract data from invoices (PDF, email, scan), match against purchase orders, flag discrepancies, and submit for approval. Hands-free AP.</p>
+        <div><span class="agent-tag">Document AI</span><span class="agent-tag">Validation</span></div>
+        <div class="agent-saves">Typical savings: 6-12 hrs/week per team</div>
+      </div>
+      <div class="agent-card">
+        <h3>Email Triage &amp; Response</h3>
+        <p>Agents categorize incoming email, draft responses for routine inquiries, flag items that need human attention, and file everything in the right place.</p>
+        <div><span class="agent-tag">NLP</span><span class="agent-tag">Drafting</span></div>
+        <div class="agent-saves">Typical savings: 5-10 hrs/week per person</div>
+      </div>
+      <div class="agent-card">
+        <h3>Onboarding Workflows</h3>
+        <p>Agents handle the checklist — provisioning accounts, sending welcome emails, scheduling training sessions, setting up project access, triggering compliance docs.</p>
+        <div><span class="agent-tag">Multi-step</span><span class="agent-tag">Cross-system</span></div>
+        <div class="agent-saves">Typical savings: 4-6 hrs per new hire</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Built on Open Source -->
+<section class="section">
+  <div class="container">
+    <div class="vision-grid">
+      <div>
+        <p class="section-label">Technology</p>
+        <h2 class="section-title">Built on open-source frameworks</h2>
+        <p class="section-subtitle" style="margin-bottom:24px;">Go2 agents are built on proven open-source AI and automation frameworks. No proprietary lock-in. Your agents are portable, auditable, and extensible.</p>
+        <p style="font-size:15px; color:#64748b; line-height:1.7;">We use frontier LLMs (Claude, GPT-4, Gemini) for reasoning and natural language tasks, combined with established automation frameworks for reliable execution. Every agent is version-controlled, tested, and monitored.</p>
+      </div>
+      <div>
+        <div class="oss-grid" style="grid-template-columns:1fr 1fr;">
+          <div class="oss-card">
+            <h4>LLM-Powered</h4>
+            <p>Claude, GPT-4, Gemini for reasoning &amp; NLP tasks</p>
+          </div>
+          <div class="oss-card">
+            <h4>Open Frameworks</h4>
+            <p>LangChain, CrewAI, and custom orchestration</p>
+          </div>
+          <div class="oss-card">
+            <h4>Version Controlled</h4>
+            <p>Every agent in Git, fully auditable and rollback-ready</p>
+          </div>
+          <div class="oss-card">
+            <h4>API-First</h4>
+            <p>Integrates with your existing tools via standard APIs</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- The Vision -->
+<section class="section" style="background:#f0f5ff;">
+  <div class="container">
+    <p class="section-label">The Vision</p>
+    <h2 class="section-title">This is where work is going</h2>
+    <p class="section-subtitle" style="margin-bottom:32px;">Today, AI agents handle the repetitive tasks your team shouldn't be doing. Tomorrow, they'll handle entire workflows end-to-end. Go2 is building toward a future where humans focus on judgment, creativity, and strategy — and agents handle everything else.</p>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:24px;">
+      <div style="padding:28px; background:#fff; border-radius:12px; border:1px solid #e0e7ff;">
+        <h4 style="font-size:14px; font-weight:600; color:#2563eb; margin-bottom:8px;">NOW</h4>
+        <h3 style="font-size:18px; font-weight:700; margin-bottom:8px;">Task Agents</h3>
+        <p style="font-size:14px; color:#64748b; line-height:1.6;">Single-purpose agents that handle specific repetitive tasks. Data entry, report generation, ticket routing. Supervised by humans.</p>
+      </div>
+      <div style="padding:28px; background:#fff; border-radius:12px; border:1px solid #e0e7ff;">
+        <h4 style="font-size:14px; font-weight:600; color:#2563eb; margin-bottom:8px;">NEXT</h4>
+        <h3 style="font-size:18px; font-weight:700; margin-bottom:8px;">Workflow Agents</h3>
+        <p style="font-size:14px; color:#64748b; line-height:1.6;">Multi-step agents that handle entire workflows. From intake to completion, across multiple tools and systems. Human review at key decision points.</p>
+      </div>
+      <div style="padding:28px; background:#fff; border-radius:12px; border:1px solid #e0e7ff;">
+        <h4 style="font-size:14px; font-weight:600; color:#2563eb; margin-bottom:8px;">FUTURE</h4>
+        <h3 style="font-size:18px; font-weight:700; margin-bottom:8px;">Autonomous Teams</h3>
+        <p style="font-size:14px; color:#64748b; line-height:1.6;">Coordinated agent teams that work alongside humans. They learn, adapt, and improve continuously. Humans set direction; agents execute.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section cta-section">
+  <div class="container">
+    <p class="section-label" style="color:#60a5fa;">Get Started</p>
+    <h2 class="section-title">Ready to automate the work nobody<br>should be doing manually?</h2>
+    <p class="section-subtitle">Start with capture and coaching. When you see the workflows, you'll know exactly what to automate.</p>
+    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <a href="#" class="btn btn-primary">Start Free Trial</a>
+      <a href="pricing.html" class="btn" style="color:#94a3b8; border:1px solid #334155;">View Pricing</a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-logo">Go2</div>
+    <div class="footer-links">
+      <a href="how-it-works.html">How It Works</a>
+      <a href="agents.html">AI Agents</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="results.html">Results</a>
+    </div>
+    <div class="footer-copy">&copy; 2026 Go2. All rights reserved.</div>
+  </div>
+</footer>
+
+</body>
+</html>
