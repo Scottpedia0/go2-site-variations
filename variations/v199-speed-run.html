@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Speedrun Your AI Transformation</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&display=swap');
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface-2: #1a1a28;
+    --neon-pink: #ff2d95;
+    --neon-cyan: #00fff0;
+    --neon-green: #39ff14;
+    --neon-yellow: #fff01f;
+    --neon-purple: #bf5af2;
+    --neon-orange: #ff6b35;
+    --white: #e8e8e8;
+    --grey: #6b7280;
+    --dim: #3f3f50;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--white);
+    overflow-x: hidden;
+  }
+
+  /* SCANLINES OVERLAY */
+  body::after {
+    content: ''; position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px
+    );
+  }
+
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 3rem;
+    background: rgba(10,10,15,0.95); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--dim);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .logo {
+    font-size: 1.3rem; font-weight: 800;
+    color: var(--neon-cyan);
+    text-shadow: 0 0 10px rgba(0,255,240,0.5);
+  }
+  .logo span { color: var(--neon-pink); }
+  .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+  .nav-links a { color: var(--grey); text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: all 0.3s; letter-spacing: 1px; }
+  .nav-links a:hover { color: var(--neon-cyan); text-shadow: 0 0 8px rgba(0,255,240,0.4); }
+  .nav-cta {
+    background: transparent !important; color: var(--neon-green) !important;
+    border: 1px solid var(--neon-green) !important; padding: 0.5rem 1.2rem;
+    border-radius: 4px; text-shadow: 0 0 8px rgba(57,255,20,0.4) !important;
+  }
+  .nav-cta:hover { background: rgba(57,255,20,0.1) !important; }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 8rem 2rem 4rem; text-align: center;
+    position: relative;
+    background: radial-gradient(ellipse at 50% 50%, rgba(191,90,242,0.05) 0%, transparent 60%);
+  }
+  /* Grid bg */
+  .hero::before {
+    content: ''; position: absolute; inset: 0;
+    background:
+      linear-gradient(rgba(0,255,240,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,240,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    animation: gridScroll 20s linear infinite;
+  }
+  @keyframes gridScroll {
+    0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
+    100% { transform: perspective(500px) rotateX(60deg) translateY(60px); }
+  }
+
+  .hero-content { position: relative; z-index: 1; }
+  .hero-badge {
+    display: inline-block; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 3px;
+    color: var(--neon-pink); padding: 0.4rem 1rem; border-radius: 4px;
+    border: 1px solid rgba(255,45,149,0.3); margin-bottom: 2rem;
+    text-shadow: 0 0 8px rgba(255,45,149,0.4);
+    animation: badgePulse 2s ease-in-out infinite;
+  }
+  @keyframes badgePulse { 0%,100% { border-color: rgba(255,45,149,0.3); } 50% { border-color: rgba(255,45,149,0.6); } }
+
+  .hero h1 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 4rem; font-weight: 800; letter-spacing: -1px; line-height: 1.1;
+    margin-bottom: 1.5rem;
+  }
+  .hero h1 .cyan { color: var(--neon-cyan); text-shadow: 0 0 20px rgba(0,255,240,0.4); }
+  .hero h1 .pink { color: var(--neon-pink); text-shadow: 0 0 20px rgba(255,45,149,0.4); }
+
+  /* TIMER */
+  .timer {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.5rem; font-weight: 700; color: var(--neon-yellow);
+    text-shadow: 0 0 15px rgba(255,240,31,0.5);
+    margin-bottom: 1.5rem;
+    letter-spacing: 2px;
+  }
+  .timer-label { font-size: 0.7rem; color: var(--grey); letter-spacing: 3px; display: block; margin-bottom: 0.25rem; }
+
+  .hero p {
+    font-size: 1.1rem; color: var(--grey); max-width: 550px; margin: 0 auto 2rem;
+    line-height: 1.7;
+  }
+  .hero-cta {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 1rem 2rem; font-family: 'JetBrains Mono', monospace;
+    font-weight: 700; font-size: 0.9rem; letter-spacing: 1px;
+    text-decoration: none; border: 2px solid var(--neon-cyan);
+    color: var(--neon-cyan); background: transparent;
+    text-shadow: 0 0 10px rgba(0,255,240,0.4);
+    transition: all 0.3s; position: relative; overflow: hidden;
+  }
+  .hero-cta::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(0,255,240,0.1), transparent);
+    transform: translateX(-100%); transition: transform 0.3s;
+  }
+  .hero-cta:hover::before { transform: translateX(0); }
+  .hero-cta:hover { box-shadow: 0 0 30px rgba(0,255,240,0.3); }
+
+  /* LEVELS SECTION */
+  .levels {
+    padding: 8rem 2rem;
+    background: var(--surface);
+    position: relative;
+  }
+  .levels-container { max-width: 1000px; margin: 0 auto; }
+  .levels-header { text-align: center; margin-bottom: 4rem; }
+  .levels-header h2 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2.5rem; font-weight: 800; letter-spacing: -1px;
+    margin-bottom: 1rem;
+  }
+  .levels-header h2 .green { color: var(--neon-green); text-shadow: 0 0 15px rgba(57,255,20,0.4); }
+  .levels-header p { color: var(--grey); font-size: 1.1rem; }
+
+  .level-track { display: flex; flex-direction: column; gap: 1.5rem; }
+  .level {
+    display: grid; grid-template-columns: 80px 1fr auto; gap: 1.5rem; align-items: center;
+    padding: 1.5rem 2rem; border-radius: 8px;
+    background: var(--surface-2); border: 1px solid var(--dim);
+    transition: all 0.4s; position: relative;
+  }
+  .level:hover { border-color: var(--neon-cyan); transform: translateX(8px); }
+  .level-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2rem; font-weight: 800;
+  }
+  .level:nth-child(1) .level-num { color: var(--neon-cyan); text-shadow: 0 0 10px rgba(0,255,240,0.4); }
+  .level:nth-child(2) .level-num { color: var(--neon-green); text-shadow: 0 0 10px rgba(57,255,20,0.4); }
+  .level:nth-child(3) .level-num { color: var(--neon-yellow); text-shadow: 0 0 10px rgba(255,240,31,0.4); }
+  .level:nth-child(4) .level-num { color: var(--neon-orange); text-shadow: 0 0 10px rgba(255,107,53,0.4); }
+  .level:nth-child(5) .level-num { color: var(--neon-pink); text-shadow: 0 0 10px rgba(255,45,149,0.4); }
+  .level-info h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.25rem; }
+  .level-info p { font-size: 0.85rem; color: var(--grey); }
+  .level-xp {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 1px;
+    padding: 0.3rem 0.75rem; border-radius: 4px;
+    white-space: nowrap;
+  }
+  .level:nth-child(1) .level-xp { color: var(--neon-cyan); border: 1px solid rgba(0,255,240,0.3); }
+  .level:nth-child(2) .level-xp { color: var(--neon-green); border: 1px solid rgba(57,255,20,0.3); }
+  .level:nth-child(3) .level-xp { color: var(--neon-yellow); border: 1px solid rgba(255,240,31,0.3); }
+  .level:nth-child(4) .level-xp { color: var(--neon-orange); border: 1px solid rgba(255,107,53,0.3); }
+  .level:nth-child(5) .level-xp { color: var(--neon-pink); border: 1px solid rgba(255,45,149,0.3); }
+
+  /* ACHIEVEMENTS */
+  .achievements {
+    padding: 8rem 2rem;
+    background: linear-gradient(180deg, var(--surface), var(--bg));
+  }
+  .ach-container { max-width: 1100px; margin: 0 auto; }
+  .ach-header { text-align: center; margin-bottom: 4rem; }
+  .ach-header h2 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem;
+  }
+  .ach-header h2 .yellow { color: var(--neon-yellow); text-shadow: 0 0 15px rgba(255,240,31,0.4); }
+
+  .ach-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  .achievement {
+    background: var(--surface-2); border: 1px solid var(--dim);
+    border-radius: 8px; padding: 2rem; text-align: center;
+    transition: all 0.4s; position: relative; overflow: hidden;
+  }
+  .achievement:hover { border-color: var(--neon-yellow); transform: translateY(-4px); }
+  .achievement.unlocked::before {
+    content: 'UNLOCKED'; position: absolute; top: 0.75rem; right: 0.75rem;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.55rem; font-weight: 700;
+    letter-spacing: 2px; color: var(--neon-green);
+    padding: 0.2rem 0.5rem; border: 1px solid rgba(57,255,20,0.3); border-radius: 3px;
+    text-shadow: 0 0 6px rgba(57,255,20,0.4);
+  }
+  .achievement.locked { opacity: 0.4; }
+  .achievement.locked::before {
+    content: 'LOCKED'; position: absolute; top: 0.75rem; right: 0.75rem;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.55rem; font-weight: 700;
+    letter-spacing: 2px; color: var(--grey);
+    padding: 0.2rem 0.5rem; border: 1px solid var(--dim); border-radius: 3px;
+  }
+  .ach-icon { font-size: 2.5rem; margin-bottom: 1rem; display: block; }
+  .achievement h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem;
+  }
+  .achievement p { font-size: 0.8rem; color: var(--grey); line-height: 1.5; }
+  .ach-stat {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; color: var(--neon-cyan); margin-top: 0.75rem;
+    display: block;
+  }
+
+  /* STATS */
+  .game-stats {
+    padding: 5rem 2rem;
+    border-top: 1px solid var(--dim); border-bottom: 1px solid var(--dim);
+    background: var(--bg);
+  }
+  .game-stats-grid { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; text-align: center; }
+  .gs-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 3rem; font-weight: 800;
+    color: var(--neon-cyan); text-shadow: 0 0 15px rgba(0,255,240,0.3);
+  }
+  .gs-label { font-size: 0.8rem; color: var(--dim); margin-top: 0.5rem; font-weight: 600; }
+
+  /* OPEN SOURCE */
+  .opensource {
+    padding: 6rem 2rem; text-align: center;
+    background: var(--bg);
+  }
+  .os-card {
+    max-width: 800px; margin: 0 auto;
+    background: var(--surface-2); border: 1px solid rgba(191,90,242,0.2);
+    border-radius: 12px; padding: 3rem;
+  }
+  .os-card h2 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.8rem; font-weight: 800; margin-bottom: 1rem;
+  }
+  .os-card h2 .purple { color: var(--neon-purple); text-shadow: 0 0 15px rgba(191,90,242,0.4); }
+  .os-card p { font-size: 1rem; color: var(--grey); line-height: 1.7; max-width: 550px; margin: 0 auto; }
+
+  /* CTA */
+  .cta-section {
+    padding: 8rem 2rem; text-align: center;
+    background: radial-gradient(ellipse at 50% 100%, rgba(0,255,240,0.03) 0%, transparent 50%);
+  }
+  .cta-section h2 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 3rem; font-weight: 800; margin-bottom: 1rem;
+  }
+  .cta-section h2 .cyan { color: var(--neon-cyan); text-shadow: 0 0 20px rgba(0,255,240,0.4); }
+  .cta-section p { font-size: 1.1rem; color: var(--grey); margin-bottom: 2.5rem; max-width: 500px; margin-left: auto; margin-right: auto; }
+  .final-cta {
+    display: inline-flex; padding: 1rem 2.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700; font-size: 0.95rem; letter-spacing: 1px;
+    text-decoration: none; background: var(--neon-cyan); color: var(--bg);
+    border: none; transition: all 0.3s;
+    box-shadow: 0 0 30px rgba(0,255,240,0.3);
+  }
+  .final-cta:hover { box-shadow: 0 0 50px rgba(0,255,240,0.5); transform: translateY(-2px); }
+
+  footer {
+    padding: 2rem; text-align: center;
+    border-top: 1px solid var(--dim);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  footer p { color: var(--dim); font-size: 0.7rem; letter-spacing: 2px; }
+
+  @media (max-width: 900px) {
+    .hero h1 { font-size: 2.5rem; }
+    .level { grid-template-columns: 50px 1fr; }
+    .level-xp { display: none; }
+    .ach-grid { grid-template-columns: 1fr; }
+    .game-stats-grid { grid-template-columns: repeat(2, 1fr); }
+    nav { padding: 1rem 1.5rem; }
+    .nav-links a:not(.nav-cta) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">GO<span>2</span></div>
+  <div class="nav-links">
+    <a href="#levels">LEVELS</a>
+    <a href="#achievements">ACHIEVEMENTS</a>
+    <a href="#" class="nav-cta">START RUN</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">NEW GAME+</div>
+    <h1><span class="cyan">SPEEDRUN</span><br>YOUR <span class="pink">AI</span><br>TRANSFORMATION</h1>
+    <div class="timer">
+      <span class="timer-label">TIME TO VALUE</span>
+      00:14:32:07
+    </div>
+    <p>95% of AI pilots fail. Most companies spend 18 months to get nowhere. Go2 is the speedrun strat: capture work data, coach in real-time, deploy agents that actually work.</p>
+    <a href="#levels" class="hero-cta">&gt; START_RUN</a>
+  </div>
+</section>
+
+<section class="levels" id="levels">
+  <div class="levels-container">
+    <div class="levels-header">
+      <h2>AI Maturity <span class="green">Levels</span></h2>
+      <p>Most companies are stuck at Level 1. Go2 speedruns you to Level 5.</p>
+    </div>
+    <div class="level-track">
+      <div class="level">
+        <div class="level-num">LV1</div>
+        <div class="level-info">
+          <h3>Awareness</h3>
+          <p>You know AI exists. You've tried ChatGPT. You think about "AI strategy." Nothing is deployed.</p>
+        </div>
+        <div class="level-xp">+0 XP</div>
+      </div>
+      <div class="level">
+        <div class="level-num">LV2</div>
+        <div class="level-info">
+          <h3>Pilot Purgatory</h3>
+          <p>Running pilots that never reach production. 95% of companies are stuck here (MIT). No data about how work actually happens.</p>
+        </div>
+        <div class="level-xp">+100 XP</div>
+      </div>
+      <div class="level">
+        <div class="level-num">LV3</div>
+        <div class="level-info">
+          <h3>Data Capture</h3>
+          <p>Go2's Cowork.ai deployed. Work data flowing. Processes auto-documented. You finally know how work actually happens.</p>
+        </div>
+        <div class="level-xp">+500 XP</div>
+      </div>
+      <div class="level">
+        <div class="level-num">LV4</div>
+        <div class="level-info">
+          <h3>Active Intelligence</h3>
+          <p>Real-time coaching live (89% satisfaction). 40+ hours/week of automation identified. AI agents training on real workflows.</p>
+        </div>
+        <div class="level-xp">+2000 XP</div>
+      </div>
+      <div class="level">
+        <div class="level-num">LV5</div>
+        <div class="level-info">
+          <h3>AI-Native Operations</h3>
+          <p>AI agents running autonomously. Continuous improvement loop. Your AI tools (Claude, ChatGPT) sidecar'd with real work context.</p>
+        </div>
+        <div class="level-xp">+9999 XP</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="achievements" id="achievements">
+  <div class="ach-container">
+    <div class="ach-header">
+      <h2><span class="yellow">Achievement</span> Unlocked</h2>
+    </div>
+    <div class="ach-grid">
+      <div class="achievement unlocked">
+        <span class="ach-icon">&#127942;</span>
+        <h3>FIRST BLOOD</h3>
+        <p>Deployed Cowork.ai to first team. Work data capture begins.</p>
+        <span class="ach-stat">2M+ profiles achieved</span>
+      </div>
+      <div class="achievement unlocked">
+        <span class="ach-icon">&#128202;</span>
+        <h3>PROCESS MAPPED</h3>
+        <p>Auto-documented 100 workflows without anyone lifting a finger.</p>
+        <span class="ach-stat">Zero manual documentation</span>
+      </div>
+      <div class="achievement unlocked">
+        <span class="ach-icon">&#129302;</span>
+        <h3>COACH ACTIVE</h3>
+        <p>Real-time AI coaching deployed. Workers actually like it.</p>
+        <span class="ach-stat">89% satisfaction rate</span>
+      </div>
+      <div class="achievement unlocked">
+        <span class="ach-icon">&#128176;</span>
+        <h3>REVENUE PROOF</h3>
+        <p>$60M+ in sales proves this isn't a science project.</p>
+        <span class="ach-stat">$60M+ total sales</span>
+      </div>
+      <div class="achievement unlocked">
+        <span class="ach-icon">&#9201;</span>
+        <h3>TIME SAVED</h3>
+        <p>Found 40+ hours/week of automatable work per company.</p>
+        <span class="ach-stat">40+ hrs/week identified</span>
+      </div>
+      <div class="achievement locked">
+        <span class="ach-icon">&#128274;</span>
+        <h3>YOUR TURN</h3>
+        <p>Deploy Go2. Capture your work data. Unlock your AI transformation.</p>
+        <span class="ach-stat">??? XP</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="game-stats">
+  <div class="game-stats-grid">
+    <div><div class="gs-val">95%</div><div class="gs-label">AI FAIL RATE (MIT)</div></div>
+    <div><div class="gs-val">2M+</div><div class="gs-label">PLAYER PROFILES</div></div>
+    <div><div class="gs-val">$60M+</div><div class="gs-label">TOTAL SCORE</div></div>
+    <div><div class="gs-val">89%</div><div class="gs-label">PLAYER SATISFACTION</div></div>
+  </div>
+</section>
+
+<section class="opensource">
+  <div class="os-card">
+    <h2>Open Source <span class="purple">Agent Training</span></h2>
+    <p>Go2 doesn't lock you in. Open source agent training tools let you build custom AI agents trained on real work data. Your data, your agents, your rules. Go2 sidecars Claude, ChatGPT, and whatever comes next.</p>
+  </div>
+</section>
+
+<section class="cta-section">
+  <h2>READY <span class="cyan">PLAYER</span> ONE?</h2>
+  <p>Stop grinding at Level 1. Speedrun to AI that actually works.</p>
+  <a href="#" class="final-cta">&gt; INSERT_COIN</a>
+</section>
+
+<footer>
+  <p>// GO2 &mdash; SPEEDRUN YOUR AI TRANSFORMATION // 2026</p>
+</footer>
+
+</body>
+</html>

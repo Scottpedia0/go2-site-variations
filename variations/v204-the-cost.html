@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 - The Cost of AI Failure</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-dark: #0C0C0C;
+    --bg-mid: #1A1A1A;
+    --red: #FF3B3B;
+    --red-dim: rgba(255, 59, 59, 0.15);
+    --red-glow: rgba(255, 59, 59, 0.4);
+    --amber: #FFAA33;
+    --green: #00E676;
+    --green-dim: rgba(0, 230, 118, 0.1);
+    --green-glow: rgba(0, 230, 118, 0.3);
+    --white: #F5F5F5;
+    --gray: #888;
+    --gray-dark: #444;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--bg-dark);
+    color: var(--white);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Nav */
+  nav {
+    position: fixed; top: 0; width: 100%; z-index: 100;
+    padding: 1.2rem 3rem;
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(12, 12, 12, 0.9);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .nav-logo {
+    font-size: 1.3rem; font-weight: 700;
+    color: var(--white); text-decoration: none;
+  }
+  .nav-links { display: flex; gap: 2rem; align-items: center; }
+  .nav-links a {
+    color: var(--gray); text-decoration: none;
+    font-size: 0.8rem; font-weight: 500;
+    transition: color 0.3s;
+  }
+  .nav-links a:hover { color: var(--white); }
+  .nav-cta-btn {
+    padding: 0.6rem 1.5rem; background: var(--green);
+    color: var(--bg-dark); border-radius: 6px;
+    font-weight: 700; font-size: 0.8rem;
+    text-decoration: none; transition: all 0.3s;
+  }
+  .nav-cta-btn:hover { box-shadow: 0 0 20px var(--green-glow); }
+
+  /* Hero - The Cost */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    text-align: center;
+    padding: 8rem 3rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at center top, var(--red-dim) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .hero-warning {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.5rem 1.2rem; border-radius: 100px;
+    background: var(--red-dim);
+    border: 1px solid rgba(255, 59, 59, 0.3);
+    font-size: 0.75rem; font-weight: 600;
+    color: var(--red); margin-bottom: 2.5rem;
+    letter-spacing: 0.05em;
+  }
+  .warning-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--red);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--red-glow); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 8px transparent; }
+  }
+  .hero h1 {
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 800; line-height: 1.1;
+    margin-bottom: 1.5rem;
+  }
+  .hero h1 .red { color: var(--red); }
+  .hero p {
+    font-size: 1.1rem; color: var(--gray);
+    max-width: 600px; line-height: 1.7;
+  }
+
+  /* Calculator */
+  .calc-section {
+    padding: 6rem 3rem;
+    background: var(--bg-mid);
+    border-top: 1px solid rgba(255,59,59,0.1);
+    border-bottom: 1px solid rgba(255,59,59,0.1);
+  }
+  .calc-inner {
+    max-width: 900px; margin: 0 auto; text-align: center;
+  }
+  .calc-inner h2 {
+    font-size: 2rem; font-weight: 700;
+    margin-bottom: 0.8rem;
+  }
+  .calc-inner > p {
+    color: var(--gray); margin-bottom: 3rem;
+  }
+  .calc-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem; margin-bottom: 3rem;
+  }
+  .calc-card {
+    padding: 2rem; border-radius: 12px;
+    background: var(--bg-dark);
+    border: 1px solid rgba(255,255,255,0.05);
+    text-align: center;
+  }
+  .calc-card .amount {
+    font-size: 2.2rem; font-weight: 800;
+    color: var(--red); display: block;
+    margin-bottom: 0.5rem;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .calc-card .desc {
+    font-size: 0.8rem; color: var(--gray);
+    line-height: 1.5;
+  }
+
+  /* Compounding */
+  .compound-visual {
+    padding: 2rem; border-radius: 12px;
+    background: var(--bg-dark);
+    border: 1px solid rgba(255,59,59,0.15);
+  }
+  .compound-visual h3 {
+    font-size: 0.8rem; text-transform: uppercase;
+    letter-spacing: 0.15em; color: var(--red);
+    margin-bottom: 1.5rem;
+  }
+  .compound-bars {
+    display: flex; flex-direction: column; gap: 1rem;
+  }
+  .c-bar-row {
+    display: grid; grid-template-columns: 80px 1fr 80px;
+    gap: 1rem; align-items: center;
+  }
+  .c-bar-label {
+    font-size: 0.75rem; color: var(--gray);
+    text-align: right;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .c-bar-track {
+    height: 28px; background: rgba(255,255,255,0.03);
+    border-radius: 4px; overflow: hidden;
+    position: relative;
+  }
+  .c-bar-fill {
+    height: 100%; border-radius: 4px;
+    background: linear-gradient(90deg, var(--red-dim), var(--red));
+    transition: width 1s ease;
+  }
+  .c-bar-val {
+    font-size: 0.75rem; color: var(--red);
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+  }
+
+  /* Transition section */
+  .transition-section {
+    padding: 8rem 3rem;
+    position: relative;
+    text-align: center;
+    overflow: hidden;
+  }
+  .transition-section::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(180deg,
+      var(--bg-dark) 0%,
+      rgba(255,59,59,0.03) 20%,
+      rgba(0,230,118,0.03) 80%,
+      var(--bg-dark) 100%
+    );
+    pointer-events: none;
+  }
+  .transition-section h2 {
+    font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+    font-weight: 700; margin-bottom: 1.5rem;
+    position: relative;
+  }
+  .transition-section p {
+    color: var(--gray); max-width: 600px;
+    margin: 0 auto; font-size: 1rem;
+    line-height: 1.8; position: relative;
+  }
+
+  /* Solution */
+  .solution-section {
+    padding: 6rem 3rem;
+    background: linear-gradient(180deg, var(--bg-dark), #0A1A0A);
+    border-top: 1px solid rgba(0,230,118,0.1);
+  }
+  .solution-inner {
+    max-width: 1000px; margin: 0 auto;
+  }
+  .solution-inner h2 {
+    font-size: 2.2rem; font-weight: 700;
+    text-align: center; margin-bottom: 0.8rem;
+  }
+  .solution-inner h2 span { color: var(--green); }
+  .solution-inner > p {
+    text-align: center; color: var(--gray);
+    margin-bottom: 4rem; max-width: 600px;
+    margin-left: auto; margin-right: auto;
+  }
+  .solution-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+  .sol-card {
+    padding: 2.5rem; border-radius: 12px;
+    background: rgba(0, 230, 118, 0.03);
+    border: 1px solid rgba(0, 230, 118, 0.1);
+    transition: all 0.3s;
+  }
+  .sol-card:hover {
+    border-color: rgba(0, 230, 118, 0.3);
+    transform: translateY(-4px);
+  }
+  .sol-card h3 {
+    font-size: 1.1rem; font-weight: 600;
+    margin-bottom: 0.6rem; color: var(--green);
+  }
+  .sol-card p {
+    font-size: 0.9rem; color: var(--gray);
+    line-height: 1.7;
+  }
+
+  /* Proof */
+  .proof-section {
+    padding: 6rem 3rem;
+    background: #0A1A0A;
+  }
+  .proof-grid {
+    max-width: 1000px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+  }
+  .proof-item {
+    text-align: center; padding: 2rem;
+    border: 1px solid rgba(0,230,118,0.08);
+    border-radius: 10px;
+  }
+  .proof-item .val {
+    font-size: 2.5rem; font-weight: 800;
+    color: var(--green); display: block;
+    margin-bottom: 0.3rem;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .proof-item .lbl {
+    font-size: 0.75rem; color: var(--gray);
+  }
+
+  /* CTA */
+  .cta-section {
+    padding: 8rem 3rem; text-align: center;
+    background: linear-gradient(180deg, #0A1A0A 0%, var(--bg-dark) 100%);
+    position: relative;
+  }
+  .cta-section::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at center, var(--green-dim) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .cta-section h2 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 700; margin-bottom: 1rem;
+    position: relative;
+  }
+  .cta-section p {
+    color: var(--gray); margin-bottom: 2.5rem;
+    position: relative; font-size: 1rem;
+  }
+  .cta-green {
+    display: inline-block; padding: 1rem 3rem;
+    background: var(--green); color: var(--bg-dark);
+    font-weight: 700; font-size: 1rem;
+    border-radius: 8px; text-decoration: none;
+    transition: all 0.3s; position: relative;
+  }
+  .cta-green:hover { box-shadow: 0 0 30px var(--green-glow); transform: translateY(-2px); }
+
+  footer {
+    padding: 3rem; text-align: center;
+    font-size: 0.7rem; color: var(--gray-dark);
+  }
+
+  .reveal {
+    opacity: 0; transform: translateY(30px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 768px) {
+    .calc-grid { grid-template-columns: 1fr; }
+    .solution-grid { grid-template-columns: 1fr; }
+    .proof-grid { grid-template-columns: repeat(2, 1fr); }
+    .c-bar-row { grid-template-columns: 60px 1fr 60px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="nav-logo">GO2</a>
+  <div class="nav-links">
+    <a href="#cost">The Cost</a>
+    <a href="#fix">The Fix</a>
+    <a href="#cta" class="nav-cta-btn">Stop the Bleeding</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-warning">
+    <span class="warning-dot"></span>
+    CRITICAL BUSINESS RISK
+  </div>
+  <h1>What AI failure<br><span class="red">actually costs</span></h1>
+  <p>You're spending millions on AI tools. MIT says 95% of those pilots will fail. Not because the AI is bad. Because you're missing the one thing that makes it work.</p>
+</section>
+
+<section class="calc-section" id="cost">
+  <div class="calc-inner">
+    <h2>The Math Nobody Wants to Do</h2>
+    <p>Every failed AI pilot has a real price tag. Here's what companies actually lose.</p>
+
+    <div class="calc-grid reveal">
+      <div class="calc-card">
+        <span class="amount">$2.4M</span>
+        <span class="desc">Average cost of a failed enterprise AI pilot</span>
+      </div>
+      <div class="calc-card">
+        <span class="amount">14 mo</span>
+        <span class="desc">Average time wasted before declaring failure</span>
+      </div>
+      <div class="calc-card">
+        <span class="amount">3.2x</span>
+        <span class="desc">Cost multiplier when you restart from scratch</span>
+      </div>
+    </div>
+
+    <div class="compound-visual reveal">
+      <h3>The Compounding Cost of No Work Data</h3>
+      <div class="compound-bars">
+        <div class="c-bar-row">
+          <span class="c-bar-label">Month 1</span>
+          <div class="c-bar-track"><div class="c-bar-fill" style="width:15%;"></div></div>
+          <span class="c-bar-val">$50K</span>
+        </div>
+        <div class="c-bar-row">
+          <span class="c-bar-label">Month 3</span>
+          <div class="c-bar-track"><div class="c-bar-fill" style="width:30%;"></div></div>
+          <span class="c-bar-val">$180K</span>
+        </div>
+        <div class="c-bar-row">
+          <span class="c-bar-label">Month 6</span>
+          <div class="c-bar-track"><div class="c-bar-fill" style="width:50%;"></div></div>
+          <span class="c-bar-val">$520K</span>
+        </div>
+        <div class="c-bar-row">
+          <span class="c-bar-label">Month 12</span>
+          <div class="c-bar-track"><div class="c-bar-fill" style="width:75%;"></div></div>
+          <span class="c-bar-val">$1.4M</span>
+        </div>
+        <div class="c-bar-row">
+          <span class="c-bar-label">Month 18</span>
+          <div class="c-bar-track"><div class="c-bar-fill" style="width:100%;"></div></div>
+          <span class="c-bar-val">$2.4M</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="transition-section reveal">
+  <h2>The root cause isn't the AI.<br>It's the missing data.</h2>
+  <p>AI tools are powerful. But without data about how your company actually works -- the processes, the workarounds, the tribal knowledge -- they're just expensive toys. BCG found only 5% of companies create real value from AI. The other 95% are missing the same thing.</p>
+</section>
+
+<section class="solution-section" id="fix">
+  <div class="solution-inner">
+    <h2 class="reveal">Go2 is <span>the fix</span></h2>
+    <p class="reveal">The missing infrastructure that makes AI investments actually pay off.</p>
+
+    <div class="solution-grid">
+      <div class="sol-card reveal">
+        <h3>Capture Work Data</h3>
+        <p>Cowork.ai runs on every desktop, silently capturing how work actually happens. Real workflows. Real processes. Real institutional knowledge. No surveys, no guesswork.</p>
+      </div>
+      <div class="sol-card reveal">
+        <h3>Real-Time Coaching</h3>
+        <p>Workers get contextual guidance in the moment. Not surveillance. Coaching. 89% satisfaction because it makes them better at their jobs, not watched.</p>
+      </div>
+      <div class="sol-card reveal">
+        <h3>Find Automation Targets</h3>
+        <p>With real data, you know exactly what to automate. 40+ hours per week of automatable work, identified precisely. No more expensive guessing games.</p>
+      </div>
+      <div class="sol-card reveal">
+        <h3>Train AI That Works</h3>
+        <p>Your work data becomes training data. AI agents learn how YOUR company operates. Open-source tools to build, train, and deploy. Your data, your models.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="proof-section">
+  <div class="proof-grid reveal">
+    <div class="proof-item">
+      <span class="val">2M+</span>
+      <span class="lbl">Worker profiles</span>
+    </div>
+    <div class="proof-item">
+      <span class="val">$60M+</span>
+      <span class="lbl">Revenue</span>
+    </div>
+    <div class="proof-item">
+      <span class="val">89%</span>
+      <span class="lbl">Satisfaction</span>
+    </div>
+    <div class="proof-item">
+      <span class="val">40+</span>
+      <span class="lbl">Hrs/wk automatable</span>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section" id="cta">
+  <h2 class="reveal">Stop burning money on<br>AI that can't see your work</h2>
+  <p class="reveal">The cost of waiting compounds every month. The fix starts today.</p>
+  <a href="#" class="cta-green reveal">Get Go2 Now</a>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2 &middot; The missing infrastructure for AI</p>
+</footer>
+
+<script>
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
