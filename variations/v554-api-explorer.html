@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Explorer | Go2 Developer Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: #0a0a0f; color: #e0e0e0; min-height: 100vh; }
+.top-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: #0f0f1a; border-bottom: 1px solid #1a1a2e; position: sticky; top: 0; z-index: 100; }
+.top-bar-left { display: flex; align-items: center; gap: 16px; }
+.logo { font-weight: 800; font-size: 1.2rem; color: #fff; }
+.logo span { color: #6366f1; }
+.badge { font-size: 0.65rem; padding: 2px 8px; background: rgba(99,102,241,0.15); color: #818cf8; border-radius: 4px; font-weight: 600; }
+.api-key-input { background: #1a1a2e; border: 1px solid #333; border-radius: 6px; padding: 6px 12px; color: #888; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; width: 260px; }
+.layout { display: flex; min-height: calc(100vh - 49px); }
+.sidebar { width: 280px; background: #0f0f1a; border-right: 1px solid #1a1a2e; padding: 16px 0; overflow-y: auto; flex-shrink: 0; }
+.sidebar-section { padding: 8px 16px; }
+.sidebar-section-title { font-size: 0.7rem; color: #555; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; font-weight: 600; }
+.endpoint-item { display: flex; align-items: center; gap: 8px; padding: 8px 16px; cursor: pointer; transition: background 0.15s; border-radius: 6px; margin: 2px 8px; }
+.endpoint-item:hover { background: rgba(255,255,255,0.03); }
+.endpoint-item.active { background: rgba(99,102,241,0.1); }
+.method-badge { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; font-weight: 600; padding: 2px 6px; border-radius: 4px; min-width: 38px; text-align: center; }
+.method-badge.get { background: rgba(34,197,94,0.15); color: #4ade80; }
+.method-badge.post { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.method-badge.put { background: rgba(245,158,11,0.15); color: #fbbf24; }
+.method-badge.delete { background: rgba(239,68,68,0.15); color: #f87171; }
+.endpoint-path { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #aaa; }
+.main-content { flex: 1; padding: 32px; overflow-y: auto; }
+.endpoint-header { margin-bottom: 24px; }
+.endpoint-header h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 8px; }
+.endpoint-header .path-display { font-family: 'JetBrains Mono', monospace; font-size: 1rem; color: #888; background: #1a1a2e; padding: 8px 16px; border-radius: 8px; display: inline-flex; align-items: center; gap: 10px; }
+.endpoint-header p { color: #888; margin-top: 12px; line-height: 1.6; }
+.section-title { font-size: 0.8rem; color: #555; text-transform: uppercase; letter-spacing: 1.5px; margin: 24px 0 12px; font-weight: 600; }
+.params-table { width: 100%; border-collapse: collapse; }
+.params-table th { text-align: left; padding: 8px 12px; font-size: 0.75rem; color: #555; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #1a1a2e; }
+.params-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 0.85rem; }
+.param-name { font-family: 'JetBrains Mono', monospace; color: #a855f7; }
+.param-type { font-family: 'JetBrains Mono', monospace; color: #555; font-size: 0.8rem; }
+.param-required { color: #ef4444; font-size: 0.7rem; font-weight: 600; }
+.code-block { background: #0f0f1a; border: 1px solid #1a1a2e; border-radius: 10px; overflow: hidden; margin: 12px 0; }
+.code-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; background: rgba(255,255,255,0.02); border-bottom: 1px solid #1a1a2e; }
+.code-header span { font-size: 0.75rem; color: #555; font-weight: 500; }
+.copy-btn { background: transparent; border: 1px solid #333; color: #888; font-size: 0.7rem; padding: 3px 10px; border-radius: 4px; cursor: pointer; font-family: 'Inter', sans-serif; }
+.copy-btn:hover { border-color: #6366f1; color: #fff; }
+.code-body { padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.7; overflow-x: auto; white-space: pre; }
+.code-body .key { color: #818cf8; }
+.code-body .string { color: #4ade80; }
+.code-body .number { color: #fbbf24; }
+.code-body .comment { color: #555; }
+.code-body .method { color: #f472b6; }
+.try-it-panel { background: linear-gradient(135deg, rgba(99,102,241,0.05), rgba(168,85,247,0.05)); border: 1px solid rgba(99,102,241,0.2); border-radius: 12px; padding: 24px; margin: 24px 0; }
+.try-it-panel h3 { font-size: 1rem; margin-bottom: 16px; }
+.try-input { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
+.try-input label { font-size: 0.8rem; color: #888; min-width: 100px; }
+.try-input input { flex: 1; background: #0f0f1a; border: 1px solid #333; border-radius: 6px; padding: 8px 12px; color: #e0e0e0; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.try-btn { padding: 10px 24px; background: #6366f1; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.85rem; transition: all 0.2s; }
+.try-btn:hover { background: #4f46e5; }
+.response-panel { margin-top: 16px; display: none; }
+.response-panel.show { display: block; }
+.status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+.status-badge.success { background: rgba(34,197,94,0.15); color: #4ade80; }
+.status-badge.error { background: rgba(239,68,68,0.15); color: #f87171; }
+.cta-bar { text-align: center; padding: 60px 20px; border-top: 1px solid #1a1a2e; margin-top: 40px; }
+.cta-bar h2 { font-size: 1.5rem; margin-bottom: 12px; }
+.cta-bar p { color: #888; margin-bottom: 20px; }
+.cta-btn { display: inline-block; padding: 12px 32px; background: #6366f1; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; }
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .layout { flex-direction: column; }
+  .main-content { padding: 20px; }
+  .api-key-input { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <div class="top-bar-left">
+    <div class="logo">Go2 <span>API</span></div>
+    <span class="badge">v2.1</span>
+  </div>
+  <input class="api-key-input" type="text" value="go2_sk_test_4f8b...d3e1" readonly>
+</div>
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Team & Users</div>
+    </div>
+    <div class="endpoint-item active" onclick="showEndpoint(0)">
+      <span class="method-badge get">GET</span>
+      <span class="endpoint-path">/v2/team/members</span>
+    </div>
+    <div class="endpoint-item" onclick="showEndpoint(1)">
+      <span class="method-badge post">POST</span>
+      <span class="endpoint-path">/v2/team/invite</span>
+    </div>
+    <div class="endpoint-item" onclick="showEndpoint(2)">
+      <span class="method-badge get">GET</span>
+      <span class="endpoint-path">/v2/users/{id}</span>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Productivity</div>
+    </div>
+    <div class="endpoint-item" onclick="showEndpoint(3)">
+      <span class="method-badge get">GET</span>
+      <span class="endpoint-path">/v2/productivity/scores</span>
+    </div>
+    <div class="endpoint-item" onclick="showEndpoint(4)">
+      <span class="method-badge get">GET</span>
+      <span class="endpoint-path">/v2/productivity/trends</span>
+    </div>
+    <div class="endpoint-item" onclick="showEndpoint(5)">
+      <span class="method-badge post">POST</span>
+      <span class="endpoint-path">/v2/insights/generate</span>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Reports</div>
+    </div>
+    <div class="endpoint-item" onclick="showEndpoint(6)">
+      <span class="method-badge get">GET</span>
+      <span class="endpoint-path">/v2/reports</span>
+    </div>
+    <div class="endpoint-item" onclick="showEndpoint(7)">
+      <span class="method-badge post">POST</span>
+      <span class="endpoint-path">/v2/reports/create</span>
+    </div>
+    <div class="endpoint-item" onclick="showEndpoint(8)">
+      <span class="method-badge delete">DEL</span>
+      <span class="endpoint-path">/v2/reports/{id}</span>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Integrations</div>
+    </div>
+    <div class="endpoint-item" onclick="showEndpoint(9)">
+      <span class="method-badge get">GET</span>
+      <span class="endpoint-path">/v2/integrations</span>
+    </div>
+    <div class="endpoint-item" onclick="showEndpoint(10)">
+      <span class="method-badge put">PUT</span>
+      <span class="endpoint-path">/v2/integrations/{id}</span>
+    </div>
+  </div>
+  <div class="main-content" id="mainContent"></div>
+</div>
+
+<script>
+const endpoints = [
+  {
+    title: 'List Team Members',
+    method: 'GET', methodClass: 'get',
+    path: '/v2/team/members',
+    desc: 'Returns a paginated list of all team members with their current productivity scores, department, and status.',
+    params: [
+      { name: 'page', type: 'integer', required: false, desc: 'Page number for pagination (default: 1)' },
+      { name: 'per_page', type: 'integer', required: false, desc: 'Items per page, max 100 (default: 25)' },
+      { name: 'department', type: 'string', required: false, desc: 'Filter by department slug' },
+      { name: 'status', type: 'string', required: false, desc: 'Filter: active, inactive, onboarding' },
+    ],
+    request: `<span class="method">GET</span> https://api.go2.io/v2/team/members?page=1&per_page=10
+<span class="comment">Authorization: Bearer go2_sk_test_4f8b...d3e1</span>`,
+    response: `{
+  <span class="key">"data"</span>: [
+    {
+      <span class="key">"id"</span>: <span class="string">"usr_8f2a1b3c"</span>,
+      <span class="key">"name"</span>: <span class="string">"Alex Chen"</span>,
+      <span class="key">"email"</span>: <span class="string">"alex@company.com"</span>,
+      <span class="key">"department"</span>: <span class="string">"engineering"</span>,
+      <span class="key">"productivity_score"</span>: <span class="number">87</span>,
+      <span class="key">"status"</span>: <span class="string">"active"</span>,
+      <span class="key">"joined_at"</span>: <span class="string">"2025-11-15T08:00:00Z"</span>
+    }
+  ],
+  <span class="key">"meta"</span>: {
+    <span class="key">"total"</span>: <span class="number">47</span>,
+    <span class="key">"page"</span>: <span class="number">1</span>,
+    <span class="key">"per_page"</span>: <span class="number">10</span>
+  }
+}`,
+    tryFields: [
+      { label: 'Page', key: 'page', value: '1' },
+      { label: 'Per Page', key: 'per_page', value: '10' },
+    ],
+    tryResponse: { status: 200, body: '{\n  "data": [\n    {\n      "id": "usr_8f2a1b3c",\n      "name": "Alex Chen",\n      "email": "alex@company.com",\n      "department": "engineering",\n      "productivity_score": 87,\n      "status": "active"\n    },\n    {\n      "id": "usr_9d4e5f6a",\n      "name": "Jordan Lee",\n      "email": "jordan@company.com",\n      "department": "design",\n      "productivity_score": 92,\n      "status": "active"\n    }\n  ],\n  "meta": { "total": 47, "page": 1, "per_page": 10 }\n}' }
+  },
+  {
+    title: 'Invite Team Member',
+    method: 'POST', methodClass: 'post',
+    path: '/v2/team/invite',
+    desc: 'Send an invitation to a new team member. They will receive an onboarding email with setup instructions.',
+    params: [
+      { name: 'email', type: 'string', required: true, desc: 'Email address of the invitee' },
+      { name: 'role', type: 'string', required: true, desc: 'Role: admin, manager, member' },
+      { name: 'department', type: 'string', required: false, desc: 'Department slug to assign' },
+    ],
+    request: `<span class="method">POST</span> https://api.go2.io/v2/team/invite
+<span class="comment">Authorization: Bearer go2_sk_test_4f8b...d3e1</span>
+<span class="comment">Content-Type: application/json</span>
+
+{
+  <span class="key">"email"</span>: <span class="string">"new.hire@company.com"</span>,
+  <span class="key">"role"</span>: <span class="string">"member"</span>,
+  <span class="key">"department"</span>: <span class="string">"engineering"</span>
+}`,
+    response: `{
+  <span class="key">"id"</span>: <span class="string">"inv_7c3d2e1f"</span>,
+  <span class="key">"email"</span>: <span class="string">"new.hire@company.com"</span>,
+  <span class="key">"status"</span>: <span class="string">"pending"</span>,
+  <span class="key">"expires_at"</span>: <span class="string">"2026-04-15T00:00:00Z"</span>
+}`,
+    tryFields: [
+      { label: 'Email', key: 'email', value: 'new.hire@company.com' },
+      { label: 'Role', key: 'role', value: 'member' },
+    ],
+    tryResponse: { status: 201, body: '{\n  "id": "inv_7c3d2e1f",\n  "email": "new.hire@company.com",\n  "status": "pending",\n  "expires_at": "2026-04-15T00:00:00Z"\n}' }
+  },
+  {
+    title: 'Get User Details',
+    method: 'GET', methodClass: 'get',
+    path: '/v2/users/{id}',
+    desc: 'Retrieve detailed profile and productivity data for a specific user.',
+    params: [{ name: 'id', type: 'string', required: true, desc: 'User ID (usr_xxxxx)' }],
+    request: `<span class="method">GET</span> https://api.go2.io/v2/users/usr_8f2a1b3c`,
+    response: `{
+  <span class="key">"id"</span>: <span class="string">"usr_8f2a1b3c"</span>,
+  <span class="key">"name"</span>: <span class="string">"Alex Chen"</span>,
+  <span class="key">"productivity_score"</span>: <span class="number">87</span>,
+  <span class="key">"focus_hours_weekly"</span>: <span class="number">22.5</span>,
+  <span class="key">"meeting_hours_weekly"</span>: <span class="number">8.3</span>,
+  <span class="key">"top_suggestion"</span>: <span class="string">"Consolidate Tuesday meetings"</span>
+}`,
+    tryFields: [{ label: 'User ID', key: 'id', value: 'usr_8f2a1b3c' }],
+    tryResponse: { status: 200, body: '{\n  "id": "usr_8f2a1b3c",\n  "name": "Alex Chen",\n  "productivity_score": 87,\n  "focus_hours_weekly": 22.5,\n  "meeting_hours_weekly": 8.3\n}' }
+  },
+  {
+    title: 'Get Productivity Scores',
+    method: 'GET', methodClass: 'get',
+    path: '/v2/productivity/scores',
+    desc: 'Returns aggregated productivity scores for your team, broken down by department and time period.',
+    params: [
+      { name: 'period', type: 'string', required: false, desc: 'Time period: day, week, month, quarter' },
+      { name: 'department', type: 'string', required: false, desc: 'Filter by department' },
+    ],
+    request: `<span class="method">GET</span> https://api.go2.io/v2/productivity/scores?period=week`,
+    response: `{
+  <span class="key">"overall_score"</span>: <span class="number">78</span>,
+  <span class="key">"trend"</span>: <span class="string">"+4.2%"</span>,
+  <span class="key">"departments"</span>: {
+    <span class="key">"engineering"</span>: <span class="number">85</span>,
+    <span class="key">"design"</span>: <span class="number">79</span>,
+    <span class="key">"marketing"</span>: <span class="number">72</span>,
+    <span class="key">"sales"</span>: <span class="number">68</span>
+  }
+}`,
+    tryFields: [{ label: 'Period', key: 'period', value: 'week' }],
+    tryResponse: { status: 200, body: '{\n  "overall_score": 78,\n  "trend": "+4.2%",\n  "departments": {\n    "engineering": 85,\n    "design": 79,\n    "marketing": 72,\n    "sales": 68\n  }\n}' }
+  },
+  {
+    title: 'Get Productivity Trends',
+    method: 'GET', methodClass: 'get',
+    path: '/v2/productivity/trends',
+    desc: 'Returns time-series productivity data for charting and analysis.',
+    params: [
+      { name: 'start_date', type: 'string', required: true, desc: 'ISO 8601 start date' },
+      { name: 'end_date', type: 'string', required: true, desc: 'ISO 8601 end date' },
+      { name: 'granularity', type: 'string', required: false, desc: 'day, week, or month' },
+    ],
+    request: `<span class="method">GET</span> https://api.go2.io/v2/productivity/trends?start_date=2026-01-01&end_date=2026-03-17`,
+    response: `{
+  <span class="key">"data_points"</span>: [
+    { <span class="key">"date"</span>: <span class="string">"2026-01-06"</span>, <span class="key">"score"</span>: <span class="number">62</span> },
+    { <span class="key">"date"</span>: <span class="string">"2026-01-13"</span>, <span class="key">"score"</span>: <span class="number">68</span> },
+    { <span class="key">"date"</span>: <span class="string">"2026-01-20"</span>, <span class="key">"score"</span>: <span class="number">71</span> }
+  ]
+}`,
+    tryFields: [
+      { label: 'Start Date', key: 'start_date', value: '2026-01-01' },
+      { label: 'End Date', key: 'end_date', value: '2026-03-17' },
+    ],
+    tryResponse: { status: 200, body: '{\n  "data_points": [\n    { "date": "2026-01-06", "score": 62 },\n    { "date": "2026-01-13", "score": 68 },\n    { "date": "2026-01-20", "score": 71 },\n    { "date": "2026-02-03", "score": 74 },\n    { "date": "2026-02-17", "score": 78 },\n    { "date": "2026-03-03", "score": 82 }\n  ]\n}' }
+  }
+];
+
+// Fill remaining endpoints with stubs
+for (let i = endpoints.length; i <= 10; i++) {
+  endpoints.push({ ...endpoints[0], title: 'Endpoint ' + i, path: '/v2/stub/' + i });
+}
+
+function showEndpoint(idx) {
+  const ep = endpoints[idx];
+  if (!ep) return;
+  document.querySelectorAll('.endpoint-item').forEach((el, i) => el.classList.toggle('active', i === idx));
+  const paramsHTML = ep.params ? ep.params.map(p => `<tr><td><span class="param-name">${p.name}</span></td><td><span class="param-type">${p.type}</span></td><td>${p.required ? '<span class="param-required">required</span>' : 'optional'}</td><td style="color:#888">${p.desc}</td></tr>`).join('') : '';
+  const tryFieldsHTML = ep.tryFields ? ep.tryFields.map(f => `<div class="try-input"><label>${f.label}</label><input type="text" value="${f.value}" id="try_${f.key}"></div>`).join('') : '';
+
+  document.getElementById('mainContent').innerHTML = `
+    <div class="endpoint-header">
+      <h1>${ep.title}</h1>
+      <div class="path-display"><span class="method-badge ${ep.methodClass}">${ep.method}</span> ${ep.path}</div>
+      <p>${ep.desc}</p>
+    </div>
+    ${ep.params && ep.params.length ? `<div class="section-title">Parameters</div>
+    <table class="params-table">
+      <tr><th>Name</th><th>Type</th><th></th><th>Description</th></tr>
+      ${paramsHTML}
+    </table>` : ''}
+    <div class="section-title">Request</div>
+    <div class="code-block"><div class="code-header"><span>HTTP</span><button class="copy-btn" onclick="this.textContent='Copied!'">Copy</button></div><div class="code-body">${ep.request}</div></div>
+    <div class="section-title">Response</div>
+    <div class="code-block"><div class="code-header"><span>JSON <span class="status-badge success">200 OK</span></span><button class="copy-btn" onclick="this.textContent='Copied!'">Copy</button></div><div class="code-body">${ep.response}</div></div>
+    ${ep.tryFields ? `
+    <div class="try-it-panel">
+      <h3>Try It Out</h3>
+      ${tryFieldsHTML}
+      <button class="try-btn" onclick="tryEndpoint(${idx})">Send Request</button>
+      <div class="response-panel" id="tryResponse">
+        <div style="margin-top:12px;">
+          <span class="status-badge success" id="tryStatus">200 OK</span>
+          <span style="font-size:0.75rem;color:#555;margin-left:8px;" id="tryTime"></span>
+        </div>
+        <div class="code-block" style="margin-top:8px;"><div class="code-header"><span>Response</span></div><div class="code-body" id="tryBody"></div></div>
+      </div>
+    </div>` : ''}
+    <div class="cta-bar">
+      <h2>Ready to integrate?</h2>
+      <p>Get your API keys and start building with Go2 in minutes.</p>
+      <button class="cta-btn" style="padding:12px 32px;background:#6366f1;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:1rem;">Get API Keys</button>
+    </div>
+  `;
+}
+
+function tryEndpoint(idx) {
+  const ep = endpoints[idx];
+  const panel = document.getElementById('tryResponse');
+  panel.classList.remove('show');
+  // Simulate network delay
+  setTimeout(() => {
+    const time = Math.floor(Math.random() * 150) + 50;
+    document.getElementById('tryStatus').textContent = ep.tryResponse.status + (ep.tryResponse.status === 200 ? ' OK' : ep.tryResponse.status === 201 ? ' Created' : '');
+    document.getElementById('tryTime').textContent = time + 'ms';
+    document.getElementById('tryBody').textContent = ep.tryResponse.body;
+    panel.classList.add('show');
+  }, 300 + Math.random() * 500);
+}
+
+showEndpoint(0);
+</script>
+</body>
+</html>

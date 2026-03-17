@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 Technical Architecture — System Design & Security | Go2.io</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; color: #e0e0e0; background: #0a0e17; line-height: 1.7; }
+.container { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+code, .mono { font-family: 'JetBrains Mono', monospace; }
+
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(10,14,23,0.95); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.06); padding: 14px 0; }
+nav .container { display: flex; justify-content: space-between; align-items: center; }
+.logo { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 600; color: #60a5fa; }
+.logo span { color: #6b7280; }
+.nav-links { display: flex; align-items: center; gap: 24px; }
+.nav-links a { color: #6b7280; text-decoration: none; font-size: 13px; font-weight: 500; font-family: 'JetBrains Mono', monospace; }
+.nav-links a:hover { color: #60a5fa; }
+.nav-cta { background: #1e40af !important; color: #fff !important; padding: 8px 20px !important; border-radius: 6px !important; }
+
+.hero { padding: 130px 0 60px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.hero-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #60a5fa; margin-bottom: 12px; letter-spacing: 2px; text-transform: uppercase; }
+.hero h1 { font-size: 42px; font-weight: 800; line-height: 1.15; color: #fff; margin-bottom: 16px; }
+.hero p { font-size: 16px; color: #9ca3af; max-width: 700px; }
+.version-badge { display: inline-block; background: rgba(96,165,250,0.1); color: #60a5fa; padding: 4px 12px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; margin-top: 16px; border: 1px solid rgba(96,165,250,0.2); }
+
+.toc { padding: 40px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.toc h3 { font-size: 14px; font-weight: 600; color: #6b7280; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+.toc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.toc a { display: block; padding: 8px 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; color: #60a5fa; text-decoration: none; font-size: 13px; font-family: 'JetBrains Mono', monospace; transition: all 0.2s; }
+.toc a:hover { background: rgba(96,165,250,0.08); border-color: rgba(96,165,250,0.3); }
+
+.section { padding: 60px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.section-num { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #60a5fa; margin-bottom: 8px; }
+.section h2 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 16px; }
+.section p { color: #9ca3af; margin-bottom: 16px; }
+
+.arch-diagram { background: #0f1623; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 32px; margin: 24px 0; overflow-x: auto; }
+.arch-row { display: flex; gap: 16px; margin-bottom: 16px; align-items: stretch; justify-content: center; flex-wrap: wrap; }
+.arch-box { background: rgba(96,165,250,0.08); border: 1px solid rgba(96,165,250,0.2); border-radius: 8px; padding: 16px 20px; text-align: center; min-width: 140px; flex: 1; max-width: 200px; }
+.arch-box.green { background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.2); }
+.arch-box.purple { background: rgba(168,85,247,0.08); border-color: rgba(168,85,247,0.2); }
+.arch-box.orange { background: rgba(249,115,22,0.08); border-color: rgba(249,115,22,0.2); }
+.arch-box.red { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.2); }
+.arch-box h4 { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+.arch-box p { font-size: 11px; color: #6b7280; margin: 0; }
+.arch-arrow { text-align: center; color: #374151; font-size: 20px; margin: 8px 0; }
+.arch-label { text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #4b5563; margin-bottom: 12px; letter-spacing: 1px; text-transform: uppercase; }
+
+.code-block { background: #0f1623; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 20px; margin: 16px 0; overflow-x: auto; }
+.code-block pre { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #e0e0e0; line-height: 1.6; white-space: pre; }
+.code-block .comment { color: #4b5563; }
+.code-block .key { color: #60a5fa; }
+.code-block .string { color: #34d399; }
+.code-block .method { color: #f59e0b; }
+
+.spec-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+.spec-table th { text-align: left; padding: 10px 16px; background: rgba(255,255,255,0.03); color: #9ca3af; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.spec-table td { padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 13px; }
+.spec-table td:first-child { font-family: 'JetBrains Mono', monospace; color: #60a5fa; }
+.spec-table tr:hover { background: rgba(255,255,255,0.02); }
+
+.security-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 24px 0; }
+.sec-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 24px; }
+.sec-card h4 { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 8px; }
+.sec-card p { font-size: 13px; color: #6b7280; margin: 0; }
+.sec-card .badge { display: inline-block; background: rgba(34,197,94,0.1); color: #34d399; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px; }
+
+.cta-section { padding: 60px 0; text-align: center; }
+.cta-section h2 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 12px; }
+.cta-section p { color: #6b7280; margin-bottom: 24px; }
+.btn-primary { background: #1e40af; color: #fff; padding: 14px 32px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; display: inline-block; transition: all 0.3s; border: none; cursor: pointer; }
+.btn-primary:hover { background: #1d4ed8; }
+
+footer { padding: 32px 0; border-top: 1px solid rgba(255,255,255,0.06); text-align: center; color: #4b5563; font-size: 12px; font-family: 'JetBrains Mono', monospace; }
+
+@media (max-width: 768px) {
+  .hero h1 { font-size: 28px; }
+  .toc-grid { grid-template-columns: 1fr; }
+  .arch-row { flex-direction: column; align-items: center; }
+  .security-grid { grid-template-columns: 1fr; }
+  .nav-links { display: none; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <div class="logo">go2<span>.io/architecture</span></div>
+    <div class="nav-links">
+      <a href="#overview">Overview</a>
+      <a href="#data-flow">Data Flow</a>
+      <a href="#api">API</a>
+      <a href="#security">Security</a>
+      <a href="#" class="nav-cta">Talk to Engineering</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="container">
+    <div class="hero-label">Technical Architecture</div>
+    <h1>System Design for CTOs Who Read the Docs</h1>
+    <p>A comprehensive technical overview of Go2's architecture, data handling, API design, and security model. Written for the technical decision-maker who wants to understand what they're deploying before they deploy it.</p>
+    <div class="version-badge">v3.2.0 &bull; Last updated March 2026</div>
+  </div>
+</section>
+
+<section class="toc">
+  <div class="container">
+    <h3>Contents</h3>
+    <div class="toc-grid">
+      <a href="#overview">01. System Overview</a>
+      <a href="#data-flow">02. Data Flow</a>
+      <a href="#agent">03. Desktop Agent</a>
+      <a href="#api">04. API Architecture</a>
+      <a href="#security">05. Security Model</a>
+      <a href="#infra">06. Infrastructure</a>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="overview">
+  <div class="container">
+    <div class="section-num">01</div>
+    <h2>System Overview</h2>
+    <p>Go2 is a distributed system consisting of lightweight desktop agents, a cloud processing pipeline, and a web-based analytics platform. The architecture prioritizes privacy-by-design, minimal data collection, and zero-trust principles.</p>
+    <div class="arch-diagram">
+      <div class="arch-label">High-Level Architecture</div>
+      <div class="arch-row">
+        <div class="arch-box green"><h4>Desktop Agent</h4><p>macOS / Windows / Linux</p></div>
+      </div>
+      <div class="arch-arrow">&darr; TLS 1.3 &darr;</div>
+      <div class="arch-row">
+        <div class="arch-box"><h4>API Gateway</h4><p>Rate limiting, auth</p></div>
+        <div class="arch-box"><h4>Load Balancer</h4><p>Regional routing</p></div>
+      </div>
+      <div class="arch-arrow">&darr;</div>
+      <div class="arch-row">
+        <div class="arch-box purple"><h4>Event Processor</h4><p>Stream processing</p></div>
+        <div class="arch-box purple"><h4>AI Pipeline</h4><p>Classification & coaching</p></div>
+        <div class="arch-box purple"><h4>Analytics Engine</h4><p>Aggregation & insights</p></div>
+      </div>
+      <div class="arch-arrow">&darr;</div>
+      <div class="arch-row">
+        <div class="arch-box orange"><h4>PostgreSQL</h4><p>Structured data</p></div>
+        <div class="arch-box orange"><h4>ClickHouse</h4><p>Time-series analytics</p></div>
+        <div class="arch-box orange"><h4>Redis</h4><p>Cache & sessions</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="data-flow">
+  <div class="container">
+    <div class="section-num">02</div>
+    <h2>Data Flow & Collection</h2>
+    <p>Go2 collects application-level metadata only. We never capture screen content, keystrokes, file contents, or communication content. Here's exactly what flows through the system:</p>
+    <table class="spec-table">
+      <thead><tr><th>Data Point</th><th>Description</th><th>Retention</th></tr></thead>
+      <tbody>
+        <tr><td>app_name</td><td>Active application name (e.g., "Chrome", "Slack")</td><td>90 days raw, then aggregated</td></tr>
+        <tr><td>window_title</td><td>Window title (configurable: on/off/hash-only)</td><td>30 days, then deleted</td></tr>
+        <tr><td>url_domain</td><td>Domain only, never full URL (e.g., "docs.google.com")</td><td>90 days raw</td></tr>
+        <tr><td>activity_state</td><td>Active / Idle / Away (keyboard/mouse activity flag)</td><td>90 days raw</td></tr>
+        <tr><td>duration_ms</td><td>Time spent in each state</td><td>Aggregated indefinitely</td></tr>
+        <tr><td>project_tag</td><td>AI-inferred project/client association</td><td>90 days raw</td></tr>
+      </tbody>
+    </table>
+    <div class="code-block"><pre><span class="comment">// Example event payload (actual data transmitted)</span>
+{
+  <span class="key">"timestamp"</span>: <span class="string">"2026-03-17T14:23:41Z"</span>,
+  <span class="key">"agent_id"</span>: <span class="string">"ag_7f3k..."</span>,
+  <span class="key">"events"</span>: [
+    {
+      <span class="key">"app"</span>: <span class="string">"Google Chrome"</span>,
+      <span class="key">"domain"</span>: <span class="string">"docs.google.com"</span>,
+      <span class="key">"title_hash"</span>: <span class="string">"sha256:a1b2c3..."</span>,
+      <span class="key">"state"</span>: <span class="string">"active"</span>,
+      <span class="key">"duration_ms"</span>: <span class="string">142000</span>,
+      <span class="key">"category"</span>: <span class="string">"documentation"</span>
+    }
+  ]
+}</pre></div>
+  </div>
+</section>
+
+<section class="section" id="agent">
+  <div class="container">
+    <div class="section-num">03</div>
+    <h2>Desktop Agent Architecture</h2>
+    <p>The Go2 desktop agent is a lightweight process (~15MB RAM, &lt;0.5% CPU) that runs in the background. It uses OS-level APIs to observe application usage without requiring elevated privileges or kernel extensions.</p>
+    <table class="spec-table">
+      <thead><tr><th>Specification</th><th>Details</th></tr></thead>
+      <tbody>
+        <tr><td>Language</td><td>Rust (core) + platform-specific bindings</td></tr>
+        <tr><td>Memory</td><td>~15MB typical, 30MB peak</td></tr>
+        <tr><td>CPU</td><td>&lt;0.5% average</td></tr>
+        <tr><td>Network</td><td>~2KB/min (batched every 60s)</td></tr>
+        <tr><td>Offline support</td><td>Local queue, syncs when reconnected</td></tr>
+        <tr><td>Auto-update</td><td>Delta updates, zero-downtime, rollback support</td></tr>
+        <tr><td>Permissions</td><td>User-space only. No kernel extensions, no root.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="section" id="api">
+  <div class="container">
+    <div class="section-num">04</div>
+    <h2>API Architecture</h2>
+    <p>RESTful API with OpenAPI 3.0 spec. All endpoints require authentication via API key or OAuth 2.0 token. Rate limited per organization.</p>
+    <div class="code-block"><pre><span class="comment">// Authentication</span>
+<span class="method">GET</span> /api/v3/teams/{team_id}/analytics
+Authorization: Bearer {api_key}
+
+<span class="comment">// Rate Limits</span>
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 847
+X-RateLimit-Reset: 1710684000
+
+<span class="comment">// Webhooks</span>
+<span class="method">POST</span> /api/v3/webhooks
+{
+  <span class="key">"url"</span>: <span class="string">"https://your-app.com/go2-events"</span>,
+  <span class="key">"events"</span>: [<span class="string">"insight.generated"</span>, <span class="string">"alert.triggered"</span>],
+  <span class="key">"secret"</span>: <span class="string">"whsec_..."</span>
+}</pre></div>
+    <table class="spec-table">
+      <thead><tr><th>Endpoint</th><th>Method</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>/api/v3/analytics</td><td>GET</td><td>Aggregated productivity analytics</td></tr>
+        <tr><td>/api/v3/teams</td><td>GET/POST</td><td>Team management</td></tr>
+        <tr><td>/api/v3/users</td><td>GET/PUT</td><td>User management & settings</td></tr>
+        <tr><td>/api/v3/insights</td><td>GET</td><td>AI-generated coaching insights</td></tr>
+        <tr><td>/api/v3/webhooks</td><td>CRUD</td><td>Webhook management</td></tr>
+        <tr><td>/api/v3/exports</td><td>POST</td><td>Data export (CSV, JSON)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="section" id="security">
+  <div class="container">
+    <div class="section-num">05</div>
+    <h2>Security Model</h2>
+    <p>Zero-trust architecture with defense-in-depth. Every component assumes breach of adjacent components.</p>
+    <div class="security-grid">
+      <div class="sec-card">
+        <div class="badge">ENCRYPTION</div>
+        <h4>Data Encryption</h4>
+        <p>AES-256-GCM at rest, TLS 1.3 in transit. Per-tenant encryption keys managed via AWS KMS with automatic rotation every 90 days.</p>
+      </div>
+      <div class="sec-card">
+        <div class="badge">AUTH</div>
+        <h4>Authentication</h4>
+        <p>SAML 2.0, OIDC, OAuth 2.0. MFA required for admin access. SCIM 2.0 for automated user provisioning. Session tokens rotate every 4 hours.</p>
+      </div>
+      <div class="sec-card">
+        <div class="badge">NETWORK</div>
+        <h4>Network Security</h4>
+        <p>All services in private VPC. No public endpoints except API gateway. WAF with OWASP Top 10 rules. DDoS protection via CloudFront.</p>
+      </div>
+      <div class="sec-card">
+        <div class="badge">COMPLIANCE</div>
+        <h4>Certifications</h4>
+        <p>SOC 2 Type II, GDPR compliant, HIPAA eligible (BAA available), CCPA compliant. Annual pen testing by third-party firm.</p>
+      </div>
+      <div class="sec-card">
+        <div class="badge">ACCESS</div>
+        <h4>Access Control</h4>
+        <p>RBAC with four tiers: Org Admin, Team Manager, Member, Viewer. All admin actions logged with immutable audit trail.</p>
+      </div>
+      <div class="sec-card">
+        <div class="badge">DATA</div>
+        <h4>Data Residency</h4>
+        <p>US (us-east-1, us-west-2), EU (eu-west-1, eu-central-1), APAC (ap-southeast-1). Data never leaves selected region.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="infra">
+  <div class="container">
+    <div class="section-num">06</div>
+    <h2>Infrastructure & SLA</h2>
+    <table class="spec-table">
+      <thead><tr><th>Specification</th><th>Details</th></tr></thead>
+      <tbody>
+        <tr><td>Cloud Provider</td><td>AWS (primary), multi-region active-active</td></tr>
+        <tr><td>Uptime SLA</td><td>99.95% (Business), 99.99% (Enterprise)</td></tr>
+        <tr><td>API Latency</td><td>p50: 45ms, p95: 120ms, p99: 250ms</td></tr>
+        <tr><td>Event Ingestion</td><td>~50M events/day, sub-second processing</td></tr>
+        <tr><td>Backup</td><td>Continuous replication, point-in-time recovery (30 days)</td></tr>
+        <tr><td>Disaster Recovery</td><td>RTO: 4 hours, RPO: 1 hour (cross-region)</td></tr>
+        <tr><td>Monitoring</td><td>Datadog APM, PagerDuty escalation, 24/7 on-call</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="cta-section">
+  <div class="container">
+    <h2>Questions? Talk to Our Engineering Team.</h2>
+    <p>We'll walk through any aspect of our architecture in detail. Bring your security team.</p>
+    <a href="#" class="btn-primary">Schedule Technical Deep Dive</a>
+  </div>
+</section>
+
+<footer>
+  <div class="container">go2.io/architecture &bull; v3.2.0 &bull; &copy; 2026</div>
+</footer>
+</body>
+</html>

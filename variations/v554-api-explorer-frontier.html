@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go2 API Explorer | Developer Documentation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Brand Colors */
+            --primary: #4F46E5; /* Indigo */
+            --primary-hover: #4338CA;
+            --secondary: #0EA5E9; /* Sky */
+            
+            /* HTTP Methods */
+            --get-color: #10B981;
+            --get-bg: #D1FAE5;
+            --post-color: #F59E0B;
+            --post-bg: #FEF3C7;
+            
+            /* UI Colors */
+            --bg-body: #F8FAFC;
+            --bg-surface: #FFFFFF;
+            --bg-code: #0F172A; /* Slate 900 */
+            
+            --text-main: #334155;
+            --text-muted: #64748B;
+            --text-light: #F8FAFC;
+            
+            --border: #E2E8F0;
+            --border-dark: #334155;
+            
+            /* Syntax Highlighting */
+            --syn-key: #7DD3FC;
+            --syn-string: #A7F3D0;
+            --syn-number: #FDBA74;
+            --syn-boolean: #F472B6;
+            --syn-null: #94A3B8;
+
+            /* Spacing & Layout */
+            --sidebar-width: 260px;
+            --header-height: 64px;
+            --radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Typography */
+        h1, h2, h3, h4 { color: #0F172A; font-weight: 600; }
+        h1 { font-size: 1.5rem; }
+        h2 { font-size: 1.25rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;}
+        p { margin-bottom: 1rem; color: var(--text-muted); }
+        a { color: var(--primary); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        code { font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; }
+
+        /* Layout */
+        header {
+            height: var(--header-height);
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            z-index: 10;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--primary);
+        }
+
+        .logo-icon {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 6px;
+            display: grid;
+            place-items: center;
+            color: white;
+            font-size: 12px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .api-key-input {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            width: 250px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .api-key-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            padding: 1.5rem 0;
+            flex-shrink: 0;
+        }
+
+        .nav-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .nav-group-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 0 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 1.5rem;
+            color: var(--text-main);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: var(--bg-body);
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        /* Content Area */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem 3rem;
+            display: flex;
+            gap: 2rem;
+            scroll-behavior: smooth;
+        }
+
+        .endpoint-docs {
+            flex: 1;
+            max-width: 800px;
+        }
+
+        .endpoint-explorer {
+            flex: 0 0 450px;
+            position: sticky;
+            top: 2rem;
+            height: fit-content;
+        }
+
+        /* Endpoint Styling */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-right: 0.5rem;
+        }
+        .badge.get { background: var(--get-bg); color: var(--get-color); }
+        .badge.post { background: var(--post-bg); color: var(--post-color); }
+
+        .endpoint-url {
+            display: flex;
+            align-items: center;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            margin-bottom: 2rem;
+            color: #0F172A;
+        }
+
+        .stats-banner {
+            background: linear-gradient(to right, rgba(79, 70, 229, 0.05), rgba(14, 165, 233, 0.05));
+            border: 1px solid rgba(79, 70, 229, 0.2);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 2rem;
+        }
+
+        .stat-item h4 { font-size: 1.5rem; color: var(--primary); margin-bottom: 0.25rem; }
+        .stat-item p { font-size: 0.875rem; margin: 0; }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+            font-size: 0.875rem;
+        }
+        th, td {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+        th { color: #0F172A; font-weight: 500; }
+        .param-name { font-family: 'JetBrains Mono', monospace; color: var(--primary); font-weight: 500;}
+        .param-type { color: var(--text-muted); font-size: 0.75rem;}
+
+        /* Explorer Console */
+        .console {
+            background: var(--bg-code);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .console-header {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.5rem 1rem;
+            display: flex;
+            gap: 1rem;
+            border-bottom: 1px solid var(--border-dark);
+        }
+
+        .console-tab {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            cursor: pointer;
+            padding: 0.25rem 0;
+            border-bottom: 2px solid transparent;
+        }
+        .console-tab.active {
+            color: var(--text-light);
+            border-bottom-color: var(--primary);
+        }
+
+        .console-body {
+            padding: 1rem;
+            color: var(--text-light);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8125rem;
+            overflow-x: auto;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .console-actions {
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid var(--border-dark);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover { background: var(--primary-hover); }
+        .btn:disabled { background: var(--text-muted); cursor: not-allowed; }
+
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            display: none;
+        }
+        .status-badge.success { background: rgba(16, 185, 129, 0.2); color: #34D399; display: inline-block; }
+
+        /* Loader */
+        .loader {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            display: none;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Syntax Highlighting Classes */
+        .json-key { color: var(--syn-key); }
+        .json-string { color: var(--syn-string); }
+        .json-number { color: var(--syn-number); }
+        .json-boolean { color: var(--syn-boolean); }
+        .json-null { color: var(--syn-null); }
+
+        /* Section visibility */
+        .doc-section { display: none; }
+        .doc-section.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Mobile Responsive */
+        .mobile-menu-btn { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-main); }
+        
+        @media (max-width: 1024px) {
+            .content { flex-direction: column; padding: 1.5rem; }
+            .endpoint-explorer { flex: none; position: static; width: 100%; }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-btn { display: block; }
+            .sidebar {
+                position: absolute;
+                left: -100%;
+                top: var(--header-height);
+                height: calc(100vh - var(--header-height));
+                z-index: 20;
+                transition: left 0.3s ease;
+                box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+            }
+            .sidebar.open { left: 0; }
+            .header-actions .api-key-input { display: none; }
+            .stats-banner { flex-direction: column; gap: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+            <div class="logo-icon">G2</div>
+            Go2 API
+        </div>
+        <div class="header-actions">
+            <input type="password" class="api-key-input" placeholder="Enter API Key (sk_test_...)" id="globalApiKey">
+            <a href="#" style="font-size: 0.875rem; font-weight: 500;">Back to Dashboard</a>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="nav-group">
+                <div class="nav-group-title">Introduction</div>
+                <div class="nav-item active" onclick="loadSection('intro')">Overview & Auth</div>
+            </div>
+
+            <div class="nav-group">
+                <div class="nav-group-title">Insights & Coaching</div>
+                <div class="nav-item" onclick="loadSection('productivity')">Team Productivity</div>
+                <div class="nav-item" onclick="loadSection('coaching')">AI Coaching Suggestions</div>
+                <div class="nav-item" onclick="loadSection('work-patterns')">Work Patterns</div>
+            </div>
+
+            <div class="nav-group">
+                <div class="nav-group-title">Management</div>
+                <div class="nav-item" onclick="loadSection('users')">Users</div>
+                <div class="nav-item" onclick="loadSection('webhooks')">Webhooks</div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="content">
+            
+            <!-- Documentation Left Side -->
+            <div class="endpoint-docs">
+                
+                <!-- Section: Intro -->
+                <div id="section-intro" class="doc-section active">
+                    <h1>Go2 Developer API</h1>
+                    <p>Welcome to the Go2 API. Build integrations that help teams work smarter, not harder. Our platform focuses on actionable coaching and productivity insights, ensuring your software ecosystem aligns with healthy work habits.</p>
+                    
+                    <div class="stats-banner">
+                        <div class="stat-item">
+                            <h4>42%</h4>
+                            <p>Avg. Productivity Increase</p>
+                        </div>
+                        <div class="stat-item">
+                            <h4>15.2h</h4>
+                            <p>Saved / User / Week</p>
+                        </div>
+                        <div class="stat-item">
+                            <h4>892%</h4>
+                            <p>First Year ROI</p>
+                        </div>
+                    </div>
+
+                    <h2>Authentication</h2>
+                    <p>Go2 uses API keys to authenticate requests. You can view and manage your API keys in the Go2 Dashboard under Developer Settings.</p>
+                    <p>Your API keys carry many privileges, so be sure to keep them secure! Do not share your secret API keys in publicly accessible areas such as GitHub, client-side code, and so forth.</p>
+                    
+                    <div class="endpoint-url" style="margin-top: 1rem;">
+                        Authorization: Bearer YOUR_API_KEY
+                    </div>
+                </div>
+
+                <!-- Section: Team Productivity -->
+                <div id="section-productivity" class="doc-section">
+                    <h1>Get Team Productivity</h1>
+                    <p>Retrieves high-level productivity scores and time-saved metrics for a specific team. Go2's AI calculates this based on deep work blocks versus context switching.</p>
+                    
+                    <div class="endpoint-url">
+                        <span class="badge get">GET</span>
+                        https://api.go2.com/v1/teams/{team_id}/productivity
+                    </div>
+
+                    <h2>Path Parameters</h2>
+                    <table>
+                        <thead>
+                            <tr><th>Name</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="param-name">team_id</span> <span class="param-type">string</span></td>
+                                <td>The unique identifier of the team.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2>Query Parameters</h2>
+                    <table>
+                        <thead>
+                            <tr><th>Name</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="param-name">timeframe</span> <span class="param-type">string</span></td>
+                                <td>Optional. <code>7d</code>, <code>30d</code>, or <code>90d</code>. Default is <code>7d</code>.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Section: Coaching Suggestions -->
+                <div id="section-coaching" class="doc-section">
+                    <h1>Generate Coaching Suggestions</h1>
+                    <p>Returns personalized, AI-generated coaching recommendations for a user to help them optimize their workday, reduce burnout, and increase focus time.</p>
+                    
+                    <div class="endpoint-url">
+                        <span class="badge get">GET</span>
+                        https://api.go2.com/v1/users/{user_id}/coaching
+                    </div>
+
+                    <h2>Path Parameters</h2>
+                    <table>
+                        <thead>
+                            <tr><th>Name</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="param-name">user_id</span> <span class="param-type">string</span></td>
+                                <td>The unique identifier of the employee.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Section: Webhooks -->
+                <div id="section-webhooks" class="doc-section">
+                    <h1>Create Webhook Subscription</h1>
+                    <p>Subscribe to real-time events, such as when a new coaching insight is generated or a burnout risk threshold is crossed.</p>
+                    
+                    <div class="endpoint-url">
+                        <span class="badge post">POST</span>
+                        https://api.go2.com/v1/webhooks
+                    </div>
+
+                    <h2>Body Parameters</h2>
+                    <table>
+                        <thead>
+                            <tr><th>Name</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="param-name">url</span> <span class="param-type">string</span></td>
+                                <td>The HTTPS URL where events will be sent.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="param-name">events</span> <span class="param-type">array</span></td>
+                                <td>List of event types (e.g., <code>insight.created</code>, <code>burnout.alert</code>).</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+            <!-- Interactive API Explorer (Right Side) -->
+            <div class="endpoint-explorer">
+                <div class="console">
+                    <div class="console-header">
+                        <div class="console-tab active">Request</div>
+                    </div>
+                    
+                    <div class="console-body" id="requestBody">
+                        <!-- Populated by JS -->
+                    </div>
+
+                    <div class="console-actions">
+                        <button class="btn" id="sendBtn" onclick="executeRequest()">
+                            <span class="loader" id="btnLoader"></span>
+                            <span id="btnText">Send Request</span>
+                        </button>
+                        <span class="status-badge" id="responseStatus">200 OK</span>
+                    </div>
+
+                    <div class="console-header" style="border-top: 1px solid var(--border-dark);">
+                        <div class="console-tab active">Response</div>
+                    </div>
+                    
+                    <div class="console-body" id="responseBody" style="min-height: 150px;">
+                        <span style="color: var(--text-muted)">// Click 'Send Request' to view response</span>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // --- Data Definitions ---
+        const apiData = {
+            'intro': {
+                method: 'GET',
+                url: 'https://api.go2.com/v1/ping',
+                reqBody: null,
+                resBody: {
+                    "status": "active",
+                    "version": "1.4.2",
+                    "message": "Go2 API is operational."
+                }
+            },
+            'productivity': {
+                method: 'GET',
+                url: 'https://api.go2.com/v1/teams/tm_982xza/productivity?timeframe=7d',
+                reqBody: null,
+                resBody: {
+                    "team_id": "tm_982xza",
+                    "timeframe": "7d",
+                    "metrics": {
+                        "productivity_score": 84,
+                        "score_trend": "+12%",
+                        "hours_saved_total": 142.5,
+                        "focus_time_avg": "4h 15m",
+                        "context_switches_avg": 24
+                    },
+                    "status": "healthy"
+                }
+            },
+            'coaching': {
+                method: 'GET',
+                url: 'https://api.go2.com/v1/users/usr_445abc/coaching',
+                reqBody: null,
+                resBody: {
+                    "user_id": "usr_445abc",
+                    "generated_at": "2023-10-27T08:30:00Z",
+                    "burnout_risk": "low",
+                    "suggestions": [
+                        {
+                            "type": "schedule_optimization",
+                            "message": "You are most productive between 9 AM and 11 AM. Consider blocking this time for deep work.",
+                            "actionable": true
+                        },
+                        {
+                            "type": "meeting_fatigue",
+                            "message": "You had 6 hours of back-to-back meetings yesterday. Try implementing 5-minute buffers between calls.",
+                            "actionable": true
+                        }
+                    ]
+                }
+            },
+            'webhooks': {
+                method: 'POST',
+                url: 'https://api.go2.com/v1/webhooks',
+                reqBody: {
+                    "url": "https://your-app.com/webhooks/go2",
+                    "events": [
+                        "insight.created",
+                        "burnout.alert"
+                    ],
+                    "secret": "whsec_..."
+                },
+                resBody: {
+                    "id": "wh_778xyz",
+                    "url": "https://your-app.com/webhooks/go2",
+                    "events": ["insight.created", "burnout.alert"],
+                    "status": "active",
+                    "created_at": "2023-10-27T10:15:22Z"
+                },
+                status: "201 Created"
+            },
+            'work-patterns': {
+                method: 'GET',
+                url: 'https://api.go2.com/v1/teams/tm_982xza/patterns',
+                reqBody: null,
+                resBody: {
+                    "error": "Endpoint documentation coming soon in v1.5"
+                }
+            },
+            'users': {
+                method: 'GET',
+                url: 'https://api.go2.com/v1/users?limit=2',
+                reqBody: null,
+                resBody: {
+                    "data": [
+                        {"id": "usr_1", "name": "Alice Smith", "role": "Engineer"},
+                        {"id": "usr_2", "name": "Bob Jones", "role": "Manager"}
+                    ],
+                    "has_more": true
+                }
+            }
+        };
+
+        let currentSection = 'intro';
+
+        // --- Core Functions ---
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        function loadSection(sectionId) {
+            currentSection = sectionId;
+
+            // Update Sidebar UI
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            // Update Content UI (hide all, show target)
+            document.querySelectorAll('.doc-section').forEach(el => el.classList.remove('active'));
+            const targetSection = document.getElementById(`section-${sectionId}`);
+            if(targetSection) {
+                targetSection.classList.add('active');
+            } else {
+                 // Fallback if section HTML doesn't exist yet but data does
+                 document.getElementById('section-intro').classList.add('active');
+            }
+
+            // Close sidebar on mobile after selection
+            if(window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('open');
+            }
+
+            updateConsoleUI();
+        }
+
+        function updateConsoleUI() {
+            const data = apiData[currentSection];
+            const reqBox = document.getElementById('requestBody');
+            const resBox = document.getElementById('responseBody');
+            
+            // Reset Response
+            resBox.innerHTML = '<span style="color: var(--text-muted)">// Click \'Send Request\' to view response</span>';
+            document.getElementById('responseStatus').style.display = 'none';
+
+            // Build Request Output
+            let reqHtml = `<span style="color: ${data.method === 'GET' ? 'var(--get-color)' : 'var(--post-color)'}; font-weight:bold;">${data.method}</span> ${data.url}<br><br>`;
+            reqHtml += `<span style="color: var(--text-muted)">Headers:</span><br>`;
+            reqHtml += `Authorization: Bearer <span id="displayApiKey" style="color: var(--syn-string)">sk_test_12345</span><br>`;
+            reqHtml += `Content-Type: application/json<br>`;
+
+            if (data.reqBody) {
+                reqHtml += `<br><span style="color: var(--text-muted)">Body:</span><br>`;
+                reqHtml += syntaxHighlight(JSON.stringify(data.reqBody, null, 2));
+            }
+
+            reqBox.innerHTML = reqHtml;
+            syncApiKey();
+        }
+
+        function executeRequest() {
+            const btn = document.getElementById('sendBtn');
+            const loader = document.getElementById('btnLoader');
+            const btnText = document.getElementById('btnText');
+            const resBox = document.getElementById('responseBody');
+            const statusBadge = document.getElementById('responseStatus');
+            const data = apiData[currentSection];
+
+            // UI Loading State
+            btn.disabled = true;
+            loader.style.display = 'inline-block';
+            btnText.innerText = 'Sending...';
+            resBox.innerHTML = '<span style="color: var(--text-muted)">Waiting for api.go2.com...</span>';
+            statusBadge.style.display = 'none';
+
+            // Simulate Network Delay (600ms)
+            setTimeout(() => {
+                // UI Restore State
+                btn.disabled = false;
+                loader.style.display = 'none';
+                btnText.innerText = 'Send Request';
+
+                // Display Response
+                resBox.innerHTML = syntaxHighlight(JSON.stringify(data.resBody, null, 2));
+                
+                // Display Status Code
+                statusBadge.innerText = data.status || "200 OK";
+                statusBadge.className = 'status-badge success';
+                statusBadge.style.display = 'inline-block';
+
+            }, 600);
+        }
+
+        // --- Utilities ---
+
+        // Simple JSON Syntax Highlighter
+        function syntaxHighlight(json) {
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                let cls = 'json-number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'json-key';
+                    } else {
+                        cls = 'json-string';
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'json-boolean';
+                } else if (/null/.test(match)) {
+                    cls = 'json-null';
+                }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+
+        // Sync visual API key in console with header input
+        function syncApiKey() {
+            const inputVal = document.getElementById('globalApiKey').value;
+            const displayEl = document.getElementById('displayApiKey');
+            if(displayEl) {
+                displayEl.innerText = inputVal || 'sk_test_12345';
+            }
+        }
+
+        // --- Initialization ---
+        document.getElementById('globalApiKey').addEventListener('input', syncApiKey);
+        updateConsoleUI(); // Initialize first view
+
+    </script>
+</body>
+</html>

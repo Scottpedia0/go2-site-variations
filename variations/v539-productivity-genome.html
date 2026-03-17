@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Productivity Genome | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#050510;color:#fff;overflow-x:hidden}
+.hero{text-align:center;padding:4rem 2rem 2rem;position:relative}
+.badge{display:inline-block;padding:.4rem 1.2rem;border-radius:50px;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25);color:#10b981;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:1rem;font-family:'Space Mono',monospace}
+h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:900;margin-bottom:.75rem}
+h1 span{background:linear-gradient(135deg,#10b981,#6c63ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{color:#8888aa;font-size:1.05rem;max-width:550px;margin:0 auto;line-height:1.6}
+.helix-container{position:relative;width:100%;max-width:800px;height:500px;margin:3rem auto;overflow:hidden}
+canvas#helix{display:block;width:100%;height:100%}
+.gene-popup{position:absolute;background:rgba(5,5,16,.95);border:1px solid rgba(16,185,129,.3);border-radius:12px;padding:1.5rem;pointer-events:none;opacity:0;transition:opacity .3s;min-width:260px;backdrop-filter:blur(10px);z-index:10}
+.gene-popup.visible{opacity:1}
+.gene-popup h3{font-family:'Space Mono',monospace;font-size:.85rem;color:#10b981;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.05em}
+.gene-popup .gene-name{font-size:1.15rem;font-weight:700;margin-bottom:.75rem}
+.gene-popup .gene-score{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem}
+.gene-bar{flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden}
+.gene-bar-fill{height:100%;border-radius:4px;transition:width .5s}
+.gene-popup .gene-desc{font-size:.85rem;color:#888;line-height:1.5}
+.genome-map{max-width:900px;margin:2rem auto;padding:0 2rem}
+.genome-map h2{font-size:1.8rem;font-weight:800;text-align:center;margin-bottom:2rem}
+.gene-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem}
+.gene-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:1.5rem;cursor:default;transition:all .3s;position:relative;overflow:hidden}
+.gene-card:hover{background:rgba(16,185,129,.06);border-color:rgba(16,185,129,.2);transform:translateY(-2px)}
+.gene-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.gene-card.strong::before{background:linear-gradient(90deg,#10b981,#34d399)}
+.gene-card.moderate::before{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.gene-card.weak::before{background:linear-gradient(90deg,#ef4444,#f87171)}
+.gene-card .code{font-family:'Space Mono',monospace;font-size:.7rem;color:#10b981;margin-bottom:.5rem;opacity:.6}
+.gene-card .name{font-size:.95rem;font-weight:700;margin-bottom:.5rem}
+.gene-card .score-row{display:flex;justify-content:space-between;align-items:center}
+.gene-card .score{font-size:1.3rem;font-weight:900}
+.gene-card .score.strong{color:#10b981}.gene-card .score.moderate{color:#f59e0b}.gene-card .score.weak{color:#ef4444}
+.gene-card .trend{font-size:.7rem;font-weight:600;padding:.2rem .5rem;border-radius:4px}
+.trend.up{background:rgba(16,185,129,.12);color:#10b981}
+.trend.down{background:rgba(239,68,68,.12);color:#ef4444}
+.trend.flat{background:rgba(255,255,255,.06);color:#888}
+.overall{max-width:600px;margin:3rem auto;text-align:center;padding:2.5rem;background:linear-gradient(135deg,rgba(16,185,129,.06),rgba(108,99,255,.06));border:1px solid rgba(16,185,129,.15);border-radius:20px}
+.overall h3{font-family:'Space Mono',monospace;font-size:.8rem;color:#10b981;text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem}
+.overall .big-score{font-size:5rem;font-weight:900;background:linear-gradient(135deg,#10b981,#6c63ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
+.overall .percentile{color:#888;font-size:1rem;margin-top:.5rem}
+.overall .label{color:#aaa;font-size:.85rem;margin-top:1rem;line-height:1.5}
+.cta{text-align:center;padding:4rem 2rem}
+.cta h2{font-size:2rem;font-weight:800;margin-bottom:1rem}
+.cta p{color:#8888aa;margin-bottom:2rem}
+.cta-btn{display:inline-block;padding:1rem 2.5rem;background:linear-gradient(135deg,#10b981,#059669);color:#fff;text-decoration:none;border-radius:12px;font-weight:700;font-size:1.05rem;box-shadow:0 4px 20px rgba(16,185,129,.3)}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="badge">// GENOME ANALYSIS</div>
+  <h1>Your Company's<br><span>Productivity Genome</span></h1>
+  <p class="sub">Every organization has a unique productivity DNA. Go2 maps each gene — focus, collaboration, energy, flow — so you know exactly what to optimize.</p>
+</div>
+
+<div class="helix-container">
+  <canvas id="helix"></canvas>
+  <div class="gene-popup" id="popup"></div>
+</div>
+
+<div class="genome-map">
+  <h2>Genome Breakdown</h2>
+  <div class="gene-grid">
+    <div class="gene-card strong"><div class="code">GENE-FCT-01</div><div class="name">Focus Capacity</div><div class="score-row"><div class="score strong">92</div><div class="trend up">+8%</div></div></div>
+    <div class="gene-card strong"><div class="code">GENE-CLB-02</div><div class="name">Collaboration</div><div class="score-row"><div class="score strong">87</div><div class="trend up">+3%</div></div></div>
+    <div class="gene-card moderate"><div class="code">GENE-ENR-03</div><div class="name">Energy Mgmt</div><div class="score-row"><div class="score moderate">68</div><div class="trend down">-5%</div></div></div>
+    <div class="gene-card strong"><div class="code">GENE-FLW-04</div><div class="name">Flow State</div><div class="score-row"><div class="score strong">84</div><div class="trend up">+12%</div></div></div>
+    <div class="gene-card weak"><div class="code">GENE-MTG-05</div><div class="name">Meeting Health</div><div class="score-row"><div class="score weak">41</div><div class="trend down">-8%</div></div></div>
+    <div class="gene-card moderate"><div class="code">GENE-CTX-06</div><div class="name">Context Stability</div><div class="score-row"><div class="score moderate">55</div><div class="trend flat">0%</div></div></div>
+    <div class="gene-card strong"><div class="code">GENE-ALN-07</div><div class="name">Goal Alignment</div><div class="score-row"><div class="score strong">89</div><div class="trend up">+6%</div></div></div>
+    <div class="gene-card moderate"><div class="code">GENE-BRN-08</div><div class="name">Burnout Shield</div><div class="score-row"><div class="score moderate">62</div><div class="trend down">-3%</div></div></div>
+    <div class="gene-card strong"><div class="code">GENE-AUT-09</div><div class="name">Autonomy</div><div class="score-row"><div class="score strong">91</div><div class="trend up">+4%</div></div></div>
+    <div class="gene-card moderate"><div class="code">GENE-COM-10</div><div class="name">Communication</div><div class="score-row"><div class="score moderate">73</div><div class="trend up">+2%</div></div></div>
+    <div class="gene-card weak"><div class="code">GENE-HND-11</div><div class="name">Handoff Speed</div><div class="score-row"><div class="score weak">38</div><div class="trend down">-11%</div></div></div>
+    <div class="gene-card strong"><div class="code">GENE-LRN-12</div><div class="name">Learning Rate</div><div class="score-row"><div class="score strong">85</div><div class="trend up">+7%</div></div></div>
+  </div>
+</div>
+
+<div class="overall">
+  <h3>Overall Genome Score</h3>
+  <div class="big-score">72</div>
+  <div class="percentile">67th percentile among similar companies</div>
+  <div class="label">Strong in focus and collaboration. Weakest genes: Meeting Health (41) and Handoff Speed (38). Improving these two genes alone could push your score to 85+.</div>
+</div>
+
+<div class="cta">
+  <h2>Decode Your Productivity DNA</h2>
+  <p>Get your company's full Genome report — free for 14 days.</p>
+  <a href="#" class="cta-btn">Start Free Trial</a>
+</div>
+
+<script>
+const canvas=document.getElementById('helix');
+const ctx=canvas.getContext('2d');
+const popup=document.getElementById('popup');
+let W,H,t=0;
+const genes=[
+  {name:'Focus Capacity',code:'FCT-01',score:92,color:'#10b981',desc:'Ability to sustain deep work blocks without interruption'},
+  {name:'Collaboration',code:'CLB-02',score:87,color:'#10b981',desc:'Effectiveness of teamwork and pair activities'},
+  {name:'Energy Management',code:'ENR-03',score:68,color:'#f59e0b',desc:'Alignment of high-energy periods with demanding tasks'},
+  {name:'Flow State',code:'FLW-04',score:84,color:'#10b981',desc:'Frequency and duration of flow state experiences'},
+  {name:'Meeting Health',code:'MTG-05',score:41,color:'#ef4444',desc:'Meeting efficiency, agenda adherence, outcome rate'},
+  {name:'Context Stability',code:'CTX-06',score:55,color:'#f59e0b',desc:'Resistance to unnecessary context switching'},
+  {name:'Goal Alignment',code:'ALN-07',score:89,color:'#10b981',desc:'Work time spent on high-priority objectives'},
+  {name:'Burnout Shield',code:'BRN-08',score:62,color:'#f59e0b',desc:'Sustainable pace and recovery patterns'},
+  {name:'Autonomy',code:'AUT-09',score:91,color:'#10b981',desc:'Self-directed work without micromanagement'},
+  {name:'Communication',code:'COM-10',score:73,color:'#f59e0b',desc:'Clarity and efficiency of team communications'},
+  {name:'Handoff Speed',code:'HND-11',score:38,color:'#ef4444',desc:'Speed of cross-team task transitions'},
+  {name:'Learning Rate',code:'LRN-12',score:85,color:'#10b981',desc:'Speed of onboarding and skill acquisition'},
+];
+let genePositions=[];
+function resize(){
+  const rect=canvas.parentElement.getBoundingClientRect();
+  W=rect.width;H=500;
+  canvas.width=W*2;canvas.height=H*2;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  ctx.scale(2,2);
+}
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  t+=.015;
+  genePositions=[];
+  const cx=W/2,cy=H/2;
+  const amplitude=80,vertSpacing=35;
+  const startY=cy-((genes.length-1)*vertSpacing)/2;
+  // Draw helix strands
+  for(let strand=0;strand<2;strand++){
+    ctx.beginPath();
+    for(let y=0;y<H;y++){
+      const phase=strand*Math.PI;
+      const x=cx+Math.sin((y-H/2)*.015+t+phase)*amplitude;
+      if(y===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle=strand===0?'rgba(16,185,129,.2)':'rgba(108,99,255,.2)';
+    ctx.lineWidth=2;ctx.stroke();
+  }
+  // Draw gene rungs
+  genes.forEach((g,i)=>{
+    const y=startY+i*vertSpacing;
+    const x1=cx+Math.sin((y-H/2)*.015+t)*amplitude;
+    const x2=cx+Math.sin((y-H/2)*.015+t+Math.PI)*amplitude;
+    // rung
+    ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x2,y);
+    ctx.strokeStyle=g.color+'44';ctx.lineWidth=2;ctx.stroke();
+    // gene nodes
+    const r=8+g.score/20;
+    [x1,x2].forEach((x,si)=>{
+      ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
+      ctx.fillStyle=si===0?g.color+'88':'#6c63ff88';
+      ctx.fill();
+      ctx.strokeStyle=si===0?g.color:'#6c63ff';ctx.lineWidth=1.5;ctx.stroke();
+    });
+    // label
+    const midX=(x1+x2)/2;
+    ctx.fillStyle='#fff';ctx.font='bold 10px Space Mono';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(g.code,midX,y);
+    genePositions.push({x1,x2,y,r,gene:g,midX});
+  });
+  requestAnimationFrame(draw);
+}
+canvas.addEventListener('mousemove',e=>{
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  let found=false;
+  for(const gp of genePositions){
+    const d1=Math.sqrt((mx-gp.x1)**2+(my-gp.y)**2);
+    const d2=Math.sqrt((mx-gp.x2)**2+(my-gp.y)**2);
+    const dm=Math.sqrt((mx-gp.midX)**2+(my-gp.y)**2);
+    if(d1<gp.r+5||d2<gp.r+5||dm<30){
+      const g=gp.gene;
+      const barColor=g.score>80?'#10b981':g.score>60?'#f59e0b':'#ef4444';
+      popup.innerHTML=`<h3>${g.code}</h3><div class="gene-name">${g.name}</div><div class="gene-score"><div class="gene-bar"><div class="gene-bar-fill" style="width:${g.score}%;background:${barColor}"></div></div><span style="font-weight:800;color:${barColor}">${g.score}</span></div><div class="gene-desc">${g.desc}</div>`;
+      popup.classList.add('visible');
+      let tx=mx+20,ty=my-20;
+      if(tx+270>W)tx=mx-280;if(ty<0)ty=10;
+      popup.style.left=tx+'px';popup.style.top=ty+'px';
+      found=true;break;
+    }
+  }
+  if(!found)popup.classList.remove('visible');
+});
+window.addEventListener('resize',resize);
+resize();draw();
+</script>
+</body>
+</html>

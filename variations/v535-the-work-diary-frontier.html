@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Work Diary — Powered by Go2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg: #f5f1e8;
+      --paper: #fbf8f2;
+      --paper-2: #f2eadc;
+      --ink: #2b2621;
+      --muted: #6f665d;
+      --line: rgba(60,44,28,.12);
+      --accent: #2563eb;
+      --accent-2: #7c3aed;
+      --green: #0f9f6e;
+      --gold: #d59b2f;
+      --shadow: 0 12px 40px rgba(49, 37, 24, 0.10);
+      --radius: 22px;
+      --max: 1220px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(124,58,237,.06), transparent 28%),
+        radial-gradient(circle at top right, rgba(37,99,235,.06), transparent 28%),
+        linear-gradient(180deg, #efe8da 0%, var(--bg) 22%, #f7f3eb 100%);
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+
+    .paper-noise::before{
+      content:"";
+      position: fixed;
+      inset:0;
+      pointer-events:none;
+      background-image:
+        radial-gradient(rgba(0,0,0,.028) 0.6px, transparent 0.7px);
+      background-size: 10px 10px;
+      opacity:.35;
+      mix-blend-mode:multiply;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .container{
+      width:min(var(--max), calc(100% - 32px));
+      margin:0 auto;
+    }
+
+    .topbar{
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(14px);
+      background: rgba(251, 248, 242, 0.78);
+      border-bottom:1px solid rgba(60,44,28,.08);
+    }
+
+    .topbar-inner{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      min-height:72px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-weight:800;
+      letter-spacing:-0.02em;
+    }
+
+    .brand-mark{
+      width:40px;height:40px;border-radius:12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display:grid;place-items:center;
+      color:white;font-weight:800;
+      box-shadow: 0 8px 20px rgba(37,99,235,.25);
+      position:relative;
+      overflow:hidden;
+    }
+    .brand-mark::after{
+      content:"";
+      position:absolute;
+      inset:auto -10px -10px auto;
+      width:22px;height:22px;border-radius:50%;
+      background: rgba(255,255,255,.28);
+    }
+
+    .brand-text small{
+      display:block;
+      font-size:12px;
+      color: var(--muted);
+      font-weight:600;
+      letter-spacing:.02em;
+      margin-top:2px;
+    }
+
+    .nav{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .nav a{
+      padding:10px 14px;
+      border-radius:999px;
+      color:var(--muted);
+      font-weight:600;
+      font-size:14px;
+      transition:.25s ease;
+    }
+
+    .nav a:hover, .nav a.active{
+      background: rgba(37,99,235,.08);
+      color: var(--accent);
+    }
+
+    .cta{
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+
+    .btn{
+      border:none;
+      cursor:pointer;
+      font-weight:700;
+      border-radius:999px;
+      padding:12px 18px;
+      transition:.25s ease;
+      font-family: inherit;
+      font-size:14px;
+    }
+
+    .btn-primary{
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color:white;
+      box-shadow: 0 12px 24px rgba(67,56,202,.18);
+    }
+    .btn-primary:hover{ transform: translateY(-1px); box-shadow: 0 16px 30px rgba(67,56,202,.24); }
+
+    .btn-secondary{
+      background: rgba(43,38,33,.05);
+      color: var(--ink);
+      border:1px solid rgba(43,38,33,.08);
+    }
+    .btn-secondary:hover{ background: rgba(43,38,33,.08); }
+
+    .hero{
+      padding: 52px 0 24px;
+    }
+
+    .hero-grid{
+      display:grid;
+      grid-template-columns: 1.08fr .92fr;
+      gap:28px;
+      align-items:stretch;
+    }
+
+    .hero-card, .summary-card, .day-card, .quote-card, .insight-card, .pricing-card{
+      background: linear-gradient(180deg, rgba(255,255,255,.58), rgba(255,255,255,.36));
+      border:1px solid rgba(60,44,28,.10);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .hero-card{
+      padding:34px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.66), rgba(255,255,255,.4)),
+        linear-gradient(135deg, rgba(124,58,237,.08), transparent 40%),
+        linear-gradient(225deg, rgba(37,99,235,.06), transparent 42%);
+    }
+
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      font-size:13px;
+      color:var(--muted);
+      background: rgba(255,255,255,.6);
+      border:1px solid rgba(60,44,28,.08);
+      border-radius:999px;
+      padding:8px 12px;
+      margin-bottom:18px;
+      font-weight:700;
+    }
+    .eyebrow .dot{
+      width:8px;height:8px;border-radius:50%;
+      background: linear-gradient(135deg, var(--green), #32c08b);
+      box-shadow: 0 0 0 6px rgba(15,159,110,.10);
+    }
+
+    h1, h2, h3{
+      margin:0;
+      line-height:1.02;
+      letter-spacing:-0.04em;
+    }
+
+    h1{
+      font-family: "Playfair Display", serif;
+      font-size: clamp(2.8rem, 5vw, 5.1rem);
+      max-width: 10ch;
+      margin-bottom:16px;
+    }
+
+    .hero-card p.lead{
+      font-size: clamp(1rem, 1.5vw, 1.16rem);
+      color: var(--muted);
+      line-height:1.7;
+      max-width: 62ch;
+      margin: 0 0 24px;
+    }
+
+    .hero-footer{
+      display:flex;
+      flex-wrap:wrap;
+      gap:14px;
+      align-items:center;
+    }
+
+    .mini-proof{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top: 24px;
+    }
+
+    .pill{
+      padding:10px 12px;
+      border-radius:999px;
+      background: rgba(255,255,255,.64);
+      border:1px solid rgba(60,44,28,.08);
+      color: var(--muted);
+      font-weight:700;
+      font-size:13px;
+    }
+    .pill b{ color:var(--ink); }
+
+    .summary-card{
+      padding:26px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+    }
+
+    .summary-top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:18px;
+    }
+
+    .summary-top .title{
+      font-weight:800;
+      font-size:1.02rem;
+    }
+
+    .week-badge{
+      padding:8px 12px;
+      border-radius:999px;
+      background: rgba(37,99,235,.08);
+      color: var(--accent);
+      font-weight:700;
+      font-size:12px;
+    }
+
+    .profile{
+      display:flex;
+      gap:16px;
+      align-items:center;
+      padding:16px;
+      border-radius:18px;
+      background: rgba(255,255,255,.6);
+      border:1px solid rgba(60,44,28,.08);
+      margin-bottom:18px;
+    }
+
+    .avatar{
+      width:64px;height:64px;border-radius:18px;
+      background: linear-gradient(135deg, #1d4ed8, #7c3aed);
+      color:white;
+      display:grid;place-items:center;
+      font-weight:800;
+      font-size:1.2rem;
+      box-shadow: 0 10px 24px rgba(67,56,202,.18);
+    }
+
+    .profile h3{
+      font-size:1.08rem;
+      margin-bottom:6px;
+    }
+
+    .profile p{
+      margin:0;
+      color:var(--muted);
+      font-size:.95rem;
+      line-height:1.5;
+    }
+
+    .metrics{
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap:12px;
+      margin-bottom:18px;
+    }
+
+    .metric{
+      background: rgba(255,255,255,.58);
+      border:1px solid rgba(60,44,28,.08);
+      border-radius:18px;
+      padding:16px;
+    }
+    .metric .label{
+      color:var(--muted);
+      font-size:.85rem;
+      font-weight:600;
+      margin-bottom:8px;
+    }
+    .metric .value{
+      font-size:1.5rem;
+      font-weight:800;
+      letter-spacing:-0.03em;
+    }
+    .metric .sub{
+      margin-top:6px;
+      color:var(--muted);
+      font-size:.82rem;
+    }
+
+    .coach-note{
+      padding:16px 16px 18px;
+      border-radius:18px;
+      background: linear-gradient(180deg, rgba(37,99,235,.08), rgba(124,58,237,.08));
+      border:1px solid rgba(67,56,202,.10);
+      position:relative;
+    }
+    .coach-note .tag{
+      display:inline-block;
+      font-size:12px;
+      font-weight:800;
+      color: var(--accent);
+      margin-bottom:8px;
+      text-transform: uppercase;
+      letter-spacing:.06em;
+    }
+    .coach-note p{
+      margin:0;
+      line-height:1.7;
+      color: var(--ink);
+    }
+
+    .section{
+      padding: 18px 0 24px;
+    }
+
+    .section-head{
+      display:flex;
+      align-items:end;
+      justify-content:space-between;
+      gap:18px;
+      margin-bottom:18px;
+    }
+
+    .section-head h2{
+      font-family: "Playfair Display", serif;
+      font-size: clamp(2rem, 3vw, 3rem);
+    }
+
+    .section-head p{
+      margin:0;
+      color:var(--muted);
+      max-width: 58ch;
+      line-height:1.65;
+    }
+
+    .toolbar{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin: 10px 0 22px;
+    }
+
+    .filter{
+      padding:10px 14px;
+      border-radius:999px;
+      border:1px solid rgba(60,44,28,.08);
+      background: rgba(255,255,255,.58);
+      color:var(--muted);
+      font-weight:700;
+      cursor:pointer;
+      transition:.22s ease;
+    }
+
+    .filter:hover, .filter.active{
+      background: linear-gradient(135deg, rgba(37,99,235,.11), rgba(124,58,237,.11));
+      color: var(--ink);
+      border-color: rgba(67,56,202,.16);
+    }
+
+    .diary-grid{
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap:18px;
+    }
+
+    .day-card{
+      padding:24px;
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+      transition:.28s ease;
+    }
+
+    .day-card:hover{
+      transform: translateY(-3px);
+      box-shadow: 0 18px 48px rgba(49,37,24,.12);
+    }
+
+    .day-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:start;
+      gap:16px;
+    }
+
+    .day-title h3{
+      font-size:1.4rem;
+      margin-bottom:6px;
+      font-family: "Playfair Display", serif;
+    }
+
+    .day-title span{
+      color:var(--muted);
+      font-size:.95rem;
+      font-weight:600;
+    }
+
+    .mood{
+      min-width:54px;
+      height:54px;
+      border-radius:16px;
+      display:grid;
+      place-items:center;
+      font-size:1.35rem;
+      background: rgba(255,255,255,.7);
+      border:1px solid rgba(60,44,28,.08);
+    }
+
+    .entry{
+      line-height:1.8;
+      color:#433b34;
+      font-size:1rem;
+      position:relative;
+      padding-left:14px;
+    }
+
+    .entry::before{
+      content:"";
+      position:absolute;
+      left:0;
+      top:.35em;
+      bottom:.35em;
+      width:3px;
+      border-radius:999px;
+      background: linear-gradient(180deg, rgba(37,99,235,.55), rgba(124,58,237,.2));
+    }
+
+    .timeline{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      padding:14px;
+      border-radius:18px;
+      background: rgba(255,255,255,.55);
+      border:1px solid rgba(60,44,28,.08);
+    }
+
+    .tl-row{
+      display:grid;
+      grid-template-columns: 80px 1fr auto;
+      gap:10px;
+      align-items:center;
+      font-size:.92rem;
+    }
+
+    .tl-time{ color:var(--muted); font-weight:700; }
+    .tl-task{ color:var(--ink); }
+    .tl-tag{
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:800;
+      white-space:nowrap;
+    }
+    .focus{ background: rgba(15,159,110,.12); color:var(--green); }
+    .meet{ background: rgba(213,155,47,.14); color:#9a6908; }
+    .drain{ background: rgba(239,68,68,.12); color:#b42318; }
+    .recover{ background: rgba(37,99,235,.12); color:var(--accent); }
+
+    .go2-box{
+      padding:16px;
+      border-radius:18px;
+      background: linear-gradient(180deg, rgba(37,99,235,.08), rgba(124,58,237,.07));
+      border:1px dashed rgba(67,56,202,.24);
+    }
+    .go2-label{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:12px;
+      font-weight:800;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing:.08em;
+      margin-bottom:10px;
+    }
+    .go2-label .spark{
+      width:10px;height:10px;border-radius:50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 0 6px rgba(67,56,202,.08);
+    }
+    .go2-box p{
+      margin:0;
+      line-height:1.7;
+      color:#312a24;
+    }
+
+    .card-stats{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .chip{
+      border-radius:14px;
+      padding:10px 12px;
+      background: rgba(255,255,255,.62);
+      border:1px solid rgba(60,44,28,.08);
+      min-width: 110px;
+    }
+    .chip .k{
+      display:block;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+      margin-bottom:4px;
+    }
+    .chip .v{
+      font-weight:800;
+      font-size:1rem;
+    }
+
+    .bottom-grid{
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap:18px;
+      padding: 20px 0 58px;
+    }
+
+    .quote-card, .insight-card, .pricing-card{
+      padding:26px;
+    }
+
+    .quote-card{
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.62), rgba(255,255,255,.4)),
+        radial-gradient(circle at top left, rgba(213,155,47,.10), transparent 30%);
+    }
+
+    .quote-card blockquote{
+      margin:0;
+      font-family:"Playfair Display", serif;
+      font-size: clamp(1.5rem, 2.2vw, 2.2rem);
+      line-height:1.35;
+      letter-spacing:-0.03em;
+      margin-bottom:16px;
+    }
+
+    .quote-card cite{
+      color:var(--muted);
+      font-style:normal;
+      font-weight:700;
+    }
+
+    .insight-list{
+      display:grid;
+      gap:12px;
+      margin-top:16px;
+    }
+
+    .insight-item{
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      padding:14px;
+      border-radius:16px;
+      background: rgba(255,255,255,.56);
+      border:1px solid rgba(60,44,28,.08);
+    }
+
+    .insight-icon{
+      width:40px;height:40px;border-radius:12px;
+      display:grid;place-items:center;
+      background: linear-gradient(135deg, rgba(37,99,235,.14), rgba(124,58,237,.14));
+      flex:0 0 auto;
+      font-size:1.05rem;
+    }
+
+    .insight-item h4{
+      margin:0 0 6px;
+      font-size:1rem;
+      letter-spacing:-0.02em;
+    }
+
+    .insight-item p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.6;
+      font-size:.95rem;
+    }
+
+    .pricing-card{
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.62), rgba(255,255,255,.4)),
+        radial-gradient(circle at bottom right, rgba(37,99,235,.10), transparent 30%);
+    }
+
+    .pricing-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom:18px;
+    }
+
+    .price{
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight:800;
+      letter-spacing:-0.04em;
+    }
+    .price span{
+      font-size:1rem;
+      color:var(--muted);
+      font-weight:700;
+      letter-spacing:0;
+    }
+
+    .pricing-points{
+      display:grid;
+      gap:10px;
+      margin: 14px 0 20px;
+    }
+
+    .pricing-points div{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      color:#3d362f;
+    }
+
+    .check{
+      width:22px;height:22px;border-radius:50%;
+      display:grid;place-items:center;
+      background: rgba(15,159,110,.14);
+      color: var(--green);
+      font-size:12px;
+      flex:0 0 auto;
+      margin-top:1px;
+    }
+
+    .roi-banner{
+      margin-top:14px;
+      padding:16px;
+      border-radius:18px;
+      background: linear-gradient(135deg, rgba(15,159,110,.10), rgba(213,155,47,.10));
+      border:1px solid rgba(15,159,110,.14);
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .roi-banner strong{
+      font-size:1.1rem;
+    }
+
+    .hidden{ display:none !important; }
+
+    @media (max-width: 1024px){
+      .hero-grid, .bottom-grid, .diary-grid{
+        grid-template-columns: 1fr;
+      }
+      .section-head{
+        align-items:start;
+        flex-direction:column;
+      }
+    }
+
+    @media (max-width: 720px){
+      .topbar-inner{
+        flex-wrap:wrap;
+        padding:12px 0;
+      }
+      .nav{
+        order:3;
+        width:100%;
+        overflow:auto;
+        padding-bottom:4px;
+      }
+      .cta{
+        width:100%;
+        justify-content:flex-end;
+      }
+      .hero-card, .summary-card, .day-card, .quote-card, .insight-card, .pricing-card{
+        border-radius:20px;
+      }
+      .hero-card, .summary-card, .quote-card, .insight-card, .pricing-card, .day-card{
+        padding:20px;
+      }
+      .metrics{
+        grid-template-columns: 1fr 1fr;
+      }
+      .tl-row{
+        grid-template-columns: 68px 1fr;
+      }
+      .tl-tag{
+        grid-column: 2 / -1;
+        justify-self:start;
+      }
+      .toolbar{
+        overflow:auto;
+        padding-bottom:4px;
+        flex-wrap:nowrap;
+      }
+      .filter{
+        white-space:nowrap;
+      }
+    }
+  </style>
+</head>
+<body class="paper-noise">
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a href="#top" class="brand">
+        <div class="brand-mark">G2</div>
+        <div class="brand-text">
+          Go2
+          <small>The Work Diary</small>
+        </div>
+      </a>
+
+      <nav class="nav">
+        <a href="#diary" class="active">Diary</a>
+        <a href="#insights">Insights</a>
+        <a href="#impact">Impact</a>
+        <a href="#pricing">Pricing</a>
+      </nav>
+
+      <div class="cta">
+        <button class="btn btn-secondary" id="toggleNotes">Quiet mode</button>
+        <button class="btn btn-primary">Book a demo</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="hero-card">
+          <div class="eyebrow"><span class="dot"></span> A week in the life of a knowledge worker</div>
+          <h1>The Work Diary</h1>
+          <p class="lead">
+            Meet a more human way to understand productivity. Powered by Go2, this diary captures the rhythm of real work — the bursts of focus, the meeting overload, the hidden context-switching, and the quiet moments where better habits begin.
+          </p>
+          <div class="hero-footer">
+            <button class="btn btn-primary" onclick="document.getElementById('diary').scrollIntoView({behavior:'smooth'})">Read the week</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})">See Go2 pricing</button>
+          </div>
+          <div class="mini-proof">
+            <div class="pill"><b>42%</b> avg productivity increase</div>
+            <div class="pill"><b>15.2 hrs</b> saved per employee / week</div>
+            <div class="pill"><b>892%</b> first-year ROI</div>
+            <div class="pill"><b>$6–12</b> per user / month</div>
+          </div>
+        </div>
+
+        <aside class="summary-card">
+          <div>
+            <div class="summary-top">
+              <div class="title">Week summary</div>
+              <div class="week-badge">Mon → Fri</div>
+            </div>
+
+            <div class="profile">
+              <div class="avatar">AR</div>
+              <div>
+                <h3>Ava R.</h3>
+                <p>Operations lead at a 67-person services company. Heavy collaboration. Constant task switching. Good intentions, crowded calendar.</p>
+              </div>
+            </div>
+
+            <div class="metrics">
+              <div class="metric">
+                <div class="label">Deep work time</div>
+                <div class="value">11.8h</div>
+                <div class="sub">Up 34% after Go2 nudges</div>
+              </div>
+              <div class="metric">
+                <div class="label">Meeting load</div>
+                <div class="value">14.2h</div>
+                <div class="sub">Still the biggest drag</div>
+              </div>
+              <div class="metric">
+                <div class="label">Context switches</div>
+                <div class="value">73/day</div>
+                <div class="sub">High, but improving</div>
+              </div>
+              <div class="metric">
+                <div class="label">Recovered time</div>
+                <div class="value">6.4h</div>
+                <div class="sub">In one week alone</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="coach-note go2-note">
+            <div class="tag">Go2 coaching note</div>
+            <p>
+              You don’t have a discipline problem. You have a design problem. Your most productive work happens between <b>9:10–11:20 AM</b>, but meetings keep invading it. Go2 recommends protecting two mornings next week for planning, writing, and decision work.
+            </p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section" id="diary">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <h2>Five days, honestly told</h2>
+          </div>
+          <p>
+            Not surveillance. Not scorekeeping. Just a personal, AI-assisted reflection on how work actually unfolded — what felt good, what drained energy, and where Go2 spotted patterns worth coaching.
+          </p>
+        </div>
+
+        <div class="toolbar">
+          <button class="filter active" data-filter="all">All entries</button>
+          <button class="filter" data-filter="focus">Focus wins</button>
+          <button class="filter" data-filter="meeting">Meeting overload</button>
+          <button class="filter" data-filter="recovery">Recovery moments</button>
+          <button class="filter" data-filter="coaching">Go2 coaching</button>
+        </div>
+
+        <div class="diary-grid">
+          <article class="day-card" data-tags="focus coaching">
+            <div class="day-header">
+              <div class="day-title">
+                <h3>Monday</h3>
+                <span>“I started strong, then disappeared into Slack.”</span>
+              </div>
+              <div class="mood" title="Focused but fragmented">☕</div>
+            </div>
+
+            <p class="entry">
+              I had real momentum before 10 AM. Knocked out a project brief in one sitting and actually felt clear. But after the first internal check-in, my day dissolved into tiny replies, “quick” pings, and bouncing between docs. By 4 PM, I had been busy all day but only moved one meaningful thing forward.
+            </p>
+
+            <div class="timeline">
+              <div class="tl-row">
+                <div class="tl-time">9:05</div>
+                <div class="tl-task">Drafted quarterly workflow brief</div>
+                <div class="tl-tag focus">Deep focus</div>
+              </div>
+              <div class="tl-row">
+                <div class="tl-time">11:10</div>
+                <div class="tl-task">Ops sync + follow-up messages</div>
+                <div class="tl-tag meet">Meetings</div>
+              </div>
+              <div class="tl-row">
+                <div class="tl-time">2:40</div>
+                <div class="tl-task">Switched across 9 apps in 50 minutes</div>
+                <div class="tl-tag drain">Fragmented</div>
+              </div>
+            </div>
+
+            <div class="card-stats">
+              <div class="chip"><span class="k">Focus block</span><span class="v">1h 42m</span></div>
+              <div class="chip"><span class="k">Context switches</span><span class="v">81</span></div>
+              <div class="chip"><span class="k">Meetings</span><span class="v">2.6h</span></div>
+            </div>
+
+            <div class="go2-box go2-note">
+              <div class="go2-label"><span class="spark"></span> Go2 insight</div>
+              <p>
+                Your best writing work happened before your first meeting. Go2 suggests a recurring “quiet start” on Mondays: delay internal syncs by 90 minutes and batch Slack responses after lunch.
+              </p>
+            </div>
+          </article>
+
+          <article class="day-card" data-tags="meeting coaching">
+            <div class="day-header">
+              <div class="day-title">
+                <h3>Tuesday</h3>
+                <span>“So many conversations. Not enough conclusions.”</span>
+              </div>
+              <div class="mood" title="Meeting heavy">📅</div>
+            </div>
+
+            <p class="entry">
+              Today felt social, collaborative, and somehow exhausting. Four meetings in a row meant I spent the day reacting instead of thinking. Everyone was aligned by the end, I think — but the actual work that alignment was supposed to unlock got pushed to tomorrow.
+            </p>
+
+            <div class="timeline">
+              <div class="tl-row">
+                <div class="tl-time">9:30</div>
+                <div class="tl-task">Leadership standup</div>
+                <div class="tl-tag meet">Meetings</div>
+              </div>
+              <div class="tl-row">
+                <div class="tl-time">11:00</div>
+                <div class="tl-task">Vendor review + prep + recap</div>
+                <div class="tl-tag meet">Meetings</div>
+              </div>
+              <div class="tl-row">
+                <div class="tl-time">3:25</div>
+                <div class="tl-task">Inbox triage, low completion energy</div>
+                <div class="tl-tag drain">Drained</div>
+              </div>
+            </div>
+
+            <div class="card-stats">
+              <div class="chip"><span class="k">Meeting time</span><span class="v">4.8h</span></div>
+              <div class="chip"><span class="k">Focus time</span><span class="v">38m</span></div>
+              <div class="chip"><span class="k">Energy dip</span><span class="v">2:15 PM</span></div>
+            </div>
+
+            <div class="go2-box go2-note">
+              <div class="go2-label"><span class="spark"></span> Go2 insight</div>
+              <p>
+                Meetings weren’t the only issue — recovery time vanished between them. Go2 recommends inserting 10-minute buffer blocks after multi-stakeholder calls to capture decisions and prevent attention spillover.
+              </p>
+            </div>
+          </article>
+
+          <article class="day-card" data-tags="focus recovery coaching">
+            <div class="day-header">
+              <div class="day-title">
+                <h3>Wednesday</h3>
+                <span>“I protected two hours, and everything changed.”</span>
+              </div>
+              <div class="mood" title="Calm and productive">🌤️</div>
+            </div>
+
+            <p class="entry">
+              I blocked my calendar from 9 to 11 and treated it like an appointment. That one choice made the whole day feel steadier. I finished the analysis deck that had been dragging for days, and because I wasn’t already behind, I went into afternoon calls less tense and more useful.
+            </p>
+
+            <div class="timeline">
+              <div class="tl-row">
+                <div class="tl-time">9:00</div>
+                <div class="tl-task">Protected work block: analysis deck</div>
+                <div class="tl-tag focus">Deep focus</div>
+              </div>
+              <div class="tl-row">
+                <div class="tl-time">12:15</div>
+                <div class="tl-task">Lunch away from screen</div>
+                <div class="tl-tag recover">Recovery</div>
+              </div>
+              <div class="tl-row">
+                <div class="tl-time">3:00</div>
+                <div class="tl-task">Client call with prepared notes</div>
+                <div class="tl-tag meet">Meetings</div>
+              </div>
+            </div>
+
+            <div class="card-stats">
+              <div class="chip"><span class="k">Longest focus</span><span class="v">2h 11m</span></div>
+              <div class="chip"><span class="k">Task completion</span><span class="v">+61%</span></div>
+              <div class="chip"><span class="k">Switches</span><span class="v">49</span></div>
+            </div>
+
+            <div class="go2-box go2-note">
+              <div class="go2-label"><span class="spark"></span> Go2 insight</div>
+              <p>
+                This was your clearest day of the week. Go2 detected that calendar protection + a screen break reduced context switching and increased completion rate. Recommendation: repeat this rhythm at least twice next week.
+              </p>
+            </div>
+          </article>
+
+          <article class="day-card" data-tags="meeting recovery coaching">
+            <div class="day-header">
+              <div class="day-title">
+                <h3>Thursday</h3>
+                <span>“The day ran me.”</span>
+              </div>
+              <div class="mood" title="Overloaded">🌧️</div>
+            </div>
+
+            <p class="entry">
+              I said yes too many times. Every request felt reasonable on its own, but together they turned into a day with no center. By late afternoon, even easy tasks felt heavy. I kept opening tabs and forgetting why I opened them.
+            </p>
+
+            <div class="timeline">
+              <div class="tl-row">
+                <div class="tl-time">10:20</div>
+                <div class="tl-task">Ad hoc support requests across teams</div>
+                <div class="tl-tag drain">Reactive</div>
+              </div>
+              <div class="tl-row">
+                <div class="tl-time">1:30</div>
+                <div class="tl-task">Back-to-back implementation calls</div>
+                <div class="tl-tag meet">Meetings</div>
+              </div>
+              <div class="tl-row">
+                <div class="tl-time">4:45</div>
+                <div class="tl-task">Short walk, returned more settled</div>
+                <div class="tl-tag recover">Recovery</div>
+              </div>
+            </div>
+
+            <div class="card-stats">
+              <div class="chip"><span class="k">Reactive time</span><span class="v">5.1h</span></div>
+              <div class="chip"><span class="k">Apps used</span><span class="v">17</span></div>
+              <div class="chip"><span class="k">Recovery break</span><span class="v">12m</span></div>
+            </div>
+
+            <div class="go2-box go2-note">
+              <div class="go2-label"><span class="spark"></span> Go2 insight</div>
+              <p>
+                Thursday shows a classic overload pattern: rising task fragmentation, shorter attention spans, and decision fatigue after 2 PM. Go2 coaching: route non-urgent requests into a shared queue and reserve one triage window instead of continuous response mode.
+              </p>
+            </div>
+          </article>
+
+          <article class="day-card" data-tags="focus recovery coaching">
+            <div class="day-header">
+              <div class="day-title">
+                <h3>Friday</h3>
+                <span>“I ended lighter than I started.”</span>
+              </div>
+              <div class="mood" title="Reflective and optimistic">✨</div>
+            </div>
+
+            <p class="entry">
+              Today felt different because I made smaller promises. I worked through a priority list instead of living in my inbox. Finished the week with a clean handoff, a clearer plan, and less guilt than usual. That alone felt like progress.
+            </p>
+
+            <div class="timeline">
+              <div class="tl-row">
+                <div class="tl-time">9:15</div>
+                <div class="tl-task">Weekly review and priority reset</div>
+                <div class="tl-tag recover">Reset</div>
+              </div>
+              <div class="tl-row">
+                <div class="tl-time">10:00</div>
+                <div class="tl-task">Process doc updates + handoff notes</div>
+                <div class="tl-tag focus">Deep focus</div>
+              </div>
+              <div class="tl-row">
+                <div class="tl-time">2:50</div>
+                <div class="tl-task">Team closeout, fewer follow-ups needed</div>
+                <div class="tl-tag meet">Meetings</div>
+              </div>
+            </div>
+
+            <div class="card-stats">
+              <div class="chip"><span class="k">Saved time</span><span class="v">1.7h</span></div>
+              <div class="chip"><span class="k">Focus score</span><span class="v">8.6/10</span></div>
+              <div class="chip"><span class="k">End-of-day stress</span><span class="v">Low</span></div>
+            </div>
+
+            <div class="go2-box go2-note">
+              <div class="go2-label"><span class="spark"></span> Go2 insight</div>
+              <p>
+                Weekly review habits correlate with lower after-hours catch-up and stronger Monday starts. Go2 suggests a recurring 30-minute Friday reflection for every manager whose work is driven by meetings, messaging, and cross-functional coordination.
+              </p>
+            </div>
+          </article>
+
+          <article class="day-card" data-tags="coaching focus meeting recovery">
+            <div class="day-header">
+              <div class="day-title">
+                <h3>What the week taught me</h3>
+                <span>“I don’t need more effort. I need better patterns.”</span>
+              </div>
+              <div class="mood" title="Insightful">🖋️</div>
+            </div>
+
+            <p class="entry">
+              The surprising part wasn’t how hard I worked. It was how visible the pattern became once someone — or something — reflected it back clearly. My best hours weren’t random. My worst days weren’t personal failures. They were design flaws in the way my workday was structured.
+            </p>
+
+            <div class="go2-box">
+              <div class="go2-label"><span class="spark"></span> Go2 weekly coaching recap</div>
+              <p>
+                Across the week, Go2 identified three major levers: protect morning focus, create buffers after meetings, and batch reactive work. For SMB leaders, this kind of coaching scales across teams — turning hidden work patterns into practical performance improvements without treating people like they’re being watched.
+              </p>
+            </div>
+
+            <div class="card-stats">
+              <div class="chip"><span class="k">Productivity lift</span><span class="v">+42%</span></div>
+              <div class="chip"><span class="k">Weekly time saved</span><span class="v">15.2h</span></div>
+              <div class="chip"><span class="k">Year-one ROI</span><span class="v">892%</span></div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="insights">
+      <div class="container bottom-grid">
+        <div class="quote-card" id="impact">
+          <div class="eyebrow">Why this matters</div>
+          <blockquote>
+            “Go2 doesn’t tell people to work harder. It helps teams understand how work actually gets done — then coaches them toward healthier, smarter patterns.”
+          </blockquote>
+          <cite>Built for SMB owners, ops leaders, and HR teams managing 5–500 employees.</cite>
+        </div>
+
+        <div class="insight-card">
+          <div class="eyebrow">What Go2 sees</div>
+          <h3 style="font-size:1.55rem; margin-bottom:10px;">Signals that become coaching</h3>
+          <div class="insight-list">
+            <div class="insight-item">
+              <div class="insight-icon">⌨️</div>
+              <div>
+                <h4>Work pattern visibility</h4>
+                <p>Keystrokes, app usage, and digital flow reveal where focus is thriving — and where friction keeps interrupting it.</p>
+              </div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-icon">💬</div>
+              <div>
+                <h4>Meeting reality checks</h4>
+                <p>Go2 spots overload, spillover, and recovery gaps so teams can redesign calendars around output, not just attendance.</p>
+              </div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-icon">🧠</div>
+              <div>
+                <h4>AI coaching, not surveillance</h4>
+                <p>Unlike legacy monitoring tools, Go2 reframes productivity as support: better habits, clearer routines, stronger performance.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pricing-card" id="pricing">
+          <div class="pricing-head">
+            <div>
+              <div class="eyebrow">Simple SMB pricing</div>
+              <h3 style="font-size:1.65rem; margin-bottom:8px;">Coaching that pays for itself</h3>
+            </div>
+            <div class="price">$6–12 <span>/ user / month</span></div>
+          </div>
+
+          <div class="pricing-points">
+            <div><span class="check">✓</span><span>Built for teams of 5–500 employees</span></div>
+            <div><span class="check">✓</span><span>Productivity insights without “big brother” positioning</span></div>
+            <div><span class="check">✓</span><span>Ideal for owners, operations managers, and HR directors</span></div>
+            <div><span class="check">✓</span><span>Faster ROI than typical time-tracking-only tools</span></div>
+          </div>
+
+          <div class="roi-banner">
+            <div>
+              <strong>892% ROI</strong>
+              <div style="color:var(--muted); margin-top:4px;">Average first-year return from smarter work design</div>
+            </div>
+            <button class="btn btn-primary">Start with Go2</button>
+          </div>
+        </div>
+
+        <div class="quote-card">
+          <div class="eyebrow">Positioning</div>
+          <blockquote style="font-size:clamp(1.35rem,2vw,1.9rem);">
+            Time Doctor, Hubstaff, and Teramind monitor activity. Go2 turns activity into coaching.
+          </blockquote>
+          <cite>That difference changes adoption, trust, and results.</cite>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const filters = document.querySelectorAll('.filter');
+    const cards = document.querySelectorAll('.day-card');
+    const toggleNotesBtn = document.getElementById('toggleNotes');
+    const go2Notes = document.querySelectorAll('.go2-note');
+    const navLinks = document.querySelectorAll('.nav a');
+
+    filters.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filters.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const filter = btn.dataset.filter;
+        cards.forEach(card => {
+          const tags = card.dataset.tags || '';
+          const map = {
+            all: true,
+            focus: tags.includes('focus'),
+            meeting: tags.includes('meeting'),
+            recovery: tags.includes('recovery'),
+            coaching: tags.includes('coaching')
+          };
+          card.classList.toggle('hidden', !map[filter]);
+        });
+      });
+    });
+
+    let quiet = false;
+    toggleNotesBtn.addEventListener('click', () => {
+      quiet = !quiet;
+      go2Notes.forEach(note => note.classList.toggle('hidden', quiet));
+      toggleNotesBtn.textContent = quiet ? 'Show coaching notes' : 'Quiet mode';
+    });
+
+    const sections = [...document.querySelectorAll('section[id], div[id]')];
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id;
+          navLinks.forEach(link => {
+            link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
+          });
+        }
+      });
+    }, { threshold: 0.35 });
+
+    sections.forEach(section => observer.observe(section));
+  </script>
+</body>
+</html>

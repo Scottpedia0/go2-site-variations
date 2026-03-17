@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Switch to Go2 — Migration Guide from Time Doctor, Hubstaff, Teramind | Go2.io</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; color: #1a1a2e; background: #fff; line-height: 1.7; }
+.container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(255,255,255,0.97); backdrop-filter: blur(20px); border-bottom: 1px solid #eee; padding: 14px 0; }
+nav .container { display: flex; justify-content: space-between; align-items: center; }
+.logo { font-size: 22px; font-weight: 800; color: #7c3aed; }
+.logo span { color: #1a1a2e; }
+.nav-links { display: flex; align-items: center; gap: 24px; }
+.nav-links a { color: #666; text-decoration: none; font-size: 13px; font-weight: 500; }
+.nav-cta { background: #7c3aed !important; color: #fff !important; padding: 8px 20px !important; border-radius: 8px !important; }
+
+.hero { padding: 130px 0 60px; text-align: center; background: linear-gradient(180deg, #f5f3ff 0%, #fff 100%); }
+.hero h1 { font-size: 46px; font-weight: 800; line-height: 1.1; color: #1e1b4b; margin-bottom: 16px; }
+.hero h1 .accent { color: #7c3aed; }
+.hero p { font-size: 18px; color: #666; max-width: 600px; margin: 0 auto 32px; }
+.from-logos { display: flex; justify-content: center; gap: 32px; align-items: center; margin-bottom: 32px; flex-wrap: wrap; }
+.from-logo { background: #fff; border: 2px solid #eee; border-radius: 12px; padding: 12px 24px; font-weight: 700; color: #999; font-size: 14px; transition: all 0.3s; cursor: pointer; }
+.from-logo.active { border-color: #7c3aed; color: #7c3aed; background: #f5f3ff; }
+
+.comparison-section { padding: 60px 0; }
+.comp-header { text-align: center; margin-bottom: 32px; }
+.section-label { font-size: 12px; font-weight: 700; color: #7c3aed; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; }
+.section-title { font-size: 32px; font-weight: 800; color: #1e1b4b; margin-bottom: 8px; }
+.section-desc { font-size: 16px; color: #666; }
+
+.comp-table { width: 100%; border-collapse: collapse; margin: 24px 0; }
+.comp-table th { padding: 14px 16px; text-align: left; font-size: 13px; font-weight: 700; border-bottom: 2px solid #eee; }
+.comp-table th:first-child { width: 40%; }
+.comp-table th.them { color: #999; }
+.comp-table th.us { color: #7c3aed; }
+.comp-table td { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+.comp-table td:first-child { font-weight: 600; color: #333; }
+.feat-yes { color: #059669; font-weight: 600; }
+.feat-no { color: #dc2626; font-weight: 600; }
+.feat-partial { color: #f59e0b; font-weight: 600; }
+
+.migration-steps { padding: 60px 0; background: #f9fafb; }
+.steps-container { max-width: 700px; margin: 32px auto 0; }
+.step { display: flex; gap: 20px; margin-bottom: 32px; }
+.step-num { width: 40px; height: 40px; background: #7c3aed; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; flex-shrink: 0; }
+.step-content h3 { font-size: 18px; font-weight: 700; color: #1e1b4b; margin-bottom: 4px; }
+.step-content p { font-size: 14px; color: #666; }
+.step-content .time { font-size: 12px; color: #7c3aed; font-weight: 600; margin-top: 4px; }
+
+.data-import { padding: 60px 0; }
+.import-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 32px; }
+.import-card { background: #f5f3ff; border: 1px solid #e9e5ff; border-radius: 12px; padding: 24px; text-align: center; }
+.import-card .icon { font-size: 28px; margin-bottom: 8px; }
+.import-card h3 { font-size: 15px; font-weight: 700; color: #1e1b4b; margin-bottom: 4px; }
+.import-card p { font-size: 12px; color: #888; }
+.import-card .status { font-size: 12px; font-weight: 700; color: #059669; margin-top: 8px; }
+
+.faq-section { padding: 60px 0; background: #faf9f7; }
+.faq-item { max-width: 700px; margin: 0 auto 16px; background: #fff; border: 1px solid #eee; border-radius: 12px; overflow: hidden; }
+.faq-q { padding: 16px 20px; font-weight: 600; font-size: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+.faq-q:hover { color: #7c3aed; }
+.faq-a { padding: 0 20px 16px; font-size: 14px; color: #666; display: none; }
+.faq-item.open .faq-a { display: block; }
+.faq-toggle { font-size: 20px; color: #ccc; transition: transform 0.2s; }
+.faq-item.open .faq-toggle { transform: rotate(45deg); color: #7c3aed; }
+
+.testimonial { padding: 60px 0; text-align: center; }
+.testimonial blockquote { font-size: 22px; font-weight: 500; max-width: 650px; margin: 0 auto 20px; line-height: 1.5; color: #333; font-style: italic; }
+.testimonial .author { font-weight: 700; color: #7c3aed; }
+.testimonial .role { color: #888; font-size: 14px; }
+.testimonial .switched { font-size: 13px; color: #999; margin-top: 4px; }
+
+.cta-section { padding: 60px 0; text-align: center; background: linear-gradient(135deg, #7c3aed, #a78bfa); color: #fff; }
+.cta-section h2 { font-size: 32px; font-weight: 800; margin-bottom: 12px; }
+.cta-section p { opacity: 0.9; margin-bottom: 24px; }
+.btn-white { background: #fff; color: #7c3aed; padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: 700; text-decoration: none; display: inline-block; transition: all 0.3s; }
+.btn-white:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+
+footer { padding: 32px 0; border-top: 1px solid #eee; text-align: center; color: #999; font-size: 13px; }
+
+@media (max-width: 768px) {
+  .hero h1 { font-size: 32px; }
+  .import-grid { grid-template-columns: 1fr; }
+  .comp-table { font-size: 12px; }
+  .nav-links { display: none; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <div class="logo">Go2<span>.io</span></div>
+    <div class="nav-links">
+      <a href="#compare">Compare</a>
+      <a href="#steps">Migration Steps</a>
+      <a href="#faq">FAQ</a>
+      <a href="#" class="nav-cta">Start Migration</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="container">
+    <h1>Switch to <span class="accent">Go2</span> — The Easy Way</h1>
+    <p>Migrating from your current tool? We've helped 200+ companies switch. Zero downtime, full data import, and happier employees from day one.</p>
+    <div class="from-logos">
+      <div class="from-logo active" data-from="timedoctor">Time Doctor</div>
+      <div class="from-logo" data-from="hubstaff">Hubstaff</div>
+      <div class="from-logo" data-from="teramind">Teramind</div>
+    </div>
+  </div>
+</section>
+
+<section class="comparison-section" id="compare">
+  <div class="container">
+    <div class="comp-header">
+      <div class="section-label">Feature Comparison</div>
+      <h2 class="section-title" id="comp-title">Time Doctor vs. Go2</h2>
+      <p class="section-desc">See exactly what you gain (and what you leave behind — on purpose).</p>
+    </div>
+    <table class="comp-table" id="comp-table">
+      <thead><tr><th>Feature</th><th class="them" id="comp-them">Time Doctor</th><th class="us">Go2</th><th>Why It Matters</th></tr></thead>
+      <tbody id="comp-body"></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="migration-steps" id="steps">
+  <div class="container">
+    <div style="text-align:center;">
+      <div class="section-label">5-Step Migration</div>
+      <h2 class="section-title">Switch in Under a Week</h2>
+      <p class="section-desc">No overlap billing. No data loss. No disruption.</p>
+    </div>
+    <div class="steps-container">
+      <div class="step"><div class="step-num">1</div><div class="step-content"><h3>Export Your Data</h3><p>Export your existing data from your current tool. We provide step-by-step guides for each platform, or our team does it for you.</p><div class="time">~30 minutes</div></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-content"><h3>Import to Go2</h3><p>Upload your historical data to Go2. We'll map your categories, teams, and projects to preserve continuity in your analytics.</p><div class="time">~1 hour (automated)</div></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-content"><h3>Deploy Go2 Agent</h3><p>Install the Go2 desktop agent. Can run alongside your existing tool during transition — no conflict, no overlap.</p><div class="time">5 min per machine</div></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-content"><h3>Parallel Run (Optional)</h3><p>Run both tools for 3-5 days to verify Go2 captures everything. Compare dashboards side-by-side for confidence.</p><div class="time">3-5 days</div></div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-content"><h3>Uninstall Old Tool</h3><p>Remove your previous tool. Go2 is now your single source of truth. We provide uninstall guides for all platforms.</p><div class="time">~15 minutes</div></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="data-import">
+  <div class="container">
+    <div style="text-align:center;">
+      <div class="section-label">Data Import</div>
+      <h2 class="section-title">Bring Your History With You</h2>
+    </div>
+    <div class="import-grid">
+      <div class="import-card"><div class="icon">&#128200;</div><h3>Historical Analytics</h3><p>Import up to 2 years of productivity data</p><div class="status">Supported</div></div>
+      <div class="import-card"><div class="icon">&#128101;</div><h3>Team Structure</h3><p>Teams, managers, and reporting lines</p><div class="status">Supported</div></div>
+      <div class="import-card"><div class="icon">&#128193;</div><h3>Project Categories</h3><p>Custom categories and classifications</p><div class="status">Supported</div></div>
+      <div class="import-card"><div class="icon">&#128176;</div><h3>Time & Billing Data</h3><p>Billable hours and client associations</p><div class="status">Supported</div></div>
+      <div class="import-card"><div class="icon">&#128202;</div><h3>Reports & Exports</h3><p>Historical report archive</p><div class="status">Supported</div></div>
+      <div class="import-card"><div class="icon">&#128274;</div><h3>User Permissions</h3><p>Role-based access settings</p><div class="status">Supported</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="faq-section" id="faq">
+  <div class="container">
+    <div style="text-align:center; margin-bottom:32px;">
+      <div class="section-label">FAQ</div>
+      <h2 class="section-title">Common Migration Questions</h2>
+    </div>
+    <div class="faq-item"><div class="faq-q">Will my employees notice the switch?<span class="faq-toggle">+</span></div><div class="faq-a">Most employees prefer Go2 immediately because it's less intrusive. No screenshots, no random popup prompts. The agent runs silently and employees see their own coaching dashboard — which they actually find helpful rather than creepy.</div></div>
+    <div class="faq-item"><div class="faq-q">What about my historical data?<span class="faq-toggle">+</span></div><div class="faq-a">We import up to 2 years of historical data from your current tool. This means your productivity trends, team analytics, and project data carry over seamlessly. No starting from scratch.</div></div>
+    <div class="faq-item"><div class="faq-q">Can I run both tools during transition?<span class="faq-toggle">+</span></div><div class="faq-a">Yes. Go2 runs alongside Time Doctor, Hubstaff, or Teramind without conflicts. We recommend a 3-5 day parallel run for peace of mind, then uninstall the old tool.</div></div>
+    <div class="faq-item"><div class="faq-q">How long does migration take?<span class="faq-toggle">+</span></div><div class="faq-a">Most companies complete migration in under a week. Data import takes 1-2 hours (automated), agent deployment takes 5 minutes per machine, and the optional parallel run is 3-5 days.</div></div>
+    <div class="faq-item"><div class="faq-q">What features will I lose?<span class="faq-toggle">+</span></div><div class="faq-a">If you use screenshots or keystroke logging, those features don't exist in Go2 — by design. We believe surveillance doesn't improve productivity; coaching does. Everything else (time tracking, project analytics, reporting) is available and usually better.</div></div>
+    <div class="faq-item"><div class="faq-q">Will my costs change?<span class="faq-toggle">+</span></div><div class="faq-a">Go2 pricing is $6-12/user/month depending on plan. Most companies switching from Teramind save 30-50% on licensing costs alone, before factoring in the productivity gains.</div></div>
+  </div>
+</section>
+
+<section class="testimonial">
+  <div class="container">
+    <blockquote>"We switched from Hubstaff and our employee satisfaction scores went up 23 points. The team went from feeling watched to feeling coached. Same data, completely different culture."</blockquote>
+    <div class="author">Alex Rivera, VP Operations</div>
+    <div class="role">B2B SaaS company, 120 employees</div>
+    <div class="switched">Switched from Hubstaff &rarr; Go2</div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <div class="container">
+    <h2>Ready to Make the Switch?</h2>
+    <p>Our migration team handles everything. You'll be fully switched within a week.</p>
+    <a href="#" class="btn-white">Start Your Migration</a>
+  </div>
+</section>
+
+<footer>
+  <div class="container">&copy; 2026 Go2.io &mdash; The Migration-Friendly Productivity Platform</div>
+</footer>
+
+<script>
+const compData = {
+  timedoctor: { name:'Time Doctor', rows: [
+    ['AI Coaching','Basic tips','Personalized AI coaching','Go2 adapts to each person\'s work style'],
+    ['Screenshots','Every 3-10 min','Never','Privacy-first approach builds trust'],
+    ['Keystroke Logging','Available','Never','Not needed for accurate insights'],
+    ['Employee Dashboard','Limited','Full self-service','Employees see their own data first'],
+    ['Offline Tracking','Yes','Yes','Both work offline'],
+    ['Project Tracking','Basic','AI-powered auto-categorization','No manual time entries needed'],
+    ['API Access','Limited','Full REST API','Build custom integrations'],
+    ['SSO/SCIM','Enterprise only','All plans','Enterprise security for everyone'],
+    ['Mobile App','Yes','Coming Q2 2026','Desktop-first for accuracy'],
+    ['Pricing','$7-20/user/mo','$6-12/user/mo','More value, lower cost']
+  ]},
+  hubstaff: { name:'Hubstaff', rows: [
+    ['AI Coaching','None','Personalized AI coaching','Go2\'s core differentiator'],
+    ['Screenshots','Every 1-10 min','Never','Employees prefer coaching over surveillance'],
+    ['GPS Tracking','Yes','No','Privacy-respecting alternative'],
+    ['Activity Levels','Mouse/keyboard %','AI-analyzed patterns','More nuanced than activity %%'],
+    ['Invoicing','Built-in','Integration (QuickBooks, etc.)','Use your preferred billing tool'],
+    ['Project Budgets','Yes','Yes + AI forecasting','Go2 predicts budget overruns'],
+    ['Team Analytics','Basic','AI-powered insights','Actionable, not just data'],
+    ['Integrations','30+','50+ native','Broader ecosystem'],
+    ['Employee Experience','Surveillance feel','Coaching platform','Culture impact matters'],
+    ['Pricing','$5-25/user/mo','$6-12/user/mo','Simpler, more predictable']
+  ]},
+  teramind: { name:'Teramind', rows: [
+    ['AI Coaching','None','Personalized AI coaching','Coaching beats monitoring'],
+    ['Screen Recording','Continuous video','Never','Go2 proves you don\'t need it'],
+    ['Email Content Monitoring','Full content','Never','We respect communication privacy'],
+    ['DLP Features','Full suite','Not included','Use dedicated DLP tools'],
+    ['Insider Threat Detection','Core feature','Not included','Different product category'],
+    ['Productivity Analytics','Yes','Yes + AI coaching','Both track; Go2 also coaches'],
+    ['Employee Privacy','Minimal','Privacy-first','Trust-based culture'],
+    ['Deployment Complexity','Complex','5-min install','No agents-on-agents'],
+    ['Setup Time','2-4 weeks','1 day','Dramatically faster'],
+    ['Pricing','$10-25/user/mo','$6-12/user/mo','40-50% cost reduction']
+  ]}
+};
+function renderComp(tool) {
+  const d = compData[tool];
+  document.getElementById('comp-title').textContent = d.name + ' vs. Go2';
+  document.getElementById('comp-them').textContent = d.name;
+  document.getElementById('comp-body').innerHTML = d.rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td style="color:#888;font-size:13px">${r[3]}</td></tr>`).join('');
+}
+document.querySelectorAll('.from-logo').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.from-logo').forEach(e => e.classList.remove('active'));
+    el.classList.add('active');
+    renderComp(el.dataset.from);
+  });
+});
+renderComp('timedoctor');
+
+document.querySelectorAll('.faq-item').forEach(item => {
+  item.querySelector('.faq-q').addEventListener('click', () => item.classList.toggle('open'));
+});
+</script>
+</body>
+</html>

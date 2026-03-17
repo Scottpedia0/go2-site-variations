@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Two Futures | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: #0a0a0f; color: #e0e0e0; overflow-x: hidden; }
+.hero { text-align: center; padding: 80px 20px 40px; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 900; margin-bottom: 12px; }
+.hero p { color: #888; max-width: 500px; margin: 0 auto 24px; }
+.slider-control { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 40px; }
+.slider-label { font-size: 0.85rem; font-weight: 600; }
+.slider-label.left { color: #ef4444; }
+.slider-label.right { color: #22c55e; }
+.slider-track { position: relative; width: 200px; height: 40px; }
+.slider-track input[type="range"] { -webkit-appearance: none; width: 100%; height: 6px; border-radius: 3px; background: linear-gradient(90deg, #ef4444, #666, #22c55e); outline: none; position: absolute; top: 50%; transform: translateY(-50%); }
+.slider-track input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: #fff; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+.split-view { position: relative; max-width: 1200px; margin: 0 auto; overflow: hidden; }
+.side { position: absolute; top: 0; width: 100%; min-height: 100%; padding: 40px 20px; transition: clip-path 0.1s linear; }
+.side.dystopia { background: #080808; clip-path: inset(0 50% 0 0); z-index: 2; }
+.side.utopia { background: #0a0f0a; clip-path: inset(0 0 0 50%); z-index: 1; }
+.split-container { display: flex; min-height: 100vh; }
+.split-half { flex: 1; padding: 40px; min-width: 0; }
+.split-half.dark { background: linear-gradient(135deg, #0a0005, #080808); border-right: 1px solid #1a0a0a; }
+.split-half.light { background: linear-gradient(135deg, #050a05, #0a0f0a); }
+.side-header { text-align: center; margin-bottom: 32px; }
+.side-header h2 { font-size: 1.4rem; font-weight: 800; margin-bottom: 6px; }
+.dark .side-header h2 { color: #ef4444; }
+.light .side-header h2 { color: #22c55e; }
+.side-header p { font-size: 0.85rem; color: #555; }
+.feature-card { padding: 20px; border-radius: 12px; margin-bottom: 12px; }
+.dark .feature-card { background: rgba(239,68,68,0.03); border: 1px solid rgba(239,68,68,0.1); }
+.light .feature-card { background: rgba(34,197,94,0.03); border: 1px solid rgba(34,197,94,0.1); }
+.feature-card h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; }
+.dark .feature-card h4 { color: #f87171; }
+.light .feature-card h4 { color: #4ade80; }
+.feature-card p { font-size: 0.8rem; color: #888; line-height: 1.5; }
+.stat-row { display: flex; gap: 12px; margin: 16px 0; flex-wrap: wrap; }
+.stat-pill { padding: 8px 14px; border-radius: 8px; font-size: 0.75rem; font-weight: 600; }
+.dark .stat-pill { background: rgba(239,68,68,0.1); color: #f87171; }
+.light .stat-pill { background: rgba(34,197,94,0.1); color: #4ade80; }
+.employee-quote { padding: 16px; border-radius: 10px; margin: 12px 0; font-size: 0.85rem; font-style: italic; line-height: 1.5; }
+.dark .employee-quote { background: rgba(239,68,68,0.03); border-left: 3px solid #ef4444; color: #999; }
+.light .employee-quote { background: rgba(34,197,94,0.03); border-left: 3px solid #22c55e; color: #999; }
+.employee-quote .name { font-style: normal; font-weight: 600; font-size: 0.75rem; color: #666; margin-top: 8px; display: block; }
+.divider { position: fixed; top: 0; bottom: 0; width: 4px; background: linear-gradient(180deg, #ef4444, #888, #22c55e); z-index: 10; transform: translateX(-50%); pointer-events: none; left: 50%; }
+.cta-section { text-align: center; padding: 80px 20px; background: #0a0a0f; position: relative; z-index: 20; }
+.cta-section h2 { font-size: clamp(1.5rem, 4vw, 2.5rem); font-weight: 800; margin-bottom: 16px; }
+.cta-section p { color: #888; margin-bottom: 24px; max-width: 500px; margin-left: auto; margin-right: auto; }
+.cta-btn { display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 1.1rem; border: none; cursor: pointer; }
+@media (max-width: 768px) {
+  .split-container { flex-direction: column; }
+  .split-half { border-right: none !important; border-bottom: 1px solid #1a1a2e; }
+  .divider { display: none; }
+  .slider-control { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="hero">
+  <h1>Two Futures of Work</h1>
+  <p>Surveillance dystopia or AI-coaching utopia. Same goal — different world. Which one does your company live in?</p>
+</div>
+
+<div class="slider-control">
+  <span class="slider-label left">Surveillance</span>
+  <div class="slider-track"><input type="range" min="0" max="100" value="50" id="splitSlider" oninput="updateSplit(this.value)"></div>
+  <span class="slider-label right">Go2</span>
+</div>
+
+<div class="split-container">
+  <div class="split-half dark" id="darkSide">
+    <div class="side-header">
+      <h2>The Surveillance Future</h2>
+      <p>Screenshot every 5 minutes. Keystroke logging. Always watched.</p>
+    </div>
+
+    <div class="feature-card">
+      <h4>Screenshots Every 5 Minutes</h4>
+      <p>Your screen captured 96 times per day. Every tab. Every message. Every moment of hesitation. All stored. All reviewed.</p>
+    </div>
+    <div class="stat-row">
+      <span class="stat-pill">-40% creative output</span>
+      <span class="stat-pill">+67% anxiety</span>
+    </div>
+
+    <div class="feature-card">
+      <h4>Keystroke & Mouse Tracking</h4>
+      <p>Every key you press. Every mouse movement. An "activity score" that judges your productivity by how fast your fingers move.</p>
+    </div>
+
+    <div class="feature-card">
+      <h4>"Idle Time" Alerts</h4>
+      <p>Step away from your desk for 3 minutes and your manager gets a notification. Thinking time is flagged as "unproductive."</p>
+    </div>
+
+    <div class="employee-quote">
+      "I installed a mouse jiggler. Not because I'm lazy — because I need to use the bathroom without triggering an alert."
+      <span class="name">— Anonymous, Glassdoor review</span>
+    </div>
+
+    <div class="feature-card">
+      <h4>Individual Surveillance Dashboards</h4>
+      <p>Managers see second-by-second activity for each employee. Ranking people by "active time." Creating a culture of performance theater.</p>
+    </div>
+
+    <div class="feature-card">
+      <h4>The Result</h4>
+      <p>2.5x higher turnover. Employees game the system. Trust is destroyed. The best people leave first. What remains is compliance without creativity.</p>
+    </div>
+    <div class="stat-row">
+      <span class="stat-pill">2.5x turnover</span>
+      <span class="stat-pill">$250K/departure</span>
+      <span class="stat-pill">0% trust</span>
+    </div>
+
+    <div class="employee-quote">
+      "I left the highest-paying job of my career because I couldn't handle being watched every second. No salary is worth that."
+      <span class="name">— Senior Engineer, departed after 4 months</span>
+    </div>
+  </div>
+
+  <div class="split-half light" id="lightSide">
+    <div class="side-header">
+      <h2>The Go2 Future</h2>
+      <p>AI coaching. Pattern insights. Zero surveillance. Always trusted.</p>
+    </div>
+
+    <div class="feature-card">
+      <h4>Work Pattern Analysis (Not Screenshots)</h4>
+      <p>Go2 understands how you work at a category level. Focus time vs. meetings vs. collaboration. No visual capture. Ever.</p>
+    </div>
+    <div class="stat-row">
+      <span class="stat-pill">+42% productivity</span>
+      <span class="stat-pill">95% satisfaction</span>
+    </div>
+
+    <div class="feature-card">
+      <h4>AI Coaching for Every Person</h4>
+      <p>Personalized suggestions: "Your best focus time is 9-11 AM. Block it." "You have 3 redundant meetings this week." Helpful, not punitive.</p>
+    </div>
+
+    <div class="feature-card">
+      <h4>Focus Time Protection</h4>
+      <p>Go2 identifies your peak cognitive hours and helps protect them. No meetings during your flow state. Notifications batched. Deep work enabled.</p>
+    </div>
+
+    <div class="employee-quote">
+      "For the first time, my manager understands why I need uninterrupted time. Go2 showed them the data. I didn't have to fight for it."
+      <span class="name">— Sarah, Senior Designer</span>
+    </div>
+
+    <div class="feature-card">
+      <h4>Team-Level Insights (Not Individual Spying)</h4>
+      <p>Managers see aggregate patterns: team focus time, meeting load, collaboration health. No individual surveillance. Trust + visibility.</p>
+    </div>
+
+    <div class="feature-card">
+      <h4>The Result</h4>
+      <p>42% productivity increase. Voluntary turnover drops 60%. Employees feel supported, not watched. Innovation increases. Culture thrives.</p>
+    </div>
+    <div class="stat-row">
+      <span class="stat-pill">42% improvement</span>
+      <span class="stat-pill">892% ROI</span>
+      <span class="stat-pill">100% trust</span>
+    </div>
+
+    <div class="employee-quote">
+      "Go2 is the first 'productivity tool' that actually made me more productive instead of more anxious."
+      <span class="name">— Marcus, Engineering Lead</span>
+    </div>
+  </div>
+</div>
+
+<div class="cta-section">
+  <h2>Choose your future.</h2>
+  <p>Surveillance tools sell fear. Go2 sells understanding. Same data, completely different philosophy. Dramatically different results.</p>
+  <button class="cta-btn">Choose the Better Future</button>
+</div>
+
+<script>
+function updateSplit(val) {
+  const pct = val / 100;
+  const darkSide = document.getElementById('darkSide');
+  const lightSide = document.getElementById('lightSide');
+  // On wider screens, adjust visual emphasis
+  darkSide.style.opacity = 0.5 + (1 - pct) * 0.5;
+  lightSide.style.opacity = 0.5 + pct * 0.5;
+}
+
+// Scroll animations
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.opacity = '1';
+      e.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.feature-card, .employee-quote, .stat-row').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(15px)';
+  el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+  observer.observe(el);
+});
+</script>
+</body>
+</html>

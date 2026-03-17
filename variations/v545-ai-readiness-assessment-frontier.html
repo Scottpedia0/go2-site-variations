@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go2 | AI Readiness Assessment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Brand Colors */
+            --primary: #0F172A; /* Deep Slate */
+            --primary-light: #1E293B;
+            --accent: #0EA5E9; /* Vibrant Teal/Blue */
+            --accent-hover: #0284C7;
+            --accent-glow: rgba(14, 165, 233, 0.2);
+            --success: #10B981;
+            --warning: #F59E0B;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --bg-page: #020617;
+            --bg-card: #0F172A;
+            --border: #334155;
+            
+            /* Chart Colors */
+            --chart-grid: #334155;
+            --chart-fill: rgba(14, 165, 233, 0.3);
+            --chart-stroke: #0EA5E9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Typography */
+        h1, h2, h3, h4 { letter-spacing: -0.02em; }
+        
+        /* Layout */
+        header {
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            background: rgba(2, 6, 23, 0.8);
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: white;
+            text-decoration: none;
+        }
+
+        .logo span { color: var(--accent); }
+
+        .header-tag {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            display: none;
+        }
+
+        @media (min-width: 640px) {
+            .header-tag { display: block; }
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 6rem 1rem 2rem 1rem;
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Container & Views */
+        .container {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px var(--accent-glow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .view {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            transform: translateY(10px);
+        }
+
+        .view.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Buttons */
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -10px var(--accent);
+        }
+
+        .btn:disabled {
+            background: var(--border);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Intro View */
+        #intro-view { text-align: center; }
+        
+        #intro-view h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #fff, #94A3B8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        #intro-view p {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .stat-badges {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: rgba(14, 165, 233, 0.1);
+            border: 1px solid rgba(14, 165, 233, 0.2);
+            color: var(--accent);
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        /* Quiz View */
+        .progress-container {
+            margin-bottom: 2rem;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        .question-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            line-height: 1.4;
+        }
+
+        .options-grid {
+            display: grid;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .option-card {
+            background: var(--primary-light);
+            border: 2px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .option-card:hover {
+            border-color: var(--accent);
+            background: rgba(14, 165, 233, 0.05);
+        }
+
+        .option-card.selected {
+            border-color: var(--accent);
+            background: rgba(14, 165, 233, 0.1);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .option-letter {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+        }
+
+        .option-card.selected .option-letter {
+            background: var(--accent);
+            color: white;
+        }
+
+        .option-text {
+            font-size: 1rem;
+            color: var(--text-main);
+            flex: 1;
+        }
+
+        .quiz-footer {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 1rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Loading View */
+        #loading-view {
+            text-align: center;
+            padding: 4rem 0;
+        }
+
+        .loader {
+            width: 64px;
+            height: 64px;
+            border: 4px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 2rem auto;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .loading-text {
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+        }
+        
+        .loading-subtext {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Results View */
+        .results-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .results-header h2 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .results-score-badge {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 2rem;
+            font-weight: 700;
+            font-size: 1.25rem;
+            margin-top: 1rem;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 3rem;
+            margin-bottom: 3rem;
+        }
+
+        @media (min-width: 768px) {
+            .results-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .chart-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--primary-light);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            border: 1px solid var(--border);
+        }
+
+        svg { max-width: 100%; height: auto; overflow: visible; }
+
+        .recommendations-list { display: flex; flex-direction: column; gap: 1.5rem; }
+
+        .rec-item {
+            background: var(--primary-light);
+            padding: 1.25rem;
+            border-radius: 1rem;
+            border-left: 4px solid var(--accent);
+        }
+
+        .rec-item h4 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .rec-score {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: normal;
+        }
+
+        .rec-item p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            background: linear-gradient(135deg, var(--primary-light) 0%, #0F172A 100%);
+            border: 1px solid var(--border);
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, var(--accent), var(--success));
+        }
+
+        .cta-section h3 { font-size: 1.75rem; margin-bottom: 1rem; }
+        .cta-section p { color: var(--text-muted); margin-bottom: 2rem; max-width: 500px; margin-left: auto; margin-right: auto; }
+        
+        .roi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .roi-stat {
+            background: rgba(255,255,255,0.05);
+            padding: 1rem;
+            border-radius: 0.75rem;
+        }
+
+        .roi-stat h4 { font-size: 1.5rem; color: var(--success); margin-bottom: 0.25rem; }
+        .roi-stat span { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+        .pricing-note {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-top: 1rem;
+            display: block;
+        }
+
+        @media (max-width: 640px) {
+            .container { padding: 1.5rem; border-radius: 1rem; }
+            #intro-view h1 { font-size: 2rem; }
+            .roi-grid { grid-template-columns: 1fr; }
+            .chart-container { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="#" class="logo">Go<span>2</span></a>
+        <div class="header-tag">AI Productivity Coaching for SMBs</div>
+    </header>
+
+    <main>
+        <div class="container">
+            
+            <!-- 1. Intro View -->
+            <div id="intro-view" class="view active">
+                <div class="stat-badges">
+                    <span class="badge">42% Avg. Productivity Increase</span>
+                    <span class="badge">15.2 Hrs Saved / Employee</span>
+                </div>
+                <h1>Is your team ready for AI productivity coaching?</h1>
+                <p>Modern teams perform best with coaching, not surveillance. Take our 2-minute assessment to discover where your operational blindspots are and how AI can empower your team to work smarter.</p>
+                <button class="btn" onclick="startQuiz()">
+                    Start Assessment
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+            </div>
+
+            <!-- 2. Quiz View -->
+            <div id="quiz-view" class="view">
+                <div class="progress-container">
+                    <div class="progress-header">
+                        <span id="progress-text">Question 1 of 10</span>
+                        <span>Coaching Readiness</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                </div>
+
+                <div class="question-container">
+                    <h2 class="question-text" id="question-text">Question goes here?</h2>
+                    <div class="options-grid" id="options-grid">
+                        <!-- Options injected via JS -->
+                    </div>
+                </div>
+
+                <div class="quiz-footer">
+                    <button class="btn" id="next-btn" onclick="nextQuestion()" disabled>Next Question</button>
+                </div>
+            </div>
+
+            <!-- 3. Loading View -->
+            <div id="loading-view" class="view">
+                <div class="loader"></div>
+                <h3 class="loading-text">Analyzing organizational readiness...</h3>
+                <p class="loading-subtext">Mapping workflows & evaluating AI coaching fit.</p>
+            </div>
+
+            <!-- 4. Results View -->
+            <div id="results-view" class="view">
+                <div class="results-header">
+                    <h2>Your AI Readiness Profile</h2>
+                    <p style="color: var(--text-muted);">Based on your responses, here is your organizational breakdown.</p>
+                    <div class="results-score-badge" id="overall-score">Score: 0/100</div>
+                </div>
+
+                <div class="results-grid">
+                    <!-- Radar Chart -->
+                    <div class="chart-container">
+                        <div id="radar-chart"></div>
+                    </div>
+
+                    <!-- Recommendations -->
+                    <div class="recommendations-list" id="recommendations-list">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+                <!-- CTA -->
+                <div class="cta-section">
+                    <h3>Stop guessing. Start coaching.</h3>
+                    <p>Go2 gives you unprecedented visibility into how work actually happens, coupled with AI-driven coaching to eliminate bottlenecks.</p>
+                    
+                    <div class="roi-grid">
+                        <div class="roi-stat">
+                            <h4>892%</h4>
+                            <span>First Year ROI</span>
+                        </div>
+                        <div class="roi-stat">
+                            <h4>15.2h</h4>
+                            <span>Saved Weekly</span>
+                        </div>
+                        <div class="roi-stat">
+                            <h4>+42%</h4>
+                            <span>Output Increase</span>
+                        </div>
+                    </div>
+
+                    <button class="btn" style="width: 100%; max-width: 300px;">Start Free Trial</button>
+                    <span class="pricing-note">Plans starting at just $6 - $12 / user / month.</span>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // --- Data Structure ---
+        const categories = {
+            infrastructure: { label: "Data Infrastructure", max: 8 },
+            culture: { label: "Culture & Trust", max: 8 },
+            process: { label: "Process Standardization", max: 8 },
+            tech: { label: "Current Tech Stack", max: 8 },
+            alignment: { label: "Goal Alignment", max: 8 }
+        };
+
+        const questions = [
+            // Infrastructure
+            {
+                q: "Where does the majority of your team's daily work happen?",
+                cat: "infrastructure",
+                options: [
+                    { text: "Mostly local files, paper, or physical whiteboards.", points: 1 },
+                    { text: "A mix of local files and basic cloud storage (Google Drive/Dropbox).", points: 2 },
+                    { text: "Mostly cloud-based tools, but they aren't connected.", points: 3 },
+                    { text: "Fully integrated cloud-based SaaS ecosystem.", points: 4 }
+                ]
+            },
+            {
+                q: "How difficult is it currently to gather data on team capacity and workload?",
+                cat: "infrastructure",
+                options: [
+                    { text: "Nearly impossible; relies entirely on asking people.", points: 1 },
+                    { text: "Takes days of manual spreadsheet compilation.", points: 2 },
+                    { text: "We have basic dashboards, but they lack granular detail.", points: 3 },
+                    { text: "Instant access to real-time capacity and app-usage data.", points: 4 }
+                ]
+            },
+            // Culture & Trust
+            {
+                q: "How would your employees react to a tool that tracks their app usage and keystrokes?",
+                cat: "culture",
+                options: [
+                    { text: "Extreme resistance; it would be viewed as 'Big Brother'.", points: 1 },
+                    { text: "Skeptical, but might accept it if mandated.", points: 2 },
+                    { text: "Open to it, provided it's used to help them, not punish them.", points: 3 },
+                    { text: "They would welcome it as a tool to prove their hard work and prevent burnout.", points: 4 }
+                ]
+            },
+            {
+                q: "What is your primary motivation for implementing a productivity platform?",
+                cat: "culture",
+                options: [
+                    { text: "To ensure remote workers are actually at their keyboards.", points: 1 },
+                    { text: "To track hours for payroll and client billing.", points: 2 },
+                    { text: "To identify workflow bottlenecks across the company.", points: 3 },
+                    { text: "To provide automated, personalized coaching to help individuals grow.", points: 4 }
+                ]
+            },
+            // Process
+            {
+                q: "How standardized are your company's core workflows?",
+                cat: "process",
+                options: [
+                    { text: "Everyone does things their own way ('Tribal Knowledge').", points: 1 },
+                    { text: "We have some SOPs, but they are rarely updated or followed.", points: 2 },
+                    { text: "Most processes are documented and generally followed.", points: 3 },
+                    { text: "Highly standardized, continuously optimized, and measurable.", points: 4 }
+                ]
+            },
+            {
+                q: "When a project falls behind, how do you diagnose the root cause?",
+                cat: "process",
+                options: [
+                    { text: "We rely entirely on managers' gut feelings.", points: 1 },
+                    { text: "Post-mortem meetings based on subjective feedback.", points: 2 },
+                    { text: "We review project management tool timelines.", points: 3 },
+                    { text: "We analyze objective data on time spent in specific applications vs outcomes.", points: 4 }
+                ]
+            },
+            // Tech Stack
+            {
+                q: "How frequently do you audit and consolidate your software subscriptions?",
+                cat: "tech",
+                options: [
+                    { text: "Never. People just expense whatever tools they want.", points: 1 },
+                    { text: "Only when finance complains about the budget.", points: 2 },
+                    { text: "Annually during budget reviews.", points: 3 },
+                    { text: "Continuously. We actively monitor tool adoption and ROI.", points: 4 }
+                ]
+            },
+            {
+                q: "Are your employees currently utilizing AI tools (like ChatGPT, Copilot) in their daily work?",
+                cat: "tech",
+                options: [
+                    { text: "No, and we actively discourage/block it.", points: 1 },
+                    { text: "Probably, but unofficially ('Shadow AI').", points: 2 },
+                    { text: "Yes, we encourage it but lack formal training.", points: 3 },
+                    { text: "Yes, we have integrated AI into our standard workflows.", points: 4 }
+                ]
+            },
+            // Alignment
+            {
+                q: "How do you currently define 'productivity' in your organization?",
+                cat: "alignment",
+                options: [
+                    { text: "Hours logged at the desk / online status.", points: 1 },
+                    { text: "Volume of tasks completed.", points: 2 },
+                    { text: "Quality of work and meeting deadlines.", points: 3 },
+                    { text: "Business outcomes achieved and value created.", points: 4 }
+                ]
+            },
+            {
+                q: "How often do managers have 1-on-1 coaching conversations with their direct reports?",
+                cat: "alignment",
+                options: [
+                    { text: "Only during annual performance reviews.", points: 1 },
+                    { text: "Quarterly check-ins.", points: 2 },
+                    { text: "Monthly meetings focused mostly on status updates.", points: 3 },
+                    { text: "Weekly or bi-weekly focused on career growth and removing blockers.", points: 4 }
+                ]
+            }
+        ];
+
+        // --- State ---
+        let currentQuestionIndex = 0;
+        let userScores = {
+            infrastructure: 0,
+            culture: 0,
+            process: 0,
+            tech: 0,
+            alignment: 0
+        };
+        let selectedOptionPoints = null;
+
+        // --- DOM Elements ---
+        const views = {
+            intro: document.getElementById('intro-view'),
+            quiz: document.getElementById('quiz-view'),
+            loading: document.getElementById('loading-view'),
+            results: document.getElementById('results-view')
+        };
+        const nextBtn = document.getElementById('next-btn');
+
+        // --- Functions ---
+        function switchView(viewName) {
+            Object.values(views).forEach(v => {
+                v.classList.remove('active');
+                setTimeout(() => { if(!v.classList.contains('active')) v.style.display = 'none'; }, 400);
+            });
+            
+            setTimeout(() => {
+                views[viewName].style.display = 'block';
+                setTimeout(() => views[viewName].classList.add('active'), 50);
+            }, 400);
+        }
+
+        function startQuiz() {
+            switchView('quiz');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = questions[currentQuestionIndex];
+            document.getElementById('question-text').innerText = q.q;
+            
+            // Progress
+            document.getElementById('progress-text').innerText = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
+            document.getElementById('progress-fill').style.width = `${((currentQuestionIndex) / questions.length) * 100}%`;
+
+            // Options
+            const optionsGrid = document.getElementById('options-grid');
+            optionsGrid.innerHTML = '';
+            selectedOptionPoints = null;
+            nextBtn.disabled = true;
+
+            const letters = ['A', 'B', 'C', 'D'];
+
+            q.options.forEach((opt, index) => {
+                const card = document.createElement('div');
+                card.className = 'option-card';
+                card.innerHTML = `
+                    <div class="option-letter">${letters[index]}</div>
+                    <div class="option-text">${opt.text}</div>
+                `;
+                card.onclick = () => selectOption(card, opt.points);
+                optionsGrid.appendChild(card);
+            });
+        }
+
+        function selectOption(cardElement, points) {
+            // Remove selected class from all
+            document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+            // Add to clicked
+            cardElement.classList.add('selected');
+            selectedOptionPoints = points;
+            nextBtn.disabled = false;
+        }
+
+        function nextQuestion() {
+            if (selectedOptionPoints === null) return;
+
+            // Save score
+            const cat = questions[currentQuestionIndex].cat;
+            userScores[cat] += selectedOptionPoints;
+
+            currentQuestionIndex++;
+
+            if (currentQuestionIndex < questions.length) {
+                // Animate out/in
+                const container = document.querySelector('.question-container');
+                container.style.opacity = 0;
+                container.style.transform = 'translateY(10px)';
+                container.style.transition = 'all 0.3s ease';
+                
+                setTimeout(() => {
+                    renderQuestion();
+                    container.style.opacity = 1;
+                    container.style.transform = 'translateY(0)';
+                }, 300);
+            } else {
+                document.getElementById('progress-fill').style.width = '100%';
+                calculateAndShowResults();
+            }
+        }
+
+        function calculateAndShowResults() {
+            switchView('loading');
+
+            // Calculate Overall Score (Max 40 points total)
+            let totalPoints = Object.values(userScores).reduce((a, b) => a + b, 0);
+            let overallPercentage = Math.round((totalPoints / 40) * 100);
+
+            setTimeout(() => {
+                document.getElementById('overall-score').innerText = `AI Readiness: ${overallPercentage}%`;
+                renderRadarChart();
+                renderRecommendations();
+                switchView('results');
+            }, 2500); // Fake loading time for effect
+        }
+
+        // --- Custom SVG Radar Chart ---
+        function renderRadarChart() {
+            const container = document.getElementById('radar-chart');
+            container.innerHTML = ''; // Clear previous
+
+            const size = 300;
+            const center = size / 2;
+            const radius = 100;
+            const axes = Object.keys(categories);
+            const numAxes = axes.length;
+            const angleStep = (Math.PI * 2) / numAxes;
+
+            // SVG Setup
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svg.setAttribute("width", size);
+            svg.setAttribute("height", size);
+            svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
+
+            // Helper to get coordinates
+            const getPoint = (value, angle) => ({
+                x: center + (radius * value) * Math.cos(angle - Math.PI / 2),
+                y: center + (radius * value) * Math.sin(angle - Math.PI / 2)
+            });
+
+            // Draw Background Levels (Pentagons)
+            for (let level = 1; level <= 4; level++) {
+                const levelValue = level / 4;
+                let points = "";
+                for (let i = 0; i < numAxes; i++) {
+                    const p = getPoint(levelValue, i * angleStep);
+                    points += `${p.x},${p.y} `;
+                }
+                const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+                polygon.setAttribute("points", points.trim());
+                polygon.setAttribute("fill", "none");
+                polygon.setAttribute("stroke", "var(--chart-grid)");
+                polygon.setAttribute("stroke-width", "1");
+                svg.appendChild(polygon);
+            }
+
+            // Draw Axes lines & Labels
+            axes.forEach((axis, i) => {
+                const angle = i * angleStep;
+                const endP = getPoint(1, angle);
+                const labelP = getPoint(1.25, angle); // Push labels out further
+
+                // Line
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", center);
+                line.setAttribute("y1", center);
+                line.setAttribute("x2", endP.x);
+                line.setAttribute("y2", endP.y);
+                line.setAttribute("stroke", "var(--chart-grid)");
+                line.setAttribute("stroke-width", "1");
+                svg.appendChild(line);
+
+                // Label
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("x", labelP.x);
+                // Adjust Y based on position to avoid overlap
+                let yAdjust = 0;
+                if(labelP.y < center - 20) yAdjust = 0;
+                else if(labelP.y > center + 20) yAdjust = 10;
+                else yAdjust = 5;
+
+                text.setAttribute("y", labelP.y + yAdjust);
+                text.setAttribute("text-anchor", "middle");
+                text.setAttribute("fill", "var(--text-muted)");
+                text.setAttribute("font-size", "11px");
+                text.setAttribute("font-weight", "600");
+                
+                // Multi-line labels for fit
+                const words = categories[axis].label.split(' ');
+                if(words.length > 2) {
+                    text.textContent = words[0] + ' ' + words[1];
+                    const tspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
+                    tspan.setAttribute("x", labelP.x);
+                    tspan.setAttribute("dy", "14");
+                    tspan.textContent = words.slice(2).join(' ');
+                    text.appendChild(tspan);
+                } else {
+                    text.textContent = categories[axis].label;
+                }
+                svg.appendChild(text);
+            });
+
+            // Draw Data Polygon
+            let dataPoints = "";
+            axes.forEach((axis, i) => {
+                // Normalize score (max 8 per category)
+                const val = userScores[axis] / categories[axis].max;
+                const p = getPoint(val, i * angleStep);
+                dataPoints += `${p.x},${p.y} `;
+                
+                // Add circle at data point
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", p.x);
+                circle.setAttribute("cy", p.y);
+                circle.setAttribute("r", "4");
+                circle.setAttribute("fill", "var(--accent)");
+                svg.appendChild(circle);
+            });
+
+            const dataPolygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+            dataPolygon.setAttribute("points", dataPoints.trim());
+            dataPolygon.setAttribute("fill", "var(--chart-fill)");
+            dataPolygon.setAttribute("stroke", "var(--chart-stroke)");
+            dataPolygon.setAttribute("stroke-width", "2");
+            // Insert polygon before circles so circles render on top
+            svg.insertBefore(dataPolygon, svg.querySelectorAll('circle')[0]);
+
+            container.appendChild(svg);
+        }
+
+        // --- Recommendations Logic ---
+        function renderRecommendations() {
+            const list = document.getElementById('recommendations-list');
+            list.innerHTML = '';
+
+            const recommendationsLogic = {
+                culture: {
+                    low: "Start with Transparency: Your team may be skeptical of tracking. Frame Go2 strictly as an AI coach to eliminate bottlenecks, not a surveillance tool. Focus on aggregate data first.",
+                    high: "Culture of Trust: Your team is primed for growth. Go2's personalized AI coaching will be embraced as a tool to prevent burnout and prove value."
+                },
+                infrastructure: {
+                    low: "Digitize Workflows: Go2 can help identify which manual processes are costing the most time, providing the data needed to justify cloud migration.",
+                    high: "Data Ready: Your SaaS ecosystem is mature. Go2 will seamlessly layer over your tools to map complex cross-app workflows instantly."
+                },
+                process: {
+                    low: "Identify the Golden Path: Without standardized SOPs, use Go2 to analyze your top performers. The AI will automatically document their workflows to train the rest of the team.",
+                    high: "Optimize at Scale: Your processes are solid. Go2 will detect micro-inefficiencies and context-switching costs that human managers miss."
+                }
+            };
+
+            // Pick top 3 categories to comment on based on score variance (just picking fixed 3 for simplicity in this demo, but making it dynamic based on scores)
+            const axesToReview = ['culture', 'infrastructure', 'process'];
+
+            axesToReview.forEach(axis => {
+                const score = userScores[axis];
+                const max = categories[axis].max;
+                const percent = Math.round((score / max) * 100);
+                
+                let text = score <= 4 ? recommendationsLogic[axis].low : recommendationsLogic[axis].high;
+                let colorClass = score <= 4 ? 'var(--warning)' : 'var(--success)';
+
+                const item = document.createElement('div');
+                item.className = 'rec-item';
+                item.style.borderLeftColor = colorClass;
+                item.innerHTML = `
+                    <h4>${categories[axis].label} <span class="rec-score">${percent}%</span></h4>
+                    <p>${text}</p>
+                `;
+                list.appendChild(item);
+            });
+        }
+    </script>
+</body>
+</html>

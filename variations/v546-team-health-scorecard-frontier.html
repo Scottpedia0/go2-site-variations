@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go2 - Team Health Scorecard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Color Palette */
+            --bg-body: #f8fafc;
+            --bg-surface: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --brand-primary: #6366f1; /* Indigo */
+            --brand-secondary: #4f46e5;
+            --border-light: #e2e8f0;
+            
+            /* Grades */
+            --grade-a: #10b981; /* Emerald */
+            --grade-a-bg: #d1fae5;
+            --grade-b: #3b82f6; /* Blue */
+            --grade-b-bg: #dbeafe;
+            --grade-c: #f59e0b; /* Amber */
+            --grade-c-bg: #fef3c7;
+            --grade-d: #ef4444; /* Red */
+            --grade-d-bg: #fee2e2;
+
+            /* Shadows & Radii */
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-full: 9999px;
+            
+            font-family: 'Inter', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar (Decorative for context) */
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-surface);
+            border-right: 1px solid var(--border-light);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--brand-primary);
+            letter-spacing: -0.5px;
+        }
+
+        .logo svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        .nav-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item {
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-item:hover {
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background-color: var(--brand-primary);
+            color: white;
+        }
+        
+        .nav-item.active svg {
+            stroke: white;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 32px;
+        }
+
+        .header-titles h1 {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
+
+        .header-titles p {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+
+        .badge-ai {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #e0e7ff 0%, #ede9fe 100%);
+            color: var(--brand-secondary);
+            padding: 6px 12px;
+            border-radius: var(--radius-full);
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid #c7d2fe;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid var(--border-light);
+            background-color: var(--bg-surface);
+            color: var(--text-primary);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background-color: var(--bg-body);
+        }
+
+        .btn-primary {
+            background-color: var(--brand-primary);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--brand-secondary);
+        }
+
+        /* Scorecard Grid */
+        .scorecard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+
+        .card {
+            background-color: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+            border-color: #cbd5e1;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+
+        .card-title-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .icon-box {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--bg-body);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .grade-badge {
+            font-size: 28px;
+            font-weight: 800;
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .grade-A { color: var(--grade-a); background-color: var(--grade-a-bg); }
+        .grade-B { color: var(--grade-b); background-color: var(--grade-b-bg); }
+        .grade-C { color: var(--grade-c); background-color: var(--grade-c-bg); }
+
+        .card-body p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .card-footer {
+            border-top: 1px solid var(--border-light);
+            padding-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .trend {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 500;
+        }
+
+        .trend.up { color: var(--grade-a); }
+        .trend.down { color: var(--grade-c); }
+
+        .click-hint {
+            color: var(--brand-primary);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            opacity: 0;
+            transform: translateX(-10px);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover .click-hint {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* Slide-over Panel */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(2px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 40;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .side-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 480px;
+            background-color: var(--bg-surface);
+            box-shadow: var(--shadow-lg);
+            z-index: 50;
+            transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .side-panel.active {
+            transform: translateX(0);
+        }
+
+        .panel-header {
+            padding: 32px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .panel-title-area {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 8px;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+        }
+
+        .close-btn:hover {
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+        }
+
+        .panel-content {
+            padding: 32px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        /* AI Coaching Box */
+        .ai-coaching-box {
+            background: linear-gradient(to right, #f8fafc, #f1f5f9);
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid var(--brand-primary);
+            padding: 24px;
+            border-radius: var(--radius-md);
+            margin-bottom: 32px;
+        }
+
+        .ai-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--brand-primary);
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .ai-text {
+            color: var(--text-primary);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        /* Metrics List */
+        .metrics-list {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .metric-info h4 {
+            font-size: 15px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .metric-info p {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .metric-value {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        /* Chart Simulation */
+        .chart-container {
+            margin-top: 32px;
+        }
+        
+        .chart-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+        }
+
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            height: 150px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border-light);
+            position: relative;
+        }
+
+        .bar-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            height: 100%;
+            position: relative;
+        }
+
+        .bar {
+            width: 100%;
+            border-radius: 4px 4px 0 0;
+            transition: height 1s ease;
+        }
+
+        .bar-label {
+            position: absolute;
+            bottom: -24px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .bar-value {
+            position: absolute;
+            top: -24px;
+            font-size: 12px;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .bar-wrapper:hover .bar-value {
+            opacity: 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar { display: none; }
+            .scorecard-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 640px) {
+            .main-content { padding: 24px 16px; }
+            .page-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+            .side-panel { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+            Go2
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                Dashboard
+            </li>
+            <li class="nav-item active">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+                Health Scorecard
+            </li>
+            <li class="nav-item">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                Time Insights
+            </li>
+            <li class="nav-item">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                Team Directory
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="page-header">
+            <div class="header-titles">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+                    <h1>Product & Engineering Team</h1>
+                    <span class="badge-ai">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a2 2 0 0 1 2 2c0 1.1-.9 2-2 2s-2-.9-2-2a2 2 0 0 1 2-2zm0 6c4.4 0 8 3.6 8 8v4H4v-4c0-4.4 3.6-8 8-8z"></path></svg>
+                        AI Coaching Active
+                    </span>
+                </div>
+                <p>Health Scorecard • Insights for week of Oct 16 - Oct 22</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    Last 7 Days
+                </button>
+                <button class="btn btn-primary">Export Report</button>
+            </div>
+        </header>
+
+        <section class="scorecard-grid">
+            <!-- Focus Time Card -->
+            <div class="card" onclick="openPanel('focus')">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <div class="icon-box" style="color: var(--grade-a);">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+                        </div>
+                        <h2 class="card-title">Focus Time</h2>
+                    </div>
+                    <div class="grade-badge grade-A">A</div>
+                </div>
+                <div class="card-body">
+                    <p>Uninterrupted blocks of 30+ minutes dedicated to core applications and deep work.</p>
+                </div>
+                <div class="card-footer">
+                    <span class="trend up">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                        18.5 hrs/user
+                    </span>
+                    <span class="click-hint">View Insights &rarr;</span>
+                </div>
+            </div>
+
+            <!-- Meeting Load Card -->
+            <div class="card" onclick="openPanel('meetings')">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <div class="icon-box" style="color: var(--grade-c);">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                        </div>
+                        <h2 class="card-title">Meeting Load</h2>
+                    </div>
+                    <div class="grade-badge grade-C">C+</div>
+                </div>
+                <div class="card-body">
+                    <p>Time spent in synchronous communication, video calls, and calendar blocks.</p>
+                </div>
+                <div class="card-footer">
+                    <span class="trend down">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+                        14.2 hrs/user
+                    </span>
+                    <span class="click-hint">View Insights &rarr;</span>
+                </div>
+            </div>
+
+            <!-- Collaboration Card -->
+            <div class="card" onclick="openPanel('collab')">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <div class="icon-box" style="color: var(--grade-b);">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        </div>
+                        <h2 class="card-title">Collaboration</h2>
+                    </div>
+                    <div class="grade-badge grade-B">B</div>
+                </div>
+                <div class="card-body">
+                    <p>Asynchronous teamwork, document sharing, and cross-functional chat interactions.</p>
+                </div>
+                <div class="card-footer">
+                    <span class="trend up">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                        Healthy Async Mix
+                    </span>
+                    <span class="click-hint">View Insights &rarr;</span>
+                </div>
+            </div>
+
+            <!-- Work-Life Balance Card -->
+            <div class="card" onclick="openPanel('wlb')">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <div class="icon-box" style="color: var(--grade-b);">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                        </div>
+                        <h2 class="card-title">Work-Life Balance</h2>
+                    </div>
+                    <div class="grade-badge grade-B">B-</div>
+                </div>
+                <div class="card-body">
+                    <p>Measurement of after-hours activity, weekend work, and consistent schedule adherence.</p>
+                </div>
+                <div class="card-footer">
+                    <span class="trend down">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+                        12% After-hours
+                    </span>
+                    <span class="click-hint">View Insights &rarr;</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Overlay & Slide-over Panel -->
+    <div class="overlay" id="overlay" onclick="closePanel()"></div>
+    
+    <aside class="side-panel" id="sidePanel">
+        <div class="panel-header">
+            <div class="panel-title-area">
+                <div class="grade-badge" id="panelGrade">A</div>
+                <div>
+                    <h2 id="panelTitle" style="font-size: 20px;">Focus Time</h2>
+                    <p style="color: var(--text-secondary); font-size: 14px;">Detailed Insights & Coaching</p>
+                </div>
+            </div>
+            <button class="close-btn" onclick="closePanel()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        
+        <div class="panel-content">
+            <div class="ai-coaching-box">
+                <div class="ai-header">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg>
+                    Go2 AI Coaching
+                </div>
+                <div class="ai-text" id="panelAiText">
+                    <!-- Injected by JS -->
+                </div>
+            </div>
+
+            <div class="metrics-list" id="panelMetrics">
+                <!-- Injected by JS -->
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">Weekly Trend</div>
+                <div class="bar-chart" id="panelChart">
+                    <!-- Injected by JS -->
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <script>
+        // Data structure for the different scorecard metrics
+        const insightsData = {
+            focus: {
+                title: "Focus Time",
+                grade: "A",
+                gradeClass: "grade-A",
+                aiText: "<strong>Excellent focus habits detected.</strong> The team is securing large blocks of deep work. <em>Coaching Tip:</em> Protect Tuesday mornings company-wide; data shows it yields a 35% higher volume of uninterrupted code commits and documentation mapping compared to other days.",
+                metrics: [
+                    { label: "Avg Focus Hours/Wk", desc: "Uninterrupted blocks > 30m", value: "18.5 hrs" },
+                    { label: "Context Switches", desc: "App toggling per hour", value: "8.2 (Low)" },
+                    { label: "Top Focus App", desc: "Where deep work happens", value: "VS Code" }
+                ],
+                chartData: [60, 85, 90, 75, 50] // simulated percentages
+            },
+            meetings: {
+                title: "Meeting Load",
+                grade: "C+",
+                gradeClass: "grade-C",
+                aiText: "<strong>Meeting fatigue is trending upwards.</strong> 30% of scheduled internal syncs lacked calendar agendas, leading to lower engagement. <em>Coaching Tip:</em> Implement a 'No Meeting Wednesday' policy. Similar teams saved an average of 4.2 hours per employee weekly by doing this.",
+                metrics: [
+                    { label: "Avg Meeting Hours/Wk", desc: "Sync communication", value: "14.2 hrs" },
+                    { label: "Ad-hoc Calls", desc: "Unscheduled huddles", value: "4.5 hrs" },
+                    { label: "Agendaless Meetings", desc: "Risk of low productivity", value: "30%" }
+                ],
+                chartData: [40, 60, 55, 80, 45]
+            },
+            collab: {
+                title: "Collaboration",
+                grade: "B",
+                gradeClass: "grade-B",
+                aiText: "<strong>Strong intra-team communication.</strong> The engineering pod communicates effectively asynchronously via Slack and Jira. However, cross-functional collaboration with Design is low. <em>Coaching Tip:</em> Schedule a brief bi-weekly asynchronous video update (e.g., Loom) between Eng and Design leads to break down silos.",
+                metrics: [
+                    { label: "Async Messaging", desc: "Slack/Teams messages", value: "High" },
+                    { label: "Doc Collaboration", desc: "Co-editing Confluence/Docs", value: "Medium" },
+                    { label: "Cross-team Comms", desc: "Interacting outside dept", value: "Low" }
+                ],
+                chartData: [70, 75, 60, 80, 70]
+            },
+            wlb: {
+                title: "Work-Life Balance",
+                grade: "B-",
+                gradeClass: "grade-B",
+                aiText: "<strong>Burnout risk detected for 3 team members.</strong> Activity logs show consistent commits and Slack usage past 8 PM local time. <em>Coaching Tip:</em> Review the upcoming deadline for the 'Q4 Mobile App Release'. Redistribute load or adjust scope to reduce evening strain. Go2 is about sustainable output, not just output.",
+                metrics: [
+                    { label: "After-hours Activity", desc: "Work outside 9-5 local", value: "12% of total" },
+                    { label: "Weekend Work", desc: "Active on Sat/Sun", value: "4.5 hrs avg" },
+                    { label: "Burnout Risk Level", desc: "Based on sustained overwork", value: "Elevated" }
+                ],
+                chartData: [30, 20, 45, 60, 25] // Higher is worse here conceptually, but representing activity
+            }
+        };
+
+        const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+
+        function openPanel(metricKey) {
+            const data = insightsData[metricKey];
+            if (!data) return;
+
+            // Update Header
+            document.getElementById('panelTitle').textContent = data.title;
+            const badge = document.getElementById('panelGrade');
+            badge.textContent = data.grade;
+            badge.className = `grade-badge ${data.gradeClass}`;
+
+            // Update AI Text
+            document.getElementById('panelAiText').innerHTML = data.aiText;
+
+            // Update Metrics List
+            const metricsHtml = data.metrics.map(m => `
+                <div class="metric-item">
+                    <div class="metric-info">
+                        <h4>${m.label}</h4>
+                        <p>${m.desc}</p>
+                    </div>
+                    <div class="metric-value">${m.value}</div>
+                </div>
+            `).join('');
+            document.getElementById('panelMetrics').innerHTML = metricsHtml;
+
+            // Update Chart
+            const chartColor = getComputedStyle(document.documentElement).getPropertyValue(`--${data.gradeClass}`).trim();
+            const chartHtml = data.chartData.map((val, index) => `
+                <div class="bar-wrapper">
+                    <span class="bar-value">${val}%</span>
+                    <div class="bar" style="height: ${val}%; background-color: ${chartColor}; opacity: 0.8;"></div>
+                    <span class="bar-label">${days[index]}</span>
+                </div>
+            `).join('');
+            document.getElementById('panelChart').innerHTML = chartHtml;
+
+            // Show Panel
+            document.getElementById('overlay').classList.add('active');
+            document.getElementById('sidePanel').classList.add('active');
+        }
+
+        function closePanel() {
+            document.getElementById('overlay').classList.remove('active');
+            document.getElementById('sidePanel').classList.remove('active');
+        }
+    </script>
+</body>
+</html>

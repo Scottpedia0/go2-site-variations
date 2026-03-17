@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Time Machine | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0a0a0a;color:#e0e0e0;overflow-x:hidden}
+.nav{position:fixed;top:0;left:0;right:0;padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;z-index:100;background:rgba(10,10,10,.8);backdrop-filter:blur(20px)}
+.logo{font-size:1.25rem;font-weight:800;color:#fff}.logo span{color:#a78bfa}
+.nav-btn{padding:.5rem 1.5rem;background:#a78bfa;color:#0a0a0a;border:none;border-radius:8px;font-size:.85rem;font-weight:700;cursor:pointer;text-decoration:none}
+.timeline-nav{position:fixed;right:2rem;top:50%;transform:translateY(-50%);z-index:50;display:flex;flex-direction:column;gap:1rem;align-items:center}
+.timeline-dot{width:14px;height:14px;border-radius:50%;border:2px solid #444;background:transparent;cursor:pointer;transition:all .3s;position:relative}
+.timeline-dot.active{border-color:#a78bfa;background:#a78bfa;box-shadow:0 0 12px rgba(167,139,250,.5)}
+.timeline-dot .dot-label{position:absolute;right:24px;top:50%;transform:translateY(-50%);white-space:nowrap;font-size:.7rem;color:#666;opacity:0;transition:opacity .3s}
+.timeline-dot:hover .dot-label,.timeline-dot.active .dot-label{opacity:1;color:#a78bfa}
+.timeline-line{width:2px;height:30px;background:#222}
+section.era{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:6rem 2rem;position:relative;overflow:hidden}
+.era-content{max-width:900px;margin:0 auto;position:relative;z-index:2}
+.era-badge{display:inline-block;padding:.4rem 1.2rem;border-radius:100px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;margin-bottom:1.5rem}
+.era h2{font-family:'Playfair Display',serif;font-size:clamp(2rem,5vw,3.5rem);font-weight:900;line-height:1.1;margin-bottom:1rem}
+.era p{font-size:1.1rem;line-height:1.7;max-width:600px;margin-bottom:2rem}
+.era-stats{display:flex;gap:2rem;flex-wrap:wrap}
+.era-stat{padding:1.5rem;border-radius:16px;min-width:160px}
+.era-stat .sv{font-size:2rem;font-weight:800;margin-bottom:.25rem}
+.era-stat .sl{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;opacity:.6}
+/* Past */
+.era-past{background:linear-gradient(180deg,#0a0a0a,#1a0808)}
+.era-past .era-badge{background:rgba(239,68,68,.15);color:#f87171}
+.era-past h2{color:#f87171}
+.era-past p{color:#a08888}
+.era-past .era-stat{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.15)}
+.era-past .sv{color:#f87171}
+.past-bg{position:absolute;inset:0;opacity:.1;background:repeating-linear-gradient(0deg,transparent,transparent 50px,rgba(239,68,68,.1) 50px,rgba(239,68,68,.1) 51px);pointer-events:none}
+/* Present */
+.era-present{background:linear-gradient(180deg,#1a0808,#0f0f18)}
+.era-present .era-badge{background:rgba(251,191,36,.15);color:#fbbf24}
+.era-present h2{color:#fbbf24}
+.era-present p{color:#a09878}
+.era-present .era-stat{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.15)}
+.era-present .sv{color:#fbbf24}
+/* Future */
+.era-future{background:linear-gradient(180deg,#0f0f18,#0a0a1a)}
+.era-future .era-badge{background:rgba(167,139,250,.15);color:#a78bfa}
+.era-future h2{color:#a78bfa}
+.era-future p{color:#9898c0}
+.era-future .era-stat{background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.15)}
+.era-future .sv{color:#a78bfa}
+.future-glow{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(167,139,250,.08),transparent 70%);pointer-events:none}
+/* Transition section */
+.transition{padding:4rem 2rem;text-align:center;position:relative}
+.transition .arrow{font-size:3rem;color:#333;animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(10px)}}
+.scrubber{position:fixed;bottom:0;left:0;right:0;padding:1rem 2rem;background:rgba(10,10,10,.9);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.05);z-index:100;display:flex;align-items:center;gap:1rem}
+.scrubber label{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:#666;white-space:nowrap}
+.scrubber input[type=range]{flex:1;-webkit-appearance:none;height:6px;border-radius:3px;background:linear-gradient(90deg,#ef4444,#fbbf24,#a78bfa);outline:none}
+.scrubber input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.scrubber .scrub-label{font-size:.85rem;font-weight:700;min-width:80px;text-align:right}
+.cta-final{min-height:60vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:4rem 2rem;background:linear-gradient(180deg,#0a0a1a,#0a0a0a)}
+.cta-final h2{font-family:'Playfair Display',serif;font-size:clamp(1.5rem,4vw,2.5rem);font-weight:900;margin-bottom:1rem}
+.cta-final p{color:#666;max-width:500px;margin-bottom:2rem;line-height:1.6}
+.cta-btn{display:inline-block;padding:1rem 2.5rem;background:#a78bfa;color:#0a0a0a;font-size:1rem;font-weight:700;border:none;border-radius:12px;cursor:pointer;text-decoration:none;transition:all .3s}
+.cta-btn:hover{background:#8b5cf6;transform:translateY(-2px);box-shadow:0 10px 30px rgba(167,139,250,.3)}
+footer{text-align:center;padding:3rem 2rem 5rem;color:#333;font-size:.8rem}
+@media(max-width:768px){.era-stats{flex-direction:column}.timeline-nav{display:none}.scrubber{padding:.75rem 1rem}}
+</style>
+</head>
+<body>
+<nav class="nav"><div class="logo">Go2<span>.</span></div><a href="#future" class="nav-btn">See the Future</a></nav>
+
+<div class="timeline-nav">
+<div class="timeline-dot active" onclick="scrollToEra('past')"><span class="dot-label">The Past</span></div>
+<div class="timeline-line"></div>
+<div class="timeline-dot" onclick="scrollToEra('present')"><span class="dot-label">Today</span></div>
+<div class="timeline-line"></div>
+<div class="timeline-dot" onclick="scrollToEra('future')"><span class="dot-label">With Go2</span></div>
+</div>
+
+<section class="era era-past" id="past">
+<div class="past-bg"></div>
+<div class="era-content">
+<div class="era-badge">The Past</div>
+<h2>The Dark Ages<br>of Management</h2>
+<p>Spreadsheets. Gut feelings. Annual reviews that surprised everyone. Managers guessing. Employees hiding. Productivity? Nobody actually knew.</p>
+<div class="era-stats">
+<div class="era-stat"><div class="sv">0%</div><div class="sl">Visibility</div></div>
+<div class="era-stat"><div class="sv">40%</div><div class="sl">Time Wasted</div></div>
+<div class="era-stat"><div class="sv">$0</div><div class="sl">Data-Driven Decisions</div></div>
+</div>
+</div>
+</section>
+
+<div class="transition"><div class="arrow">&#8595;</div></div>
+
+<section class="era era-present" id="present">
+<div class="era-content">
+<div class="era-badge">The Present</div>
+<h2>The Age of<br>Partial Visibility</h2>
+<p>You have project management tools. You have time trackers. But they show you tasks completed, not team health. Output measured, but potential untapped. Better than the past, but not enough.</p>
+<div class="era-stats">
+<div class="era-stat"><div class="sv">30%</div><div class="sl">Visibility</div></div>
+<div class="era-stat"><div class="sv">25%</div><div class="sl">Time Wasted</div></div>
+<div class="era-stat"><div class="sv">$52K</div><div class="sl">Left on the Table</div></div>
+</div>
+</div>
+</section>
+
+<div class="transition"><div class="arrow">&#8595;</div></div>
+
+<section class="era era-future" id="future">
+<div class="future-glow"></div>
+<div class="era-content">
+<div class="era-badge">The Future with Go2</div>
+<h2>The Era of<br>Intelligent Clarity</h2>
+<p>AI that understands work patterns. Coaching that prevents burnout. Insights that drive real decisions. Not surveillance — partnership. Your team at its best, every day.</p>
+<div class="era-stats">
+<div class="era-stat"><div class="sv">100%</div><div class="sl">Visibility</div></div>
+<div class="era-stat"><div class="sv">42%</div><div class="sl">Productivity Gain</div></div>
+<div class="era-stat"><div class="sv">892%</div><div class="sl">ROI</div></div>
+</div>
+</div>
+</section>
+
+<section class="cta-final">
+<h2>The Future Is Already Here</h2>
+<p>Your competitors are already living in the future. Every day you wait is a day you stay in the past. Make the leap.</p>
+<a href="#" class="cta-btn">Travel to the Future &rarr;</a>
+</section>
+
+<footer>&copy; 2026 Go2. The future of team productivity.</footer>
+
+<div class="scrubber">
+<label>Timeline</label>
+<input type="range" id="scrubber" min="0" max="100" value="0">
+<div class="scrub-label" id="scrubLabel" style="color:#f87171">The Past</div>
+</div>
+
+<script>
+const scrubber=document.getElementById('scrubber');
+const scrubLabel=document.getElementById('scrubLabel');
+const dots=document.querySelectorAll('.timeline-dot');
+function scrollToEra(id){document.getElementById(id).scrollIntoView({behavior:'smooth'});}
+scrubber.addEventListener('input',function(){
+  const v=parseInt(this.value);
+  const docH=document.documentElement.scrollHeight-window.innerHeight;
+  window.scrollTo({top:docH*(v/100),behavior:'auto'});
+});
+window.addEventListener('scroll',()=>{
+  const scrollPct=window.scrollY/(document.documentElement.scrollHeight-window.innerHeight)*100;
+  scrubber.value=scrollPct;
+  if(scrollPct<33){scrubLabel.textContent='The Past';scrubLabel.style.color='#f87171';dots.forEach((d,i)=>d.classList.toggle('active',i===0));}
+  else if(scrollPct<66){scrubLabel.textContent='Today';scrubLabel.style.color='#fbbf24';dots.forEach((d,i)=>d.classList.toggle('active',i===1));}
+  else{scrubLabel.textContent='With Go2';scrubLabel.style.color='#a78bfa';dots.forEach((d,i)=>d.classList.toggle('active',i===2));}
+});
+</script>
+</body>
+</html>

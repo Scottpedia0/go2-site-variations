@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Go2 Boardroom Simulator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#08111f;
+      --bg-2:#0d1830;
+      --panel:#0f1c35;
+      --panel-2:#132342;
+      --panel-3:#192d55;
+      --text:#eef4ff;
+      --muted:#9fb0d3;
+      --soft:#7f93bc;
+      --line:rgba(255,255,255,.08);
+      --line-2:rgba(255,255,255,.14);
+      --blue:#69a7ff;
+      --blue-2:#3d7fff;
+      --cyan:#63e3ff;
+      --green:#45d59d;
+      --amber:#ffcc66;
+      --red:#ff7a90;
+      --shadow:0 20px 60px rgba(0,0,0,.35);
+      --radius:22px;
+      --radius-sm:14px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(61,127,255,.22), transparent 30%),
+        radial-gradient(circle at top right, rgba(99,227,255,.12), transparent 25%),
+        radial-gradient(circle at bottom center, rgba(69,213,157,.10), transparent 25%),
+        linear-gradient(180deg, #07101d 0%, #08111f 45%, #0a1527 100%);
+      overflow-x:hidden;
+    }
+
+    .bg-grid::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+      background-size:32px 32px;
+      mask-image: radial-gradient(circle at center, black 30%, transparent 90%);
+      pointer-events:none;
+      z-index:0;
+    }
+
+    .shell{
+      position:relative;
+      z-index:1;
+      max-width:1440px;
+      margin:0 auto;
+      padding:28px;
+    }
+
+    .hero{
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap:24px;
+      align-items:stretch;
+      margin-bottom:24px;
+    }
+
+    .card{
+      background:linear-gradient(180deg, rgba(19,35,66,.88), rgba(12,23,44,.92));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .hero-main{
+      padding:30px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .hero-main::after{
+      content:"";
+      position:absolute;
+      width:260px;
+      height:260px;
+      border-radius:50%;
+      right:-60px;
+      top:-80px;
+      background:radial-gradient(circle, rgba(99,227,255,.22), transparent 65%);
+      pointer-events:none;
+    }
+
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      color:var(--cyan);
+      font-weight:700;
+      font-size:.82rem;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      padding:10px 14px;
+      border:1px solid rgba(99,227,255,.18);
+      border-radius:999px;
+      background:rgba(99,227,255,.06);
+    }
+
+    .eyebrow .dot{
+      width:8px;height:8px;border-radius:50%;
+      background:var(--green);
+      box-shadow:0 0 0 6px rgba(69,213,157,.12);
+    }
+
+    h1{
+      margin:18px 0 12px;
+      font-size:clamp(2rem, 4vw, 4rem);
+      line-height:1.02;
+      letter-spacing:-.04em;
+      max-width:10ch;
+    }
+
+    .lead{
+      color:var(--muted);
+      font-size:1.05rem;
+      line-height:1.7;
+      max-width:62ch;
+      margin-bottom:22px;
+    }
+
+    .hero-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      margin-bottom:26px;
+    }
+
+    .btn{
+      appearance:none;
+      border:0;
+      border-radius:14px;
+      padding:14px 18px;
+      font:inherit;
+      font-weight:700;
+      cursor:pointer;
+      transition:.22s ease;
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      text-decoration:none;
+    }
+
+    .btn-primary{
+      background:linear-gradient(135deg, var(--blue), var(--blue-2));
+      color:white;
+      box-shadow:0 12px 30px rgba(61,127,255,.28);
+    }
+
+    .btn-primary:hover{transform:translateY(-2px); filter:brightness(1.06)}
+    .btn-secondary{
+      color:var(--text);
+      background:rgba(255,255,255,.05);
+      border:1px solid var(--line-2);
+    }
+    .btn-secondary:hover{background:rgba(255,255,255,.08)}
+
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(3, 1fr);
+      gap:12px;
+    }
+
+    .stat{
+      padding:16px;
+      border-radius:18px;
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--line);
+    }
+
+    .stat .value{
+      font-size:1.65rem;
+      font-weight:800;
+      letter-spacing:-.03em;
+      margin-bottom:6px;
+    }
+    .stat .label{
+      color:var(--soft);
+      font-size:.92rem;
+      line-height:1.4;
+    }
+
+    .hero-side{
+      padding:22px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+
+    .mini-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:4px;
+    }
+
+    .mini-title{
+      font-weight:700;
+      font-size:1rem;
+    }
+
+    .confidence{
+      color:var(--green);
+      font-size:.88rem;
+      font-weight:700;
+      background:rgba(69,213,157,.1);
+      border:1px solid rgba(69,213,157,.18);
+      padding:8px 10px;
+      border-radius:999px;
+    }
+
+    .scorecard{
+      display:grid;
+      gap:12px;
+    }
+
+    .meter{
+      padding:14px;
+      border-radius:16px;
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--line);
+    }
+
+    .meter-top{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:10px;
+      font-size:.92rem;
+      color:var(--muted);
+    }
+
+    .bar{
+      height:10px;
+      border-radius:999px;
+      background:rgba(255,255,255,.07);
+      overflow:hidden;
+      position:relative;
+    }
+
+    .bar > span{
+      display:block;
+      height:100%;
+      border-radius:inherit;
+      background:linear-gradient(90deg, var(--cyan), var(--blue));
+      box-shadow:0 0 24px rgba(99,227,255,.24);
+    }
+
+    .highlight{
+      padding:16px;
+      border-radius:18px;
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      color:var(--muted);
+      line-height:1.6;
+      font-size:.95rem;
+    }
+
+    .highlight b{color:var(--text)}
+
+    .simulator{
+      display:grid;
+      grid-template-columns: 320px minmax(0,1fr) 340px;
+      gap:24px;
+      align-items:start;
+    }
+
+    .sidebar, .stage, .coach{
+      min-height:720px;
+    }
+
+    .sidebar, .coach{
+      padding:18px;
+      position:sticky;
+      top:18px;
+    }
+
+    .panel-title{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:16px;
+      gap:10px;
+    }
+
+    .panel-title h3{
+      margin:0;
+      font-size:1rem;
+      letter-spacing:-.02em;
+    }
+
+    .panel-sub{
+      color:var(--soft);
+      font-size:.9rem;
+      margin-top:6px;
+      line-height:1.5;
+    }
+
+    .board-list{
+      display:grid;
+      gap:12px;
+      margin-top:16px;
+    }
+
+    .member{
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+      transition:.2s ease;
+      cursor:pointer;
+    }
+
+    .member:hover,
+    .member.active{
+      background:rgba(255,255,255,.07);
+      border-color:rgba(105,167,255,.35);
+      transform:translateY(-1px);
+    }
+
+    .member-top{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      margin-bottom:10px;
+    }
+
+    .avatar{
+      width:42px;height:42px;border-radius:14px;
+      display:grid;place-items:center;
+      font-weight:800;
+      font-size:.95rem;
+      color:white;
+      background:linear-gradient(135deg, #5f82ff, #58d5ff);
+      flex:0 0 auto;
+    }
+
+    .member h4{
+      margin:0 0 2px 0;
+      font-size:.95rem;
+    }
+
+    .member p{
+      margin:0;
+      color:var(--soft);
+      font-size:.82rem;
+    }
+
+    .member .mood{
+      margin-top:10px;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      font-size:.78rem;
+      color:var(--amber);
+      padding:7px 10px;
+      border-radius:999px;
+      background:rgba(255,204,102,.1);
+      border:1px solid rgba(255,204,102,.15);
+    }
+
+    .stage{
+      padding:0;
+      overflow:hidden;
+    }
+
+    .stage-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:16px;
+      padding:20px 22px;
+      border-bottom:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+    }
+
+    .stage-header h2{
+      margin:0;
+      font-size:1.15rem;
+      letter-spacing:-.02em;
+    }
+
+    .header-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .chip{
+      border:1px solid var(--line-2);
+      background:rgba(255,255,255,.05);
+      color:var(--muted);
+      border-radius:999px;
+      padding:9px 12px;
+      font-size:.82rem;
+      font-weight:600;
+    }
+
+    .dialog{
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+      padding:22px;
+      max-height:640px;
+      overflow:auto;
+      scroll-behavior:smooth;
+    }
+
+    .dialog::-webkit-scrollbar{width:10px}
+    .dialog::-webkit-scrollbar-thumb{
+      background:rgba(255,255,255,.1);
+      border-radius:999px;
+    }
+
+    .msg{
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      animation:fadeUp .35s ease;
+    }
+
+    @keyframes fadeUp{
+      from{opacity:0; transform:translateY(8px)}
+      to{opacity:1; transform:none}
+    }
+
+    .msg .bubble{
+      max-width:82%;
+      padding:15px 16px;
+      border-radius:18px;
+      line-height:1.6;
+      font-size:.96rem;
+      border:1px solid var(--line);
+      box-shadow:0 8px 24px rgba(0,0,0,.18);
+    }
+
+    .msg.board .bubble{
+      background:rgba(255,255,255,.05);
+    }
+
+    .msg.go2{
+      justify-content:flex-end;
+    }
+
+    .msg.go2 .bubble{
+      background:linear-gradient(180deg, rgba(61,127,255,.2), rgba(61,127,255,.11));
+      border-color:rgba(105,167,255,.24);
+    }
+
+    .msg .meta{
+      color:var(--soft);
+      font-size:.78rem;
+      margin-top:6px;
+      display:block;
+    }
+
+    .controls{
+      border-top:1px solid var(--line);
+      padding:18px 22px 22px;
+      background:rgba(5,10,20,.24);
+    }
+
+    .scenario-grid{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0,1fr));
+      gap:10px;
+      margin-bottom:12px;
+    }
+
+    .scenario-btn{
+      text-align:left;
+      padding:14px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+      cursor:pointer;
+      transition:.2s ease;
+    }
+
+    .scenario-btn:hover,
+    .scenario-btn.active{
+      background:rgba(61,127,255,.1);
+      border-color:rgba(105,167,255,.35);
+      transform:translateY(-1px);
+    }
+
+    .scenario-btn .small{
+      display:block;
+      margin-top:6px;
+      color:var(--soft);
+      font-size:.82rem;
+      line-height:1.45;
+    }
+
+    .ask-row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+
+    .custom-wrap{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:10px;
+      margin-top:10px;
+    }
+
+    textarea{
+      width:100%;
+      min-height:58px;
+      max-height:130px;
+      resize:vertical;
+      border-radius:16px;
+      border:1px solid var(--line-2);
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+      padding:14px 16px;
+      font:inherit;
+      outline:none;
+    }
+
+    textarea::placeholder{color:#7e90b7}
+
+    .coach-cards{
+      display:grid;
+      gap:12px;
+      margin-top:16px;
+    }
+
+    .coach-card{
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:15px;
+    }
+
+    .coach-card h4{
+      margin:0 0 10px;
+      font-size:.94rem;
+    }
+
+    .coach-card p{
+      margin:0;
+      color:var(--muted);
+      font-size:.9rem;
+      line-height:1.6;
+    }
+
+    .impact{
+      display:grid;
+      gap:10px;
+      margin-top:10px;
+    }
+
+    .impact-item{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--line);
+      color:var(--muted);
+      font-size:.88rem;
+    }
+
+    .impact-item b{color:var(--text)}
+
+    .footer-note{
+      margin-top:14px;
+      color:var(--soft);
+      font-size:.8rem;
+      line-height:1.5;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      border-radius:999px;
+      background:rgba(69,213,157,.1);
+      border:1px solid rgba(69,213,157,.16);
+      color:var(--green);
+      font-weight:700;
+      font-size:.8rem;
+    }
+
+    .badge.warn{
+      background:rgba(255,204,102,.1);
+      border-color:rgba(255,204,102,.16);
+      color:var(--amber);
+    }
+
+    @media (max-width: 1180px){
+      .simulator{
+        grid-template-columns:1fr;
+      }
+      .sidebar,.coach{
+        position:relative;
+        top:auto;
+        min-height:auto;
+      }
+      .stage{order:-1}
+    }
+
+    @media (max-width: 900px){
+      .hero{
+        grid-template-columns:1fr;
+      }
+    }
+
+    @media (max-width: 640px){
+      .shell{padding:16px}
+      .hero-main,.hero-side,.sidebar,.coach{padding:16px}
+      .stage-header,.dialog,.controls{padding-left:16px;padding-right:16px}
+      .stats{grid-template-columns:1fr}
+      .scenario-grid{grid-template-columns:1fr}
+      .custom-wrap{grid-template-columns:1fr}
+      .msg .bubble{max-width:100%}
+      h1{max-width:12ch}
+    }
+  </style>
+</head>
+<body class="bg-grid">
+  <div class="shell">
+    <section class="hero">
+      <div class="card hero-main">
+        <div class="eyebrow"><span class="dot"></span> Go2 Boardroom Simulator</div>
+        <h1>Answer the board with confidence.</h1>
+        <p class="lead">
+          Step into the CEO seat. Your board asks hard questions about productivity, team utilization, meeting load, focus time, and ROI. Go2 helps you answer with insight — positioning productivity intelligence as <strong>coaching, not surveillance</strong>.
+        </p>
+        <div class="hero-actions">
+          <button class="btn btn-primary" id="startSim">Start Simulation</button>
+          <button class="btn btn-secondary" id="playDemo">Run Toughest Question</button>
+        </div>
+        <div class="stats">
+          <div class="stat">
+            <div class="value">42%</div>
+            <div class="label">Average productivity increase with AI-powered coaching insights</div>
+          </div>
+          <div class="stat">
+            <div class="value">15.2 hrs</div>
+            <div class="label">Saved per employee per week by reducing friction and wasted work</div>
+          </div>
+          <div class="stat">
+            <div class="value">892%</div>
+            <div class="label">First-year ROI from better utilization, workflow clarity, and coaching</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card hero-side">
+        <div class="mini-head">
+          <div>
+            <div class="mini-title">Board Readiness Snapshot</div>
+            <div class="panel-sub">How prepared your answers are across common objections.</div>
+          </div>
+          <div class="confidence" id="confidenceScore">88% ready</div>
+        </div>
+
+        <div class="scorecard">
+          <div class="meter">
+            <div class="meter-top"><span>ROI Narrative</span><strong>93%</strong></div>
+            <div class="bar"><span style="width:93%"></span></div>
+          </div>
+          <div class="meter">
+            <div class="meter-top"><span>Privacy Positioning</span><strong>96%</strong></div>
+            <div class="bar"><span style="width:96%"></span></div>
+          </div>
+          <div class="meter">
+            <div class="meter-top"><span>Utilization Clarity</span><strong>84%</strong></div>
+            <div class="bar"><span style="width:84%"></span></div>
+          </div>
+          <div class="meter">
+            <div class="meter-top"><span>Pricing Defense</span><strong>79%</strong></div>
+            <div class="bar"><span style="width:79%"></span></div>
+          </div>
+        </div>
+
+        <div class="highlight">
+          <b>Best positioning angle:</b> “Go2 shows how work actually gets done, then uses AI coaching to help teams improve. It’s not about watching employees — it’s about removing hidden friction, protecting focus time, and helping managers coach better.”
+        </div>
+      </div>
+    </section>
+
+    <section class="simulator">
+      <aside class="card sidebar">
+        <div class="panel-title">
+          <div>
+            <h3>Your Board</h3>
+            <div class="panel-sub">Select a board member to preview their lens and likely objections.</div>
+          </div>
+          <span class="badge">Live simulation</span>
+        </div>
+
+        <div class="board-list" id="boardList">
+          <div class="member active" data-member="finance">
+            <div class="member-top">
+              <div class="avatar">CF</div>
+              <div>
+                <h4>Claire Foster</h4>
+                <p>Finance Chair</p>
+              </div>
+            </div>
+            <p>Focuses on ROI, budget efficiency, and measurable gains versus software spend.</p>
+            <div class="mood">Tough on numbers</div>
+          </div>
+
+          <div class="member" data-member="people">
+            <div class="member-top">
+              <div class="avatar">MS</div>
+              <div>
+                <h4>Marcus Shaw</h4>
+                <p>People & Culture Director</p>
+              </div>
+            </div>
+            <p>Challenges privacy, morale, adoption, and employee trust implications.</p>
+            <div class="mood">People-first skeptic</div>
+          </div>
+
+          <div class="member" data-member="operations">
+            <div class="member-top">
+              <div class="avatar">RP</div>
+              <div>
+                <h4>Rita Patel</h4>
+                <p>Operations Lead</p>
+              </div>
+            </div>
+            <p>Wants clear insight into bottlenecks, meetings, workflows, and team utilization.</p>
+            <div class="mood">Execution focused</div>
+          </div>
+
+          <div class="member" data-member="strategy">
+            <div class="member-top">
+              <div class="avatar">DT</div>
+              <div>
+                <h4>David Tran</h4>
+                <p>Independent Board Advisor</p>
+              </div>
+            </div>
+            <p>Questions differentiation from Time Doctor, Hubstaff, and Teramind.</p>
+            <div class="mood">Competitive pressure</div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="card stage">
+        <div class="stage-header">
+          <div>
+            <h2>Boardroom Dialogue</h2>
+            <div class="panel-sub">You’re presenting Go2 to the board. Pick a question or ask your own.</div>
+          </div>
+          <div class="header-actions">
+            <span class="chip" id="questionCount">0 questions answered</span>
+            <span class="chip" id="activeLens">Active lens: Finance</span>
+          </div>
+        </div>
+
+        <div class="dialog" id="dialog">
+          <div class="msg board">
+            <div class="avatar">CF</div>
+            <div>
+              <div class="bubble">
+                Let’s get straight to it. Productivity software is a crowded space. Why should we believe Go2 creates measurable business value rather than just another dashboard?
+                <span class="meta">Claire Foster · Finance Chair</span>
+              </div>
+            </div>
+          </div>
+          <div class="msg go2">
+            <div>
+              <div class="bubble">
+                Go2 creates value because it doesn’t stop at activity visibility — it translates work patterns into coaching opportunities managers can act on. For SMBs, that means identifying hidden meeting overload, fragmented focus time, underused tools, and role-specific workflow friction. The result is measurable: customers see an average <strong>42% productivity increase</strong>, <strong>15.2 hours saved per employee per week</strong>, and <strong>892% ROI in year one</strong>. The core difference is that Go2 helps teams improve performance, not simply record behavior.
+                <span class="meta">Go2 recommended response</span>
+              </div>
+            </div>
+            <div class="avatar">G2</div>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="scenario-grid" id="scenarioGrid">
+            <button class="scenario-btn active" data-scenario="roi">
+              How do we justify the spend?
+              <span class="small">Budget, ROI, time saved, and business case for SMBs at $6–12/user/month.</span>
+            </button>
+            <button class="scenario-btn" data-scenario="privacy">
+              Is this employee surveillance?
+              <span class="small">Privacy, morale, trust, and why Go2 is coaching-first.</span>
+            </button>
+            <button class="scenario-btn" data-scenario="utilization">
+              What does it reveal about utilization?
+              <span class="small">Focus time, app usage, meetings, workload patterns, and bottlenecks.</span>
+            </button>
+            <button class="scenario-btn" data-scenario="competition">
+              Why not Time Doctor or Hubstaff?
+              <span class="small">Differentiate from monitoring tools and legacy tracking categories.</span>
+            </button>
+          </div>
+
+          <div class="ask-row">
+            <button class="btn btn-primary" id="askSelected">Answer Selected Question</button>
+            <button class="btn btn-secondary" id="shuffleQuestion">Random Tough Question</button>
+            <button class="btn btn-secondary" id="resetDialog">Reset</button>
+          </div>
+
+          <div class="custom-wrap">
+            <textarea id="customQuestion" placeholder="Or type your own board question, e.g. 'How do we roll this out without spooking employees?'"></textarea>
+            <button class="btn btn-primary" id="askCustom">Ask Custom Question</button>
+          </div>
+        </div>
+      </main>
+
+      <aside class="card coach">
+        <div class="panel-title">
+          <div>
+            <h3>Go2 Coach Notes</h3>
+            <div class="panel-sub">Real-time framing to help you sound credible, modern, and board-ready.</div>
+          </div>
+          <span class="badge warn" id="toneBadge">Tone: Strategic</span>
+        </div>
+
+        <div class="coach-cards">
+          <div class="coach-card">
+            <h4>Recommended framing</h4>
+            <p id="framingText">
+              Lead with business outcomes, then reinforce that Go2 is designed for productivity coaching — not surveillance. Emphasize manager enablement, workflow clarity, and protected focus time.
+            </p>
+          </div>
+
+          <div class="coach-card">
+            <h4>Best proof points</h4>
+            <div class="impact" id="proofPoints">
+              <div class="impact-item"><span>Average productivity lift</span><b>42%</b></div>
+              <div class="impact-item"><span>Time saved weekly</span><b>15.2 hrs/employee</b></div>
+              <div class="impact-item"><span>Year-one ROI</span><b>892%</b></div>
+            </div>
+          </div>
+
+          <div class="coach-card">
+            <h4>What to avoid saying</h4>
+            <p id="avoidText">
+              Don’t describe Go2 as “tracking workers” or “watching employees.” Avoid a compliance-heavy, punitive tone. Position data as coaching input that helps teams improve how work gets done.
+            </p>
+          </div>
+        </div>
+
+        <div class="footer-note">
+          Ideal buyers: <strong>SMB owners</strong>, <strong>ops managers</strong>, and <strong>HR directors</strong> who need visibility into real work patterns without adopting a surveillance culture.
+        </div>
+      </aside>
+    </section>
+  </div>
+
+  <script>
+    const scenarios = {
+      roi: {
+        member: "finance",
+        lens: "Finance",
+        tone: "Strategic",
+        boardName: "Claire Foster",
+        boardRole: "Finance Chair",
+        boardAvatar: "CF",
+        question: "At roughly $6–12 per user per month, how do we justify this spend to the board versus simply asking managers to improve performance manually?",
+        answer: "Because the cost is small relative to the hidden productivity waste most SMBs can’t currently see. Go2 surfaces where time is actually going across meetings, app usage, interruptions, and workflow fragmentation, then turns that data into AI coaching recommendations managers can use immediately. That drives tangible outcomes: an average <strong>42% productivity increase</strong>, <strong>15.2 hours saved per employee per week</strong>, and <strong>892% ROI in the first year</strong>. In other words, Go2 is not another overhead tool — it’s a low-cost lever for improving team output, manager effectiveness, and operating efficiency at scale.",
+        framing: "Anchor the answer in ROI and wasted-time recovery. Show that Go2 is cheaper than operating blindly.",
+        avoid: "Don’t frame pricing as 'cheap monitoring.' Frame it as high-leverage operational intelligence and coaching.",
+        confidence: "92% ready"
+      },
+      privacy: {
+        member: "people",
+        lens: "People & Culture",
+        tone: "Empathetic",
+        boardName: "Marcus Shaw",
+        boardRole: "People & Culture Director",
+        boardAvatar: "MS",
+        question: "Be honest — employees may see keystroke and app data and assume surveillance. How do we deploy Go2 without damaging trust or morale?",
+        answer: "That concern is exactly why Go2’s positioning matters. Go2 is built and introduced as a <strong>productivity coaching platform</strong>, not a surveillance tool. The purpose is to help teams work smarter by identifying patterns like context switching, meeting overload, tool sprawl, and lost focus time — then giving managers and employees actionable coaching to reduce friction. The message to staff is not 'we’re watching you'; it’s 'we want to understand how work happens so we can remove obstacles, protect time, and improve outcomes.' When deployed transparently with clear expectations and coaching-oriented use cases, Go2 strengthens manager support rather than creating a punitive culture.",
+        framing: "Lead with transparency, trust, and coaching. Position data as a tool to improve work design, not police effort.",
+        avoid: "Avoid language about catching underperformers or proving people are working. That undermines trust instantly.",
+        confidence: "95% ready"
+      },
+      utilization: {
+        member: "operations",
+        lens: "Operations",
+        tone: "Analytical",
+        boardName: "Rita Patel",
+        boardRole: "Operations Lead",
+        boardAvatar: "RP",
+        question: "What does Go2 actually reveal that helps us improve utilization? I don’t need vague trends — I need operational clarity.",
+        answer: "Go2 gives operational clarity by showing how work is distributed across focus time, meetings, app usage, and interruption patterns. That means leaders can identify whether teams are overloaded with coordination, underutilizing core systems, spending excessive time in low-value tools, or losing productive hours to fragmented workflows. Instead of assuming utilization issues, Go2 shows where they happen and pairs those insights with AI coaching recommendations. For SMB operators, that’s powerful because it helps optimize staffing, rebalance workloads, reduce unnecessary meetings, and improve how teams execute day to day.",
+        framing: "Use specific operational examples: meeting load, focus-time erosion, app fragmentation, and workload imbalance.",
+        avoid: "Don’t talk in generic analytics jargon. Tie the platform directly to staffing, throughput, and execution quality.",
+        confidence: "89% ready"
+      },
+      competition: {
+        member: "strategy",
+        lens: "Competitive Positioning",
+        tone: "Confident",
+        boardName: "David Tran",
+        boardRole: "Independent Board Advisor",
+        boardAvatar: "DT",
+        question: "Time Doctor, Hubstaff, and Teramind already claim visibility into productivity. Why is Go2 meaningfully different?",
+        answer: "The difference is category definition. Traditional tools like Time Doctor, Hubstaff, and Teramind are largely perceived as <strong>monitoring</strong> systems — they focus on tracking, oversight, and compliance-style visibility. Go2 positions differently: it uses work-pattern intelligence to deliver <strong>AI coaching</strong> that helps teams improve performance. For SMBs, that distinction matters because they don’t just want data on activity; they want help understanding how work actually gets done and how managers can improve it. Go2’s story is not 'watch more closely' — it’s 'coach more effectively, reduce friction, and unlock smarter utilization.' That makes it easier to adopt culturally and more compelling strategically.",
+        framing: "Define the category difference clearly: monitoring versus coaching. Then connect that to adoption and business impact.",
+        avoid: "Don’t get dragged into feature-by-feature parity. Win on philosophy, outcomes, and manager value.",
+        confidence: "90% ready"
+      }
+    };
+
+    const customResponses = [
+      {
+        match: ["roll out", "adoption", "spook", "morale", "trust"],
+        member: "people",
+        lens: "People & Culture",
+        tone: "Empathetic",
+        boardName: "Marcus Shaw",
+        boardRole: "People & Culture Director",
+        boardAvatar: "MS",
+        question: "How do we roll this out without spooking employees?",
+        answer: "The rollout has to be transparent and coaching-led from day one. Position Go2 as a way to understand workload friction, reduce meeting overload, protect focus time, and help managers support teams better. Be explicit that the goal is not surveillance or punishment. For SMBs especially, adoption improves when employees see the platform helping remove blockers and improve work quality rather than simply measuring activity."
+      },
+      {
+        match: ["manager", "coaching", "leader", "management"],
+        member: "operations",
+        lens: "Management Effectiveness",
+        tone: "Practical",
+        boardName: "Rita Patel",
+        boardRole: "Operations Lead",
+        boardAvatar: "RP",
+        question: "How does this make managers better?",
+        answer: "Go2 gives managers objective visibility into how work actually flows across meetings, apps, and focused execution time. Instead of relying on instinct alone, they can coach based on patterns: where employees are overloaded, where workflow friction is slowing delivery, and where team habits are hurting productivity. That makes one-on-ones more useful and management more proactive."
+      },
+      {
+        match: ["smb", "small", "mid", "5-500"],
+        member: "finance",
+        lens: "SMB Fit",
+        tone: "Strategic",
+        boardName: "Claire Foster",
+        boardRole: "Finance Chair",
+        boardAvatar: "CF",
+        question: "Why is this especially relevant for SMBs?",
+        answer: "SMBs often feel productivity issues first because every hour matters and management layers are thin. Go2 gives organizations with 5 to 500 employees a practical way to see how work actually gets done without needing a large operations analytics team. It helps owners, ops leaders, and HR leaders make smarter staffing, workflow, and coaching decisions quickly."
+      }
+    ];
+
+    const dialog = document.getElementById('dialog');
+    const scenarioButtons = document.querySelectorAll('.scenario-btn');
+    const boardMembers = document.querySelectorAll('.member');
+    const activeLens = document.getElementById('activeLens');
+    const questionCount = document.getElementById('questionCount');
+    const framingText = document.getElementById('framingText');
+    const avoidText = document.getElementById('avoidText');
+    const confidenceScore = document.getElementById('confidenceScore');
+    const toneBadge = document.getElementById('toneBadge');
+    const customQuestion = document.getElementById('customQuestion');
+
+    let currentScenario = 'roi';
+    let answered = 0;
+
+    function setActiveMember(memberKey){
+      boardMembers.forEach(m => m.classList.toggle('active', m.dataset.member === memberKey));
+    }
+
+    function setScenario(key){
+      currentScenario = key;
+      scenarioButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.scenario === key));
+      const s = scenarios[key];
+      setActiveMember(s.member);
+      activeLens.textContent = `Active lens: ${s.lens}`;
+      framingText.textContent = s.framing;
+      avoidText.textContent = s.avoid;
+      confidenceScore.textContent = s.confidence;
+      toneBadge.textContent = `Tone: ${s.tone}`;
+    }
+
+    function addMessage(type, avatar, text, meta){
+      const wrapper = document.createElement('div');
+      wrapper.className = `msg ${type}`;
+
+      if(type === 'board'){
+        wrapper.innerHTML = `
+          <div class="avatar">${avatar}</div>
+          <div>
+            <div class="bubble">${text}<span class="meta">${meta}</span></div>
+          </div>
+        `;
+      } else {
+        wrapper.innerHTML = `
+          <div>
+            <div class="bubble">${text}<span class="meta">${meta}</span></div>
+          </div>
+          <div class="avatar">${avatar}</div>
+        `;
+      }
+      dialog.appendChild(wrapper);
+      dialog.scrollTop = dialog.scrollHeight;
+    }
+
+    function askScenario(key){
+      const s = scenarios[key];
+      setScenario(key);
+      addMessage('board', s.boardAvatar, s.question, `${s.boardName} · ${s.boardRole}`);
+      setTimeout(() => {
+        addMessage('go2', 'G2', s.answer, 'Go2 recommended response');
+      }, 350);
+      answered++;
+      questionCount.textContent = `${answered} question${answered === 1 ? '' : 's'} answered`;
+    }
+
+    function askCustom(){
+      const input = customQuestion.value.trim();
+      if(!input) return;
+      let response = null;
+
+      for (const item of customResponses){
+        if(item.match.some(word => input.toLowerCase().includes(word))){
+          response = item;
+          break;
+        }
+      }
+
+      if(!response){
+        response = {
+          member: "strategy",
+          lens: "Board Challenge",
+          tone: "Executive",
+          boardName: "David Tran",
+          boardRole: "Independent Board Advisor",
+          boardAvatar: "DT",
+          question: input,
+          answer: "The strongest answer is to bring the conversation back to outcomes. Go2 helps SMB leaders understand how work actually happens across meetings, apps, and activity patterns, then uses AI coaching to improve productivity rather than simply monitor people. That matters because businesses don’t need more visibility for its own sake — they need actionable guidance that increases output, saves time, and helps managers coach more effectively."
+        };
+      }
+
+      setActiveMember(response.member);
+      activeLens.textContent = `Active lens: ${response.lens}`;
+      toneBadge.textContent = `Tone: ${response.tone}`;
+      framingText.textContent = "Answer in business language first, then reinforce coaching over monitoring.";
+      avoidText.textContent = "Avoid defensive wording. Sound clear, transparent, and outcomes-focused.";
+      confidenceScore.textContent = "87% ready";
+
+      addMessage('board', response.boardAvatar, response.question, `${response.boardName} · ${response.boardRole}`);
+      setTimeout(() => {
+        addMessage('go2', 'G2', response.answer, 'Go2 recommended response');
+      }, 350);
+
+      answered++;
+      questionCount.textContent = `${answered} question${answered === 1 ? '' : 's'} answered`;
+      customQuestion.value = '';
+    }
+
+    function resetDialog(){
+      answered = 0;
+      questionCount.textContent = '0 questions answered';
+      dialog.innerHTML = `
+        <div class="msg board">
+          <div class="avatar">CF</div>
+          <div>
+            <div class="bubble">
+              Let’s get straight to it. Productivity software is a crowded space. Why should we believe Go2 creates measurable business value rather than just another dashboard?
+              <span class="meta">Claire Foster · Finance Chair</span>
+            </div>
+          </div>
+        </div>
+        <div class="msg go2">
+          <div>
+            <div class="bubble">
+              Go2 creates value because it doesn’t stop at activity visibility — it translates work patterns into coaching opportunities managers can act on. For SMBs, that means identifying hidden meeting overload, fragmented focus time, underused tools, and role-specific workflow friction. The result is measurable: customers see an average <strong>42% productivity increase</strong>, <strong>15.2 hours saved per employee per week</strong>, and <strong>892% ROI in year one</strong>. The core difference is that Go2 helps teams improve performance, not simply record behavior.
+              <span class="meta">Go2 recommended response</span>
+            </div>
+          </div>
+          <div class="avatar">G2</div>
+        </div>
+      `;
+      setScenario('roi');
+    }
+
+    scenarioButtons.forEach(btn => {
+      btn.addEventListener('click', () => setScenario(btn.dataset.scenario));
+    });
+
+    boardMembers.forEach(member => {
+      member.addEventListener('click', () => {
+        const key = member.dataset.member;
+        const mapping = {
+          finance: 'roi',
+          people: 'privacy',
+          operations: 'utilization',
+          strategy: 'competition'
+        };
+        setScenario(mapping[key]);
+      });
+    });
+
+    document.getElementById('askSelected').addEventListener('click', () => askScenario(currentScenario));
+    document.getElementById('shuffleQuestion').addEventListener('click', () => {
+      const keys = Object.keys(scenarios);
+      const random = keys[Math.floor(Math.random() * keys.length)];
+      askScenario(random);
+    });
+    document.getElementById('askCustom').addEventListener('click', askCustom);
+    customQuestion.addEventListener('keydown', (e) => {
+      if((e.metaKey || e.ctrlKey) && e.key === 'Enter') askCustom();
+    });
+
+    document.getElementById('resetDialog').addEventListener('click', resetDialog);
+    document.getElementById('startSim').addEventListener('click', () => {
+      document.querySelector('.stage').scrollIntoView({behavior:'smooth', block:'start'});
+      setTimeout(() => askScenario(currentScenario), 300);
+    });
+    document.getElementById('playDemo').addEventListener('click', () => {
+      document.querySelector('.stage').scrollIntoView({behavior:'smooth', block:'start'});
+      setTimeout(() => askScenario('privacy'), 300);
+    });
+
+    setScenario('roi');
+  </script>
+</body>
+</html>

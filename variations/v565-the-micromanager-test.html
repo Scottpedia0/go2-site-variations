@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Micromanager Test | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: #0a0a0f; color: #e0e0e0; min-height: 100vh; }
+.container { max-width: 700px; margin: 0 auto; padding: 40px 20px; }
+.screen { display: none; }
+.screen.active { display: block; }
+/* Intro */
+.intro { text-align: center; min-height: 80vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.intro h1 { font-size: clamp(2rem, 6vw, 3.5rem); font-weight: 900; line-height: 1.1; margin-bottom: 16px; }
+.intro h1 span { background: linear-gradient(135deg, #f59e0b, #ef4444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.intro p { color: #888; font-size: 1.05rem; max-width: 500px; margin-bottom: 32px; }
+.start-btn { padding: 16px 48px; background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; border: none; border-radius: 14px; font-size: 1.1rem; font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s; }
+.start-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(99,102,241,0.3); }
+.disclaimer { font-size: 0.75rem; color: #444; margin-top: 16px; }
+/* Quiz */
+.progress { display: flex; gap: 4px; margin-bottom: 8px; }
+.progress-seg { flex: 1; height: 4px; border-radius: 2px; background: #1a1a2e; transition: background 0.3s; }
+.progress-seg.done { background: #6366f1; }
+.progress-info { font-size: 0.75rem; color: #555; margin-bottom: 32px; }
+.question-card { margin-bottom: 24px; }
+.question-card h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 6px; line-height: 1.3; }
+.question-card .scenario { font-size: 0.9rem; color: #888; line-height: 1.6; margin-bottom: 24px; font-style: italic; }
+.options { display: flex; flex-direction: column; gap: 10px; }
+.option { padding: 16px 20px; background: rgba(255,255,255,0.02); border: 1px solid #1a1a2e; border-radius: 12px; cursor: pointer; transition: all 0.2s; display: flex; gap: 12px; align-items: flex-start; }
+.option:hover { border-color: #333; background: rgba(255,255,255,0.04); }
+.option.selected { border-color: #6366f1; background: rgba(99,102,241,0.05); }
+.option-letter { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #333; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; transition: all 0.2s; }
+.option.selected .option-letter { background: #6366f1; border-color: #6366f1; color: #fff; }
+.option-text { font-size: 0.9rem; color: #ccc; line-height: 1.4; }
+.option-text .humor { display: block; font-size: 0.75rem; color: #555; margin-top: 4px; font-style: italic; }
+/* Results */
+.results { text-align: center; }
+.result-icon { font-size: 4rem; margin-bottom: 16px; }
+.result-score { font-size: 5rem; font-weight: 900; margin-bottom: 8px; }
+.result-title { font-size: 1.6rem; font-weight: 700; margin-bottom: 12px; }
+.result-body { font-size: 1rem; color: #888; line-height: 1.7; max-width: 550px; margin: 0 auto 32px; }
+.result-meter { margin: 24px auto; max-width: 400px; }
+.meter-labels { display: flex; justify-content: space-between; font-size: 0.7rem; color: #555; margin-bottom: 6px; }
+.meter-track { height: 12px; background: linear-gradient(90deg, #22c55e, #f59e0b, #ef4444); border-radius: 6px; position: relative; }
+.meter-indicator { position: absolute; top: -4px; width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 3px solid #0a0a0f; transition: left 0.8s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+.result-breakdown { text-align: left; max-width: 500px; margin: 32px auto; }
+.result-breakdown h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 12px; }
+.breakdown-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #1a1a2e; font-size: 0.85rem; }
+.breakdown-item .label { color: #888; }
+.breakdown-item .score { font-weight: 600; }
+.go2-pitch { background: linear-gradient(135deg, rgba(34,197,94,0.05), rgba(34,197,94,0.02)); border: 1px solid rgba(34,197,94,0.2); border-radius: 16px; padding: 32px; margin: 32px 0; text-align: center; }
+.go2-pitch h3 { font-size: 1.1rem; margin-bottom: 8px; color: #4ade80; }
+.go2-pitch p { font-size: 0.9rem; color: #888; line-height: 1.6; margin-bottom: 16px; }
+.cta-btn { padding: 14px 36px; background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; border: none; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; font-family: 'Inter', sans-serif; }
+.share-btns { display: flex; gap: 8px; justify-content: center; margin-top: 16px; }
+.share-btn { padding: 8px 20px; background: #1a1a2e; border: 1px solid #333; color: #888; border-radius: 8px; font-size: 0.8rem; cursor: pointer; font-family: 'Inter', sans-serif; }
+.share-btn:hover { border-color: #6366f1; color: #fff; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="screen active" id="intro">
+    <div class="intro">
+      <h1>Are You <span>Accidentally</span> a Micromanager?</h1>
+      <p>10 questions. Brutally honest. Find out if your "management style" is secretly driving your best people away.</p>
+      <button class="start-btn" onclick="startQuiz()">Take the Test</button>
+      <div class="disclaimer">Takes 3 minutes. Results may be uncomfortable.</div>
+    </div>
+  </div>
+
+  <div class="screen" id="quiz">
+    <div class="progress" id="progress"></div>
+    <div class="progress-info" id="progressInfo"></div>
+    <div id="questionArea"></div>
+  </div>
+
+  <div class="screen" id="results"></div>
+</div>
+
+<script>
+const questions = [
+  {
+    q: "An employee finishes a project 2 days early. Your first thought?",
+    scenario: "Your top designer submits the redesign ahead of schedule. It looks great.",
+    options: [
+      { text: "Excellent. Time to give them something more challenging.", humor: "The healthy response", score: 0 },
+      { text: "I should review it extra carefully. Maybe they rushed.", humor: "The 'trust but verify' response", score: 1 },
+      { text: "Why weren't they working on other things during those 2 days?", humor: "Yikes. We need to talk.", score: 3 },
+    ]
+  },
+  {
+    q: "How do you feel about an employee who doesn't respond to Slack for 2 hours?",
+    scenario: "It's 2 PM on a Tuesday. Your developer hasn't replied to your message from noon.",
+    options: [
+      { text: "They're probably in deep work. I'll wait.", humor: "Gold star for you", score: 0 },
+      { text: "I'll send a follow-up just to make sure they saw it.", humor: "The nudge", score: 2 },
+      { text: "I check their Slack status and recent activity to see what they're doing.", humor: "That's... surveillance lite", score: 3 },
+    ]
+  },
+  {
+    q: "You're going on vacation for a week. What do you prepare?",
+    scenario: "You have a real vacation coming up. Sun, sand, no laptop (supposedly).",
+    options: [
+      { text: "Brief my team lead and trust them to handle everything.", humor: "Normal human behavior", score: 0 },
+      { text: "Create a detailed daily checklist for the team to follow.", humor: "Checklist is fine. 'Daily' is the red flag.", score: 2 },
+      { text: "Schedule check-in calls and keep Slack on my phone. Just in case.", humor: "That's not a vacation. That's a remote office.", score: 3 },
+    ]
+  },
+  {
+    q: "An employee wants to try a different approach to solving a problem. Your response?",
+    scenario: "Your marketing lead proposes a campaign strategy that's very different from how you'd do it.",
+    options: [
+      { text: "Interesting. Let's set up metrics to evaluate it after 30 days.", humor: "Empowering AND data-driven", score: 0 },
+      { text: "Walk me through every step so I can make sure it'll work.", humor: "Translation: I need to approve everything", score: 2 },
+      { text: "I'd rather we go with the proven approach. Less risk.", humor: "Translation: my approach", score: 3 },
+    ]
+  },
+  {
+    q: "How often do you ask for status updates on a week-long project?",
+    scenario: "You assigned a project on Monday that's due Friday.",
+    options: [
+      { text: "I check in once mid-week, briefly.", humor: "Perfect cadence", score: 0 },
+      { text: "Daily standups plus an end-of-day summary.", humor: "That's 10 updates for a 5-day project", score: 2 },
+      { text: "Whenever I think about it. Which is... often.", humor: "Your team knows. Trust us.", score: 3 },
+    ]
+  },
+  {
+    q: "You discover an employee has been doing something differently than you would. Results are the same.",
+    scenario: "Your ops person processes invoices in a different order than your method. Same accuracy, same speed.",
+    options: [
+      { text: "Results are the same? Great. Their method works too.", humor: "Maturity.", score: 0 },
+      { text: "I'd explain my method so they can decide which is better.", humor: "'Explain' or 'mandate'?", score: 1 },
+      { text: "I need them to follow the established process. Consistency matters.", humor: "Consistency or control?", score: 3 },
+    ]
+  },
+  {
+    q: "Your team proposes having one meeting-free day per week. Your reaction?",
+    scenario: "The team unanimously wants 'No-Meeting Wednesday' to focus on deep work.",
+    options: [
+      { text: "Absolutely. Let's try it for a month and measure impact.", humor: "Your team loves you", score: 0 },
+      { text: "Good idea, but I'll need brief check-ins to stay in the loop.", humor: "So... a meeting about not having meetings", score: 2 },
+      { text: "I'm not comfortable losing a day of visibility into what's happening.", humor: "This is the one. This is the tell.", score: 3 },
+    ]
+  },
+  {
+    q: "A remote employee works 6 hours on Tuesday but 10 hours on Thursday. Weekly output is excellent.",
+    scenario: "They flex their schedule based on energy and workload. Results consistently exceed expectations.",
+    options: [
+      { text: "Output matters, not hours. If results are great, the schedule works.", humor: "Trust level: expert", score: 0 },
+      { text: "I'd prefer more consistency, but the results speak for themselves.", humor: "Almost there", score: 1 },
+      { text: "Everyone should work standard hours. It's about fairness and reliability.", humor: "Fairness or control?", score: 3 },
+    ]
+  },
+  {
+    q: "You notice an employee's computer shows idle for 20 minutes during the workday.",
+    scenario: "Your monitoring tool (if you have one) shows 'inactive' at 2 PM.",
+    options: [
+      { text: "They're probably thinking, on a call, or taking a break. All fine.", humor: "The only sane answer", score: 0 },
+      { text: "I make a mental note to watch for a pattern.", humor: "One mental note becomes a dossier", score: 2 },
+      { text: "I'd bring it up in our next 1:1.", humor: "You're going to 1:1 about bathroom breaks?", score: 3 },
+    ]
+  },
+  {
+    q: "If Go2 existed, what would you most want to see?",
+    scenario: "Imagine AI-powered team productivity insights were available right now.",
+    options: [
+      { text: "Team-level patterns so I can remove blockers and improve the environment.", humor: "This is exactly what Go2 does", score: 0 },
+      { text: "Individual productivity scores so I know who's performing.", humor: "Scores without context become weapons", score: 2 },
+      { text: "Real-time activity tracking so I know what everyone's doing at all times.", humor: "That's surveillance. You know that, right?", score: 3 },
+    ]
+  },
+];
+
+let currentQ = 0;
+let scores = [];
+
+function startQuiz() {
+  document.getElementById('intro').classList.remove('active');
+  document.getElementById('quiz').classList.add('active');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = questions[currentQ];
+  document.getElementById('progress').innerHTML = questions.map((_, i) => `<div class="progress-seg ${i < currentQ ? 'done' : ''}"></div>`).join('');
+  document.getElementById('progressInfo').textContent = `Question ${currentQ + 1} of ${questions.length}`;
+
+  document.getElementById('questionArea').innerHTML = `
+    <div class="question-card">
+      <h2>${q.q}</h2>
+      <div class="scenario">${q.scenario}</div>
+      <div class="options">
+        ${q.options.map((o, i) => `
+          <div class="option" onclick="selectOption(${i}, ${o.score})">
+            <div class="option-letter">${String.fromCharCode(65 + i)}</div>
+            <div class="option-text">${o.text}<span class="humor">${o.humor}</span></div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function selectOption(idx, score) {
+  const options = document.querySelectorAll('.option');
+  options[idx].classList.add('selected');
+  scores.push(score);
+
+  setTimeout(() => {
+    currentQ++;
+    if (currentQ >= questions.length) {
+      showResults();
+    } else {
+      renderQuestion();
+    }
+  }, 400);
+}
+
+function showResults() {
+  document.getElementById('quiz').classList.remove('active');
+  document.getElementById('results').classList.add('active');
+
+  const total = scores.reduce((a, b) => a + b, 0);
+  const max = questions.length * 3;
+  const pct = (total / max * 100).toFixed(0);
+
+  let icon, title, body, color;
+  if (total <= 5) { icon = '&#128522;'; title = 'Enlightened Leader'; body = "Congratulations. You trust your team, focus on outcomes, and create an environment where people do their best work. You're the kind of manager people don't want to leave. Go2 would be a powerful amplifier for someone like you — giving you team-level insights to make an already great environment even better."; color = '#22c55e'; }
+  else if (total <= 12) { icon = '&#128528;'; title = 'Recovering Micromanager'; body = "You have good instincts, but some control tendencies sneak in. It's natural — most managers hover sometimes. The key is awareness. You know when you're doing it. Go2 gives you the visibility you crave WITHOUT the surveillance. Real insights, not checkbox monitoring."; color = '#f59e0b'; }
+  else if (total <= 20) { icon = '&#128556;'; title = 'Accidental Micromanager'; body = "Here's the thing: you probably don't mean to micromanage. Most micromanagers don't. You care about outcomes, you want things done right, and you feel responsible. But your team feels watched, not supported. The good news? This is fixable. Go2 replaces your urge to check up on people with actual data about what's working and what's not."; color = '#f97316'; }
+  else { icon = '&#128561;'; title = 'Full Micromanager'; body = "Let's be real: your management style is surveillance in a better outfit. Your team is stressed, your best people are updating their resumes, and the control you're exerting is destroying the productivity you're trying to protect. But you took this test, which means you know something needs to change. Go2 is literally built for leaders like you — it gives you visibility WITHOUT the toxicity."; color = '#ef4444'; }
+
+  document.getElementById('results').innerHTML = `
+    <div class="results">
+      <div class="result-icon">${icon}</div>
+      <div class="result-score" style="color:${color}">${total}/${max}</div>
+      <div class="result-title">${title}</div>
+      <div class="result-meter">
+        <div class="meter-labels"><span>Trust Leader</span><span>Micromanager</span></div>
+        <div class="meter-track"><div class="meter-indicator" style="left:calc(${pct}% - 10px)"></div></div>
+      </div>
+      <div class="result-body">${body}</div>
+      <div class="go2-pitch">
+        <h3>Go2: Visibility without surveillance</h3>
+        <p>Whatever your score, Go2 gives you what you actually need — understanding of how your team works, without watching their every move. AI coaching, not monitoring.</p>
+        <button class="cta-btn">Try Go2 Free</button>
+      </div>
+      <div class="share-btns">
+        <button class="share-btn" onclick="location.reload()">Retake Test</button>
+        <button class="share-btn">Share Results</button>
+      </div>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>

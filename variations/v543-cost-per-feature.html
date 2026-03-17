@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>True Cost Per Feature | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0a0a1a;color:#fff;min-height:100vh}
+.hero{text-align:center;padding:4rem 2rem 2rem}
+.badge{display:inline-block;padding:.4rem 1.2rem;border-radius:50px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25);color:#f59e0b;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:1rem;font-family:'JetBrains Mono',monospace}
+h1{font-size:clamp(2rem,4vw,3rem);font-weight:900;margin-bottom:.75rem}
+h1 span{color:#f59e0b}
+.sub{color:#8888aa;font-size:1.05rem;max-width:580px;margin:0 auto;line-height:1.6}
+.calculator{max-width:1000px;margin:2rem auto;padding:0 2rem;display:grid;grid-template-columns:1fr 1.2fr;gap:2rem}
+@media(max-width:768px){.calculator{grid-template-columns:1fr}}
+.panel{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:2rem}
+.panel h2{font-size:1.2rem;font-weight:700;margin-bottom:1.5rem}
+.field{margin-bottom:1.5rem}
+.field label{display:block;font-size:.85rem;color:#aaa;margin-bottom:.5rem}
+.field input,.field select{width:100%;padding:.8rem 1rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-size:.95rem;font-family:inherit;outline:none}
+.field input:focus,.field select:focus{border-color:#f59e0b}
+.field select option{background:#1a1a2e}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.calc-btn{width:100%;padding:1rem;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:1rem;cursor:pointer;font-family:inherit;margin-top:1rem}
+.results{display:none}.results.show{display:block}
+.cost-breakdown{margin-bottom:1.5rem}
+.cost-row{display:flex;justify-content:space-between;align-items:center;padding:.75rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.cost-row .label{font-size:.9rem;color:#aaa;display:flex;align-items:center;gap:.5rem}
+.cost-row .label .icon{width:8px;height:8px;border-radius:50%}
+.cost-row .amount{font-family:'JetBrains Mono',monospace;font-size:.95rem;font-weight:700}
+.cost-row.visible .amount{color:#f59e0b}
+.cost-row.hidden .amount{color:#ff6b6b}
+.cost-total{display:flex;justify-content:space-between;padding:1rem 0;border-top:2px solid rgba(255,255,255,.1);margin-top:.5rem;font-weight:700;font-size:1.1rem}
+.cost-total .amount{font-family:'JetBrains Mono',monospace;font-size:1.3rem;color:#ff6b6b}
+.pie-chart{text-align:center;margin:1.5rem 0}
+.pie-chart canvas{max-width:220px;margin:0 auto}
+.hidden-cost-alert{background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.2);border-radius:14px;padding:1.5rem;margin:1.5rem 0}
+.hidden-cost-alert h3{color:#ff6b6b;font-size:1rem;margin-bottom:.5rem}
+.hidden-cost-alert p{color:#aaa;font-size:.9rem;line-height:1.5}
+.hidden-cost-alert .big-num{font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:900;color:#ff6b6b;margin:.5rem 0}
+.go2-panel{background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.15);border-radius:14px;padding:1.5rem;margin-top:1.5rem}
+.go2-panel h3{color:#10b981;font-size:1rem;margin-bottom:.75rem}
+.savings-row{display:flex;justify-content:space-between;padding:.4rem 0;font-size:.9rem}
+.savings-row .val{font-family:'JetBrains Mono',monospace;font-weight:700;color:#10b981}
+.cta{text-align:center;padding:4rem 2rem}
+.cta h2{font-size:2rem;font-weight:800;margin-bottom:1rem}
+.cta p{color:#8888aa;margin-bottom:2rem}
+.cta-btn{display:inline-block;padding:1rem 2.5rem;background:linear-gradient(135deg,#6c63ff,#4834d4);color:#fff;text-decoration:none;border-radius:12px;font-weight:700;font-size:1.05rem;box-shadow:0 4px 20px rgba(108,99,255,.3)}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="badge">// DEV TEAM CALCULATOR</div>
+  <h1>The True Cost of<br><span>Shipping a Feature</span></h1>
+  <p class="sub">You know the estimate. You know the hourly rate. But the real cost includes context switching, meetings, rework, and waiting. Calculate your true cost.</p>
+</div>
+<div class="calculator">
+  <div class="panel">
+    <h2>Feature Details</h2>
+    <div class="field"><label>Feature Complexity</label><select id="complexity"><option value="small">Small (1-3 days estimated)</option><option value="medium" selected>Medium (1-2 weeks)</option><option value="large">Large (3-4 weeks)</option><option value="epic">Epic (1-2 months)</option></select></div>
+    <div class="field-row">
+      <div class="field"><label>Engineers Involved</label><input type="number" id="engineers" value="3" min="1" max="20"></div>
+      <div class="field"><label>Avg Hourly Rate ($)</label><input type="number" id="rate" value="85" min="30" max="300"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Meetings/Week (per person)</label><input type="number" id="meetings" value="12" min="0" max="30"></div>
+      <div class="field"><label>Other Projects (concurrent)</label><input type="number" id="projects" value="2" min="0" max="8"></div>
+    </div>
+    <div class="field"><label>Avg Wait Time for Reviews (hours)</label><input type="number" id="waitTime" value="8" min="0" max="48"></div>
+    <button class="calc-btn" onclick="calculate()">Calculate True Cost</button>
+  </div>
+  <div class="panel">
+    <h2>Cost Breakdown</h2>
+    <div class="results" id="results">
+      <div class="cost-breakdown">
+        <div class="cost-row visible"><div class="label"><div class="icon" style="background:#3b82f6"></div>Direct Development</div><div class="amount" id="c1">$0</div></div>
+        <div class="cost-row hidden"><div class="label"><div class="icon" style="background:#ff6b6b"></div>Context Switching Tax</div><div class="amount" id="c2">$0</div></div>
+        <div class="cost-row hidden"><div class="label"><div class="icon" style="background:#ef4444"></div>Meeting Overhead</div><div class="amount" id="c3">$0</div></div>
+        <div class="cost-row hidden"><div class="label"><div class="icon" style="background:#f59e0b"></div>Wait / Blocked Time</div><div class="amount" id="c4">$0</div></div>
+        <div class="cost-row hidden"><div class="label"><div class="icon" style="background:#8b5cf6"></div>Rework from Fragmentation</div><div class="amount" id="c5">$0</div></div>
+        <div class="cost-row visible"><div class="label"><div class="icon" style="background:#10b981"></div>Code Review Time</div><div class="amount" id="c6">$0</div></div>
+        <div class="cost-total"><span>True Total Cost</span><span class="amount" id="cTotal">$0</span></div>
+      </div>
+      <div class="pie-chart"><canvas id="pie" width="440" height="440"></canvas></div>
+      <div class="hidden-cost-alert">
+        <h3>Hidden Cost Multiplier</h3>
+        <div class="big-num" id="multiplier">0x</div>
+        <p id="alertText">Your feature costs X more than the "direct" estimate. This is money your team burns on overhead, not on building.</p>
+      </div>
+      <div class="go2-panel">
+        <h3>With Go2 Optimization</h3>
+        <div class="savings-row"><span>Context switching reduced by 40%</span><span class="val" id="s1">-$0</span></div>
+        <div class="savings-row"><span>Meeting time reduced by 25%</span><span class="val" id="s2">-$0</span></div>
+        <div class="savings-row"><span>Wait time reduced by 50%</span><span class="val" id="s3">-$0</span></div>
+        <div class="savings-row"><span>Rework reduced by 30%</span><span class="val" id="s4">-$0</span></div>
+        <div class="savings-row" style="border-top:1px solid rgba(16,185,129,.2);padding-top:.75rem;margin-top:.5rem;font-weight:700"><span>Total Savings Per Feature</span><span class="val" id="sTotal">-$0</span></div>
+      </div>
+    </div>
+    <div id="placeholder" style="text-align:center;color:#555;padding:4rem 0">
+      <p style="font-size:3rem;margin-bottom:1rem">$?</p>
+      <p>Fill in your details and click Calculate</p>
+    </div>
+  </div>
+</div>
+<div class="cta">
+  <h2>Stop Burning Money on Hidden Costs</h2>
+  <p>Go2 shows you exactly where dev time goes — and how to get it back. Free for 14 days.</p>
+  <a href="#" class="cta-btn">Start Free Trial</a>
+</div>
+
+<script>
+const fmt=n=>'$'+Math.round(n).toLocaleString();
+const complexityHours={small:20,medium:60,large:160,epic:320};
+function calculate(){
+  const comp=document.getElementById('complexity').value;
+  const eng=+document.getElementById('engineers').value;
+  const rate=+document.getElementById('rate').value;
+  const mtg=+document.getElementById('meetings').value;
+  const proj=+document.getElementById('projects').value;
+  const wait=+document.getElementById('waitTime').value;
+  const baseHours=complexityHours[comp];
+  const weeks=baseHours/40;
+  const directCost=baseHours*eng*rate;
+  const switchCost=proj*.15*baseHours*eng*rate;
+  const mtgHours=mtg*weeks*eng;
+  const mtgCost=mtgHours*rate;
+  const waitCycles=Math.ceil(baseHours/40)*eng*2;
+  const waitCost=waitCycles*wait*rate*.3;
+  const reworkPct=.05+proj*.03+Math.max(0,(mtg-8)*.01);
+  const reworkCost=directCost*reworkPct;
+  const reviewCost=baseHours*.15*eng*rate;
+  const total=directCost+switchCost+mtgCost+waitCost+reworkCost+reviewCost;
+  document.getElementById('c1').textContent=fmt(directCost);
+  document.getElementById('c2').textContent=fmt(switchCost);
+  document.getElementById('c3').textContent=fmt(mtgCost);
+  document.getElementById('c4').textContent=fmt(waitCost);
+  document.getElementById('c5').textContent=fmt(reworkCost);
+  document.getElementById('c6').textContent=fmt(reviewCost);
+  document.getElementById('cTotal').textContent=fmt(total);
+  const mult=(total/directCost).toFixed(1);
+  document.getElementById('multiplier').textContent=mult+'x';
+  document.getElementById('alertText').textContent=`Your feature costs ${mult}x more than the direct development estimate. ${fmt(total-directCost)} is hidden overhead that doesn't show up in sprint planning.`;
+  // Savings
+  const s1v=switchCost*.4,s2v=mtgCost*.25,s3v=waitCost*.5,s4v=reworkCost*.3;
+  document.getElementById('s1').textContent='-'+fmt(s1v);
+  document.getElementById('s2').textContent='-'+fmt(s2v);
+  document.getElementById('s3').textContent='-'+fmt(s3v);
+  document.getElementById('s4').textContent='-'+fmt(s4v);
+  document.getElementById('sTotal').textContent='-'+fmt(s1v+s2v+s3v+s4v);
+  // Pie
+  const c=document.getElementById('pie');const ctx=c.getContext('2d');
+  ctx.clearRect(0,0,440,440);
+  const data=[{v:directCost,c:'#3b82f6',l:'Direct'},{v:switchCost,c:'#ff6b6b',l:'Switching'},{v:mtgCost,c:'#ef4444',l:'Meetings'},{v:waitCost,c:'#f59e0b',l:'Wait'},{v:reworkCost,c:'#8b5cf6',l:'Rework'},{v:reviewCost,c:'#10b981',l:'Review'}];
+  let angle=-Math.PI/2;
+  data.forEach(d=>{
+    const slice=(d.v/total)*Math.PI*2;
+    ctx.beginPath();ctx.moveTo(220,220);ctx.arc(220,220,200,angle,angle+slice);ctx.closePath();
+    ctx.fillStyle=d.c;ctx.fill();
+    const mid=angle+slice/2;
+    if(slice>.15){
+      const lx=220+Math.cos(mid)*130,ly=220+Math.sin(mid)*130;
+      ctx.fillStyle='#fff';ctx.font='bold 22px Inter';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(Math.round(d.v/total*100)+'%',lx,ly);
+      ctx.font='600 16px Inter';ctx.fillText(d.l,lx,ly+22);
+    }
+    angle+=slice;
+  });
+  document.getElementById('results').classList.add('show');
+  document.getElementById('placeholder').style.display='none';
+}
+</script>
+</body>
+</html>

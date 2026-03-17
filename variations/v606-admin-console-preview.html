@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 Admin Console — IT Administration Preview | Go2.io</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; color: #d4d4d8; background: #111113; line-height: 1.6; }
+code { font-family: 'JetBrains Mono', monospace; }
+
+.app-layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+.sidebar { background: #0a0a0c; border-right: 1px solid #27272a; padding: 0; position: fixed; width: 220px; height: 100vh; overflow-y: auto; }
+.sb-header { padding: 20px 16px; border-bottom: 1px solid #1c1c1e; }
+.sb-logo { font-size: 18px; font-weight: 700; color: #a78bfa; }
+.sb-logo span { color: #52525b; font-weight: 400; }
+.sb-org { font-size: 12px; color: #52525b; margin-top: 4px; }
+.sb-nav { padding: 12px 8px; }
+.sb-section { font-size: 10px; font-weight: 700; color: #3f3f46; text-transform: uppercase; letter-spacing: 1.5px; padding: 12px 12px 6px; }
+.sb-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; color: #71717a; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; margin-bottom: 2px; }
+.sb-item:hover { background: rgba(167,139,250,0.06); color: #a1a1aa; }
+.sb-item.active { background: rgba(167,139,250,0.1); color: #a78bfa; }
+.sb-icon { font-size: 16px; }
+.sb-badge { margin-left: auto; background: #ef4444; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; }
+
+.main-content { margin-left: 220px; }
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 32px; border-bottom: 1px solid #1c1c1e; background: #111113; position: sticky; top: 0; z-index: 10; }
+.topbar h1 { font-size: 18px; font-weight: 700; color: #fafafa; }
+.topbar-actions { display: flex; gap: 12px; align-items: center; }
+.tb-btn { padding: 8px 16px; background: #27272a; border: 1px solid #3f3f46; border-radius: 8px; color: #d4d4d8; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+.tb-btn:hover { background: #3f3f46; }
+.tb-btn.primary { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+.tb-btn.primary:hover { background: #6d28d9; }
+.tb-search { background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 8px 14px; color: #d4d4d8; font-size: 13px; width: 240px; outline: none; }
+.tb-search::placeholder { color: #52525b; }
+
+.page-content { padding: 24px 32px; }
+
+/* Cards */
+.stat-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 20px; }
+.stat-card .label { font-size: 12px; color: #52525b; font-weight: 500; margin-bottom: 4px; }
+.stat-card .value { font-size: 28px; font-weight: 700; color: #fafafa; }
+.stat-card .delta { font-size: 12px; margin-top: 4px; }
+.delta.up { color: #22c55e; }
+.delta.down { color: #ef4444; }
+.delta.neutral { color: #52525b; }
+
+/* Table */
+.table-card { background: #18181b; border: 1px solid #27272a; border-radius: 12px; overflow: hidden; margin-bottom: 24px; }
+.table-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #27272a; }
+.table-header h3 { font-size: 15px; font-weight: 600; color: #fafafa; }
+.table-filters { display: flex; gap: 8px; }
+.filter-btn { padding: 4px 12px; background: #27272a; border: 1px solid #3f3f46; border-radius: 6px; color: #a1a1aa; font-size: 12px; cursor: pointer; }
+.filter-btn.active { background: rgba(167,139,250,0.1); border-color: #7c3aed; color: #a78bfa; }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { text-align: left; padding: 10px 20px; font-size: 11px; font-weight: 600; color: #52525b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #27272a; }
+.data-table td { padding: 12px 20px; border-bottom: 1px solid #1c1c1e; font-size: 13px; }
+.data-table tr:hover { background: rgba(255,255,255,0.02); }
+.user-cell { display: flex; align-items: center; gap: 10px; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: #fff; }
+.user-name { font-weight: 500; color: #fafafa; }
+.user-email { font-size: 12px; color: #52525b; }
+.status-badge { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.status-active { background: rgba(34,197,94,0.1); color: #22c55e; }
+.status-inactive { background: rgba(113,113,122,0.1); color: #71717a; }
+.status-pending { background: rgba(245,158,11,0.1); color: #f59e0b; }
+.role-badge { font-size: 12px; color: #a1a1aa; }
+
+/* Policy Cards */
+.policy-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
+.policy-card { background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 20px; }
+.policy-card h4 { font-size: 14px; font-weight: 600; color: #fafafa; margin-bottom: 8px; }
+.policy-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1c1c1e; font-size: 13px; }
+.policy-row:last-child { border: none; }
+.policy-key { color: #71717a; }
+.toggle { width: 36px; height: 20px; background: #3f3f46; border-radius: 10px; position: relative; cursor: pointer; transition: background 0.2s; }
+.toggle.on { background: #7c3aed; }
+.toggle::after { content: ''; position: absolute; width: 16px; height: 16px; background: #fff; border-radius: 50%; top: 2px; left: 2px; transition: transform 0.2s; }
+.toggle.on::after { transform: translateX(16px); }
+
+/* Audit Log */
+.audit-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #1c1c1e; }
+.audit-time { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #52525b; width: 140px; flex-shrink: 0; }
+.audit-action { font-size: 13px; color: #a1a1aa; }
+.audit-action strong { color: #fafafa; }
+.audit-tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; margin-left: 4px; }
+.audit-tag.info { background: rgba(96,165,250,0.1); color: #60a5fa; }
+.audit-tag.warn { background: rgba(245,158,11,0.1); color: #f59e0b; }
+.audit-tag.critical { background: rgba(239,68,68,0.1); color: #ef4444; }
+
+/* Promo bar */
+.promo-bar { background: linear-gradient(90deg, #7c3aed, #4f46e5); padding: 12px 0; text-align: center; color: #fff; font-size: 14px; font-weight: 500; }
+.promo-bar a { color: #fff; font-weight: 700; text-decoration: underline; margin-left: 8px; }
+
+footer { padding: 24px 32px; border-top: 1px solid #1c1c1e; text-align: center; color: #3f3f46; font-size: 12px; margin-left: 220px; }
+
+@media (max-width: 900px) {
+  .app-layout { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .main-content, footer { margin-left: 0; }
+  .stat-cards { grid-template-columns: repeat(2, 1fr); }
+  .policy-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="promo-bar">This is a preview of the Go2 Admin Console. <a href="#">Start your free trial to access the real thing &rarr;</a></div>
+
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sb-header">
+      <div class="sb-logo">Go2 <span>Admin</span></div>
+      <div class="sb-org">Acme Corp &bull; Business Plan</div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-section">Overview</div>
+      <div class="sb-item active"><span class="sb-icon">&#128202;</span> Dashboard</div>
+      <div class="sb-item"><span class="sb-icon">&#128200;</span> Analytics</div>
+      <div class="sb-section">Management</div>
+      <div class="sb-item"><span class="sb-icon">&#128101;</span> Users <span class="sb-badge">3</span></div>
+      <div class="sb-item"><span class="sb-icon">&#128736;</span> Teams</div>
+      <div class="sb-item"><span class="sb-icon">&#128274;</span> Policies</div>
+      <div class="sb-section">Security</div>
+      <div class="sb-item"><span class="sb-icon">&#128737;</span> SSO Config</div>
+      <div class="sb-item"><span class="sb-icon">&#128220;</span> Audit Log</div>
+      <div class="sb-item"><span class="sb-icon">&#128272;</span> API Keys</div>
+      <div class="sb-section">Settings</div>
+      <div class="sb-item"><span class="sb-icon">&#9881;</span> Organization</div>
+      <div class="sb-item"><span class="sb-icon">&#128176;</span> Billing</div>
+    </nav>
+  </aside>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h1>Admin Dashboard</h1>
+      <div class="topbar-actions">
+        <input type="text" class="tb-search" placeholder="Search users, teams...">
+        <button class="tb-btn">Export</button>
+        <button class="tb-btn primary">+ Add User</button>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="stat-cards">
+        <div class="stat-card"><div class="label">Total Users</div><div class="value">142</div><div class="delta up">+8 this month</div></div>
+        <div class="stat-card"><div class="label">Active Today</div><div class="value">118</div><div class="delta neutral">83% of total</div></div>
+        <div class="stat-card"><div class="label">Avg. Productivity</div><div class="value">78.4%</div><div class="delta up">+3.2% vs last month</div></div>
+        <div class="stat-card"><div class="label">Pending Invites</div><div class="value">3</div><div class="delta down">Action needed</div></div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <h3>Users</h3>
+          <div class="table-filters">
+            <div class="filter-btn active">All</div>
+            <div class="filter-btn">Active</div>
+            <div class="filter-btn">Inactive</div>
+            <div class="filter-btn">Pending</div>
+          </div>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>User</th><th>Role</th><th>Team</th><th>Status</th><th>Last Active</th></tr></thead>
+          <tbody>
+            <tr><td><div class="user-cell"><div class="avatar" style="background:#7c3aed">JM</div><div><div class="user-name">Jessica Martinez</div><div class="user-email">j.martinez@acme.com</div></div></div></td><td class="role-badge">Admin</td><td>Engineering</td><td><span class="status-badge status-active">Active</span></td><td>2 min ago</td></tr>
+            <tr><td><div class="user-cell"><div class="avatar" style="background:#0ea5e9">KP</div><div><div class="user-name">Kevin Patel</div><div class="user-email">k.patel@acme.com</div></div></div></td><td class="role-badge">Manager</td><td>Marketing</td><td><span class="status-badge status-active">Active</span></td><td>15 min ago</td></tr>
+            <tr><td><div class="user-cell"><div class="avatar" style="background:#f59e0b">SR</div><div><div class="user-name">Sarah Rodriguez</div><div class="user-email">s.rodriguez@acme.com</div></div></div></td><td class="role-badge">Member</td><td>Design</td><td><span class="status-badge status-active">Active</span></td><td>1 hr ago</td></tr>
+            <tr><td><div class="user-cell"><div class="avatar" style="background:#22c55e">TW</div><div><div class="user-name">Tom Wilson</div><div class="user-email">t.wilson@acme.com</div></div></div></td><td class="role-badge">Member</td><td>Sales</td><td><span class="status-badge status-inactive">Inactive</span></td><td>3 days ago</td></tr>
+            <tr><td><div class="user-cell"><div class="avatar" style="background:#ef4444">AL</div><div><div class="user-name">Amy Liu</div><div class="user-email">a.liu@acme.com</div></div></div></td><td class="role-badge">Member</td><td>Engineering</td><td><span class="status-badge status-pending">Pending</span></td><td>Invite sent</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="policy-grid">
+        <div class="policy-card">
+          <h4>Data Collection Policies</h4>
+          <div class="policy-row"><span class="policy-key">Application tracking</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="policy-row"><span class="policy-key">Window titles</span><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+          <div class="policy-row"><span class="policy-key">URL domains</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="policy-row"><span class="policy-key">Break time exclusion</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+        <div class="policy-card">
+          <h4>Privacy Settings</h4>
+          <div class="policy-row"><span class="policy-key">Individual data visible to managers</span><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+          <div class="policy-row"><span class="policy-key">Employee self-service export</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="policy-row"><span class="policy-key">Aggregate-only reporting</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="policy-row"><span class="policy-key">Pause tracking (employee choice)</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header"><h3>Recent Audit Log</h3><div class="table-filters"><div class="filter-btn active">All</div><div class="filter-btn">Security</div><div class="filter-btn">Admin</div></div></div>
+        <div style="padding: 16px 20px;">
+          <div class="audit-item"><span class="audit-time">2026-03-17 14:32</span><span class="audit-action"><strong>j.martinez</strong> updated data collection policy <span class="audit-tag info">Policy</span></span></div>
+          <div class="audit-item"><span class="audit-time">2026-03-17 14:15</span><span class="audit-action"><strong>j.martinez</strong> invited a.liu@acme.com <span class="audit-tag info">User</span></span></div>
+          <div class="audit-item"><span class="audit-time">2026-03-17 11:02</span><span class="audit-action"><strong>k.patel</strong> exported team analytics report <span class="audit-tag info">Export</span></span></div>
+          <div class="audit-item"><span class="audit-time">2026-03-17 09:45</span><span class="audit-action"><strong>system</strong> API key rotated automatically <span class="audit-tag warn">Security</span></span></div>
+          <div class="audit-item"><span class="audit-time">2026-03-16 17:23</span><span class="audit-action"><strong>j.martinez</strong> failed login attempt (wrong MFA code) <span class="audit-tag critical">Auth</span></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>&copy; 2026 Go2.io &mdash; Admin Console Preview &bull; <a href="#" style="color:#a78bfa;text-decoration:none;">Start Free Trial</a></footer>
+</body>
+</html>

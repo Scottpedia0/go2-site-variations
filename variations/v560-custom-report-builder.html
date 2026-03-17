@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Report Builder | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: #0a0a0f; color: #e0e0e0; min-height: 100vh; }
+.top-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: #0f0f1a; border-bottom: 1px solid #1a1a2e; }
+.top-bar h2 { font-size: 1rem; font-weight: 700; }
+.top-bar h2 span { color: #6366f1; }
+.top-actions { display: flex; gap: 8px; }
+.btn-sm { padding: 8px 16px; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.8rem; cursor: pointer; border: 1px solid #333; background: transparent; color: #ccc; transition: all 0.2s; }
+.btn-sm:hover { border-color: #6366f1; }
+.btn-sm.primary { background: #6366f1; border-color: #6366f1; color: #fff; }
+.layout { display: flex; min-height: calc(100vh - 49px); }
+.sidebar { width: 260px; background: #0f0f1a; border-right: 1px solid #1a1a2e; padding: 16px; overflow-y: auto; flex-shrink: 0; }
+.sidebar h3 { font-size: 0.7rem; color: #555; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; margin-top: 16px; }
+.sidebar h3:first-child { margin-top: 0; }
+.drag-item { padding: 10px 12px; background: rgba(255,255,255,0.02); border: 1px solid #1a1a2e; border-radius: 8px; margin-bottom: 6px; cursor: grab; font-size: 0.8rem; display: flex; align-items: center; gap: 8px; transition: all 0.2s; user-select: none; }
+.drag-item:hover { border-color: #333; background: rgba(255,255,255,0.04); }
+.drag-item .item-icon { font-size: 0.9rem; }
+.drag-item .item-color { width: 8px; height: 8px; border-radius: 50%; }
+.canvas-area { flex: 1; padding: 24px; overflow-y: auto; }
+.canvas-header { margin-bottom: 20px; }
+.canvas-header input { background: transparent; border: none; color: #fff; font-size: 1.4rem; font-weight: 700; font-family: 'Inter', sans-serif; width: 100%; outline: none; }
+.canvas-header input::placeholder { color: #333; }
+.canvas-subheader { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+.canvas-subheader select, .canvas-subheader input[type="date"] { background: #1a1a2e; border: 1px solid #333; border-radius: 6px; padding: 6px 10px; color: #ccc; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
+.report-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; min-height: 400px; }
+.report-widget { background: rgba(255,255,255,0.02); border: 1px solid #1a1a2e; border-radius: 14px; padding: 20px; min-height: 200px; position: relative; transition: all 0.3s; }
+.report-widget:hover { border-color: #333; }
+.report-widget.full-width { grid-column: 1 / -1; }
+.widget-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.widget-header h4 { font-size: 0.85rem; font-weight: 600; }
+.widget-remove { background: none; border: none; color: #555; cursor: pointer; font-size: 1rem; padding: 4px; }
+.widget-remove:hover { color: #ef4444; }
+.drop-zone { border: 2px dashed #1a1a2e; border-radius: 14px; min-height: 200px; display: flex; align-items: center; justify-content: center; color: #333; font-size: 0.85rem; transition: all 0.2s; grid-column: 1 / -1; }
+.drop-zone.drag-over { border-color: #6366f1; color: #6366f1; background: rgba(99,102,241,0.03); }
+/* Chart visualizations */
+.mini-bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 120px; padding-top: 10px; }
+.mini-bar { flex: 1; border-radius: 4px 4px 0 0; transition: height 0.5s ease; position: relative; }
+.mini-bar span { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 0.6rem; color: #555; }
+.mini-line-chart { position: relative; height: 120px; }
+.mini-line-chart svg { width: 100%; height: 100%; }
+.mini-donut { display: flex; align-items: center; gap: 20px; }
+.mini-donut svg { width: 120px; height: 120px; }
+.donut-legend { display: flex; flex-direction: column; gap: 6px; }
+.donut-legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: #888; }
+.donut-legend-item .dot { width: 8px; height: 8px; border-radius: 50%; }
+.stat-big { text-align: center; padding: 20px; }
+.stat-big .stat-num { font-size: 3rem; font-weight: 900; background: linear-gradient(135deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.stat-big .stat-label { font-size: 0.8rem; color: #666; margin-top: 4px; }
+.table-widget { width: 100%; }
+.table-widget table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.table-widget th { text-align: left; padding: 8px; color: #555; font-weight: 500; border-bottom: 1px solid #1a1a2e; }
+.table-widget td { padding: 8px; color: #ccc; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.cta-banner { text-align: center; padding: 40px 20px; border-top: 1px solid #1a1a2e; margin-top: 24px; }
+.cta-banner h2 { font-size: 1.3rem; margin-bottom: 8px; }
+.cta-banner p { color: #888; margin-bottom: 16px; font-size: 0.9rem; }
+.cta-btn { padding: 12px 32px; background: #6366f1; color: #fff; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; }
+@media (max-width: 768px) { .sidebar { display: none; } .report-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <h2><span>Go2</span> Report Builder</h2>
+  <div class="top-actions">
+    <button class="btn-sm" onclick="resetReport()">Reset</button>
+    <button class="btn-sm" onclick="loadSample()">Load Sample</button>
+    <button class="btn-sm primary">Export PDF</button>
+  </div>
+</div>
+<div class="layout">
+  <div class="sidebar">
+    <h3>Metrics</h3>
+    <div class="drag-item" draggable="true" data-type="bar" data-metric="focus"><span class="item-icon">&#128202;</span> Focus Time by Dept</div>
+    <div class="drag-item" draggable="true" data-type="line" data-metric="trend"><span class="item-icon">&#128200;</span> Productivity Trend</div>
+    <div class="drag-item" draggable="true" data-type="donut" data-metric="breakdown"><span class="item-icon">&#128280;</span> Time Breakdown</div>
+    <div class="drag-item" draggable="true" data-type="stat" data-metric="score"><span class="item-icon">&#127942;</span> Team Score</div>
+    <div class="drag-item" draggable="true" data-type="stat" data-metric="hours"><span class="item-icon">&#9201;</span> Hours Saved</div>
+    <div class="drag-item" draggable="true" data-type="stat" data-metric="roi"><span class="item-icon">&#128176;</span> ROI</div>
+    <div class="drag-item" draggable="true" data-type="bar" data-metric="meetings"><span class="item-icon">&#128197;</span> Meeting Load</div>
+    <div class="drag-item" draggable="true" data-type="table" data-metric="top"><span class="item-icon">&#128221;</span> Top Performers</div>
+    <div class="drag-item" draggable="true" data-type="line" data-metric="weekly"><span class="item-icon">&#128200;</span> Weekly Pattern</div>
+    <h3>Chart Type</h3>
+    <div class="drag-item" style="opacity:0.5;cursor:default"><span class="item-color" style="background:#6366f1"></span> Bar Chart</div>
+    <div class="drag-item" style="opacity:0.5;cursor:default"><span class="item-color" style="background:#22c55e"></span> Line Chart</div>
+    <div class="drag-item" style="opacity:0.5;cursor:default"><span class="item-color" style="background:#f59e0b"></span> Donut Chart</div>
+    <div class="drag-item" style="opacity:0.5;cursor:default"><span class="item-color" style="background:#ec4899"></span> Stat Card</div>
+    <div class="drag-item" style="opacity:0.5;cursor:default"><span class="item-color" style="background:#3b82f6"></span> Table</div>
+  </div>
+  <div class="canvas-area">
+    <div class="canvas-header">
+      <input type="text" placeholder="Untitled Report" value="Q1 2026 Productivity Report">
+      <div class="canvas-subheader">
+        <select><option>All Departments</option><option>Engineering</option><option>Design</option><option>Sales</option><option>Marketing</option></select>
+        <input type="date" value="2026-01-01">
+        <span style="color:#555;font-size:0.8rem;line-height:2.2">to</span>
+        <input type="date" value="2026-03-17">
+      </div>
+    </div>
+    <div class="report-grid" id="reportGrid">
+      <div class="drop-zone" id="dropZone">Drag metrics from the sidebar to build your report</div>
+    </div>
+    <div class="cta-banner">
+      <h2>Build real reports with your team's data</h2>
+      <p>This is a demo. Start your free trial to create custom reports from actual productivity data.</p>
+      <button class="cta-btn">Start Free Trial</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let widgets = [];
+
+const widgetRenderers = {
+  'bar-focus': { title: 'Focus Time by Department', full: false, render: () => {
+    const data = [{l:'Eng',v:85,c:'#6366f1'},{l:'Design',v:72,c:'#ec4899'},{l:'Sales',v:55,c:'#22c55e'},{l:'Mkt',v:68,c:'#f59e0b'},{l:'Ops',v:78,c:'#3b82f6'}];
+    return `<div class="mini-bar-chart">${data.map(d=>`<div class="mini-bar" style="height:${d.v}%;background:${d.c}"><span>${d.l}</span></div>`).join('')}</div>`;
+  }},
+  'bar-meetings': { title: 'Meeting Load (hours/week)', full: false, render: () => {
+    const data = [{l:'Eng',v:35,c:'#6366f1'},{l:'Design',v:52,c:'#ec4899'},{l:'Sales',v:72,c:'#22c55e'},{l:'Mkt',v:48,c:'#f59e0b'},{l:'Ops',v:40,c:'#3b82f6'}];
+    return `<div class="mini-bar-chart">${data.map(d=>`<div class="mini-bar" style="height:${d.v}%;background:${d.c}"><span>${d.l}</span></div>`).join('')}</div>`;
+  }},
+  'line-trend': { title: 'Productivity Trend (12 weeks)', full: false, render: () => {
+    const pts = [45,48,52,55,58,62,65,68,72,75,78,82];
+    const path = pts.map((p,i) => `${i*100/11},${100-p}`).join(' ');
+    return `<div class="mini-line-chart"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="${path}" fill="none" stroke="#6366f1" stroke-width="2"/><polygon points="0,100 ${path} 100,100" fill="url(#grad)" opacity="0.2"/><defs><linearGradient id="grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="transparent"/></linearGradient></defs></svg></div>`;
+  }},
+  'line-weekly': { title: 'Weekly Productivity Pattern', full: false, render: () => {
+    const pts = [55,78,82,80,72];
+    const labels = ['Mon','Tue','Wed','Thu','Fri'];
+    const path = pts.map((p,i) => `${i*100/4},${100-p}`).join(' ');
+    return `<div class="mini-line-chart"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="${path}" fill="none" stroke="#22c55e" stroke-width="2"/></svg></div>`;
+  }},
+  'donut-breakdown': { title: 'Time Breakdown', full: false, render: () => {
+    const data = [{l:'Focus Work',v:42,c:'#6366f1'},{l:'Meetings',v:22,c:'#ec4899'},{l:'Communication',v:18,c:'#f59e0b'},{l:'Admin',v:12,c:'#3b82f6'},{l:'Breaks',v:6,c:'#22c55e'}];
+    let offset = 0;
+    const circles = data.map(d => { const s = `<circle cx="50" cy="50" r="35" fill="none" stroke="${d.c}" stroke-width="14" stroke-dasharray="${d.v*2.2} ${220-d.v*2.2}" stroke-dashoffset="${-offset*2.2}" />`; offset += d.v; return s; }).join('');
+    const legend = data.map(d => `<div class="donut-legend-item"><span class="dot" style="background:${d.c}"></span>${d.l} (${d.v}%)</div>`).join('');
+    return `<div class="mini-donut"><svg viewBox="0 0 100 100">${circles}</svg><div class="donut-legend">${legend}</div></div>`;
+  }},
+  'stat-score': { title: 'Team Productivity Score', full: false, render: () => `<div class="stat-big"><div class="stat-num">78</div><div class="stat-label">out of 100 | +12% vs last quarter</div></div>` },
+  'stat-hours': { title: 'Hours Saved This Quarter', full: false, render: () => `<div class="stat-big"><div class="stat-num">15.2h</div><div class="stat-label">per employee per week</div></div>` },
+  'stat-roi': { title: 'Quarter ROI', full: false, render: () => `<div class="stat-big"><div class="stat-num">892%</div><div class="stat-label">return on Go2 investment</div></div>` },
+  'table-top': { title: 'Top Performing Teams', full: true, render: () => `<div class="table-widget"><table><tr><th>Team</th><th>Score</th><th>Focus Hrs</th><th>Meetings</th><th>Trend</th></tr><tr><td>Platform Eng</td><td>92</td><td>24.5h</td><td>5.2h</td><td style="color:#4ade80">+8%</td></tr><tr><td>Product Design</td><td>88</td><td>21.3h</td><td>7.8h</td><td style="color:#4ade80">+12%</td></tr><tr><td>Growth Mkt</td><td>84</td><td>18.7h</td><td>8.1h</td><td style="color:#4ade80">+5%</td></tr><tr><td>SDR Team</td><td>76</td><td>12.4h</td><td>14.2h</td><td style="color:#fbbf24">+2%</td></tr><tr><td>Customer Ops</td><td>81</td><td>19.8h</td><td>7.5h</td><td style="color:#4ade80">+9%</td></tr></table></div>` },
+};
+
+document.querySelectorAll('.drag-item[draggable]').forEach(item => {
+  item.addEventListener('dragstart', e => {
+    e.dataTransfer.setData('text/plain', item.dataset.type + '-' + item.dataset.metric);
+  });
+});
+
+const grid = document.getElementById('reportGrid');
+const dropZone = document.getElementById('dropZone');
+
+grid.addEventListener('dragover', e => { e.preventDefault(); if(dropZone) dropZone.classList.add('drag-over'); });
+grid.addEventListener('dragleave', () => { if(dropZone) dropZone.classList.remove('drag-over'); });
+grid.addEventListener('drop', e => {
+  e.preventDefault();
+  if(dropZone) dropZone.classList.remove('drag-over');
+  const key = e.dataTransfer.getData('text/plain');
+  if (widgetRenderers[key] && !widgets.includes(key)) {
+    widgets.push(key);
+    renderWidgets();
+  }
+});
+
+function renderWidgets() {
+  if (widgets.length === 0) {
+    grid.innerHTML = '<div class="drop-zone" id="dropZone">Drag metrics from the sidebar to build your report</div>';
+    return;
+  }
+  grid.innerHTML = widgets.map((key, i) => {
+    const w = widgetRenderers[key];
+    return `<div class="report-widget ${w.full ? 'full-width' : ''}">
+      <div class="widget-header"><h4>${w.title}</h4><button class="widget-remove" onclick="removeWidget(${i})">&times;</button></div>
+      ${w.render()}
+    </div>`;
+  }).join('') + '<div class="drop-zone" id="dropZone" style="min-height:100px;font-size:0.75rem;">+ Drop more widgets here</div>';
+  // Re-attach drop events
+  const newDZ = document.getElementById('dropZone');
+  if (newDZ) {
+    newDZ.addEventListener('dragover', e => { e.preventDefault(); newDZ.classList.add('drag-over'); });
+    newDZ.addEventListener('dragleave', () => newDZ.classList.remove('drag-over'));
+    newDZ.addEventListener('drop', e => {
+      e.preventDefault(); newDZ.classList.remove('drag-over');
+      const key = e.dataTransfer.getData('text/plain');
+      if (widgetRenderers[key] && !widgets.includes(key)) { widgets.push(key); renderWidgets(); }
+    });
+  }
+}
+
+function removeWidget(i) { widgets.splice(i, 1); renderWidgets(); }
+function resetReport() { widgets = []; renderWidgets(); }
+function loadSample() {
+  widgets = ['stat-score','stat-hours','stat-roi','bar-focus','line-trend','donut-breakdown','bar-meetings','table-top'];
+  renderWidgets();
+}
+</script>
+</body>
+</html>

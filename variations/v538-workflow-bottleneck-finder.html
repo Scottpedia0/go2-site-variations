@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workflow Bottleneck Finder | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0a0a1a;color:#fff;overflow-x:hidden}
+.header{text-align:center;padding:3rem 2rem 1rem}
+.badge{display:inline-block;padding:.4rem 1.2rem;border-radius:50px;background:rgba(255,107,107,.12);border:1px solid rgba(255,107,107,.25);color:#ff6b6b;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:1rem}
+h1{font-size:clamp(2rem,4vw,3rem);font-weight:900;margin-bottom:.75rem}
+.sub{color:#8888aa;font-size:1.05rem;max-width:550px;margin:0 auto}
+.sankey-container{position:relative;max-width:1000px;margin:2rem auto;padding:1rem 2rem;overflow:hidden}
+.sankey-container canvas{display:block;width:100%;height:auto;border-radius:16px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)}
+.flow-tooltip{position:absolute;background:rgba(10,10,26,.95);border:1px solid rgba(108,99,255,.3);border-radius:12px;padding:1.25rem;pointer-events:none;opacity:0;transition:opacity .2s;min-width:200px;backdrop-filter:blur(10px);z-index:10;font-size:.85rem}
+.flow-tooltip.visible{opacity:1}
+.flow-tooltip h3{font-size:.95rem;margin-bottom:.5rem}
+.flow-tooltip .hours{color:#6c63ff;font-weight:700;font-size:1.2rem;margin-bottom:.5rem}
+.flow-tooltip p{color:#888;line-height:1.5}
+.bottleneck-list{max-width:900px;margin:2rem auto;padding:0 2rem}
+.bottleneck-list h2{font-size:1.8rem;font-weight:800;margin-bottom:2rem;text-align:center}
+.bottleneck{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:1.75rem;margin-bottom:1.5rem;display:grid;grid-template-columns:auto 1fr auto;gap:1.5rem;align-items:center;cursor:pointer;transition:all .3s}
+.bottleneck:hover{background:rgba(108,99,255,.06);border-color:rgba(108,99,255,.2)}
+.bottleneck.red{border-left:4px solid #ff6b6b}
+.bottleneck.yellow{border-left:4px solid #f59e0b}
+.bottleneck.green{border-left:4px solid #10b981}
+.severity{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.1rem}
+.severity.high{background:rgba(255,107,107,.15);color:#ff6b6b}
+.severity.med{background:rgba(245,158,11,.15);color:#f59e0b}
+.severity.low{background:rgba(16,185,129,.15);color:#10b981}
+.bottleneck h3{font-size:1.05rem;font-weight:700;margin-bottom:.3rem}
+.bottleneck p{color:#8888aa;font-size:.9rem;line-height:1.5}
+.bottleneck .impact{font-size:.8rem;font-weight:600;margin-top:.5rem}
+.impact.red{color:#ff6b6b}.impact.yellow{color:#f59e0b}
+.fix-badge{padding:.5rem 1rem;border-radius:8px;font-size:.75rem;font-weight:700;white-space:nowrap;align-self:start}
+.fix-badge.quick{background:rgba(16,185,129,.12);color:#10b981}
+.fix-badge.medium{background:rgba(245,158,11,.12);color:#f59e0b}
+.recommendation{display:none;margin-top:1rem;padding:1rem;background:rgba(108,99,255,.06);border-radius:10px;border:1px solid rgba(108,99,255,.15)}
+.recommendation.show{display:block}
+.recommendation h4{color:#6c63ff;font-size:.85rem;margin-bottom:.5rem}
+.recommendation p{color:#aaa;font-size:.85rem;line-height:1.5}
+.summary{max-width:900px;margin:2rem auto;padding:2rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.5rem}
+.summary-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:1.75rem;text-align:center}
+.summary-card .val{font-size:2rem;font-weight:900}
+.summary-card .val.bad{color:#ff6b6b}.summary-card .val.ok{color:#f59e0b}.summary-card .val.good{color:#10b981}
+.summary-card .lbl{color:#8888aa;font-size:.85rem;margin-top:.3rem}
+.cta{text-align:center;padding:4rem 2rem}
+.cta h2{font-size:2rem;font-weight:800;margin-bottom:1rem}
+.cta p{color:#8888aa;margin-bottom:2rem}
+.cta-btn{display:inline-block;padding:1rem 2.5rem;background:linear-gradient(135deg,#6c63ff,#4834d4);color:#fff;text-decoration:none;border-radius:12px;font-weight:700;font-size:1.05rem;box-shadow:0 4px 20px rgba(108,99,255,.3)}
+@media(max-width:768px){.bottleneck{grid-template-columns:1fr;gap:1rem}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="badge">Find Bottlenecks</div>
+  <h1>Where Does Your Team's Time Go?</h1>
+  <p class="sub">Interactive Sankey diagram shows how time flows through your org. Thick = lots of time. Red = bottleneck. Click flows for recommendations.</p>
+</div>
+
+<div class="sankey-container">
+  <canvas id="sankey" height="450"></canvas>
+  <div class="flow-tooltip" id="flowTip"></div>
+</div>
+
+<div class="summary">
+  <div class="summary-card"><div class="val bad">31%</div><div class="lbl">Time in Bottlenecks</div></div>
+  <div class="summary-card"><div class="val ok">15.2h</div><div class="lbl">Weekly Hours Recoverable</div></div>
+  <div class="summary-card"><div class="val good">$284K</div><div class="lbl">Annual Savings Potential</div></div>
+  <div class="summary-card"><div class="val good">3</div><div class="lbl">Quick Wins Available</div></div>
+</div>
+
+<div class="bottleneck-list">
+  <h2>Bottlenecks Detected</h2>
+  <div class="bottleneck red" onclick="toggleRec(this)">
+    <div class="severity high">1</div>
+    <div><h3>Meeting Overload</h3><p>Your team spends 42% of working hours in meetings. Industry benchmark is 25%. 60% of meetings have no agenda.</p><div class="impact red">Impact: -6.8 hours/person/week wasted</div><div class="recommendation"><h4>Recommendation</h4><p>Implement "No Meeting Wednesdays" and require agendas for all meetings over 30 minutes. Companies that adopt this recover 4.2 hours/person/week on average. Go2 can auto-flag meetings without agendas before they appear on calendars.</p></div></div>
+    <div class="fix-badge quick">Quick Win</div>
+  </div>
+  <div class="bottleneck red" onclick="toggleRec(this)">
+    <div class="severity high">2</div>
+    <div><h3>Approval Queue Backup</h3><p>Design reviews wait an average of 3.2 days for approval. Two managers are bottlenecks for 80% of approvals.</p><div class="impact red">Impact: -2.4 days average project delay</div><div class="recommendation"><h4>Recommendation</h4><p>Delegate approval authority for routine designs to senior ICs. Set up async review in Figma with 24-hour SLA. Go2 tracks approval velocity and alerts when queues exceed thresholds.</p></div></div>
+    <div class="fix-badge medium">Medium Effort</div>
+  </div>
+  <div class="bottleneck yellow" onclick="toggleRec(this)">
+    <div class="severity med">3</div>
+    <div><h3>Context Switching Tax</h3><p>Engineers switch between 4+ projects daily. Average focus block is 23 minutes. Industry best practice is 90+ minutes.</p><div class="impact yellow">Impact: -35% coding output vs potential</div><div class="recommendation"><h4>Recommendation</h4><p>Batch similar work into dedicated half-days. Assign no more than 2 projects per engineer per sprint. Go2's AI automatically identifies when context switching spikes and suggests batching strategies.</p></div></div>
+    <div class="fix-badge quick">Quick Win</div>
+  </div>
+  <div class="bottleneck yellow" onclick="toggleRec(this)">
+    <div class="severity med">4</div>
+    <div><h3>Cross-Team Handoff Delays</h3><p>Design to engineering handoffs average 4.1 days. Specs are incomplete 40% of the time, causing rework.</p><div class="impact yellow">Impact: -1.8 days per feature cycle</div><div class="recommendation"><h4>Recommendation</h4><p>Create a handoff checklist template and require Design-Engineering pairing for complex features. Go2 tracks handoff velocity and flags when specs are missing key elements.</p></div></div>
+    <div class="fix-badge medium">Medium Effort</div>
+  </div>
+  <div class="bottleneck green" onclick="toggleRec(this)">
+    <div class="severity low">5</div>
+    <div><h3>Notification Overload</h3><p>Average employee receives 127 notifications/day across Slack, email, and tools. Only 18% are actionable.</p><div class="impact yellow">Impact: -45 minutes/day in notification handling</div><div class="recommendation"><h4>Recommendation</h4><p>Set up notification batching: check Slack 4x/day, email 2x/day. Use Go2's focus mode integration to auto-silence non-urgent notifications during deep work blocks.</p></div></div>
+    <div class="fix-badge quick">Quick Win</div>
+  </div>
+</div>
+
+<div class="cta">
+  <h2>Find Your Real Bottlenecks</h2>
+  <p>Go2 maps your actual workflow — not guesses. Free for 14 days.</p>
+  <a href="#" class="cta-btn">Start Free Trial</a>
+</div>
+
+<script>
+function toggleRec(el){
+  const r=el.querySelector('.recommendation');
+  r.classList.toggle('show');
+}
+// Sankey diagram
+const canvas=document.getElementById('sankey');
+const ctx=canvas.getContext('2d');
+const tip=document.getElementById('flowTip');
+let cw,ch;
+function resizeCanvas(){
+  const rect=canvas.parentElement.getBoundingClientRect();
+  cw=rect.width-32;ch=450;
+  canvas.width=cw*2;canvas.height=ch*2;
+  canvas.style.width=cw+'px';canvas.style.height=ch+'px';
+  ctx.scale(2,2);
+  drawSankey();
+}
+const stages=[
+  {label:'Total Hours',items:[{name:'40h Work Week',value:40,color:'#6c63ff'}]},
+  {label:'Activity Type',items:[{name:'Meetings',value:16.8,color:'#ff6b6b'},{name:'Deep Work',value:10,color:'#10b981'},{name:'Collaboration',value:6,color:'#3b82f6'},{name:'Admin/Email',value:4.5,color:'#f59e0b'},{name:'Context Switch',value:2.7,color:'#ef4444'}]},
+  {label:'Outcome',items:[{name:'Productive',value:18,color:'#10b981'},{name:'Partially Productive',value:10,color:'#f59e0b'},{name:'Wasted',value:12,color:'#ff6b6b'}]}
+];
+let flowPaths=[];
+function drawSankey(){
+  ctx.clearRect(0,0,cw,ch);
+  flowPaths=[];
+  const colW=80,gap=(cw-colW*stages.length)/(stages.length-1);
+  const padY=60,maxH=ch-padY*2;
+  // labels
+  ctx.font='600 12px Inter';ctx.fillStyle='#888';ctx.textAlign='center';
+  stages.forEach((s,si)=>{
+    const x=si*(colW+gap)+colW/2;
+    ctx.fillText(s.label,x,25);
+  });
+  // draw nodes
+  const nodePositions=stages.map((s,si)=>{
+    const x=si*(colW+gap);
+    const total=s.items.reduce((a,b)=>a+b.value,0);
+    let y=padY;
+    return s.items.map(item=>{
+      const h=(item.value/total)*maxH;
+      const pos={x,y,w:colW,h,item};
+      // draw rect
+      ctx.fillStyle=item.color+'cc';
+      ctx.beginPath();
+      const r=6;
+      ctx.roundRect(x,y,colW,h,r);
+      ctx.fill();
+      // label
+      ctx.fillStyle='#fff';ctx.font='bold 10px Inter';ctx.textAlign='center';
+      if(h>30){ctx.fillText(item.name,x+colW/2,y+h/2-6);ctx.font='700 13px Inter';ctx.fillText(item.value+'h',x+colW/2,y+h/2+10)}
+      y+=h+4;
+      return pos;
+    });
+  });
+  // draw flows between stages
+  const flowMaps=[
+    [[0,[0,.42],[1,.25],[2,.15],[3,.11],[4,.07]]],// total -> activity
+    [[0,[0,.1],[1,.6],[2,.3]],[1,[0,.7],[1,.2],[2,.1]],[2,[0,.5],[1,.3],[2,.2]],[3,[0,.2],[1,.3],[2,.5]],[4,[0,0],[1,.2],[2,.8]]]// activity -> outcome
+  ];
+  for(let si=0;si<flowMaps.length;si++){
+    const srcNodes=nodePositions[si];
+    const dstNodes=nodePositions[si+1];
+    const dstOffsets=dstNodes.map(()=>0);
+    for(const [srcIdx,...dsts] of flowMaps[si]){
+      const src=srcNodes[srcIdx];
+      let srcOffset=0;
+      for(const [dstIdx,pct] of dsts){
+        const dst=dstNodes[dstIdx];
+        const flowH=src.h*pct;
+        if(flowH<1)continue;
+        const sy=src.y+srcOffset;
+        const dy=dst.y+dstOffsets[dstIdx];
+        const sx=src.x+src.w;
+        const dx=dst.x;
+        const isBottleneck=src.item.color==='#ff6b6b'||src.item.color==='#ef4444';
+        ctx.globalAlpha=.25;
+        ctx.fillStyle=isBottleneck?'#ff6b6b':src.item.color;
+        ctx.beginPath();
+        const cp=(dx-sx)/2;
+        ctx.moveTo(sx,sy);
+        ctx.bezierCurveTo(sx+cp,sy,dx-cp,dy,dx,dy);
+        ctx.lineTo(dx,dy+flowH);
+        ctx.bezierCurveTo(dx-cp,dy+flowH,sx+cp,sy+flowH,sx,sy+flowH);
+        ctx.closePath();ctx.fill();
+        ctx.globalAlpha=1;
+        flowPaths.push({sx,sy,dx,dy,flowH,src:src.item,dst:dst.item,hours:(src.item.value*pct).toFixed(1)});
+        srcOffset+=flowH;
+        dstOffsets[dstIdx]+=flowH;
+      }
+    }
+  }
+}
+canvas.addEventListener('mousemove',e=>{
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  let found=false;
+  for(const f of flowPaths){
+    const inX=mx>f.sx&&mx<f.dx;
+    const midY=f.sy+(f.dy-f.sy)*((mx-f.sx)/(f.dx-f.sx));
+    if(inX&&my>midY-5&&my<midY+f.flowH+5){
+      tip.innerHTML=`<h3>${f.src.name} → ${f.dst.name}</h3><div class="hours">${f.hours} hours/week</div><p>Click bottlenecks below for recommendations</p>`;
+      tip.classList.add('visible');
+      let tx=mx+15,ty=my-10;
+      if(tx+220>cw)tx=mx-230;
+      tip.style.left=tx+'px';tip.style.top=ty+'px';
+      found=true;break;
+    }
+  }
+  if(!found)tip.classList.remove('visible');
+});
+window.addEventListener('resize',resizeCanvas);
+resizeCanvas();
+</script>
+</body>
+</html>

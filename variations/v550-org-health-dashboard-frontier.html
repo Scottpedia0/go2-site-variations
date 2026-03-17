@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go2 | Organizational Health Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Core Colors */
+            --bg-app: #f4f7fa;
+            --bg-surface: #ffffff;
+            --sidebar-bg: #0b1120;
+            --sidebar-hover: #1e293b;
+            
+            /* Typography Colors */
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --text-inverse: #ffffff;
+            --text-inverse-muted: #94a3b8;
+            
+            /* Brand & Status Colors */
+            --brand-primary: #4338ca; /* Indigo */
+            --brand-light: #e0e7ff;
+            --brand-accent: #0ea5e9; /* Sky */
+            
+            --status-good: #10b981;
+            --status-good-bg: #d1fae5;
+            --status-warning: #f59e0b;
+            --status-warning-bg: #fef3c7;
+            --status-danger: #ef4444;
+            --status-danger-bg: #fee2e2;
+            
+            /* UI Elements */
+            --border-light: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+            --radius-md: 12px;
+            --radius-lg: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* --- Typography --- */
+        h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+        h2 { font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; }
+        h3 { font-size: 0.875rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;}
+        p { font-size: 0.875rem; color: var(--text-muted); line-height: 1.5; }
+        .text-strong { font-weight: 600; color: var(--text-main); }
+
+        /* --- Layout --- */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            color: var(--text-inverse);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+            z-index: 50;
+        }
+
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .topbar {
+            height: 72px;
+            background-color: var(--bg-surface);
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            flex-shrink: 0;
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        /* --- Sidebar Specifics --- */
+        .brand {
+            height: 72px;
+            display: flex;
+            align-items: center;
+            padding: 0 1.5rem;
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.05em;
+            color: #fff;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            gap: 0.5rem;
+        }
+        .brand span { color: var(--brand-accent); }
+
+        .nav-menu {
+            padding: 1.5rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            color: var(--text-inverse-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-item:hover {
+            background-color: var(--sidebar-hover);
+            color: var(--text-inverse);
+        }
+
+        .nav-item.active {
+            background-color: var(--brand-primary);
+            color: white;
+        }
+
+        .nav-item svg { width: 20px; height: 20px; }
+
+        .impact-widget {
+            margin: 1rem;
+            padding: 1.25rem;
+            background: linear-gradient(145deg, rgba(67, 56, 202, 0.2) 0%, rgba(14, 165, 233, 0.1) 100%);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: var(--radius-md);
+        }
+        .impact-widget h4 { color: #fff; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; opacity: 0.8;}
+        .impact-stat { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.5rem; }
+        .impact-stat .val { color: var(--status-good); font-weight: 700; font-size: 1.25rem; }
+        .impact-stat .lbl { color: var(--text-inverse-muted); font-size: 0.75rem; }
+
+        /* --- Topbar Specifics --- */
+        .date-picker {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-app);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            color: var(--text-main);
+            font-weight: 500;
+            border: 1px solid var(--border-light);
+            cursor: pointer;
+        }
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: var(--brand-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        /* --- Dashboard Content --- */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 2rem;
+        }
+
+        .btn-export {
+            padding: 0.5rem 1rem;
+            background-color: white;
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-main);
+            box-shadow: var(--shadow-sm);
+            transition: background 0.2s;
+        }
+        .btn-export:hover { background-color: var(--bg-app); }
+
+        /* --- KPI Grid --- */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(0,0,0,0.03);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .kpi-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .kpi-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .kpi-icon.blue { background: var(--brand-light); color: var(--brand-primary); }
+        .kpi-icon.green { background: var(--status-good-bg); color: var(--status-good); }
+        .kpi-icon.red { background: var(--status-danger-bg); color: var(--status-danger); }
+        .kpi-icon.yellow { background: var(--status-warning-bg); color: var(--status-warning); }
+
+        .kpi-value-row {
+            display: flex;
+            align-items: baseline;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: -0.03em;
+        }
+
+        .kpi-trend {
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .kpi-trend.up { color: var(--status-good); }
+        .kpi-trend.down { color: var(--status-danger); }
+        .kpi-trend.up-bad { color: var(--status-danger); } /* E.g., Burnout going up */
+        .kpi-trend.down-good { color: var(--status-good); } /* E.g., Burnout going down */
+
+        .sparkline-container {
+            height: 40px;
+            width: 100%;
+        }
+        canvas.sparkline {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* --- Secondary Grid (Charts & Coach) --- */
+        .insights-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .panel {
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(0,0,0,0.03);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-container {
+            flex: 1;
+            min-height: 250px;
+            position: relative;
+        }
+
+        /* --- AI Coaching Feed --- */
+        .ai-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .ai-badge {
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .insight-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            overflow-y: auto;
+            max-height: 350px;
+            padding-right: 0.5rem;
+        }
+        
+        /* Custom Scrollbar */
+        .insight-list::-webkit-scrollbar { width: 4px; }
+        .insight-list::-webkit-scrollbar-track { background: transparent; }
+        .insight-list::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 4px; }
+
+        .insight-item {
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            background: var(--bg-app);
+            border: 1px solid var(--border-light);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: default;
+        }
+        .insight-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            background: var(--bg-surface);
+            border-color: var(--brand-light);
+        }
+
+        .insight-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .insight-tag {
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+        }
+        .tag-productivity { background: var(--brand-light); color: var(--brand-primary); }
+        .tag-wellbeing { background: var(--status-warning-bg); color: var(--status-warning); }
+        .tag-collaboration { background: var(--status-good-bg); color: var(--status-good); }
+        
+        .insight-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-left: auto;
+        }
+
+        .insight-text {
+            font-size: 0.875rem;
+            color: var(--text-main);
+            line-height: 1.5;
+            margin-bottom: 0.75rem;
+        }
+
+        .insight-action {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--brand-primary);
+            cursor: pointer;
+        }
+        .insight-action svg { width: 14px; height: 14px; }
+        .insight-action:hover { text-decoration: underline; }
+
+        /* Mobile Menu Toggle */
+        .mobile-toggle {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-main);
+        }
+
+        @media (max-width: 1024px) {
+            .insights-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                height: 100vh;
+                transform: translateX(-100%);
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .mobile-toggle {
+                display: block;
+            }
+            .topbar {
+                padding: 0 1rem;
+            }
+            .content-area {
+                padding: 1rem;
+            }
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--brand-accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                <path d="M2 17l10 5 10-5"></path>
+                <path d="M2 12l10 5 10-5"></path>
+            </svg>
+            Go<span>2</span>
+        </div>
+        <nav class="nav-menu">
+            <a href="#" class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                Org Dashboard
+            </a>
+            <a href="#" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                Teams & People
+            </a>
+            <a href="#" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                AI Coaching Center
+            </a>
+            <a href="#" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                Work Patterns
+            </a>
+            <a href="#" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                Settings
+            </a>
+        </nav>
+        
+        <div class="impact-widget">
+            <h4>Go2 Platform Impact</h4>
+            <div class="impact-stat">
+                <span class="val">+42%</span>
+                <span class="lbl">Avg Productivity</span>
+            </div>
+            <div class="impact-stat">
+                <span class="val">15.2h</span>
+                <span class="lbl">Saved/Emp/Wk</span>
+            </div>
+            <p style="font-size: 0.7rem; color: rgba(255,255,255,0.5); margin-top: 0.5rem; line-height: 1.2;">Based on trailing 12-month organizational data.</p>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-wrapper">
+        <!-- Topbar -->
+        <header class="topbar">
+            <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+            <div style="flex:1"></div>
+            <div class="user-profile">
+                <div class="date-picker">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    Last 30 Days
+                </div>
+                <div class="avatar">JS</div>
+            </div>
+        </header>
+
+        <!-- Scrollable Area -->
+        <main class="content-area">
+            <div class="dashboard-header">
+                <div>
+                    <h1>Organizational Health</h1>
+                    <p>Executive overview of productivity, engagement, and work patterns.</p>
+                </div>
+                <button class="btn-export">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Export Report
+                </button>
+            </div>
+
+            <!-- KPIs -->
+            <div class="kpi-grid">
+                <!-- KPI 1 -->
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Productivity Index</span>
+                        <div class="kpi-icon blue">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                        </div>
+                    </div>
+                    <div class="kpi-value-row">
+                        <span class="kpi-value">84<span style="font-size:1rem;color:var(--text-muted)">/100</span></span>
+                        <span class="kpi-trend up">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                            +5.2%
+                        </span>
+                    </div>
+                    <div class="sparkline-container">
+                        <canvas id="spark-prod" class="sparkline"></canvas>
+                    </div>
+                </div>
+
+                <!-- KPI 2 -->
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Engagement Score</span>
+                        <div class="kpi-icon green">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                        </div>
+                    </div>
+                    <div class="kpi-value-row">
+                        <span class="kpi-value">91<span style="font-size:1rem;color:var(--text-muted)">/100</span></span>
+                        <span class="kpi-trend up">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                            +2.1%
+                        </span>
+                    </div>
+                    <div class="sparkline-container">
+                        <canvas id="spark-eng" class="sparkline"></canvas>
+                    </div>
+                </div>
+
+                <!-- KPI 3 -->
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Burnout Risk</span>
+                        <div class="kpi-icon yellow">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                        </div>
+                    </div>
+                    <div class="kpi-value-row">
+                        <span class="kpi-value">12<span style="font-size:1rem;color:var(--text-muted)">%</span></span>
+                        <span class="kpi-trend down-good">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+                            -3.4%
+                        </span>
+                    </div>
+                    <div class="sparkline-container">
+                        <canvas id="spark-burn" class="sparkline"></canvas>
+                    </div>
+                </div>
+
+                <!-- KPI 4 -->
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Collaboration Health</span>
+                        <div class="kpi-icon blue">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                        </div>
+                    </div>
+                    <div class="kpi-value-row">
+                        <span class="kpi-value">78<span style="font-size:1rem;color:var(--text-muted)">/100</span></span>
+                        <span class="kpi-trend down">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+                            -1.2%
+                        </span>
+                    </div>
+                    <div class="sparkline-container">
+                        <canvas id="spark-collab" class="sparkline"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Secondary Grid -->
+            <div class="insights-grid">
+                <!-- Work Patterns Chart -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <h2>Work Pattern Trends</h2>
+                            <p>Deep work vs. Meetings & Admin (Organization-wide)</p>
+                        </div>
+                        <div style="display:flex; gap: 1rem; font-size: 0.75rem; font-weight: 600;">
+                            <span style="display:flex; align-items:center; gap:0.25rem;"><span style="width:8px;height:8px;border-radius:50%;background:var(--brand-primary)"></span>Deep Work</span>
+                            <span style="display:flex; align-items:center; gap:0.25rem;"><span style="width:8px;height:8px;border-radius:50%;background:var(--status-warning)"></span>Meetings</span>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="main-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- AI Coaching Feed -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="ai-header">
+                            <h2>Go2 Insights</h2>
+                            <span class="ai-badge">AI Coach</span>
+                        </div>
+                    </div>
+                    <div class="insight-list">
+                        <!-- Insight 1 -->
+                        <div class="insight-item">
+                            <div class="insight-meta">
+                                <span class="insight-tag tag-productivity">Productivity</span>
+                                <span class="insight-time">2h ago</span>
+                            </div>
+                            <p class="insight-text">
+                                The <strong>Engineering team</strong> is experiencing a 15% increase in meeting load this week, fragmenting deep work blocks. 
+                            </p>
+                            <div class="insight-action">
+                                Suggest "No Meeting Wednesday" 
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                            </div>
+                        </div>
+
+                        <!-- Insight 2 -->
+                        <div class="insight-item">
+                            <div class="insight-meta">
+                                <span class="insight-tag tag-wellbeing">Burnout Risk</span>
+                                <span class="insight-time">Yesterday</span>
+                            </div>
+                            <p class="insight-text">
+                                4 employees in <strong>Sales</strong> have logged over 55 hours for two consecutive weeks. After-hours email activity is exceptionally high.
+                            </p>
+                            <div class="insight-action">
+                                Review territory distributions
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                            </div>
+                        </div>
+
+                        <!-- Insight 3 -->
+                        <div class="insight-item">
+                            <div class="insight-meta">
+                                <span class="insight-tag tag-collaboration">Collaboration</span>
+                                <span class="insight-time">2 days ago</span>
+                            </div>
+                            <p class="insight-text">
+                                Cross-departmental communication between <strong>Marketing</strong> and <strong>Product</strong> has dropped 30% since the new tool rollout.
+                            </p>
+                            <div class="insight-action">
+                                View communication flow map
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- JavaScript for Charts (No external dependencies) -->
+    <script>
+        // Utility to draw sparklines
+        function drawSparkline(canvasId, data, colorStr, fillGradientColors) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            
+            // Handle high DPI displays
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+            
+            const w = rect.width;
+            const h = rect.height;
+            const padding = 2;
+            
+            const max = Math.max(...data);
+            const min = Math.min(...data);
+            const range = max - min || 1;
+            
+            const stepX = w / (data.length - 1);
+            
+            ctx.beginPath();
+            ctx.moveTo(0, h - ((data[0] - min) / range) * (h - padding*2) - padding);
+            
+            for (let i = 1; i < data.length; i++) {
+                const x = i * stepX;
+                const y = h - ((data[i] - min) / range) * (h - padding*2) - padding;
+                // Smooth curves
+                const prevX = (i - 1) * stepX;
+                const prevY = h - ((data[i - 1] - min) / range) * (h - padding*2) - padding;
+                const cpX = prevX + (x - prevX) / 2;
+                ctx.quadraticCurveTo(cpX, prevY, x, y);
+            }
+            
+            // Stroke
+            ctx.strokeStyle = colorStr;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Fill
+            if (fillGradientColors) {
+                ctx.lineTo(w, h);
+                ctx.lineTo(0, h);
+                ctx.closePath();
+                
+                const gradient = ctx.createLinearGradient(0, 0, 0, h);
+                gradient.addColorStop(0, fillGradientColors[0]);
+                gradient.addColorStop(1, fillGradientColors[1]);
+                
+                ctx.fillStyle = gradient;
+                ctx.fill();
+            }
+        }
+
+        // Utility to draw main area chart
+        function drawMainChart() {
+            const canvas = document.getElementById('main-chart');
+            if (!canvas) return;
+
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+
+            const w = rect.width;
+            const h = rect.height;
+            const paddingX = 40;
+            const paddingY = 30;
+            const chartW = w - paddingX;
+            const chartH = h - paddingY;
+
+            // Mock Data (30 days)
+            const days = 30;
+            const deepWorkData = [];
+            const meetingsData = [];
+            
+            let dwBase = 60;
+            let mtgBase = 30;
+            for(let i=0; i<days; i++) {
+                // Add some random noise and weekend dips
+                let isWeekend = (i % 7 === 5 || i % 7 === 6);
+                let noise1 = Math.random() * 10 - 5;
+                let noise2 = Math.random() * 8 - 4;
+                
+                if(isWeekend) {
+                    deepWorkData.push(5 + noise1/2);
+                    meetingsData.push(2 + noise2/2);
+                } else {
+                    deepWorkData.push(dwBase + noise1 + (i*0.5)); // Slight upward trend
+                    meetingsData.push(mtgBase + noise2);
+                }
+            }
+
+            const maxVal = 100; // Fixed scale
+            
+            // Draw Grid lines
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for(let i=0; i<=4; i++) {
+                const y = chartH - (i/4 * chartH);
+                ctx.moveTo(paddingX, y);
+                ctx.lineTo(w, y);
+                
+                // Labels
+                ctx.fillStyle = '#64748b';
+                ctx.font = '10px "Plus Jakarta Sans"';
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(i * 25 + '%', paddingX - 10, y);
+            }
+            ctx.stroke();
+
+            // Function to draw a dataset
+            function drawDataset(data, colorStroke, colorFillStart, colorFillEnd) {
+                const stepX = chartW / (data.length - 1);
+                
+                ctx.beginPath();
+                ctx.moveTo(paddingX, chartH - (data[0] / maxVal) * chartH);
+                
+                for (let i = 1; i < data.length; i++) {
+                    const x = paddingX + (i * stepX);
+                    const y = chartH - (data[i] / maxVal) * chartH;
+                    ctx.lineTo(x, y);
+                }
+                
+                // Stroke
+                ctx.strokeStyle = colorStroke;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Fill
+                ctx.lineTo(paddingX + chartW, chartH);
+                ctx.lineTo(paddingX, chartH);
+                ctx.closePath();
+                
+                const gradient = ctx.createLinearGradient(0, 0, 0, chartH);
+                gradient.addColorStop(0, colorFillStart);
+                gradient.addColorStop(1, colorFillEnd);
+                
+                ctx.fillStyle = gradient;
+                ctx.fill();
+            }
+
+            // Draw Meetings (Back)
+            drawDataset(meetingsData, '#f59e0b', 'rgba(245, 158, 11, 0.2)', 'rgba(245, 158, 11, 0)');
+            // Draw Deep Work (Front)
+            drawDataset(deepWorkData, '#4338ca', 'rgba(67, 56, 202, 0.4)', 'rgba(67, 56, 202, 0)');
+        }
+
+        // Initialize Charts on load
+        window.addEventListener('load', () => {
+            // Data arrays
+            const prodData = [70, 72, 75, 74, 78, 80, 82, 81, 83, 84];
+            const engData = [85, 86, 85, 88, 87, 89, 90, 89, 90, 91];
+            const burnData = [20, 19, 19, 18, 16, 15, 15, 14, 13, 12]; // Going down is good
+            const collabData = [82, 81, 83, 80, 79, 78, 77, 79, 78, 78];
+
+            // Colors
+            const cInd = '#4338ca'; const cIndT = 'rgba(67, 56, 202, 0.2)';
+            const cGrn = '#10b981'; const cGrnT = 'rgba(16, 185, 129, 0.2)';
+            const cYel = '#f59e0b'; const cYelT = 'rgba(245, 158, 11, 0.2)';
+            const cRed = '#ef4444'; const cRedT = 'rgba(239, 68, 68, 0.2)';
+
+            // Draw sparklines
+            drawSparkline('spark-prod', prodData, cInd, [cIndT, 'transparent']);
+            drawSparkline('spark-eng', engData, cGrn, [cGrnT, 'transparent']);
+            // Burnout is green if going down, but the line itself we'll color based on status. Let's use yellow/orange for warning.
+            drawSparkline('spark-burn', burnData, cYel, [cYelT, 'transparent']); 
+            drawSparkline('spark-collab', collabData, cInd, [cIndT, 'transparent']);
+
+            // Draw Main Chart
+            drawMainChart();
+        });
+
+        // Redraw on resize
+        window.addEventListener('resize', () => {
+            // Simple debounce could be added here, but for this demo direct call is fine
+            drawMainChart();
+             // Sparklines are fixed height, but width changes. Re-init requires re-passing data.
+             // For a pure HTML demo without complex state management, we'll let main chart resize
+             // and leave sparklines as they render fine on initial load.
+        });
+
+    </script>
+</body>
+</html>

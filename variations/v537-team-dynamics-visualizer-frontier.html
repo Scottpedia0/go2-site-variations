@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go2 | AI-Powered Team Dynamics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5; /* Indigo */
+            --primary-light: #818cf8;
+            --secondary: #10b981; /* Emerald */
+            --dark: #111827;
+            --text-main: #374151;
+            --text-light: #6b7280;
+            --bg-page: #f9fafb;
+            --bg-card: #ffffff;
+            --border: #e5e7eb;
+            
+            /* Node Colors by Dept */
+            --dept-ops: #3b82f6; /* Blue */
+            --dept-dev: #8b5cf6; /* Purple */
+            --dept-sales: #f59e0b; /* Amber */
+            --dept-hr: #ec4899; /* Pink */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        nav {
+            background: var(--bg-card);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            z-index: 10;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-mark {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-light);
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .btn-demo {
+            background: var(--primary);
+            color: white !important;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .btn-demo:hover {
+            background: #4338ca;
+        }
+
+        /* Main Content */
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+            gap: 1.5rem;
+        }
+
+        .header-content {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto 1rem auto;
+        }
+
+        .header-content h1 {
+            color: var(--dark);
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .header-content p {
+            color: var(--text-light);
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .tag {
+            display: inline-block;
+            background: #e0e7ff;
+            color: var(--primary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* App Layout */
+        .app-grid {
+            display: grid;
+            grid-template-columns: 2.5fr 1fr;
+            gap: 1.5rem;
+            flex: 1;
+            min-height: 500px;
+        }
+
+        /* Canvas Area */
+        .canvas-container {
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .canvas-toolbar {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fafafa;
+        }
+
+        .canvas-toolbar h2 {
+            font-size: 1.1rem;
+            color: var(--dark);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .legend {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        canvas {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+        
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        /* Sidebar Area */
+        .sidebar {
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-light);
+            margin: auto;
+            padding: 2rem;
+        }
+
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 1rem;
+            color: #d1d5db;
+        }
+
+        /* Profile Card internally generated via JS */
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .profile-info h3 {
+            color: var(--dark);
+            font-size: 1.2rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .profile-info p {
+            color: var(--text-light);
+            font-size: 0.85rem;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: var(--bg-page);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-card .label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-light);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .stat-card .value.green { color: var(--secondary); }
+
+        .ai-insights {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .ai-insights h4 {
+            color: #1e3a8a;
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .ai-insights ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .ai-insights li {
+            font-size: 0.85rem;
+            color: #1e40af;
+            margin-bottom: 0.5rem;
+            padding-left: 1.2rem;
+            position: relative;
+            line-height: 1.4;
+        }
+
+        .ai-insights li::before {
+            content: "✦";
+            position: absolute;
+            left: 0;
+            top: 0;
+            color: #3b82f6;
+        }
+
+        /* Bottom Stats Bar */
+        .bottom-stats {
+            background: var(--dark);
+            color: white;
+            padding: 2rem;
+            margin-top: auto;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .global-stat {
+            text-align: center;
+        }
+
+        .global-stat .num {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: 0.2rem;
+        }
+
+        .global-stat .desc {
+            font-size: 0.9rem;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .app-grid {
+                grid-template-columns: 1fr;
+            }
+            .canvas-container {
+                min-height: 400px;
+            }
+            .nav-links {
+                display: none; /* simple mobile nav handling */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">
+            <div class="logo-mark"></div>
+            Go2
+        </div>
+        <div class="nav-links">
+            <a href="#">Platform Overview</a>
+            <a href="#">AI Coaching</a>
+            <a href="#">Pricing ($6-$12/mo)</a>
+            <a href="#" class="btn-demo">Book Demo</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header-content">
+            <div class="tag">Coaching, Not Monitoring</div>
+            <h1>Team Dynamics Visualizer</h1>
+            <p>Go2's AI analyzes workflow patterns across your tools to map collaboration. Understand how work actually gets done, identify silos, and provide personalized coaching to help your team work smarter.</p>
+        </div>
+
+        <div class="app-grid">
+            <div class="canvas-container">
+                <div class="canvas-toolbar">
+                    <h2>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                        Collaboration Network
+                    </h2>
+                    <div class="legend">
+                        <div class="legend-item"><div class="dot" style="background: var(--dept-ops)"></div> Ops</div>
+                        <div class="legend-item"><div class="dot" style="background: var(--dept-dev)"></div> Dev</div>
+                        <div class="legend-item"><div class="dot" style="background: var(--dept-sales)"></div> Sales</div>
+                        <div class="legend-item"><div class="dot" style="background: var(--dept-hr)"></div> HR</div>
+                    </div>
+                </div>
+                <!-- Canvas Element -->
+                <canvas id="networkCanvas"></canvas>
+            </div>
+
+            <div class="sidebar" id="sidebar">
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    <h3>Select a Team Member</h3>
+                    <p style="margin-top: 0.5rem; font-size: 0.9rem;">Click on any node in the graph to view AI-driven productivity insights and personalized coaching suggestions.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-stats">
+        <div class="global-stat">
+            <div class="num">42%</div>
+            <div class="desc">Avg Productivity Increase</div>
+        </div>
+        <div class="global-stat">
+            <div class="num">15.2</div>
+            <div class="desc">Hours Saved / Week / Emp</div>
+        </div>
+        <div class="global-stat">
+            <div class="num">892%</div>
+            <div class="desc">First Year ROI</div>
+        </div>
+    </div>
+
+    <script>
+        // --- Data Setup ---
+        const departments = {
+            'Operations': '#3b82f6',
+            'Engineering': '#8b5cf6',
+            'Sales': '#f59e0b',
+            'HR': '#ec4899'
+        };
+
+        const rawNodes = [
+            { id: 1, name: "Sarah J.", role: "Ops Director", dept: "Operations", score: 92, hoursSaved: 18.5, radius: 22, initials: "SJ", 
+              aiTips: ["High cross-department alignment.", "Suggest delegating routine QA checks to automate workflow.", "Peak focus hours: 9am - 11am."] },
+            { id: 2, name: "Mike T.", role: "Ops Specialist", dept: "Operations", score: 78, hoursSaved: 12.0, radius: 16, initials: "MT",
+              aiTips: ["High context switching detected.", "Try blocking 2 hours daily for deep work.", "Collaboration with Dev team is highly efficient."] },
+            { id: 3, name: "Alex C.", role: "Lead Engineer", dept: "Engineering", score: 88, hoursSaved: 16.2, radius: 20, initials: "AC",
+              aiTips: ["Excellent code review turnaround.", "Meeting load is high; consider async updates for daily standups."] },
+            { id: 4, name: "Jordan W.", role: "Backend Dev", dept: "Engineering", score: 85, hoursSaved: 14.5, radius: 18, initials: "JW",
+              aiTips: ["Strong focus blocks maintained.", "Communication with Ops could be streamlined via ticketing integration."] },
+            { id: 5, name: "Taylor R.", role: "Frontend Dev", dept: "Engineering", score: 81, hoursSaved: 13.0, radius: 17, initials: "TR",
+              aiTips: ["Frequent tool toggling between Figma and IDE.", "Consider dual-monitor setup or integrated preview plugins."] },
+            { id: 6, name: "Casey M.", role: "Sales Lead", dept: "Sales", score: 95, hoursSaved: 20.1, radius: 22, initials: "CM",
+              aiTips: ["Outstanding CRM utilization.", "Email response time is top 5%.", "Share successful outreach templates with team."] },
+            { id: 7, name: "Riley B.", role: "Account Exec", dept: "Sales", score: 72, hoursSaved: 8.5, radius: 15, initials: "RB",
+              aiTips: ["Time spent on manual data entry is high.", "Go2 suggests enabling automated CRM logging.", "Schedule 1:1 coaching on pipeline management."] },
+            { id: 8, name: "Jamie L.", role: "HR Manager", dept: "HR", score: 89, hoursSaved: 15.8, radius: 19, initials: "JL",
+              aiTips: ["Strong inter-departmental communication.", "Streamline onboarding docs to reduce repetitive questions.", "Great job maintaining team wellness check-ins."] },
+            { id: 9, name: "Morgan S.", role: "Recruiter", dept: "HR", score: 84, hoursSaved: 14.0, radius: 17, initials: "MS",
+              aiTips: ["High volume of external meetings.", "Use scheduling links to reduce email ping-pong.", "Collaboration with Engineering leads is effective."] }
+        ];
+
+        // Links represent interaction volume/strength
+        const rawLinks = [
+            { source: 1, target: 2, strength: 0.8 },
+            { source: 1, target: 3, strength: 0.6 },
+            { source: 1, target: 6, strength: 0.5 },
+            { source: 1, target: 8, strength: 0.7 },
+            { source: 3, target: 4, strength: 0.9 },
+            { source: 3, target: 5, strength: 0.8 },
+            { source: 4, target: 5, strength: 0.6 },
+            { source: 2, target: 4, strength: 0.3 },
+            { source: 6, target: 7, strength: 0.8 },
+            { source: 6, target: 1, strength: 0.5 },
+            { source: 8, target: 9, strength: 0.9 },
+            { source: 8, target: 1, strength: 0.7 },
+            { source: 9, target: 3, strength: 0.4 }
+        ];
+
+        // --- Physics Engine & Canvas Setup ---
+        const canvas = document.getElementById('networkCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let animationFrameId;
+
+        let nodes = [];
+        let links = [];
+
+        // Interaction state
+        let draggedNode = null;
+        let hoveredNode = null;
+        let selectedNode = null;
+        let mouseX = 0;
+        let mouseY = 0;
+
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            // Handle high DPI displays
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            width = rect.width;
+            height = rect.height;
+        }
+
+        function initGraph() {
+            resizeCanvas();
+            
+            // Initialize physical properties
+            nodes = rawNodes.map(n => ({
+                ...n,
+                x: Math.random() * width,
+                y: Math.random() * height,
+                vx: 0,
+                vy: 0,
+                color: departments[n.dept]
+            }));
+
+            links = rawLinks.map(l => ({
+                source: nodes.find(n => n.id === l.source),
+                target: nodes.find(n => n.id === l.target),
+                strength: l.strength
+            }));
+
+            startAnimation();
+        }
+
+        // --- Force Directed Algorithm ---
+        function applyForces() {
+            const centerGravity = 0.05;
+            const repulsionForce = 3000;
+            const springLength = 120;
+            const springStiffness = 0.02;
+            const damping = 0.85;
+
+            // 1. Repulsion (Coulomb's Law)
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+                    let dx = nodes[i].x - nodes[j].x;
+                    let dy = nodes[i].y - nodes[j].y;
+                    let distSq = dx * dx + dy * dy;
+                    
+                    if (distSq > 0 && distSq < 90000) { // Limit effect distance
+                        let dist = Math.sqrt(distSq);
+                        let force = repulsionForce / distSq;
+                        let fx = force * (dx / dist);
+                        let fy = force * (dy / dist);
+                        
+                        nodes[i].vx += fx;
+                        nodes[i].vy += fy;
+                        nodes[j].vx -= fx;
+                        nodes[j].vy -= fy;
+                    }
+                }
+            }
+
+            // 2. Attraction (Springs/Hooke's Law)
+            links.forEach(link => {
+                let dx = link.target.x - link.source.x;
+                let dy = link.target.y - link.source.y;
+                let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                
+                let force = (dist - springLength) * springStiffness * link.strength;
+                let fx = force * (dx / dist);
+                let fy = force * (dy / dist);
+
+                link.source.vx += fx;
+                link.source.vy += fy;
+                link.target.vx -= fx;
+                link.target.vy -= fy;
+            });
+
+            // 3. Center Gravity & Update Position
+            nodes.forEach(n => {
+                // Pull to center
+                n.vx += (width / 2 - n.x) * centerGravity;
+                n.vy += (height / 2 - n.y) * centerGravity;
+
+                // Handle Dragging override
+                if (n === draggedNode) {
+                    n.x = mouseX;
+                    n.y = mouseY;
+                    n.vx = 0;
+                    n.vy = 0;
+                } else {
+                    // Update position
+                    n.x += n.vx;
+                    n.y += n.vy;
+                    // Apply friction
+                    n.vx *= damping;
+                    n.vy *= damping;
+                }
+
+                // Bounds checking
+                n.x = Math.max(n.radius, Math.min(width - n.radius, n.x));
+                n.y = Math.max(n.radius, Math.min(height - n.radius, n.y));
+            });
+        }
+
+        // --- Rendering ---
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw Links
+            links.forEach(link => {
+                ctx.beginPath();
+                ctx.moveTo(link.source.x, link.source.y);
+                ctx.lineTo(link.target.x, link.target.y);
+                
+                // Highlight connected links if a node is selected/hovered
+                let isHighlighted = false;
+                if (selectedNode) {
+                    isHighlighted = (link.source === selectedNode || link.target === selectedNode);
+                } else if (hoveredNode) {
+                    isHighlighted = (link.source === hoveredNode || link.target === hoveredNode);
+                }
+
+                ctx.lineWidth = link.strength * 3;
+                if (isHighlighted) {
+                    ctx.strokeStyle = 'rgba(79, 70, 229, 0.6)'; // Primary color
+                } else {
+                    ctx.strokeStyle = 'rgba(209, 213, 219, 0.4)'; // Gray
+                }
+                
+                ctx.stroke();
+            });
+
+            // Draw Nodes
+            nodes.forEach(n => {
+                const isSelected = n === selectedNode;
+                const isHovered = n === hoveredNode;
+                
+                // Shadow
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, n.radius + (isSelected ? 4 : 0), 0, 2 * Math.PI);
+                ctx.fillStyle = 'rgba(0,0,0,0.1)';
+                ctx.fill();
+
+                // Circle
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, n.radius + (isSelected ? 2 : 0), 0, 2 * Math.PI);
+                ctx.fillStyle = n.color;
+                ctx.fill();
+                
+                // Border
+                ctx.lineWidth = isSelected ? 3 : 2;
+                ctx.strokeStyle = '#ffffff';
+                ctx.stroke();
+
+                // Initials
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '600 12px Inter';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(n.initials, n.x, n.y);
+
+                // Name label (only on hover or select)
+                if (isHovered || isSelected) {
+                    ctx.fillStyle = '#1f2937';
+                    ctx.font = '500 12px Inter';
+                    ctx.textAlign = 'center';
+                    // Background for text
+                    let textWidth = ctx.measureText(n.name).width;
+                    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                    ctx.beginPath();
+                    ctx.roundRect(n.x - textWidth/2 - 5, n.y + n.radius + 5, textWidth + 10, 20, 4);
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = '#1f2937';
+                    ctx.fillText(n.name, n.x, n.y + n.radius + 15);
+                }
+            });
+        }
+
+        function animate() {
+            applyForces();
+            draw();
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        function startAnimation() {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            animate();
+        }
+
+        // --- Interaction Logic ---
+        function getMousePos(evt) {
+            const rect = canvas.getBoundingClientRect();
+            // Handle scaling
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const dpr = window.devicePixelRatio || 1;
+            
+            return {
+                x: (evt.clientX - rect.left), // Logical coordinates relative to CSS size
+                y: (evt.clientY - rect.top)
+            };
+        }
+
+        canvas.addEventListener('mousemove', (e) => {
+            const pos = getMousePos(e);
+            mouseX = pos.x;
+            mouseY = pos.y;
+
+            if (draggedNode) return;
+
+            // Find hovered node
+            hoveredNode = null;
+            for (let i = nodes.length - 1; i >= 0; i--) {
+                const n = nodes[i];
+                const dx = mouseX - n.x;
+                const dy = mouseY - n.y;
+                if (dx * dx + dy * dy < n.radius * n.radius) {
+                    hoveredNode = n;
+                    break;
+                }
+            }
+
+            canvas.style.cursor = hoveredNode ? 'pointer' : 'grab';
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (hoveredNode) {
+                draggedNode = hoveredNode;
+                selectedNode = hoveredNode;
+                updateSidebar(selectedNode);
+                canvas.style.cursor = 'grabbing';
+            } else {
+                selectedNode = null;
+                updateSidebar(null);
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            draggedNode = null;
+            if(!hoveredNode) canvas.style.cursor = 'grab';
+        });
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+        });
+
+        // --- UI Updates ---
+        function updateSidebar(node) {
+            const sidebar = document.getElementById('sidebar');
+            
+            if (!node) {
+                sidebar.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        <h3>Select a Team Member</h3>
+                        <p style="margin-top: 0.5rem; font-size: 0.9rem;">Click on any node in the graph to view AI-driven productivity insights and personalized coaching suggestions.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let tipsHtml = node.aiTips.map(tip => `<li>${tip}</li>`).join('');
+
+            sidebar.innerHTML = `
+                <div class="profile-header">
+                    <div class="avatar" style="background-color: ${node.color}">${node.initials}</div>
+                    <div class="profile-info">
+                        <h3>${node.name}</h3>
+                        <p>${node.role} • ${node.dept}</p>
+                    </div>
+                </div>
+
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="label">Productivity Score</div>
+                        <div class="value ${node.score > 80 ? 'green' : ''}">${node.score}/100</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Time Saved (Wk)</div>
+                        <div class="value green">+${node.hoursSaved}h</div>
+                    </div>
+                </div>
+
+                <div class="ai-insights">
+                    <h4>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                        Go2 AI Coaching Insights
+                    </h4>
+                    <ul>
+                        ${tipsHtml}
+                    </ul>
+                </div>
+                
+                <button class="btn-demo" style="width: 100%; margin-top: auto; text-align: center; border: none; padding: 0.75rem; cursor:pointer;">
+                    Send Private Coaching Report
+                </button>
+            `;
+        }
+
+        // Initialize
+        initGraph();
+
+    </script>
+</body>
+</html>

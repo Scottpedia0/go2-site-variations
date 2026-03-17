@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Go2 ROI Deep Dive for CFOs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0b1020;
+      --panel:#10172a;
+      --panel-2:#0f172a;
+      --panel-3:#111827;
+      --line:#243047;
+      --line-soft:#1c2740;
+      --text:#e5edf9;
+      --muted:#9aa7bd;
+      --muted-2:#7d8aa3;
+      --brand:#49a5ff;
+      --brand-2:#22c55e;
+      --brand-3:#f59e0b;
+      --danger:#ef4444;
+      --cyan:#38bdf8;
+      --shadow:0 20px 60px rgba(0,0,0,.35);
+      --radius:18px;
+      --radius-sm:12px;
+      --radius-xs:10px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:'Inter',system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      background:
+        radial-gradient(1200px 700px at 85% -10%, rgba(73,165,255,.14), transparent 45%),
+        radial-gradient(900px 600px at 0% 20%, rgba(34,197,94,.08), transparent 40%),
+        linear-gradient(180deg,#07101f 0%, #0a1120 100%);
+      color:var(--text);
+      min-height:100vh;
+    }
+
+    .container{
+      width:min(1360px, calc(100% - 32px));
+      margin:0 auto;
+    }
+
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:50;
+      backdrop-filter: blur(16px);
+      background:rgba(7, 13, 27, .72);
+      border-bottom:1px solid rgba(154,167,189,.12);
+    }
+
+    .topbar-inner{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:18px;
+      padding:14px 0;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-weight:800;
+      letter-spacing:.01em;
+    }
+
+    .brand-mark{
+      width:38px;height:38px;border-radius:12px;
+      background:linear-gradient(135deg,var(--brand),#7dd3fc 55%, #dbeafe);
+      position:relative;
+      box-shadow:0 12px 30px rgba(73,165,255,.28);
+    }
+    .brand-mark:before,
+    .brand-mark:after{
+      content:"";
+      position:absolute;
+      background:#07101f;
+      border-radius:999px;
+    }
+    .brand-mark:before{width:14px;height:14px;left:7px;top:12px}
+    .brand-mark:after{width:14px;height:14px;right:7px;top:12px}
+
+    .nav-actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .btn{
+      border:1px solid rgba(154,167,189,.16);
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      color:var(--text);
+      padding:11px 14px;
+      border-radius:12px;
+      font-weight:600;
+      font-size:14px;
+      cursor:pointer;
+      transition:.2s ease;
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      text-decoration:none;
+      white-space:nowrap;
+    }
+    .btn:hover{transform:translateY(-1px); border-color:rgba(154,167,189,.3)}
+    .btn.primary{
+      background:linear-gradient(135deg, #0ea5e9, #2563eb);
+      border-color:rgba(125,211,252,.25);
+      box-shadow:0 16px 35px rgba(37,99,235,.25);
+    }
+    .btn.success{
+      background:linear-gradient(135deg, #16a34a, #22c55e);
+      border-color:rgba(34,197,94,.25);
+      box-shadow:0 16px 35px rgba(34,197,94,.18);
+    }
+    .btn.ghost{
+      background:transparent;
+    }
+
+    .hero{
+      padding:42px 0 24px;
+    }
+
+    .hero-grid{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap:20px;
+      align-items:stretch;
+    }
+
+    .card{
+      background:linear-gradient(180deg, rgba(16,23,42,.94), rgba(12,18,34,.96));
+      border:1px solid rgba(154,167,189,.12);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
+
+    .hero-copy{
+      padding:28px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .hero-copy:before{
+      content:"";
+      position:absolute;
+      inset:auto -20% -35% auto;
+      width:320px;height:320px;border-radius:50%;
+      background:radial-gradient(circle, rgba(73,165,255,.18), transparent 60%);
+      pointer-events:none;
+    }
+
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:7px 10px;
+      border:1px solid rgba(73,165,255,.22);
+      border-radius:999px;
+      color:#cbe6ff;
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:.06em;
+      text-transform:uppercase;
+      background:rgba(73,165,255,.08);
+    }
+
+    h1{
+      margin:16px 0 12px;
+      font-size:clamp(30px,4vw,52px);
+      line-height:1.02;
+      letter-spacing:-.03em;
+    }
+
+    .hero-sub{
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.65;
+      max-width:840px;
+      margin:0 0 24px;
+    }
+
+    .hero-stats{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+      margin-top:22px;
+    }
+
+    .stat{
+      padding:18px;
+      border-radius:16px;
+      background:rgba(255,255,255,.025);
+      border:1px solid rgba(154,167,189,.12);
+    }
+    .stat .value{
+      font-size:30px;
+      font-weight:800;
+      letter-spacing:-.03em;
+    }
+    .stat .label{
+      margin-top:6px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.45;
+    }
+
+    .hero-side{
+      padding:24px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      gap:16px;
+    }
+
+    .metric-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+
+    .mini{
+      padding:16px;
+      border-radius:14px;
+      background:rgba(255,255,255,.025);
+      border:1px solid rgba(154,167,189,.12);
+    }
+
+    .mini .k{
+      color:var(--muted);
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.07em;
+      font-weight:700;
+    }
+
+    .mini .v{
+      margin-top:8px;
+      font-weight:800;
+      font-size:22px;
+      letter-spacing:-.03em;
+    }
+
+    .formula{
+      padding:16px;
+      border-radius:14px;
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+      border:1px solid rgba(154,167,189,.12);
+    }
+
+    .formula-title{
+      font-size:13px;
+      color:#cbd5e1;
+      font-weight:700;
+      margin-bottom:8px;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+    }
+
+    .formula code{
+      display:block;
+      white-space:pre-wrap;
+      color:#93c5fd;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      line-height:1.65;
+      font-size:13px;
+    }
+
+    .section{
+      padding:12px 0 28px;
+    }
+
+    .section-header{
+      display:flex;
+      align-items:end;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom:16px;
+      flex-wrap:wrap;
+    }
+
+    .section-title{
+      font-size:24px;
+      font-weight:800;
+      letter-spacing:-.02em;
+      margin:0;
+    }
+
+    .section-desc{
+      color:var(--muted);
+      margin-top:6px;
+      font-size:14px;
+    }
+
+    .layout{
+      display:grid;
+      grid-template-columns: 420px minmax(0,1fr);
+      gap:20px;
+      align-items:start;
+    }
+
+    .panel{
+      padding:20px;
+    }
+
+    .panel-title{
+      margin:0 0 4px;
+      font-size:16px;
+      font-weight:800;
+      letter-spacing:-.02em;
+    }
+
+    .panel-sub{
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:18px;
+      line-height:1.5;
+    }
+
+    .input-grid{
+      display:grid;
+      gap:14px;
+    }
+
+    .field{
+      display:grid;
+      gap:8px;
+    }
+
+    .field-row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+
+    label{
+      font-size:13px;
+      color:#d7e0ee;
+      font-weight:600;
+    }
+
+    .hint{
+      color:var(--muted-2);
+      font-size:12px;
+      line-height:1.4;
+      margin-top:-2px;
+    }
+
+    input[type="number"],
+    input[type="text"],
+    select,
+    input[type="range"]{
+      width:100%;
+    }
+
+    input[type="number"],
+    input[type="text"],
+    select{
+      background:#0a1224;
+      color:var(--text);
+      border:1px solid rgba(154,167,189,.16);
+      border-radius:12px;
+      padding:12px 13px;
+      font:inherit;
+      outline:none;
+      transition:.2s ease;
+    }
+
+    input:focus, select:focus{
+      border-color:rgba(73,165,255,.5);
+      box-shadow:0 0 0 4px rgba(73,165,255,.08);
+    }
+
+    input[type="range"]{
+      appearance:none;
+      background:transparent;
+      height:34px;
+    }
+    input[type="range"]::-webkit-slider-runnable-track{
+      height:6px;border-radius:999px;
+      background:linear-gradient(90deg,var(--brand),#60a5fa);
+    }
+    input[type="range"]::-webkit-slider-thumb{
+      appearance:none;width:18px;height:18px;border-radius:50%;
+      background:#fff;border:3px solid var(--brand);margin-top:-6px;
+      box-shadow:0 4px 12px rgba(73,165,255,.35);
+    }
+    input[type="range"]::-moz-range-track{
+      height:6px;border-radius:999px;background:linear-gradient(90deg,var(--brand),#60a5fa);
+    }
+    input[type="range"]::-moz-range-thumb{
+      width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--brand);
+    }
+
+    .range-row{
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+
+    .range-value{
+      min-width:70px;
+      text-align:right;
+      font-weight:800;
+      color:#bfdbfe;
+    }
+
+    .divider{
+      height:1px;
+      background:linear-gradient(90deg, transparent, rgba(154,167,189,.18), transparent);
+      margin:4px 0;
+    }
+
+    .toggle-row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .pill{
+      padding:9px 12px;
+      border-radius:999px;
+      border:1px solid rgba(154,167,189,.14);
+      color:var(--muted);
+      background:rgba(255,255,255,.02);
+      cursor:pointer;
+      font-size:13px;
+      font-weight:700;
+      transition:.2s ease;
+      user-select:none;
+    }
+    .pill.active{
+      color:#dbeafe;
+      border-color:rgba(73,165,255,.34);
+      background:rgba(73,165,255,.12);
+    }
+
+    .results-wrap{
+      display:grid;
+      gap:20px;
+    }
+
+    .summary-grid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:12px;
+    }
+
+    .summary-card{
+      padding:18px;
+      border-radius:16px;
+      background:rgba(255,255,255,.025);
+      border:1px solid rgba(154,167,189,.12);
+      min-height:112px;
+    }
+
+    .summary-card .tag{
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+      text-transform:uppercase;
+      letter-spacing:.07em;
+    }
+
+    .summary-card .big{
+      margin-top:8px;
+      font-size:30px;
+      font-weight:800;
+      letter-spacing:-.03em;
+      line-height:1.05;
+    }
+
+    .summary-card .sub{
+      margin-top:8px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.45;
+    }
+
+    .summary-card.good .big{color:#86efac}
+    .summary-card.blue .big{color:#93c5fd}
+    .summary-card.gold .big{color:#fcd34d}
+    .summary-card.red .big{color:#fca5a5}
+
+    .results-grid{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap:20px;
+    }
+
+    .table-card, .chart-card{
+      padding:18px;
+    }
+
+    .table-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:14px;
+      flex-wrap:wrap;
+    }
+
+    .table-title{
+      font-size:16px;
+      font-weight:800;
+      margin:0;
+    }
+
+    .table-scroll{
+      overflow:auto;
+      border:1px solid rgba(154,167,189,.12);
+      border-radius:14px;
+      background:rgba(255,255,255,.015);
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:760px;
+    }
+
+    thead th{
+      text-align:left;
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+      color:#b8c6da;
+      padding:12px 14px;
+      border-bottom:1px solid rgba(154,167,189,.12);
+      background:rgba(255,255,255,.02);
+      position:sticky;
+      top:0;
+      z-index:1;
+    }
+
+    tbody td{
+      padding:12px 14px;
+      border-bottom:1px solid rgba(154,167,189,.08);
+      color:#dbe5f3;
+      font-size:13px;
+      vertical-align:top;
+    }
+
+    tbody tr:hover td{
+      background:rgba(255,255,255,.02);
+    }
+
+    td.num{
+      text-align:right;
+      font-variant-numeric:tabular-nums;
+    }
+
+    .muted{
+      color:var(--muted);
+    }
+
+    .strong{
+      font-weight:800;
+    }
+
+    .positive{color:#86efac}
+    .negative{color:#fca5a5}
+    .neutral{color:#93c5fd}
+
+    .chart-wrap{
+      display:grid;
+      gap:18px;
+    }
+
+    .chart-box{
+      padding:16px;
+      border-radius:16px;
+      border:1px solid rgba(154,167,189,.12);
+      background:rgba(255,255,255,.02);
+    }
+
+    .chart-title{
+      font-size:14px;
+      font-weight:800;
+      margin:0 0 12px;
+    }
+
+    canvas{
+      width:100%;
+      height:auto;
+      display:block;
+    }
+
+    .legend{
+      display:flex;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+
+    .legend-item{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:12px;
+      color:var(--muted);
+      font-weight:600;
+    }
+
+    .dot{
+      width:10px;height:10px;border-radius:50%;
+      display:inline-block;
+    }
+
+    .assumptions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:20px;
+    }
+
+    .note-list{
+      display:grid;
+      gap:10px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.55;
+    }
+
+    .note{
+      padding:14px 15px;
+      border-radius:14px;
+      background:rgba(255,255,255,.02);
+      border:1px solid rgba(154,167,189,.1);
+    }
+
+    .footer{
+      padding:16px 0 40px;
+      color:var(--muted-2);
+      font-size:12px;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(34,197,94,.1);
+      border:1px solid rgba(34,197,94,.18);
+      color:#bbf7d0;
+      font-size:12px;
+      font-weight:700;
+    }
+
+    @media (max-width: 1180px){
+      .layout, .results-grid, .hero-grid, .assumptions{grid-template-columns:1fr}
+      .summary-grid{grid-template-columns:repeat(2,1fr)}
+    }
+
+    @media (max-width: 780px){
+      .container{width:min(100% - 20px, 1360px)}
+      .hero{padding-top:24px}
+      .hero-copy, .hero-side, .panel, .table-card, .chart-card{padding:16px}
+      .hero-stats, .metric-grid, .field-row, .summary-grid{grid-template-columns:1fr}
+      .topbar-inner{align-items:flex-start}
+      .nav-actions{width:100%}
+      .btn{flex:1; justify-content:center}
+      h1{font-size:34px}
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <div>
+          <div style="font-size:17px;">Go2</div>
+          <div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:2px;">CFO ROI Deep Dive</div>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <button class="btn ghost" id="loadSampleBtn">Load Sample SMB Case</button>
+        <button class="btn" id="resetBtn">Reset Inputs</button>
+        <button class="btn" id="csvBtn">Export CSV</button>
+        <button class="btn primary" id="printBtn">Export PDF / Print</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="container">
+    <section class="hero">
+      <div class="hero-grid">
+        <div class="card hero-copy">
+          <div class="eyebrow">Finance-led evaluation model</div>
+          <h1>Quantify the financial case for Go2 with CFO-grade precision.</h1>
+          <p class="hero-sub">
+            Model labor recovery, meeting efficiency, avoidable tool waste, and implementation cost using a transparent,
+            spreadsheet-style ROI framework. Built for SMB owners, operators, HR leaders, and especially finance teams
+            evaluating productivity coaching software — not surveillance software.
+          </p>
+
+          <div class="hero-stats">
+            <div class="stat">
+              <div class="value">42%</div>
+              <div class="label">Average productivity increase benchmark used as an upper-bound reference.</div>
+            </div>
+            <div class="stat">
+              <div class="value">15.2 hrs</div>
+              <div class="label">Weekly time saved per employee in high-fit environments.</div>
+            </div>
+            <div class="stat">
+              <div class="value">892%</div>
+              <div class="label">First-year ROI benchmark from top-performing deployments.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card hero-side">
+          <div class="metric-grid">
+            <div class="mini">
+              <div class="k">Audience</div>
+              <div class="v">CFO / FP&A / Ops</div>
+            </div>
+            <div class="mini">
+              <div class="k">Pricing model</div>
+              <div class="v">$6–12 / user / mo</div>
+            </div>
+            <div class="mini">
+              <div class="k">Positioning</div>
+              <div class="v">Coaching, not monitoring</div>
+            </div>
+            <div class="mini">
+              <div class="k">Use case</div>
+              <div class="v">SMBs, 5–500 employees</div>
+            </div>
+          </div>
+
+          <div class="formula">
+            <div class="formula-title">Core ROI formula</div>
+            <code>Annual Net Benefit = Recovered Labor Value
+                   + Meeting Efficiency Savings
+                   + Reduced Tool Waste
+                   - Go2 Subscription Cost
+                   - Onboarding / Admin Cost
+
+ROI % = (Annual Net Benefit / Total Annual Cost) × 100
+
+Payback Period (months) = Total Annual Cost / (Annual Gross Benefit / 12)</code>
+          </div>
+
+          <div class="badge">Finance note: All assumptions below are fully adjustable.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Build your ROI model</h2>
+          <div class="section-desc">Enter company financials and operating assumptions. Outputs update instantly.</div>
+        </div>
+      </div>
+
+      <div class="layout">
+        <aside class="card panel">
+          <h3 class="panel-title">Company inputs</h3>
+          <div class="panel-sub">Use loaded payroll cost where possible. For lean teams, salary + burden estimate is acceptable.</div>
+
+          <div class="input-grid">
+            <div class="field-row">
+              <div class="field">
+                <label for="employees">Employees in scope</label>
+                <input type="number" id="employees" min="5" max="500" step="1" value="85">
+                <div class="hint">Users analyzed for deployment.</div>
+              </div>
+              <div class="field">
+                <label for="annualSalary">Average loaded annual cost / employee</label>
+                <input type="number" id="annualSalary" min="20000" step="1000" value="78000">
+                <div class="hint">Salary + taxes + benefits + overhead.</div>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="workHours">Weekly paid hours / employee</label>
+                <input type="number" id="workHours" min="20" max="80" step="1" value="40">
+                <div class="hint">Typically 40 for full-time teams.</div>
+              </div>
+              <div class="field">
+                <label for="weeksPerYear">Working weeks / year</label>
+                <input type="number" id="weeksPerYear" min="40" max="52" step="1" value="48">
+                <div class="hint">Net of PTO / holidays if preferred.</div>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="field">
+              <label for="hoursSaved">Weekly productivity hours recovered / employee</label>
+              <div class="range-row">
+                <input type="range" id="hoursSaved" min="1" max="20" step="0.1" value="6.4">
+                <div class="range-value" id="hoursSavedVal">6.4 hrs</div>
+              </div>
+              <div class="hint">Conservative CFO scenario often falls in the 3–8 hour range.</div>
+            </div>
+
+            <div class="field">
+              <label for="captureRate">Value capture rate on time saved</label>
+              <div class="range-row">
+                <input type="range" id="captureRate" min="10" max="100" step="1" value="55">
+                <div class="range-value" id="captureRateVal">55%</div>
+              </div>
+              <div class="hint">Not all recovered time converts to economic value. Finance teams often use 30–70%.</div>
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="meetingHours">Average weekly meeting hours / employee</label>
+                <input type="number" id="meetingHours" min="0" max="30" step="0.5" value="8.5">
+                <div class="hint">Estimate across in-scope users.</div>
+              </div>
+              <div class="field">
+                <label for="meetingReduction">Meeting efficiency improvement</label>
+                <input type="number" id="meetingReduction" min="0" max="50" step="1" value="12">
+                <div class="hint">% of meeting time reduced or improved.</div>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="toolWaste">Annual avoidable tool / process waste</label>
+                <input type="number" id="toolWaste" min="0" step="1000" value="18000">
+                <div class="hint">Redundant software, unused workflows, duplicate effort.</div>
+              </div>
+              <div class="field">
+                <label for="adminHours">Annual admin / management hours for Go2</label>
+                <input type="number" id="adminHours" min="0" step="1" value="90">
+                <div class="hint">Owner time for rollout, review, and team coaching.</div>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="pricePerUser">Go2 price / user / month</label>
+                <input type="number" id="pricePerUser" min="6" max="12" step="0.5" value="9">
+                <div class="hint">Expected range: $6–12.</div>
+              </div>
+              <div class="field">
+                <label for="setupCost">One-time onboarding / setup cost</label>
+                <input type="number" id="setupCost" min="0" step="500" value="3500">
+                <div class="hint">Training, onboarding, implementation support.</div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Scenario</label>
+              <div class="toggle-row" id="scenarioToggle">
+                <div class="pill" data-scenario="conservative">Conservative</div>
+                <div class="pill active" data-scenario="expected">Expected</div>
+                <div class="pill" data-scenario="aggressive">Aggressive</div>
+                <div class="pill" data-scenario="benchmark">Go2 Benchmark</div>
+              </div>
+              <div class="hint">Scenario buttons adjust recovery assumptions while preserving headcount and cost structure.</div>
+            </div>
+          </div>
+        </aside>
+
+        <section class="results-wrap">
+          <div class="card panel">
+            <h3 class="panel-title">Executive summary</h3>
+            <div class="panel-sub">Primary outputs optimized for CFO review, budgeting, and board-level justification.</div>
+
+            <div class="summary-grid">
+              <div class="summary-card good">
+                <div class="tag">Annual net benefit</div>
+                <div class="big" id="annualNetBenefit">$0</div>
+                <div class="sub">Gross value created minus subscription, implementation, and admin cost.</div>
+              </div>
+              <div class="summary-card blue">
+                <div class="tag">ROI</div>
+                <div class="big" id="roiPct">0%</div>
+                <div class="sub">Net benefit divided by total annual cost.</div>
+              </div>
+              <div class="summary-card gold">
+                <div class="tag">Payback period</div>
+                <div class="big" id="paybackMonths">0.0 mo</div>
+                <div class="sub">Months to recover full first-year investment from gross benefit.</div>
+              </div>
+              <div class="summary-card red">
+                <div class="tag">Year 1 total cost</div>
+                <div class="big" id="totalCost">$0</div>
+                <div class="sub">Subscription + setup + admin time cost.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="results-grid">
+            <div class="card table-card">
+              <div class="table-head">
+                <div>
+                  <h3 class="table-title">Detailed financial model</h3>
+                  <div class="section-desc">Line-item structure mirrors an internal ROI worksheet.</div>
+                </div>
+                <div class="badge" id="scenarioBadge">Expected scenario</div>
+              </div>
+
+              <div class="table-scroll">
+                <table id="roiTable">
+                  <thead>
+                    <tr>
+                      <th>Line item</th>
+                      <th>Formula / basis</th>
+                      <th class="num">Annual value</th>
+                    </tr>
+                  </thead>
+                  <tbody id="roiTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card chart-card">
+              <div class="chart-wrap">
+                <div class="chart-box">
+                  <h3 class="chart-title">Benefit vs cost breakdown</h3>
+                  <canvas id="barChart" width="520" height="280"></canvas>
+                  <div class="legend">
+                    <div class="legend-item"><span class="dot" style="background:#38bdf8;"></span> Recovered labor value</div>
+                    <div class="legend-item"><span class="dot" style="background:#22c55e;"></span> Meeting savings</div>
+                    <div class="legend-item"><span class="dot" style="background:#f59e0b;"></span> Tool/process waste reduced</div>
+                    <div class="legend-item"><span class="dot" style="background:#ef4444;"></span> Total cost</div>
+                  </div>
+                </div>
+
+                <div class="chart-box">
+                  <h3 class="chart-title">12-month cumulative payback</h3>
+                  <canvas id="lineChart" width="520" height="280"></canvas>
+                  <div class="legend">
+                    <div class="legend-item"><span class="dot" style="background:#93c5fd;"></span> Cumulative gross benefit</div>
+                    <div class="legend-item"><span class="dot" style="background:#fca5a5;"></span> Cumulative total cost</div>
+                    <div class="legend-item"><span class="dot" style="background:#86efac;"></span> Cumulative net benefit</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="assumptions">
+            <div class="card panel">
+              <h3 class="panel-title">Interpretation notes</h3>
+              <div class="note-list">
+                <div class="note">
+                  <strong>Recovered labor value</strong> is the largest driver. To remain finance-rigorous, the model multiplies time saved by a
+                  <strong>value capture rate</strong> rather than assuming 100% monetization.
+                </div>
+                <div class="note">
+                  <strong>Meeting savings</strong> are separated from broader productivity recovery so finance teams can choose whether to treat
+                  them as incremental or overlapping. This model treats them as additive but visible.
+                </div>
+                <div class="note">
+                  <strong>Admin time</strong> is costed using the same average hourly loaded rate to avoid understating internal effort.
+                </div>
+                <div class="note">
+                  <strong>Go2</strong> is positioned as AI productivity coaching — insight into work patterns that supports smarter workflows,
+                  improved habits, and management coaching, rather than employee surveillance.
+                </div>
+              </div>
+            </div>
+
+            <div class="card panel">
+              <h3 class="panel-title">Recommended CFO sensitivity bands</h3>
+              <div class="note-list">
+                <div class="note">
+                  <strong>Conservative:</strong> 2–4 hours saved per week, 25–40% capture rate, 5–10% meeting efficiency gain.
+                </div>
+                <div class="note">
+                  <strong>Expected:</strong> 4–8 hours saved per week, 40–65% capture rate, 10–15% meeting efficiency gain.
+                </div>
+                <div class="note">
+                  <strong>Aggressive:</strong> 8–12 hours saved per week, 65–85% capture rate, 15–20% meeting efficiency gain.
+                </div>
+                <div class="note">
+                  <strong>Benchmark anchor:</strong> Go2 cites 42% average productivity increase, 15.2 hours saved/week/employee, and 892% ROI in year one.
+                  Use this as an upside case, not a base case, for board materials.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <div class="footer">
+      Go2 ROI Deep Dive • Finance model for SMB teams (5–500 employees) • Export CSV for spreadsheet analysis or print to PDF for investment memos.
+    </div>
+  </main>
+
+  <script>
+    const els = {
+      employees: document.getElementById('employees'),
+      annualSalary: document.getElementById('annualSalary'),
+      workHours: document.getElementById('workHours'),
+      weeksPerYear: document.getElementById('weeksPerYear'),
+      hoursSaved: document.getElementById('hoursSaved'),
+      captureRate: document.getElementById('captureRate'),
+      meetingHours: document.getElementById('meetingHours'),
+      meetingReduction: document.getElementById('meetingReduction'),
+      toolWaste: document.getElementById('toolWaste'),
+      adminHours: document.getElementById('adminHours'),
+      pricePerUser: document.getElementById('pricePerUser'),
+      setupCost: document.getElementById('setupCost'),
+      hoursSavedVal: document.getElementById('hoursSavedVal'),
+      captureRateVal: document.getElementById('captureRateVal'),
+      annualNetBenefit: document.getElementById('annualNetBenefit'),
+      roiPct: document.getElementById('roiPct'),
+      paybackMonths: document.getElementById('paybackMonths'),
+      totalCost: document.getElementById('totalCost'),
+      roiTableBody: document.getElementById('roiTableBody'),
+      csvBtn: document.getElementById('csvBtn'),
+      printBtn: document.getElementById('printBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      loadSampleBtn: document.getElementById('loadSampleBtn'),
+      scenarioBadge: document.getElementById('scenarioBadge'),
+      scenarioToggle: document.getElementById('scenarioToggle'),
+      barChart: document.getElementById('barChart'),
+      lineChart: document.getElementById('lineChart'),
+    };
+
+    const defaults = {
+      employees: 85,
+      annualSalary: 78000,
+      workHours: 40,
+      weeksPerYear: 48,
+      hoursSaved: 6.4,
+      captureRate: 55,
+      meetingHours: 8.5,
+      meetingReduction: 12,
+      toolWaste: 18000,
+      adminHours: 90,
+      pricePerUser: 9,
+      setupCost: 3500
+    };
+
+    let currentScenario = 'expected';
+
+    function num(v){ return parseFloat(v) || 0; }
+    function money(v){
+      return new Intl.NumberFormat('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0}).format(v);
+    }
+    function money1(v){
+      return new Intl.NumberFormat('en-US', {style:'currency', currency:'USD', maximumFractionDigits:1}).format(v);
+    }
+    function pct(v){ return `${v.toFixed(1)}%`; }
+
+    function applyScenario(name){
+      currentScenario = name;
+      document.querySelectorAll('.pill').forEach(p => p.classList.toggle('active', p.dataset.scenario === name));
+
+      const presets = {
+        conservative: { hoursSaved: 3.2, captureRate: 32, meetingReduction: 7 },
+        expected:     { hoursSaved: 6.4, captureRate: 55, meetingReduction: 12 },
+        aggressive:   { hoursSaved: 9.8, captureRate: 74, meetingReduction: 18 },
+        benchmark:    { hoursSaved: 15.2, captureRate: 72, meetingReduction: 22 }
+      };
+
+      const p = presets[name];
+      if(!p) return;
+      els.hoursSaved.value = p.hoursSaved;
+      els.captureRate.value = p.captureRate;
+      els.meetingReduction.value = p.meetingReduction;
+      update();
+    }
+
+    function getModel(){
+      const employees = num(els.employees.value);
+      const annualSalary = num(els.annualSalary.value);
+      const workHours = num(els.workHours.value);
+      const weeksPerYear = num(els.weeksPerYear.value);
+      const hoursSaved = num(els.hoursSaved.value);
+      const captureRate = num(els.captureRate.value) / 100;
+      const meetingHours = num(els.meetingHours.value);
+      const meetingReduction = num(els.meetingReduction.value) / 100;
+      const toolWaste = num(els.toolWaste.value);
+      const adminHours = num(els.adminHours.value);
+      const pricePerUser = num(els.pricePerUser.value);
+      const setupCost = num(els.setupCost.value);
+
+      const annualHoursPerEmployee = workHours * weeksPerYear;
+      const hourlyRate = annualHoursPerEmployee > 0 ? annualSalary / annualHoursPerEmployee : 0;
+
+      const grossTimeRecoveredHours = employees * hoursSaved * weeksPerYear;
+      const recoveredLaborValue = grossTimeRecoveredHours * hourlyRate * captureRate;
+
+      const meetingHoursRecovered = employees * meetingHours * meetingReduction * weeksPerYear;
+      const meetingSavings = meetingHoursRecovered * hourlyRate * captureRate;
+
+      const subscriptionCost = employees * pricePerUser * 12;
+      const adminCost = adminHours * hourlyRate;
+      const totalCost = subscriptionCost + setupCost + adminCost;
+
+      const grossBenefit = recoveredLaborValue + meetingSavings + toolWaste;
+      const netBenefit = grossBenefit - totalCost;
+      const roi = totalCost > 0 ? (netBenefit / totalCost) * 100 : 0;
+      const paybackMonths = grossBenefit > 0 ? totalCost / (grossBenefit / 12) : 0;
+
+      return {
+        employees, annualSalary, workHours, weeksPerYear, hoursSaved, captureRate, meetingHours, meetingReduction,
+        toolWaste, adminHours, pricePerUser, setupCost, annualHoursPerEmployee, hourlyRate,
+        grossTimeRecoveredHours, recoveredLaborValue, meetingHoursRecovered, meetingSavings,
+        subscriptionCost, adminCost, totalCost, grossBenefit, netBenefit, roi, paybackMonths
+      };
+    }
+
+    function renderTable(m){
+      const rows = [
+        {
+          item: 'Employees in scope',
+          basis: `${m.employees.toFixed(0)} users`,
+          value: null,
+          display: m.employees.toFixed(0)
+        },
+        {
+          item: 'Average loaded hourly cost',
+          basis: `${money(m.annualSalary)} ÷ ${m.annualHoursPerEmployee.toFixed(0)} hrs/year`,
+          value: m.hourlyRate,
+          display: money1(m.hourlyRate)
+        },
+        {
+          item: 'Recovered productivity hours',
+          basis: `${m.employees} × ${m.hoursSaved.toFixed(1)} hrs/week × ${m.weeksPerYear} weeks`,
+          value: m.grossTimeRecoveredHours,
+          display: `${m.grossTimeRecoveredHours.toLocaleString(undefined,{maximumFractionDigits:0})} hrs`
+        },
+        {
+          item: 'Recovered labor value',
+          basis: `Recovered hours × hourly cost × ${(m.captureRate*100).toFixed(0)}% capture`,
+          value: m.recoveredLaborValue
+        },
+        {
+          item: 'Meeting hours improved',
+          basis: `${m.employees} × ${m.meetingHours.toFixed(1)} hrs/week × ${(m.meetingReduction*100).toFixed(0)}% × ${m.weeksPerYear} weeks`,
+          value: m.meetingHoursRecovered,
+          display: `${m.meetingHoursRecovered.toLocaleString(undefined,{maximumFractionDigits:0})} hrs`
+        },
+        {
+          item: 'Meeting efficiency savings',
+          basis: `Meeting hours improved × hourly cost × ${(m.captureRate*100).toFixed(0)}% capture`,
+          value: m.meetingSavings
+        },
+        {
+          item: 'Avoidable tool/process waste reduced',
+          basis: `Direct annual estimate`,
+          value: m.toolWaste
+        },
+        {
+          item: 'Go2 subscription cost',
+          basis: `${m.employees} × ${money(m.pricePerUser)} × 12 months`,
+          value: -m.subscriptionCost
+        },
+        {
+          item: 'Onboarding / setup cost',
+          basis: `One-time first-year cost`,
+          value: -m.setupCost
+        },
+        {
+          item: 'Internal admin cost',
+          basis: `${m.adminHours} hrs × ${money1(m.hourlyRate)}`,
+          value: -m.adminCost
+        },
+        {
+          item: 'Total gross benefit',
+          basis: `Recovered labor + meetings + tool waste`,
+          value: m.grossBenefit,
+          strong: true
+        },
+        {
+          item: 'Total annual cost',
+          basis: `Subscription + setup + admin`,
+          value: -m.totalCost,
+          strong: true
+        },
+        {
+          item: 'Annual net benefit',
+          basis: `Gross benefit - total cost`,
+          value: m.netBenefit,
+          strong: true
+        },
+        {
+          item: 'ROI',
+          basis: `Net benefit ÷ total cost`,
+          value: null,
+          display: pct(m.roi),
+          strong: true
+        },
+        {
+          item: 'Payback period',
+          basis: `Total cost ÷ monthly gross benefit`,
+          value: null,
+          display: `${m.paybackMonths.toFixed(1)} months`,
+          strong: true
+        }
+      ];
+
+      els.roiTableBody.innerHTML = rows.map(r => {
+        let cls = '';
+        if (typeof r.value === 'number') cls = r.value > 0 ? 'positive' : (r.value < 0 ? 'negative' : 'neutral');
+        return `
+          <tr>
+            <td class="${r.strong ? 'strong' : ''}">${r.item}</td>
+            <td class="muted">${r.basis}</td>
+            <td class="num ${cls} ${r.strong ? 'strong' : ''}">${r.display ?? money(r.value)}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function drawBarChart(m){
+      const c = els.barChart;
+      const ctx = c.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const rect = c.getBoundingClientRect();
+      c.width = rect.width * dpr;
+      c.height = 280 * dpr;
+      ctx.scale(dpr, dpr);
+
+      const w = rect.width;
+      const h = 280;
+      ctx.clearRect(0,0,w,h);
+
+      const data = [
+        {label:'Recovered labor', value:m.recoveredLaborValue, color:'#38bdf8'},
+        {label:'Meeting savings', value:m.meetingSavings, color:'#22c55e'},
+        {label:'Tool waste', value:m.toolWaste, color:'#f59e0b'},
+        {label:'Total cost', value:m.totalCost, color:'#ef4444'}
+      ];
+
+      const max = Math.max(...data.map(d => d.value), 1);
+      const left = 56, right = 14, top = 18, bottom = 36;
+      const cw = w - left - right;
+      const ch = h - top - bottom;
+
+      ctx.strokeStyle = 'rgba(154,167,189,.14)';
+      ctx.lineWidth = 1;
+      ctx.font = '12px Inter';
+      ctx.fillStyle = '#93a4bb';
+
+      for(let i=0;i<=4;i++){
+        const y = top + ch - (ch/4)*i;
+        ctx.beginPath();
+        ctx.moveTo(left, y);
+        ctx.lineTo(w-right, y);
+        ctx.stroke();
+        const val = max * (i/4);
+        ctx.fillText(money(val), 6, y+4);
+      }
+
+      const barSpace = cw / data.length;
+      const barW = Math.min(74, barSpace * 0.52);
+
+      data.forEach((d,i) => {
+        const x = left + barSpace*i + (barSpace-barW)/2;
+        const bh = (d.value/max) * ch;
+        const y = top + ch - bh;
+
+        const grad = ctx.createLinearGradient(0,y,0,y+bh);
+        grad.addColorStop(0, d.color);
+        grad.addColorStop(1, 'rgba(255,255,255,.18)');
+        ctx.fillStyle = grad;
+        roundRect(ctx, x, y, barW, bh, 12, true, false);
+
+        ctx.fillStyle = '#dbe5f3';
+        ctx.textAlign = 'center';
+        ctx.font = '600 12px Inter';
+        ctx.fillText(d.label, x + barW/2, h - 12);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '700 12px Inter';
+        ctx.fillText(shortMoney(d.value), x + barW/2, Math.max(14, y - 8));
+      });
+
+      ctx.textAlign = 'left';
+    }
+
+    function drawLineChart(m){
+      const c = els.lineChart;
+      const ctx = c.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const rect = c.getBoundingClientRect();
+      c.width = rect.width * dpr;
+      c.height = 280 * dpr;
+      ctx.scale(dpr, dpr);
+
+      const w = rect.width;
+      const h = 280;
+      ctx.clearRect(0,0,w,h);
+
+      const left = 52, right = 16, top = 18, bottom = 34;
+      const cw = w - left - right;
+      const ch = h - top - bottom;
+
+      const monthlyGross = m.grossBenefit / 12;
+      const monthlySub = m.subscriptionCost / 12;
+      const months = Array.from({length:12}, (_,i) => i+1);
+
+      const grossSeries = months.map(mon => monthlyGross * mon);
+      const costSeries = months.map(mon => m.setupCost + m.adminCost * (mon/12) + monthlySub * mon);
+      const netSeries = months.map((_,i) => grossSeries[i] - costSeries[i]);
+
+      const max = Math.max(...grossSeries, ...costSeries, ...netSeries, 1);
+      const min = Math.min(0, ...netSeries);
+      const range = max - min || 1;
+
+      ctx.strokeStyle = 'rgba(154,167,189,.14)';
+      ctx.fillStyle = '#93a4bb';
+      ctx.font = '12px Inter';
+
+      for(let i=0;i<=4;i++){
+        const val = min + (range/4)*i;
+        const y = top + ch - ((val - min)/range) * ch;
+        ctx.beginPath();
+        ctx.moveTo(left, y);
+        ctx.lineTo(w-right, y);
+        ctx.stroke();
+        ctx.fillText(money(val), 6, y+4);
+      }
+
+      months.forEach((mth, i) => {
+        const x = left + (cw/11)*i;
+        ctx.beginPath();
+        ctx.moveTo(x, top);
+        ctx.lineTo(x, top+ch);
+        ctx.strokeStyle = 'rgba(154,167,189,.06)';
+        ctx.stroke();
+
+        ctx.fillStyle = '#93a4bb';
+        ctx.textAlign = 'center';
+        ctx.fillText(`M${mth}`, x, h - 10);
+      });
+
+      drawSeries(ctx, grossSeries, '#93c5fd', left, top, cw, ch, min, range);
+      drawSeries(ctx, costSeries, '#fca5a5', left, top, cw, ch, min, range);
+      drawSeries(ctx, netSeries, '#86efac', left, top, cw, ch, min, range);
+
+      ctx.textAlign = 'left';
+    }
+
+    function drawSeries(ctx, series, color, left, top, cw, ch, min, range){
+      ctx.beginPath();
+      series.forEach((v,i) => {
+        const x = left + (cw/11)*i;
+        const y = top + ch - ((v - min)/range) * ch;
+        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      });
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      series.forEach((v,i) => {
+        const x = left + (cw/11)*i;
+        const y = top + ch - ((v - min)/range) * ch;
+        ctx.beginPath();
+        ctx.arc(x,y,4,0,Math.PI*2);
+        ctx.fillStyle = color;
+        ctx.fill();
+      });
+    }
+
+    function roundRect(ctx, x, y, width, height, radius, fill, stroke){
+      if (typeof radius === 'number') radius = {tl: radius, tr: radius, br: radius, bl: radius};
+      ctx.beginPath();
+      ctx.moveTo(x + radius.tl, y);
+      ctx.lineTo(x + width - radius.tr, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius.tr);
+      ctx.lineTo(x + width, y + height - radius.br);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius.br, y + height);
+      ctx.lineTo(x + radius.bl, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius.bl);
+      ctx.lineTo(x, y + radius.tl);
+      ctx.quadraticCurveTo(x, y, x + radius.tl, y);
+      ctx.closePath();
+      if(fill) ctx.fill();
+      if(stroke) ctx.stroke();
+    }
+
+    function shortMoney(v){
+      if(v >= 1000000) return `$${(v/1000000).toFixed(2)}M`;
+      if(v >= 1000) return `$${(v/1000).toFixed(0)}k`;
+      return money(v);
+    }
+
+    function update(){
+      els.hoursSavedVal.textContent = `${num(els.hoursSaved.value).toFixed(1)} hrs`;
+      els.captureRateVal.textContent = `${num(els.captureRate.value).toFixed(0)}%`;
+
+      const m = getModel();
+
+      els.annualNetBenefit.textContent = money(m.netBenefit);
+      els.roiPct.textContent = pct(m.roi);
+      els.paybackMonths.textContent = `${m.paybackMonths.toFixed(1)} mo`;
+      els.totalCost.textContent = money(m.totalCost);
+
+      els.scenarioBadge.textContent =
+        currentScenario === 'benchmark' ? 'Go2 benchmark scenario' :
+        `${currentScenario.charAt(0).toUpperCase() + currentScenario.slice(1)} scenario`;
+
+      renderTable(m);
+      drawBarChart(m);
+      drawLineChart(m);
+    }
+
+    function exportCSV(){
+      const rows = [];
+      const model = getModel();
+
+      rows.push(['Go2 CFO ROI Deep Dive']);
+      rows.push(['Scenario', currentScenario]);
+      rows.push([]);
+      rows.push(['Inputs']);
+      rows.push(['Employees in scope', model.employees]);
+      rows.push(['Average loaded annual cost per employee', model.annualSalary]);
+      rows.push(['Weekly paid hours', model.workHours]);
+      rows.push(['Working weeks per year', model.weeksPerYear]);
+      rows.push(['Weekly productivity hours recovered per employee', model.hoursSaved]);
+      rows.push(['Value capture rate', model.captureRate]);
+      rows.push(['Weekly meeting hours per employee', model.meetingHours]);
+      rows.push(['Meeting efficiency improvement', model.meetingReduction]);
+      rows.push(['Annual avoidable tool/process waste', model.toolWaste]);
+      rows.push(['Annual admin hours', model.adminHours]);
+      rows.push(['Go2 price per user per month', model.pricePerUser]);
+      rows.push(['Setup cost', model.setupCost]);
+      rows.push([]);
+      rows.push(['Outputs']);
+      rows.push(['Average loaded hourly cost', model.hourlyRate]);
+      rows.push(['Recovered productivity hours', model.grossTimeRecoveredHours]);
+      rows.push(['Recovered labor value', model.recoveredLaborValue]);
+      rows.push(['Meeting hours improved', model.meetingHoursRecovered]);
+      rows.push(['Meeting efficiency savings', model.meetingSavings]);
+      rows.push(['Tool/process waste reduced', model.toolWaste]);
+      rows.push(['Subscription cost', model.subscriptionCost]);
+      rows.push(['Admin cost', model.adminCost]);
+      rows.push(['Total annual cost', model.totalCost]);
+      rows.push(['Gross benefit', model.grossBenefit]);
+      rows.push(['Net benefit', model.netBenefit]);
+      rows.push(['ROI %', model.roi]);
+      rows.push(['Payback months', model.paybackMonths]);
+
+      const csv = rows.map(row => row.map(cell => {
+        const str = String(cell ?? '');
+        return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+      }).join(',')).join('\n');
+
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'go2-cfo-roi-model.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function resetInputs(){
+      Object.entries(defaults).forEach(([k,v]) => els[k].value = v);
+      currentScenario = 'expected';
+      document.querySelectorAll('.pill').forEach(p => p.classList.toggle('active', p.dataset.scenario === 'expected'));
+      update();
+    }
+
+    function loadSample(){
+      els.employees.value = 140;
+      els.annualSalary.value = 84000;
+      els.workHours.value = 40;
+      els.weeksPerYear.value = 48;
+      els.hoursSaved.value = 5.8;
+      els.captureRate.value = 52;
+      els.meetingHours.value = 9.5;
+      els.meetingReduction.value = 11;
+      els.toolWaste.value = 36000;
+      els.adminHours.value = 120;
+      els.pricePerUser.value = 10;
+      els.setupCost.value = 6000;
+      currentScenario = 'expected';
+      document.querySelectorAll('.pill').forEach(p => p.classList.toggle('active', p.dataset.scenario === 'expected'));
+      update();
+    }
+
+    [
+      'employees','annualSalary','workHours','weeksPerYear','hoursSaved','captureRate',
+      'meetingHours','meetingReduction','toolWaste','adminHours','pricePerUser','setupCost'
+    ].forEach(id => els[id].addEventListener('input', update));
+
+    els.csvBtn.addEventListener('click', exportCSV);
+    els.printBtn.addEventListener('click', () => window.print());
+    els.resetBtn.addEventListener('click', resetInputs);
+    els.loadSampleBtn.addEventListener('click', loadSample);
+
+    els.scenarioToggle.addEventListener('click', (e) => {
+      const pill = e.target.closest('.pill');
+      if(!pill) return;
+      applyScenario(pill.dataset.scenario);
+    });
+
+    window.addEventListener('resize', update);
+
+    update();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Go2 Productivity Weather Map</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#08111f;
+      --bg-2:#0d1728;
+      --panel:rgba(14,24,40,0.78);
+      --panel-strong:#101c30;
+      --panel-soft:rgba(255,255,255,0.06);
+      --border:rgba(255,255,255,0.12);
+      --text:#e9f1ff;
+      --muted:#9fb2cc;
+      --muted-2:#7f94b0;
+      --brand:#5ec8ff;
+      --brand-2:#7d8cff;
+      --success:#61e5a8;
+      --warn:#ffcf5a;
+      --danger:#ff7a7a;
+      --storm:#7a8ba8;
+      --card-shadow:0 20px 60px rgba(0,0,0,.35);
+      --radius:20px;
+      --radius-sm:14px;
+      --grid:rgba(255,255,255,.04);
+    }
+
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:
+      radial-gradient(circle at 20% 20%, rgba(94,200,255,.16), transparent 22%),
+      radial-gradient(circle at 80% 10%, rgba(125,140,255,.14), transparent 20%),
+      radial-gradient(circle at 60% 80%, rgba(97,229,168,.08), transparent 18%),
+      linear-gradient(180deg, #06101d 0%, #0a1323 45%, #09121f 100%);
+      color:var(--text);font-family:"Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100%}
+    body{overflow-x:hidden}
+
+    .bg-grid{
+      position:fixed; inset:0; pointer-events:none; opacity:.55;
+      background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size:32px 32px;
+      mask-image:radial-gradient(circle at 50% 30%, black 35%, transparent 90%);
+    }
+
+    .aurora{
+      position:fixed; inset:auto -15% -10% -15%; height:45vh; pointer-events:none; filter:blur(70px); opacity:.35;
+      background:
+        radial-gradient(circle at 20% 40%, rgba(94,200,255,.28), transparent 25%),
+        radial-gradient(circle at 70% 50%, rgba(125,140,255,.26), transparent 28%),
+        radial-gradient(circle at 45% 60%, rgba(97,229,168,.14), transparent 22%);
+    }
+
+    .container{
+      width:min(1380px, calc(100% - 32px));
+      margin:0 auto;
+      padding:28px 0 36px;
+      position:relative;
+      z-index:1;
+    }
+
+    .hero{
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap:20px;
+      align-items:stretch;
+      margin-bottom:20px;
+    }
+
+    .panel{
+      background:var(--panel);
+      border:1px solid var(--border);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius:var(--radius);
+      box-shadow:var(--card-shadow);
+    }
+
+    .hero-main{
+      padding:28px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .hero-main::before{
+      content:"";
+      position:absolute;
+      inset:auto -60px -60px auto;
+      width:240px;height:240px;border-radius:50%;
+      background:radial-gradient(circle, rgba(94,200,255,.22), transparent 65%);
+      pointer-events:none;
+    }
+
+    .eyebrow{
+      display:inline-flex;align-items:center;gap:10px;
+      color:#cfe6ff;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+      padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+      margin-bottom:18px;
+    }
+
+    .eyebrow-dot{
+      width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,var(--success),var(--brand));
+      box-shadow:0 0 0 6px rgba(97,229,168,.12);
+    }
+
+    h1{
+      margin:0 0 12px;
+      font-size:clamp(2rem, 4vw, 3.8rem);
+      line-height:1.02;
+      letter-spacing:-.04em;
+      max-width:12ch;
+    }
+
+    .lead{
+      color:var(--muted);
+      font-size:1.04rem;
+      line-height:1.7;
+      max-width:64ch;
+      margin:0 0 24px;
+    }
+
+    .brand-inline{
+      color:#fff;
+      background:linear-gradient(90deg, #dff6ff 0%, #9edfff 40%, #8ea0ff 100%);
+      -webkit-background-clip:text;
+      background-clip:text;
+      color:transparent;
+    }
+
+    .hero-actions{
+      display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px;
+    }
+
+    .btn{
+      border:none;cursor:pointer;
+      display:inline-flex;align-items:center;justify-content:center;gap:10px;
+      padding:13px 18px;border-radius:14px;
+      font-weight:700;font-size:.95rem;transition:.22s ease;
+      text-decoration:none;
+    }
+
+    .btn-primary{
+      background:linear-gradient(135deg, var(--brand), var(--brand-2));
+      color:#06101d;
+      box-shadow:0 12px 26px rgba(94,200,255,.22);
+    }
+
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 16px 30px rgba(94,200,255,.28)}
+    .btn-secondary{
+      color:var(--text);
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+    }
+    .btn-secondary:hover{background:rgba(255,255,255,.07)}
+
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+    }
+
+    .stat{
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:18px;
+      padding:16px;
+    }
+
+    .stat-value{
+      font-size:1.6rem;font-weight:800;letter-spacing:-.04em;margin-bottom:4px;
+    }
+
+    .stat-label{
+      color:var(--muted-2);font-size:.88rem;line-height:1.4;
+    }
+
+    .hero-side{
+      padding:22px;
+      display:flex;flex-direction:column;gap:16px;
+    }
+
+    .mini-card{
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:18px;
+      padding:16px;
+    }
+
+    .mini-top{
+      display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;
+    }
+
+    .mini-title{font-size:.96rem;font-weight:700}
+    .mini-sub{font-size:.82rem;color:var(--muted-2)}
+
+    .forecast-row{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:10px;
+    }
+
+    .forecast-pill{
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px;
+      padding:12px 8px;text-align:center;
+    }
+
+    .forecast-pill .emoji{font-size:1.45rem;display:block;margin-bottom:6px}
+    .forecast-pill .day{font-size:.78rem;color:var(--muted)}
+    .forecast-pill .num{font-size:.85rem;font-weight:700;margin-top:4px}
+
+    .legend{
+      display:flex;flex-wrap:wrap;gap:10px;
+    }
+
+    .legend-item{
+      display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border-radius:999px;
+      background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);font-size:.86rem;color:var(--muted);
+    }
+
+    .swatch{
+      width:10px;height:10px;border-radius:50%;
+      box-shadow:0 0 0 5px rgba(255,255,255,.05);
+    }
+
+    .swatch.sunny{background:var(--success)}
+    .swatch.partly{background:var(--warn)}
+    .swatch.cloudy{background:#8fb3d8}
+    .swatch.stormy{background:var(--danger)}
+
+    .dashboard{
+      display:grid;
+      grid-template-columns: 1fr 360px;
+      gap:20px;
+      align-items:start;
+    }
+
+    .map-panel{
+      padding:22px;
+      min-height:720px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .panel-head{
+      display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;
+      margin-bottom:18px;
+    }
+
+    .title-wrap h2{
+      margin:0 0 6px;font-size:1.45rem;letter-spacing:-.03em;
+    }
+    .title-wrap p{
+      margin:0;color:var(--muted);font-size:.95rem;max-width:70ch;line-height:1.6;
+    }
+
+    .controls{
+      display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;
+    }
+
+    .segmented{
+      display:inline-flex;padding:4px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;
+      gap:4px;
+    }
+
+    .seg-btn{
+      border:none;background:transparent;color:var(--muted);padding:10px 12px;border-radius:10px;font-weight:700;font-size:.86rem;cursor:pointer;transition:.2s ease;
+    }
+
+    .seg-btn.active{background:linear-gradient(135deg, rgba(94,200,255,.22), rgba(125,140,255,.18));color:#fff}
+
+    .org-chart{
+      position:relative;
+      min-height:620px;
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,.08);
+      background:
+        radial-gradient(circle at top center, rgba(125,140,255,.10), transparent 30%),
+        linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      overflow:auto;
+      padding:28px 22px 34px;
+      scrollbar-width:thin;
+      scrollbar-color:rgba(255,255,255,.2) transparent;
+    }
+
+    .org-chart::-webkit-scrollbar{height:10px;width:10px}
+    .org-chart::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:999px}
+
+    .tree{
+      min-width:980px;
+      position:relative;
+    }
+
+    .level{
+      display:flex;
+      justify-content:center;
+      gap:26px;
+      position:relative;
+      margin-bottom:34px;
+      flex-wrap:nowrap;
+    }
+
+    .node{
+      width:220px;
+      position:relative;
+      z-index:2;
+    }
+
+    .node-card{
+      position:relative;
+      border-radius:20px;
+      padding:16px;
+      border:1px solid rgba(255,255,255,.09);
+      background:linear-gradient(180deg, rgba(16,28,48,.88), rgba(12,22,37,.88));
+      box-shadow:0 16px 34px rgba(0,0,0,.25);
+      cursor:pointer;
+      transition:.25s ease;
+      overflow:hidden;
+    }
+
+    .node-card:hover{transform:translateY(-4px);border-color:rgba(94,200,255,.35)}
+    .node-card.active{outline:2px solid rgba(94,200,255,.45);border-color:rgba(94,200,255,.35)}
+
+    .node-card::before{
+      content:"";
+      position:absolute;inset:auto -30px -30px auto;width:110px;height:110px;border-radius:50%;
+      background:radial-gradient(circle, rgba(255,255,255,.10), transparent 65%);
+      pointer-events:none;
+    }
+
+    .node-top{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;
+    }
+
+    .person{
+      display:flex;align-items:center;gap:12px;min-width:0;
+    }
+
+    .avatar{
+      width:42px;height:42px;border-radius:14px;
+      display:grid;place-items:center;
+      font-weight:800;font-size:.9rem;
+      color:#08111f;
+      background:linear-gradient(135deg,#dff6ff,#8ed9ff 60%, #8d99ff);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.4);
+      flex:0 0 auto;
+    }
+
+    .identity{min-width:0}
+    .identity .name{
+      font-size:.95rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .identity .role{
+      font-size:.78rem;color:var(--muted-2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+
+    .weather-badge{
+      min-width:52px;height:52px;border-radius:16px;
+      display:grid;place-items:center;
+      font-size:1.35rem;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      flex:0 0 auto;
+    }
+
+    .node-score{
+      display:flex;justify-content:space-between;align-items:center;
+      margin-bottom:10px;
+      color:var(--muted);
+      font-size:.83rem;
+    }
+
+    .score-strong{color:#fff;font-weight:800;font-size:.96rem}
+
+    .bar{
+      width:100%;height:10px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden;margin-bottom:12px;
+      border:1px solid rgba(255,255,255,.05);
+    }
+
+    .bar > span{
+      display:block;height:100%;border-radius:inherit;
+      background:linear-gradient(90deg, var(--success), #8df0c0);
+      box-shadow:0 0 14px rgba(97,229,168,.28);
+    }
+
+    .bar.warn > span{background:linear-gradient(90deg, var(--warn), #ffe398);box-shadow:0 0 14px rgba(255,207,90,.18)}
+    .bar.cloud > span{background:linear-gradient(90deg, #91b7de, #b6d5f1);box-shadow:0 0 14px rgba(145,183,222,.16)}
+    .bar.storm > span{background:linear-gradient(90deg, #ff8f8f, #ffb4b4);box-shadow:0 0 14px rgba(255,122,122,.18)}
+
+    .micro-metrics{
+      display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+    }
+
+    .micro{
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:12px;
+      padding:8px;
+      text-align:center;
+    }
+
+    .micro .k{
+      font-size:.7rem;color:var(--muted-2);margin-bottom:4px;
+    }
+    .micro .v{
+      font-size:.82rem;font-weight:700;
+    }
+
+    .connector{
+      position:absolute;
+      left:50%;
+      transform:translateX(-50%);
+      top:-34px;
+      width:2px;height:34px;
+      background:linear-gradient(180deg, rgba(255,255,255,.22), rgba(94,200,255,.18));
+      z-index:1;
+    }
+
+    .line-h{
+      position:absolute;
+      height:2px;
+      background:linear-gradient(90deg, rgba(255,255,255,.18), rgba(94,200,255,.24), rgba(255,255,255,.18));
+      top:-34px;
+      z-index:1;
+    }
+
+    .aside{
+      display:flex;flex-direction:column;gap:16px;
+      position:sticky;top:18px;
+    }
+
+    .detail-panel{padding:20px}
+    .detail-empty{
+      min-height:280px;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+      color:var(--muted);
+      gap:10px;padding:12px;
+    }
+
+    .detail-empty .icon{
+      width:68px;height:68px;border-radius:20px;display:grid;place-items:center;font-size:1.8rem;
+      background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+    }
+
+    .detail-header{
+      display:flex;align-items:center;gap:14px;margin-bottom:18px;
+    }
+
+    .detail-avatar{
+      width:58px;height:58px;border-radius:18px;display:grid;place-items:center;font-weight:800;color:#08111f;
+      background:linear-gradient(135deg,#eef7ff,#96dbff 56%, #8f99ff);
+      font-size:1.05rem;
+    }
+
+    .detail-name{font-size:1.15rem;font-weight:800}
+    .detail-role{font-size:.88rem;color:var(--muted);margin-top:4px}
+
+    .status-row{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      margin-bottom:16px;
+      padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+    }
+
+    .status-left{
+      display:flex;align-items:center;gap:12px;
+    }
+    .status-emoji{
+      width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:1.3rem;background:rgba(255,255,255,.06);
+    }
+
+    .status-label{font-weight:700}
+    .status-sub{font-size:.82rem;color:var(--muted)}
+
+    .delta{
+      font-size:.88rem;font-weight:800;padding:8px 10px;border-radius:999px;
+    }
+    .delta.up{background:rgba(97,229,168,.12);color:#9bf0c4}
+    .delta.down{background:rgba(255,122,122,.12);color:#ffb0b0}
+
+    .detail-grid{
+      display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;
+    }
+
+    .metric-card{
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.07);
+      border-radius:16px;padding:14px;
+    }
+
+    .metric-card .label{font-size:.78rem;color:var(--muted-2);margin-bottom:6px}
+    .metric-card .value{font-size:1.2rem;font-weight:800;letter-spacing:-.03em}
+    .metric-card .hint{margin-top:6px;font-size:.76rem;color:var(--muted)}
+
+    .section-title{
+      font-size:.92rem;font-weight:800;letter-spacing:.02em;margin:18px 0 10px;
+    }
+
+    .coaching-list{
+      display:flex;flex-direction:column;gap:10px;
+    }
+
+    .coach-item{
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.07);
+      border-radius:16px;padding:12px 13px;
+      display:flex;gap:10px;align-items:flex-start;
+    }
+
+    .coach-bullet{
+      width:24px;height:24px;border-radius:999px;display:grid;place-items:center;font-size:.8rem;font-weight:800;
+      background:linear-gradient(135deg, rgba(94,200,255,.22), rgba(125,140,255,.22));
+      color:#dff4ff;flex:0 0 auto;margin-top:1px;
+    }
+
+    .coach-item p{margin:0;color:#dfe9f9;font-size:.88rem;line-height:1.55}
+    .coach-item span{display:block;color:var(--muted-2);font-size:.77rem;margin-top:4px}
+
+    .insight-panel{padding:20px}
+    .insight-list{display:flex;flex-direction:column;gap:12px}
+    .insight{
+      padding:14px;border-radius:16px;
+      background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+    }
+    .insight strong{display:block;font-size:.9rem;margin-bottom:6px}
+    .insight p{margin:0;color:var(--muted);font-size:.84rem;line-height:1.55}
+
+    .footer-note{
+      margin-top:18px;
+      padding:14px 16px;border-radius:16px;
+      color:var(--muted);
+      background:linear-gradient(180deg, rgba(97,229,168,.06), rgba(94,200,255,.04));
+      border:1px solid rgba(255,255,255,.08);
+      font-size:.86rem;line-height:1.55;
+    }
+
+    .weather-sunny .weather-badge{box-shadow:0 0 0 1px rgba(97,229,168,.18), 0 0 24px rgba(97,229,168,.08)}
+    .weather-partly .weather-badge{box-shadow:0 0 0 1px rgba(255,207,90,.18), 0 0 24px rgba(255,207,90,.08)}
+    .weather-cloudy .weather-badge{box-shadow:0 0 0 1px rgba(145,183,222,.18), 0 0 24px rgba(145,183,222,.08)}
+    .weather-stormy .weather-badge{box-shadow:0 0 0 1px rgba(255,122,122,.18), 0 0 24px rgba(255,122,122,.08)}
+
+    .small-note{
+      font-size:.76rem;color:var(--muted-2);margin-top:12px;
+    }
+
+    @media (max-width: 1180px){
+      .hero{grid-template-columns:1fr}
+      .dashboard{grid-template-columns:1fr}
+      .aside{position:static}
+    }
+
+    @media (max-width: 760px){
+      .container{width:min(100% - 20px, 1380px);padding-top:18px}
+      .hero-main,.hero-side,.map-panel,.detail-panel,.insight-panel{padding:16px}
+      .stats{grid-template-columns:1fr}
+      .forecast-row{grid-template-columns:repeat(2,1fr)}
+      .panel-head{flex-direction:column;align-items:flex-start}
+      .controls{width:100%}
+      .org-chart{padding:16px}
+      .tree{min-width:920px}
+      .detail-grid{grid-template-columns:1fr 1fr}
+    }
+
+    @media (max-width: 520px){
+      .detail-grid{grid-template-columns:1fr}
+      .hero-actions{flex-direction:column}
+      .btn{width:100%}
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="aurora"></div>
+
+  <div class="container">
+    <section class="hero">
+      <div class="hero-main panel">
+        <div class="eyebrow">
+          <span class="eyebrow-dot"></span>
+          Go2 AI Productivity Coaching
+        </div>
+        <h1><span class="brand-inline">Productivity Weather Map</span> for modern SMB teams</h1>
+        <p class="lead">
+          See how work actually gets done across your organization — with weather-based coaching signals, not surveillance.
+          Go2 translates work patterns like app usage, focus time, meeting load, and workflow friction into a live map of team productivity health.
+        </p>
+
+        <div class="hero-actions">
+          <button class="btn btn-primary" id="focusTopPerformer">Highlight strongest team</button>
+          <button class="btn btn-secondary" id="focusNeedsHelp">Show coaching opportunities</button>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-value">42%</div>
+            <div class="stat-label">Average productivity increase with AI-powered coaching</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">15.2 hrs</div>
+            <div class="stat-label">Saved per employee each week through smarter work patterns</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">892%</div>
+            <div class="stat-label">Average first-year ROI for SMBs adopting Go2</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-side panel">
+        <div class="mini-card">
+          <div class="mini-top">
+            <div>
+              <div class="mini-title">This week’s forecast</div>
+              <div class="mini-sub">Company-wide productivity trend</div>
+            </div>
+            <div class="mini-sub">Live demo data</div>
+          </div>
+          <div class="forecast-row">
+            <div class="forecast-pill">
+              <span class="emoji">🌤️</span>
+              <div class="day">Mon</div>
+              <div class="num">78</div>
+            </div>
+            <div class="forecast-pill">
+              <span class="emoji">☀️</span>
+              <div class="day">Tue</div>
+              <div class="num">84</div>
+            </div>
+            <div class="forecast-pill">
+              <span class="emoji">🌥️</span>
+              <div class="day">Wed</div>
+              <div class="num">73</div>
+            </div>
+            <div class="forecast-pill">
+              <span class="emoji">⛈️</span>
+              <div class="day">Thu</div>
+              <div class="num">61</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mini-card">
+          <div class="mini-top">
+            <div>
+              <div class="mini-title">Weather legend</div>
+              <div class="mini-sub">Interpret coaching signals at a glance</div>
+            </div>
+          </div>
+          <div class="legend">
+            <div class="legend-item"><span class="swatch sunny"></span> Sunny: strong focus + healthy rhythm</div>
+            <div class="legend-item"><span class="swatch partly"></span> Partly cloudy: minor friction</div>
+            <div class="legend-item"><span class="swatch cloudy"></span> Cloudy: drag from meetings or context switching</div>
+            <div class="legend-item"><span class="swatch stormy"></span> Stormy: burnout risk or workflow bottleneck</div>
+          </div>
+        </div>
+
+        <div class="mini-card">
+          <div class="mini-title" style="margin-bottom:8px;">Why SMBs choose Go2</div>
+          <div class="mini-sub" style="line-height:1.65;">
+            Competitors monitor. Go2 coaches. Teams get actionable guidance to improve focus, reduce process drag, and create healthier work habits — typically at
+            <strong style="color:#fff;">$6–12/user/month</strong>.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dashboard">
+      <div class="map-panel panel">
+        <div class="panel-head">
+          <div class="title-wrap">
+            <h2>Organization Weather Map</h2>
+            <p>
+              Click any leader, team, or individual contributor to inspect productivity signals, friction sources, and AI coaching recommendations. Weather reflects momentum and work quality — not employee surveillance.
+            </p>
+          </div>
+          <div class="controls">
+            <div class="segmented" id="viewFilter">
+              <button class="seg-btn active" data-filter="all">All conditions</button>
+              <button class="seg-btn" data-filter="sunny">Sunny</button>
+              <button class="seg-btn" data-filter="cloudy">Needs attention</button>
+              <button class="seg-btn" data-filter="stormy">Stormy</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="org-chart" id="orgChart">
+          <div class="tree">
+            <div class="level" id="level-0"></div>
+            <div class="level" id="level-1"></div>
+            <div class="level" id="level-2"></div>
+          </div>
+        </div>
+        <div class="small-note">
+          Tip: Use the filter to surface coaching hotspots across managers, departments, and individuals.
+        </div>
+      </div>
+
+      <aside class="aside">
+        <div class="detail-panel panel" id="detailPanel">
+          <div class="detail-empty">
+            <div class="icon">🗺️</div>
+            <strong>Select a node</strong>
+            <div>Explore a team or person to view Go2’s productivity weather breakdown and AI coaching insights.</div>
+          </div>
+        </div>
+
+        <div class="insight-panel panel">
+          <div class="mini-title" style="margin-bottom:12px;">SMB-ready insights</div>
+          <div class="insight-list">
+            <div class="insight">
+              <strong>Coaching, not monitoring</strong>
+              <p>Go2 analyzes work patterns to recommend better habits, healthier schedules, and more efficient workflows.</p>
+            </div>
+            <div class="insight">
+              <strong>Designed for teams of 5–500</strong>
+              <p>Ideal for owners, operations leaders, and HR teams who want clarity on how work happens across the business.</p>
+            </div>
+            <div class="insight">
+              <strong>Fast ROI</strong>
+              <p>By reducing busywork, meeting overload, and context switching, Go2 helps teams unlock measurable savings quickly.</p>
+            </div>
+          </div>
+          <div class="footer-note">
+            This visual experience is a concept dashboard for Go2’s positioning: <strong>AI productivity coaching for SMBs</strong>, differentiated from tools like Time Doctor, Hubstaff, and Teramind.
+          </div>
+        </div>
+      </aside>
+    </section>
+  </div>
+
+  <script>
+    const data = [
+      {
+        id: "ceo",
+        level: 0,
+        name: "Maya Chen",
+        role: "Founder & CEO",
+        weather: "partly",
+        emoji: "🌤️",
+        score: 79,
+        delta: 6,
+        focus: "4.8h/day",
+        meetings: "17h/week",
+        efficiency: "81%",
+        apps: "12 core apps",
+        summary: "Executive cadence is healthy, but decision load and meeting spillover are creating light cloud cover across the top of the org.",
+        coaching: [
+          "Batch leadership syncs into two meeting windows to protect strategic focus blocks.",
+          "Delegate approval loops that repeatedly interrupt deep work after 2 PM.",
+          "Use AI recaps for recurring leadership meetings to reduce live attendance time."
+        ],
+        drivers: ["Meeting density slightly above healthy threshold", "Strong follow-through", "Fast response times"],
+        hint: "Stable momentum with minor executive overload"
+      },
+      {
+        id: "ops",
+        level: 1,
+        name: "Operations",
+        role: "Team • 18 employees",
+        weather: "sunny",
+        emoji: "☀️",
+        score: 91,
+        delta: 11,
+        focus: "5.6h/day",
+        meetings: "8h/week",
+        efficiency: "89%",
+        apps: "7 core apps",
+        summary: "Operations is in clear skies. Workflows are streamlined, context switching is low, and most work moves through repeatable systems.",
+        coaching: [
+          "Document the team’s scheduling and task-routing practices to share with other departments.",
+          "Promote top-performing work blocks as company-wide best practices.",
+          "Use Ops team benchmarks as the baseline for onboarding new managers."
+        ],
+        drivers: ["High uninterrupted focus time", "Low workflow friction", "Excellent app hygiene"],
+        hint: "Best-performing department this week"
+      },
+      {
+        id: "sales",
+        level: 1,
+        name: "Sales",
+        role: "Team • 14 employees",
+        weather: "cloudy",
+        emoji: "🌥️",
+        score: 68,
+        delta: -4,
+        focus: "3.7h/day",
+        meetings: "14h/week",
+        efficiency: "72%",
+        apps: "15 core apps",
+        summary: "Sales performance is steady, but the team is losing momentum to tool-switching and fragmented follow-up workflows.",
+        coaching: [
+          "Reduce CRM handoff friction by consolidating updates into one end-of-day workflow.",
+          "Turn recurring pipeline reviews into asynchronous dashboard check-ins.",
+          "Coach reps on calendar protection during high-conversion outreach windows."
+        ],
+        drivers: ["Frequent app switching", "Meeting load higher than peer teams", "Strong output despite interruptions"],
+        hint: "Solid effort, but process drag is visible"
+      },
+      {
+        id: "hr",
+        level: 1,
+        name: "People & HR",
+        role: "Team • 6 employees",
+        weather: "stormy",
+        emoji: "⛈️",
+        score: 54,
+        delta: -9,
+        focus: "2.9h/day",
+        meetings: "18h/week",
+        efficiency: "63%",
+        apps: "11 core apps",
+        summary: "HR is under pressure from hiring, onboarding, and policy requests. The signal suggests overload rather than underperformance.",
+        coaching: [
+          "Create office-hour blocks for employee questions to reduce constant interruption.",
+          "Automate onboarding reminders and document collection workflows.",
+          "Temporarily rebalance recruiting coordination to Ops support."
+        ],
+        drivers: ["High interrupt rate", "Meeting overload", "Reactive task patterns"],
+        hint: "Burnout risk if current pattern continues"
+      },
+      {
+        id: "eng",
+        level: 1,
+        name: "Customer Success",
+        role: "Team • 9 employees",
+        weather: "partly",
+        emoji: "🌤️",
+        score: 76,
+        delta: 3,
+        focus: "4.3h/day",
+        meetings: "11h/week",
+        efficiency: "78%",
+        apps: "9 core apps",
+        summary: "Customer Success is balanced overall, though recurring calls and ad hoc escalations are making top performers slightly less consistent.",
+        coaching: [
+          "Group client escalations into triage windows instead of interrupt-driven handling.",
+          "Auto-summarize account meetings and feed action items directly into tasks.",
+          "Identify top performers’ time-blocking patterns and share them team-wide."
+        ],
+        drivers: ["Healthy collaboration", "Moderate interruption load", "Good follow-up discipline"],
+        hint: "Generally healthy with scalable improvements"
+      },
+      {
+        id: "lena",
+        level: 2,
+        parent: "ops",
+        name: "Lena Park",
+        role: "Ops Manager",
+        weather: "sunny",
+        emoji: "☀️",
+        score: 94,
+        delta: 8,
+        focus: "6.1h/day",
+        meetings: "6h/week",
+        efficiency: "92%",
+        apps: "5 core apps",
+        summary: "Lena runs an exceptionally efficient workflow. Her work pattern suggests strong prioritization, low context switching, and healthy pace.",
+        coaching: [
+          "Promote Lena’s weekly planning structure as a manager template.",
+          "Use her meeting-to-output ratio as a benchmark for peer coaching.",
+          "Record her workflow setup to accelerate best-practice adoption."
+        ],
+        drivers: ["Deep focus blocks", "Minimal switching", "Strong execution rhythm"],
+        hint: "Role-model pattern"
+      },
+      {
+        id: "marco",
+        level: 2,
+        parent: "sales",
+        name: "Marco Ruiz",
+        role: "Account Executive",
+        weather: "cloudy",
+        emoji: "🌥️",
+        score: 66,
+        delta: -2,
+        focus: "3.5h/day",
+        meetings: "16h/week",
+        efficiency: "70%",
+        apps: "14 core apps",
+        summary: "Marco is productive, but too much day fragmentation is making wins harder than they need to be.",
+        coaching: [
+          "Consolidate prospecting tools to reduce switching overhead.",
+          "Block mornings for outbound work before internal syncs begin.",
+          "Use AI meeting summaries to cut post-call admin."
+        ],
+        drivers: ["High meeting volume", "CRM/admin burden", "Good resilience"],
+        hint: "Performance masked by process friction"
+      },
+      {
+        id: "priya",
+        level: 2,
+        parent: "hr",
+        name: "Priya Shah",
+        role: "HR Director",
+        weather: "stormy",
+        emoji: "⛈️",
+        score: 51,
+        delta: -7,
+        focus: "2.6h/day",
+        meetings: "20h/week",
+        efficiency: "61%",
+        apps: "13 core apps",
+        summary: "Priya’s pattern points to sustained interruption and administrative overload, not lack of effort.",
+        coaching: [
+          "Move employee Q&A into scheduled office hours to cut Slack disruption.",
+          "Automate interview scheduling and onboarding checklists.",
+          "Reassign low-leverage administrative tasks for 2 weeks."
+        ],
+        drivers: ["Interruptions every 11 minutes", "High coordination load", "Limited focus recovery time"],
+        hint: "Immediate support recommended"
+      },
+      {
+        id: "jonah",
+        level: 2,
+        parent: "eng",
+        name: "Jonah Brooks",
+        role: "Customer Success Manager",
+        weather: "partly",
+        emoji: "🌤️",
+        score: 78,
+        delta: 5,
+        focus: "4.4h/day",
+        meetings: "10h/week",
+        efficiency: "79%",
+        apps: "8 core apps",
+        summary: "Jonah is maintaining a healthy working rhythm with room to improve through better escalation boundaries.",
+        coaching: [
+          "Batch account review prep into one afternoon block.",
+          "Set triage windows for escalations from key accounts.",
+          "Use AI follow-up drafting after customer calls."
+        ],
+        drivers: ["Good structure", "Moderate interruption", "Strong customer responsiveness"],
+        hint: "On track with manageable friction"
+      }
+    ];
+
+    const levels = {
+      0: document.getElementById("level-0"),
+      1: document.getElementById("level-1"),
+      2: document.getElementById("level-2")
+    };
+
+    const detailPanel = document.getElementById("detailPanel");
+    const filterButtons = document.querySelectorAll("#viewFilter .seg-btn");
+
+    function getBarClass(weather){
+      if(weather === "sunny") return "";
+      if(weather === "partly") return "warn";
+      if(weather === "cloudy") return "cloud";
+      return "storm";
+    }
+
+    function initials(name){
+      return name.split(" ").map(n => n[0]).slice(0,2).join("").toUpperCase();
+    }
+
+    function isVisibleForFilter(item, filter){
+      if(filter === "all") return true;
+      if(filter === "cloudy") return item.weather === "cloudy" || item.weather === "partly";
+      return item.weather === filter;
+    }
+
+    let activeFilter = "all";
+    let activeId = null;
+
+    function renderTree(){
+      Object.values(levels).forEach(el => el.innerHTML = "");
+
+      data.filter(d => d.level === 0 && isVisibleForFilter(d, activeFilter)).forEach(item => {
+        levels[0].appendChild(createNode(item));
+      });
+
+      data.filter(d => d.level === 1 && isVisibleForFilter(d, activeFilter)).forEach(item => {
+        levels[1].appendChild(createNode(item, true));
+      });
+
+      data.filter(d => d.level === 2 && isVisibleForFilter(d, activeFilter)).forEach(item => {
+        levels[2].appendChild(createNode(item, true));
+      });
+
+      drawLines();
+      restoreActiveState();
+    }
+
+    function createNode(item, showConnector = false){
+      const node = document.createElement("div");
+      node.className = "node";
+      node.dataset.id = item.id;
+
+      const weatherClass = `weather-${item.weather === "partly" ? "partly" : item.weather}`;
+      node.innerHTML = `
+        ${showConnector ? `<div class="connector"></div>` : ""}
+        <div class="node-card ${weatherClass}" role="button" tabindex="0" aria-label="View ${item.name} details">
+          <div class="node-top">
+            <div class="person">
+              <div class="avatar">${initials(item.name)}</div>
+              <div class="identity">
+                <div class="name">${item.name}</div>
+                <div class="role">${item.role}</div>
+              </div>
+            </div>
+            <div class="weather-badge" title="${item.hint}">${item.emoji}</div>
+          </div>
+
+          <div class="node-score">
+            <span>Productivity climate</span>
+            <span class="score-strong">${item.score}/100</span>
+          </div>
+
+          <div class="bar ${getBarClass(item.weather)}">
+            <span style="width:${item.score}%"></span>
+          </div>
+
+          <div class="micro-metrics">
+            <div class="micro">
+              <div class="k">Focus</div>
+              <div class="v">${item.focus}</div>
+            </div>
+            <div class="micro">
+              <div class="k">Meetings</div>
+              <div class="v">${item.meetings}</div>
+            </div>
+            <div class="micro">
+              <div class="k">Efficiency</div>
+              <div class="v">${item.efficiency}</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const card = node.querySelector(".node-card");
+      card.addEventListener("click", () => selectNode(item.id));
+      card.addEventListener("keydown", (e) => {
+        if(e.key === "Enter" || e.key === " "){
+          e.preventDefault();
+          selectNode(item.id);
+        }
+      });
+
+      return node;
+    }
+
+    function restoreActiveState(){
+      document.querySelectorAll(".node-card").forEach(c => c.classList.remove("active"));
+      if(!activeId) return;
+      const el = document.querySelector(`.node[data-id="${activeId}"] .node-card`);
+      if(el) el.classList.add("active");
+    }
+
+    function selectNode(id){
+      activeId = id;
+      restoreActiveState();
+      const item = data.find(d => d.id === id);
+      if(!item) return;
+
+      const statusText = {
+        sunny: "Sunny",
+        partly: "Partly Cloudy",
+        cloudy: "Cloudy",
+        stormy: "Stormy"
+      }[item.weather];
+
+      const deltaClass = item.delta >= 0 ? "up" : "down";
+      const deltaText = `${item.delta >= 0 ? "▲" : "▼"} ${Math.abs(item.delta)} pts vs last week`;
+
+      detailPanel.innerHTML = `
+        <div class="detail-header">
+          <div class="detail-avatar">${initials(item.name)}</div>
+          <div>
+            <div class="detail-name">${item.name}</div>
+            <div class="detail-role">${item.role}</div>
+          </div>
+        </div>
+
+        <div class="status-row">
+          <div class="status-left">
+            <div class="status-emoji">${item.emoji}</div>
+            <div>
+              <div class="status-label">${statusText}</div>
+              <div class="status-sub">${item.hint}</div>
+            </div>
+          </div>
+          <div class="delta ${deltaClass}">${deltaText}</div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="metric-card">
+            <div class="label">Productivity score</div>
+            <div class="value">${item.score}/100</div>
+            <div class="hint">Blends focus time, workflow consistency, and collaboration load</div>
+          </div>
+          <div class="metric-card">
+            <div class="label">Average focus time</div>
+            <div class="value">${item.focus}</div>
+            <div class="hint">Protected, uninterrupted work time per day</div>
+          </div>
+          <div class="metric-card">
+            <div class="label">Meeting load</div>
+            <div class="value">${item.meetings}</div>
+            <div class="hint">Meeting intensity is a leading indicator of friction</div>
+          </div>
+          <div class="metric-card">
+            <div class="label">Workflow efficiency</div>
+            <div class="value">${item.efficiency}</div>
+            <div class="hint">Composite signal from app switching and work completion patterns</div>
+          </div>
+        </div>
+
+        <div class="metric-card" style="margin-bottom:16px;">
+          <div class="label">Go2 summary</div>
+          <div class="hint" style="font-size:.88rem; line-height:1.65; color:#dfe9f9; margin-top:0;">
+            ${item.summary}
+          </div>
+        </div>
+
+        <div class="section-title">Key drivers</div>
+        <div class="coaching-list" style="margin-bottom:8px;">
+          ${item.drivers.map((d,i)=>`
+            <div class="coach-item">
+              <div class="coach-bullet">${i+1}</div>
+              <div>
+                <p>${d}</p>
+              </div>
+            </div>`).join("")}
+        </div>
+
+        <div class="section-title">AI coaching recommendations</div>
+        <div class="coaching-list">
+          ${item.coaching.map((c,i)=>`
+            <div class="coach-item">
+              <div class="coach-bullet">AI</div>
+              <div>
+                <p>${c}</p>
+                <span>Designed to improve output without increasing pressure</span>
+              </div>
+            </div>`).join("")}
+        </div>
+      `;
+    }
+
+    function drawLines(){
+      document.querySelectorAll(".line-h").forEach(l => l.remove());
+
+      const level1 = document.getElementById("level-1");
+      const level2 = document.getElementById("level-2");
+
+      drawHorizontalLine(level1);
+      drawHorizontalLine(level2);
+    }
+
+    function drawHorizontalLine(levelEl){
+      const nodes = [...levelEl.querySelectorAll(".node")];
+      if(nodes.length < 2) return;
+
+      const levelRect = levelEl.getBoundingClientRect();
+      const firstRect = nodes[0].getBoundingClientRect();
+      const lastRect = nodes[nodes.length - 1].getBoundingClientRect();
+
+      const line = document.createElement("div");
+      line.className = "line-h";
+      line.style.left = `${firstRect.left - levelRect.left + firstRect.width / 2}px`;
+      line.style.width = `${lastRect.left - firstRect.left}px`;
+      levelEl.appendChild(line);
+    }
+
+    filterButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        filterButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        activeFilter = btn.dataset.filter;
+        if(activeId){
+          const activeItem = data.find(d => d.id === activeId);
+          if(activeItem && !isVisibleForFilter(activeItem, activeFilter)){
+            activeId = null;
+            detailPanel.innerHTML = `
+              <div class="detail-empty">
+                <div class="icon">🌦️</div>
+                <strong>Filter updated</strong>
+                <div>Select a visible node to inspect team health and coaching recommendations.</div>
+              </div>
+            `;
+          }
+        }
+        renderTree();
+      });
+    });
+
+    document.getElementById("focusTopPerformer").addEventListener("click", () => {
+      activeFilter = "sunny";
+      filterButtons.forEach(b => b.classList.toggle("active", b.dataset.filter === "sunny"));
+      renderTree();
+      selectNode("ops");
+      document.getElementById("orgChart").scrollTo({ left: 120, behavior: "smooth" });
+    });
+
+    document.getElementById("focusNeedsHelp").addEventListener("click", () => {
+      activeFilter = "stormy";
+      filterButtons.forEach(b => b.classList.toggle("active", b.dataset.filter === "stormy"));
+      renderTree();
+      selectNode("hr");
+      document.getElementById("orgChart").scrollTo({ left: 220, behavior: "smooth" });
+    });
+
+    window.addEventListener("resize", drawLines);
+
+    renderTree();
+    selectNode("ceo");
+  </script>
+</body>
+</html>

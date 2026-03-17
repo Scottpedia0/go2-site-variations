@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The SMB Survival Guide — Go2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f6f3ee;
+      --paper:#fbf8f3;
+      --ink:#121212;
+      --muted:#6d675f;
+      --line:rgba(18,18,18,.12);
+      --line-strong:rgba(18,18,18,.22);
+      --accent:#0c6cf2;
+      --accent-2:#5b8cff;
+      --green:#0d8a54;
+      --gold:#bb8a2f;
+      --red:#b44444;
+      --shadow:0 20px 60px rgba(18,18,18,.08);
+      --radius:22px;
+      --max:1280px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:"Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(12,108,242,.05), transparent 28%),
+        radial-gradient(circle at top right, rgba(187,138,47,.05), transparent 24%),
+        linear-gradient(180deg, #f7f4ef 0%, #f3efe8 100%);
+      line-height:1.5;
+      overflow-x:hidden;
+    }
+
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;display:block}
+
+    .noise{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      opacity:.045;
+      background-image:
+        radial-gradient(circle at 20% 20%, #000 0.5px, transparent 0.8px),
+        radial-gradient(circle at 80% 30%, #000 0.5px, transparent 0.8px),
+        radial-gradient(circle at 40% 80%, #000 0.5px, transparent 0.8px),
+        radial-gradient(circle at 60% 60%, #000 0.5px, transparent 0.8px);
+      background-size: 24px 24px, 32px 32px, 28px 28px, 36px 36px;
+      z-index:0;
+    }
+
+    .page{
+      position:relative;
+      z-index:1;
+      max-width:var(--max);
+      margin:0 auto;
+      padding:24px;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:20px;
+      padding:14px 0 24px;
+      border-bottom:1px solid var(--line);
+      position:sticky;
+      top:0;
+      backdrop-filter: blur(18px);
+      background:linear-gradient(to bottom, rgba(247,244,239,.86), rgba(247,244,239,.62));
+      z-index:20;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      font-weight:800;
+      letter-spacing:.02em;
+    }
+
+    .brand-mark{
+      width:40px;
+      height:40px;
+      border-radius:12px;
+      background:
+        linear-gradient(135deg, var(--accent), #083b84);
+      display:grid;
+      place-items:center;
+      color:#fff;
+      font-weight:900;
+      box-shadow:0 12px 24px rgba(12,108,242,.22);
+    }
+
+    .brand small{
+      display:block;
+      color:var(--muted);
+      font-size:.76rem;
+      font-weight:600;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+
+    .nav{
+      display:flex;
+      gap:22px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .nav a{
+      color:var(--muted);
+      font-size:.95rem;
+      font-weight:600;
+      position:relative;
+    }
+
+    .nav a::after{
+      content:"";
+      position:absolute;
+      left:0; right:0; bottom:-6px;
+      height:2px;
+      background:var(--ink);
+      transform:scaleX(0);
+      transform-origin:left;
+      transition:transform .25s ease;
+    }
+
+    .nav a:hover::after,.nav a.active::after{transform:scaleX(1)}
+
+    .cta{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      border:none;
+      background:var(--ink);
+      color:#fff;
+      padding:13px 18px;
+      border-radius:999px;
+      font-weight:700;
+      cursor:pointer;
+      transition:transform .2s ease, box-shadow .2s ease, background .2s ease;
+      box-shadow:0 12px 24px rgba(18,18,18,.12);
+    }
+
+    .cta:hover{
+      transform:translateY(-2px);
+      box-shadow:0 18px 28px rgba(18,18,18,.16);
+      background:#000;
+    }
+
+    .hero{
+      display:grid;
+      grid-template-columns:1.15fr .85fr;
+      gap:34px;
+      padding:40px 0 26px;
+      align-items:end;
+    }
+
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:8px 12px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      background:rgba(255,255,255,.45);
+      color:var(--muted);
+      font-size:.85rem;
+      font-weight:700;
+      letter-spacing:.02em;
+      text-transform:uppercase;
+    }
+
+    .dot{
+      width:8px;height:8px;border-radius:50%;background:var(--green);
+      box-shadow:0 0 0 6px rgba(13,138,84,.12);
+    }
+
+    .headline{
+      font-family:"Instrument Serif", Georgia, serif;
+      font-size:clamp(3.4rem, 8vw, 7.1rem);
+      line-height:.94;
+      letter-spacing:-.04em;
+      margin:18px 0 18px;
+      font-weight:400;
+    }
+
+    .headline .accent{
+      font-style:italic;
+      color:var(--accent);
+    }
+
+    .dek{
+      font-size:1.18rem;
+      color:#2d2925;
+      max-width:760px;
+      margin:0 0 24px;
+    }
+
+    .hero-meta{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:14px;
+      margin-top:28px;
+    }
+
+    .stat{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.58);
+      border-radius:18px;
+      padding:18px;
+      box-shadow:var(--shadow);
+      transition:transform .2s ease, border-color .2s ease;
+    }
+
+    .stat:hover{
+      transform:translateY(-3px);
+      border-color:rgba(12,108,242,.25);
+    }
+
+    .stat .num{
+      font-size:clamp(1.8rem,4vw,2.8rem);
+      font-weight:900;
+      letter-spacing:-.04em;
+      margin-bottom:6px;
+    }
+
+    .stat .label{
+      color:var(--muted);
+      font-size:.94rem;
+      font-weight:600;
+    }
+
+    .cover{
+      background:linear-gradient(180deg, rgba(255,255,255,.7), rgba(255,255,255,.5));
+      border:1px solid var(--line);
+      border-radius:28px;
+      min-height:560px;
+      box-shadow:var(--shadow);
+      position:relative;
+      overflow:hidden;
+      padding:24px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+    }
+
+    .cover::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        radial-gradient(circle at 80% 20%, rgba(12,108,242,.18), transparent 22%),
+        radial-gradient(circle at 20% 80%, rgba(187,138,47,.16), transparent 20%),
+        linear-gradient(135deg, rgba(255,255,255,.2), rgba(255,255,255,.04));
+      pointer-events:none;
+    }
+
+    .issue{
+      position:relative;
+      z-index:1;
+      display:flex;
+      justify-content:space-between;
+      color:var(--muted);
+      font-size:.8rem;
+      text-transform:uppercase;
+      letter-spacing:.12em;
+      font-weight:700;
+      border-bottom:1px solid var(--line);
+      padding-bottom:12px;
+    }
+
+    .cover-center{
+      position:relative;
+      z-index:1;
+      padding:22px 0 10px;
+    }
+
+    .cover-kicker{
+      color:var(--accent);
+      text-transform:uppercase;
+      letter-spacing:.14em;
+      font-size:.84rem;
+      font-weight:800;
+      margin-bottom:14px;
+    }
+
+    .cover-title{
+      font-family:"Instrument Serif", Georgia, serif;
+      font-size:clamp(2.6rem,5vw,4.5rem);
+      line-height:.95;
+      margin:0 0 14px;
+    }
+
+    .cover-sub{
+      font-size:1rem;
+      color:#3a352f;
+      max-width:420px;
+    }
+
+    .mini-chart{
+      position:relative;
+      z-index:1;
+      background:#111;
+      color:#fff;
+      border-radius:22px;
+      padding:20px;
+      margin-top:18px;
+      overflow:hidden;
+    }
+
+    .mini-chart::after{
+      content:"";
+      position:absolute;
+      right:-20px; top:-20px;
+      width:120px;height:120px;
+      background:radial-gradient(circle, rgba(91,140,255,.35), transparent 65%);
+    }
+
+    .chart-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:end;
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .chart-top strong{font-size:1rem}
+    .chart-top span{color:rgba(255,255,255,.7);font-size:.84rem}
+
+    .bars{
+      display:flex;
+      align-items:flex-end;
+      gap:10px;
+      height:120px;
+    }
+
+    .bar{
+      flex:1;
+      border-radius:14px 14px 6px 6px;
+      background:linear-gradient(180deg, #75a0ff, #0c6cf2);
+      position:relative;
+      min-width:24px;
+      transition:transform .25s ease, filter .25s ease;
+      cursor:pointer;
+    }
+
+    .bar:hover{transform:translateY(-4px);filter:brightness(1.05)}
+    .bar::after{
+      content:attr(data-label);
+      position:absolute;
+      bottom:-26px;
+      left:50%;
+      transform:translateX(-50%);
+      color:rgba(255,255,255,.7);
+      font-size:.72rem;
+      font-weight:700;
+    }
+
+    .intro-grid{
+      display:grid;
+      grid-template-columns:1.2fr .8fr;
+      gap:26px;
+      margin:34px 0 18px;
+    }
+
+    .editor-note, .toc{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.58);
+      border-radius:24px;
+      padding:28px;
+      box-shadow:var(--shadow);
+    }
+
+    .section-label{
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.14em;
+      font-size:.78rem;
+      font-weight:800;
+      margin-bottom:10px;
+    }
+
+    .editor-note h2,
+    .toc h2,
+    .section-header h2,
+    .pricing-card h2,
+    .competitor-card h2{
+      font-family:"Instrument Serif", Georgia, serif;
+      font-weight:400;
+      letter-spacing:-.03em;
+      line-height:1;
+      margin:0 0 14px;
+    }
+
+    .editor-note h2{font-size:2.4rem}
+    .editor-note p{font-size:1.02rem;color:#2e2a26}
+    .pullquote{
+      margin-top:20px;
+      padding:18px 0 0;
+      border-top:1px solid var(--line);
+      display:grid;
+      grid-template-columns:auto 1fr;
+      gap:14px;
+      align-items:start;
+    }
+
+    .quote-mark{
+      font-family:"Instrument Serif", serif;
+      font-size:4rem;
+      line-height:.7;
+      color:var(--gold);
+    }
+
+    .pullquote em{
+      font-family:"Instrument Serif", serif;
+      font-size:1.45rem;
+      display:block;
+      line-height:1.1;
+    }
+
+    .toc-list{
+      list-style:none;
+      padding:0;
+      margin:18px 0 0;
+      display:grid;
+      gap:12px;
+    }
+
+    .toc-list a{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:16px;
+      padding:14px 16px;
+      border:1px solid var(--line);
+      border-radius:16px;
+      transition:transform .2s ease, border-color .2s ease, background .2s ease;
+      font-weight:700;
+      background:rgba(255,255,255,.55);
+    }
+
+    .toc-list a:hover{
+      transform:translateX(4px);
+      border-color:rgba(12,108,242,.22);
+      background:#fff;
+    }
+
+    .toc-list span{color:var(--muted);font-weight:600;font-size:.92rem}
+
+    .section{
+      margin:26px 0;
+      border-top:1px solid var(--line-strong);
+      padding-top:26px;
+    }
+
+    .section-header{
+      display:grid;
+      grid-template-columns:.8fr 1.2fr;
+      gap:22px;
+      margin-bottom:20px;
+      align-items:end;
+    }
+
+    .section-header h2{
+      font-size:3rem;
+      margin-bottom:8px;
+    }
+
+    .section-header p{
+      color:#312d28;
+      font-size:1.02rem;
+      margin:0;
+    }
+
+    .killer{
+      display:grid;
+      grid-template-columns:110px 1.2fr .9fr;
+      gap:22px;
+      padding:24px 0;
+      border-top:1px solid var(--line);
+      align-items:start;
+      scroll-margin-top:100px;
+    }
+
+    .killer:first-of-type{border-top:none}
+
+    .num-badge{
+      width:82px;
+      height:82px;
+      border-radius:50%;
+      border:1px solid var(--line-strong);
+      display:grid;
+      place-items:center;
+      font-family:"Instrument Serif", serif;
+      font-size:2.3rem;
+      background:rgba(255,255,255,.65);
+      box-shadow:var(--shadow);
+      position:sticky;
+      top:108px;
+    }
+
+    .killer-main h3{
+      margin:0 0 10px;
+      font-size:2rem;
+      line-height:1;
+      letter-spacing:-.03em;
+    }
+
+    .tagline{
+      display:inline-block;
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(12,108,242,.08);
+      color:var(--accent);
+      font-size:.78rem;
+      text-transform:uppercase;
+      letter-spacing:.1em;
+      font-weight:800;
+      margin-bottom:12px;
+    }
+
+    .killer-main p{
+      margin:0 0 14px;
+      color:#2f2b27;
+      font-size:1rem;
+    }
+
+    .evidence{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:12px;
+      margin-top:16px;
+    }
+
+    .evidence .chip{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px;
+      background:rgba(255,255,255,.7);
+    }
+
+    .chip strong{
+      display:block;
+      font-size:1.3rem;
+      letter-spacing:-.03em;
+      margin-bottom:4px;
+    }
+
+    .chip span{
+      color:var(--muted);
+      font-size:.86rem;
+      font-weight:600;
+    }
+
+    .solution{
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.8), rgba(255,255,255,.6));
+      border-radius:22px;
+      padding:20px;
+      box-shadow:var(--shadow);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .solution::before{
+      content:"Go2";
+      position:absolute;
+      top:10px;
+      right:16px;
+      font-size:3.6rem;
+      font-weight:900;
+      color:rgba(12,108,242,.06);
+      letter-spacing:-.06em;
+    }
+
+    .solution h4{
+      margin:0 0 10px;
+      font-size:1rem;
+      color:var(--accent);
+      text-transform:uppercase;
+      letter-spacing:.1em;
+    }
+
+    .solution ul{
+      margin:0;
+      padding-left:18px;
+      color:#2d2925;
+    }
+
+    .solution li{margin:0 0 9px}
+    .solution li:last-child{margin-bottom:0}
+
+    .highlight-band{
+      margin:34px 0;
+      padding:24px;
+      border-radius:28px;
+      background:#111;
+      color:#fff;
+      display:grid;
+      grid-template-columns:1.1fr .9fr;
+      gap:26px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+
+    .highlight-band::after{
+      content:"";
+      position:absolute;
+      inset:auto -60px -60px auto;
+      width:260px;
+      height:260px;
+      background:radial-gradient(circle, rgba(91,140,255,.35), transparent 60%);
+      pointer-events:none;
+    }
+
+    .highlight-band h2{
+      font-family:"Instrument Serif", serif;
+      font-size:3rem;
+      line-height:.95;
+      margin:0 0 12px;
+      font-weight:400;
+    }
+
+    .highlight-band p{
+      color:rgba(255,255,255,.78);
+      max-width:640px;
+      margin:0;
+    }
+
+    .proof-grid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:14px;
+      align-self:end;
+    }
+
+    .proof{
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:18px;
+      padding:18px;
+    }
+
+    .proof strong{
+      display:block;
+      font-size:2rem;
+      letter-spacing:-.04em;
+      margin-bottom:4px;
+    }
+
+    .proof span{
+      color:rgba(255,255,255,.7);
+      font-size:.9rem;
+      font-weight:600;
+    }
+
+    .bottom-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:26px;
+      margin:26px 0 40px;
+    }
+
+    .pricing-card,.competitor-card{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.62);
+      border-radius:24px;
+      padding:28px;
+      box-shadow:var(--shadow);
+    }
+
+    .pricing-card h2,.competitor-card h2{font-size:2.3rem}
+
+    .price-box{
+      margin-top:18px;
+      padding:22px;
+      border-radius:22px;
+      background:#fff;
+      border:1px solid var(--line);
+    }
+
+    .price{
+      font-size:3rem;
+      font-weight:900;
+      letter-spacing:-.05em;
+      line-height:1;
+    }
+
+    .price small{
+      font-size:1rem;
+      color:var(--muted);
+      font-weight:700;
+      letter-spacing:0;
+    }
+
+    .feature-list{
+      list-style:none;
+      margin:18px 0 0;
+      padding:0;
+      display:grid;
+      gap:10px;
+    }
+
+    .feature-list li{
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      color:#2b2723;
+    }
+
+    .check{
+      width:20px;height:20px;border-radius:50%;
+      background:rgba(13,138,84,.12);
+      color:var(--green);
+      display:grid;place-items:center;
+      font-size:.78rem;font-weight:900;
+      flex:0 0 20px;
+      margin-top:2px;
+    }
+
+    .compare{
+      margin-top:18px;
+      display:grid;
+      gap:12px;
+    }
+
+    .compare-row{
+      display:grid;
+      grid-template-columns:1.1fr .9fr;
+      gap:14px;
+      padding:14px 0;
+      border-top:1px solid var(--line);
+    }
+
+    .compare-row:first-child{border-top:none}
+    .compare-row strong{font-size:1rem}
+    .compare-row span{color:var(--muted)}
+
+    .footer-cta{
+      margin:22px 0 56px;
+      border-top:1px solid var(--line-strong);
+      padding-top:28px;
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:22px;
+      flex-wrap:wrap;
+    }
+
+    .footer-cta h2{
+      font-family:"Instrument Serif", serif;
+      font-size:clamp(2.2rem,5vw,4rem);
+      line-height:.95;
+      margin:0 0 8px;
+      font-weight:400;
+    }
+
+    .footer-cta p{
+      margin:0;
+      color:var(--muted);
+      max-width:720px;
+      font-size:1rem;
+    }
+
+    .floating-progress{
+      position:fixed;
+      left:16px;
+      bottom:16px;
+      width:56px;
+      height:56px;
+      border-radius:50%;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.72);
+      backdrop-filter:blur(12px);
+      box-shadow:var(--shadow);
+      display:grid;
+      place-items:center;
+      z-index:25;
+      cursor:pointer;
+      transition:transform .2s ease;
+    }
+
+    .floating-progress:hover{transform:translateY(-3px)}
+    .floating-progress svg{
+      width:42px;height:42px;transform:rotate(-90deg);
+    }
+    .floating-progress .label{
+      position:absolute;
+      font-size:.72rem;
+      font-weight:800;
+      color:var(--ink);
+    }
+
+    .reveal{
+      opacity:0;
+      transform:translateY(24px);
+      transition:opacity .7s ease, transform .7s ease;
+    }
+    .reveal.visible{
+      opacity:1;
+      transform:translateY(0);
+    }
+
+    @media (max-width: 1100px){
+      .hero,
+      .intro-grid,
+      .highlight-band,
+      .bottom-grid,
+      .section-header,
+      .killer{
+        grid-template-columns:1fr;
+      }
+      .hero-meta,
+      .proof-grid{grid-template-columns:repeat(3,1fr)}
+      .num-badge{
+        position:relative;
+        top:auto;
+        width:68px;height:68px;
+      }
+      .killer{
+        gap:16px;
+      }
+    }
+
+    @media (max-width: 760px){
+      .page{padding:16px}
+      .topbar{
+        position:relative;
+        padding-bottom:18px;
+      }
+      .nav{display:none}
+      .hero{padding-top:18px}
+      .hero-meta,
+      .proof-grid,
+      .evidence{
+        grid-template-columns:1fr;
+      }
+      .headline{font-size:clamp(2.7rem, 14vw, 4.8rem)}
+      .cover{min-height:460px}
+      .section-header h2{font-size:2.2rem}
+      .killer-main h3{font-size:1.65rem}
+      .highlight-band h2{font-size:2.3rem}
+      .footer-cta{
+        align-items:flex-start;
+      }
+      .floating-progress{
+        width:50px;height:50px;
+        left:auto;
+        right:14px;
+        bottom:14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="noise"></div>
+
+  <div class="page">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">G2</div>
+        <div>
+          Go2
+          <small>The SMB Survival Guide</small>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a href="#killers" class="active">Productivity Killers</a>
+        <a href="#proof">The Data</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#why-go2">Why Go2</a>
+      </nav>
+
+      <button class="cta" onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})">
+        See pricing
+        <span>→</span>
+      </button>
+    </header>
+
+    <section class="hero reveal">
+      <div>
+        <div class="eyebrow">
+          <span class="dot"></span>
+          Editorial Report for SMB Owners, Ops Leaders & HR
+        </div>
+        <h1 class="headline">
+          The <span class="accent">SMB</span><br>
+          Survival Guide
+        </h1>
+        <p class="dek">
+          Small businesses don’t lose productivity in one dramatic collapse. They lose it in fragments:
+          context switching, meeting overload, hidden bottlenecks, unclear workflows, and exhausted teams.
+          Go2 helps SMBs understand how work actually gets done — then delivers AI coaching to improve it.
+          <strong>Not surveillance. Productivity coaching.</strong>
+        </p>
+
+        <div class="hero-meta">
+          <div class="stat">
+            <div class="num" data-target="42">0%</div>
+            <div class="label">Average productivity increase</div>
+          </div>
+          <div class="stat">
+            <div class="num" data-target="15.2">0</div>
+            <div class="label">Hours saved per employee each week</div>
+          </div>
+          <div class="stat">
+            <div class="num" data-target="892">0%</div>
+            <div class="label">ROI in the first year</div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="cover reveal">
+        <div class="issue">
+          <span>Special issue</span>
+          <span>Spring Edition</span>
+        </div>
+
+        <div class="cover-center">
+          <div class="cover-kicker">Field notes from the modern small business</div>
+          <h2 class="cover-title">Where the workday really goes</h2>
+          <p class="cover-sub">
+            From keystrokes and app usage to meeting patterns, Go2 reveals the hidden shape of work — and turns raw activity into AI-backed coaching for better habits, healthier teams, and stronger output.
+          </p>
+
+          <div class="mini-chart">
+            <div class="chart-top">
+              <div>
+                <strong>Recovered productive time</strong><br>
+                <span>Typical 6-month improvement arc</span>
+              </div>
+              <div><strong>+42%</strong></div>
+            </div>
+            <div class="bars">
+              <div class="bar" data-label="M1" style="height:28%"></div>
+              <div class="bar" data-label="M2" style="height:39%"></div>
+              <div class="bar" data-label="M3" style="height:47%"></div>
+              <div class="bar" data-label="M4" style="height:61%"></div>
+              <div class="bar" data-label="M5" style="height:74%"></div>
+              <div class="bar" data-label="M6" style="height:88%"></div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="intro-grid">
+      <article class="editor-note reveal">
+        <div class="section-label">Editor’s note</div>
+        <h2>Productivity problems are rarely visible from the org chart</h2>
+        <p>
+          In SMBs, every hour matters — but leaders often operate on instinct, anecdotes, or incomplete reporting. You can feel that work is slowing down without knowing <em>why</em>. Go2 closes that gap. It maps work patterns across apps, meetings, and behavior signals, then translates them into practical coaching for teams and managers.
+        </p>
+        <p>
+          The result is a smarter operating system for work: less friction, better focus, clearer capacity planning, and measurable improvement without turning your culture into a surveillance state.
+        </p>
+
+        <div class="pullquote">
+          <div class="quote-mark">“</div>
+          <div>
+            <em>Insight changes behavior. Coaching changes outcomes.</em>
+            <div style="color:var(--muted);font-weight:700;margin-top:6px;">— The Go2 philosophy</div>
+          </div>
+        </div>
+      </article>
+
+      <aside class="toc reveal">
+        <div class="section-label">Inside this issue</div>
+        <h2>The 5 biggest productivity killers</h2>
+        <div class="toc-list">
+          <a href="#killer-1"><strong>Context switching chaos</strong><span>01</span></a>
+          <a href="#killer-2"><strong>Meeting overload</strong><span>02</span></a>
+          <a href="#killer-3"><strong>Invisible bottlenecks</strong><span>03</span></a>
+          <a href="#killer-4"><strong>Tool sprawl & app drift</strong><span>04</span></a>
+          <a href="#killer-5"><strong>Burnout disguised as hustle</strong><span>05</span></a>
+        </div>
+      </aside>
+    </section>
+
+    <section class="section reveal" id="killers">
+      <div class="section-header">
+        <div>
+          <div class="section-label">Feature report</div>
+          <h2>What quietly drains SMB productivity</h2>
+        </div>
+        <p>
+          These are the patterns that most often erode output in teams of 5–500 employees. Each one looks manageable in isolation. Together, they create slowdowns, rework, missed handoffs, and poor visibility for leaders trying to scale responsibly.
+        </p>
+      </div>
+
+      <article class="killer reveal" id="killer-1">
+        <div class="num-badge">1</div>
+        <div class="killer-main">
+          <div class="tagline">The interruption economy</div>
+          <h3>Context switching chaos</h3>
+          <p>
+            Employees jump between email, chat, CRM, docs, project boards, spreadsheets, and customer calls dozens of times a day. Every switch carries a cognitive cost. For SMBs, that means fragmented attention, slower completion times, and a workday that feels busy without being productive.
+          </p>
+          <p>
+            When leaders lack visibility into this switching behavior, they often assume underperformance is a people problem — when it’s actually a workflow problem.
+          </p>
+          <div class="evidence">
+            <div class="chip">
+              <strong>Heavy app hopping</strong>
+              <span>Frequent app changes are a leading indicator of lost deep-focus time.</span>
+            </div>
+            <div class="chip">
+              <strong>Task drag</strong>
+              <span>Interrupted work takes longer to restart, review, and finish.</span>
+            </div>
+          </div>
+        </div>
+        <aside class="solution">
+          <h4>How Go2 helps</h4>
+          <ul>
+            <li>Tracks app usage patterns and identifies when focus is repeatedly broken.</li>
+            <li>Uses AI coaching to recommend better work blocks, communication norms, and workflow sequencing.</li>
+            <li>Gives managers objective insight into whether teams need process redesign, not pressure.</li>
+          </ul>
+        </aside>
+      </article>
+
+      <article class="killer reveal" id="killer-2">
+        <div class="num-badge">2</div>
+        <div class="killer-main">
+          <div class="tagline">Calendar creep</div>
+          <h3>Meeting overload</h3>
+          <p>
+            In many SMBs, meetings multiply as the company grows. A check-in becomes a status call. A status call becomes a recurring sync. Soon, the workday is cut into 30-minute fragments with no space for actual execution.
+          </p>
+          <p>
+            The cost isn’t only time spent in meetings — it’s the recovery time before and after each one. Leaders often see “alignment,” while employees experience constant disruption.
+          </p>
+          <div class="evidence">
+            <div class="chip">
+              <strong>Calendar fragmentation</strong>
+              <span>Back-to-back meetings break concentration and reduce usable work blocks.</span>
+            </div>
+            <div class="chip">
+              <strong>Hidden cost</strong>
+              <span>Meetings create prep time, follow-up time, and delayed task completion.</span>
+            </div>
+          </div>
+        </div>
+        <aside class="solution">
+          <h4>How Go2 helps</h4>
+          <ul>
+            <li>Surfaces meeting patterns across teams and highlights overload by role or function.</li>
+            <li>Measures how meetings affect productive time, not just calendar occupancy.</li>
+            <li>Coaches managers on where async updates, shorter meetings, or fewer attendees can reclaim output.</li>
+          </ul>
+        </aside>
+      </article>
+
+      <article class="killer reveal" id="killer-3">
+        <div class="num-badge">3</div>
+        <div class="killer-main">
+          <div class="tagline">The work nobody sees</div>
+          <h3>Invisible bottlenecks</h3>
+          <p>
+            Most SMB bottlenecks don’t show up in dashboards until after they’ve caused delays. A single approval gate, one overloaded manager, or one dependency-heavy employee can quietly slow an entire team.
+          </p>
+          <p>
+            Without behavioral insight, leaders are left guessing where throughput breaks down. That creates reactive management instead of proactive improvement.
+          </p>
+          <div class="evidence">
+            <div class="chip">
+              <strong>Delayed handoffs</strong>
+              <span>One overloaded node in the workflow can stall multiple downstream tasks.</span>
+            </div>
+            <div class="chip">
+              <strong>Capacity blind spots</strong>
+              <span>Teams often look “fully staffed” while key roles are functionally saturated.</span>
+            </div>
+          </div>
+        </div>
+        <aside class="solution">
+          <h4>How Go2 helps</h4>
+          <ul>
+            <li>Reveals where work patterns indicate friction, overload, or stalled momentum.</li>
+            <li>Helps ops and HR leaders spot process choke points before performance drops.</li>
+            <li>Turns activity signals into coaching on redistribution, role clarity, and capacity planning.</li>
+          </ul>
+        </aside>
+      </article>
+
+      <article class="killer reveal" id="killer-4">
+        <div class="num-badge">4</div>
+        <div class="killer-main">
+          <div class="tagline">Too many tools, too little flow</div>
+          <h3>Tool sprawl & app drift</h3>
+          <p>
+            SMBs adopt software fast: one tool for chat, one for docs, one for tickets, one for CRM, one for project management, plus whatever each department likes best. Over time, tech stacks become layered and inconsistent.
+          </p>
+          <p>
+            That sprawl creates duplicated work, unclear systems of record, and constant searching for information. Productivity suffers long before finance notices the software spend.
+          </p>
+          <div class="evidence">
+            <div class="chip">
+              <strong>Workflow fragmentation</strong>
+              <span>Employees lose time navigating between overlapping tools and duplicate systems.</span>
+            </div>
+            <div class="chip">
+              <strong>Adoption drift</strong>
+              <span>Teams create unofficial processes that leadership can’t easily observe.</span>
+            </div>
+          </div>
+        </div>
+        <aside class="solution">
+          <h4>How Go2 helps</h4>
+          <ul>
+            <li>Shows which apps are actually used, how often, and in what work patterns.</li>
+            <li>Highlights overlap, inconsistent workflows, and productivity drag caused by tool switching.</li>
+            <li>Supports smarter standardization without forcing a top-down guess.</li>
+          </ul>
+        </aside>
+      </article>
+
+      <article class="killer reveal" id="killer-5">
+        <div class="num-badge">5</div>
+        <div class="killer-main">
+          <div class="tagline">High effort, low sustainability</div>
+          <h3>Burnout disguised as hustle</h3>
+          <p>
+            SMB teams are often proud of moving fast. But speed can mask unsustainable patterns: long days, constant reactive work, and “hero mode” dependence on a few employees. What looks like commitment may actually be fragility.
+          </p>
+          <p>
+            Burnout is not just a people risk — it’s an operational risk. It reduces consistency, hurts retention, and damages output quality over time.
+          </p>
+          <div class="evidence">
+            <div class="chip">
+              <strong>Reactive workdays</strong>
+              <span>Persistent interruptions and overload increase stress while reducing effectiveness.</span>
+            </div>
+            <div class="chip">
+              <strong>Retention risk</strong>
+              <span>Unhealthy work patterns often surface before attrition and performance decline.</span>
+            </div>
+          </div>
+        </div>
+        <aside class="solution">
+          <h4>How Go2 helps</h4>
+          <ul>
+            <li>Detects patterns that suggest overload, imbalance, and unsustainable work behavior.</li>
+            <li>Frames insights around coaching and team health, not employee policing.</li>
+            <li>Helps HR and managers create better norms around focus, recovery, and role balance.</li>
+          </ul>
+        </aside>
+      </article>
+    </section>
+
+    <section class="highlight-band reveal" id="proof">
+      <div>
+        <div class="section-label" style="color:rgba(255,255,255,.58)">The proof</div>
+        <h2>SMBs don’t need more oversight. They need better insight.</h2>
+        <p>
+          Go2 helps leadership teams move from assumptions to evidence. Instead of asking “Are people working?” the better question is “What patterns are helping or hurting performance?” That shift changes culture, manager behavior, and business outcomes.
+        </p>
+      </div>
+
+      <div class="proof-grid">
+        <div class="proof">
+          <strong>42%</strong>
+          <span>Average productivity increase</span>
+        </div>
+        <div class="proof">
+          <strong>15.2h</strong>
+          <span>Saved weekly per employee</span>
+        </div>
+        <div class="proof">
+          <strong>892%</strong>
+          <span>First-year ROI</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="bottom-grid">
+      <article class="pricing-card reveal" id="pricing">
+        <div class="section-label">Pricing snapshot</div>
+        <h2>Built for SMB economics</h2>
+        <p style="color:#2f2b27;margin:0;">
+          Go2 is priced to make sense for growing teams — with a typical range of about <strong>$6–12 per user/month</strong>, depending on plan and rollout needs.
+        </p>
+
+        <div class="price-box">
+          <div class="price">$6–12 <small>/ user / month</small></div>
+          <ul class="feature-list">
+            <li><span class="check">✓</span><span>Behavior-based productivity insights across apps, meetings, and work patterns</span></li>
+            <li><span class="check">✓</span><span>AI coaching focused on performance improvement, not surveillance</span></li>
+            <li><span class="check">✓</span><span>Useful for SMB owners, operations managers, and HR leaders</span></li>
+            <li><span class="check">✓</span><span>Designed for teams from 5 to 500 employees</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="competitor-card reveal" id="why-go2">
+        <div class="section-label">Market positioning</div>
+        <h2>Why Go2 feels different</h2>
+        <p style="color:#2f2b27;margin:0;">
+          Competitors like <strong>Time Doctor</strong>, <strong>Hubstaff</strong>, and <strong>Teramind</strong> are often perceived as monitoring tools. Go2 takes a different path: productivity coaching rooted in work-pattern intelligence.
+        </p>
+
+        <div class="compare">
+          <div class="compare-row">
+            <strong>Traditional monitoring</strong>
+            <span>Emphasizes oversight, compliance, and visibility into activity.</span>
+          </div>
+          <div class="compare-row">
+            <strong>Go2 approach</strong>
+            <span>Emphasizes coaching, workflow improvement, manager enablement, and team performance.</span>
+          </div>
+          <div class="compare-row">
+            <strong>Cultural impact</strong>
+            <span>Supports healthier conversations about how work happens — and how to improve it.</span>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="footer-cta reveal">
+      <div>
+        <div class="section-label">Final word</div>
+        <h2>Make work visible.<br>Make teams better.</h2>
+        <p>
+          Go2 gives SMBs the clarity to improve performance without sacrificing trust. When you understand real work patterns, you can reduce friction, recover time, and build a smarter way to scale.
+        </p>
+      </div>
+
+      <button class="cta" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+        Back to top
+        <span>↑</span>
+      </button>
+    </section>
+  </div>
+
+  <button class="floating-progress" id="scrollBtn" aria-label="Scroll to top">
+    <svg viewBox="0 0 36 36">
+      <path d="M18 2.5a15.5 15.5 0 1 1 0 31a15.5 15.5 0 1 1 0-31"
+            fill="none" stroke="rgba(18,18,18,.12)" stroke-width="2.4"/>
+      <path id="progressPath" d="M18 2.5a15.5 15.5 0 1 1 0 31a15.5 15.5 0 1 1 0-31"
+            fill="none" stroke="#0c6cf2" stroke-width="2.6" stroke-linecap="round"/>
+    </svg>
+    <div class="label">0%</div>
+  </button>
+
+  <script>
+    const nums = document.querySelectorAll('.num');
+    const animateNumber = (el) => {
+      const target = parseFloat(el.dataset.target);
+      const isPercent = el.textContent.includes('%') || String(el.dataset.target).includes('42') || String(el.dataset.target).includes('892');
+      const duration = 1400;
+      const start = performance.now();
+
+      function tick(now){
+        const progress = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const value = target * eased;
+
+        if (target % 1 !== 0) {
+          el.textContent = value.toFixed(1) + (el.dataset.target === "15.2" ? "" : "");
+        } else {
+          el.textContent = Math.round(value);
+        }
+
+        if (el.dataset.target === "42" || el.dataset.target === "892") {
+          el.textContent += '%';
+        }
+        if (progress < 1) requestAnimationFrame(tick);
+      }
+
+      requestAnimationFrame(tick);
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+
+          if (entry.target.classList.contains('stat')) {
+            const num = entry.target.querySelector('.num');
+            if (!num.dataset.animated) {
+              num.dataset.animated = "true";
+              animateNumber(num);
+            }
+          }
+        }
+      });
+    }, { threshold: 0.16 });
+
+    document.querySelectorAll('.reveal, .stat').forEach(el => observer.observe(el));
+
+    const progressPath = document.getElementById('progressPath');
+    const scrollBtn = document.getElementById('scrollBtn');
+    const label = scrollBtn.querySelector('.label');
+    const pathLength = progressPath.getTotalLength();
+    progressPath.style.strokeDasharray = pathLength;
+    progressPath.style.strokeDashoffset = pathLength;
+
+    function updateScrollProgress(){
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = docHeight > 0 ? scrollTop / docHeight : 0;
+      const draw = pathLength * (1 - progress);
+
+      progressPath.style.strokeDashoffset = draw;
+      label.textContent = Math.round(progress * 100) + '%';
+    }
+
+    window.addEventListener('scroll', updateScrollProgress, { passive:true });
+    window.addEventListener('load', updateScrollProgress);
+    scrollBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+    const sections = document.querySelectorAll('section[id], article[id]');
+    const navLinks = document.querySelectorAll('.nav a');
+
+    window.addEventListener('scroll', () => {
+      let current = '';
+      sections.forEach(sec => {
+        const top = sec.offsetTop - 140;
+        if (window.scrollY >= top) current = sec.getAttribute('id');
+      });
+
+      navLinks.forEach(link => {
+        link.classList.remove('active');
+        const href = link.getAttribute('href').replace('#','');
+        if ((href === 'killers' && current.startsWith('killer')) || href === current) {
+          link.classList.add('active');
+        }
+      });
+    }, { passive:true });
+  </script>
+</body>
+</html>

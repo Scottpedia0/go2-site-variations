@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Productivity Weather Map | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f0f4f8;color:#1e293b;overflow-x:hidden}
+.nav{padding:1.5rem 2rem;display:flex;justify-content:space-between;align-items:center;max-width:1200px;margin:0 auto}
+.logo{font-size:1.25rem;font-weight:800}.logo span{color:#3b82f6}
+.nav-btn{padding:.5rem 1.5rem;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;text-decoration:none}
+.hero{max-width:800px;margin:0 auto;text-align:center;padding:3rem 2rem 2rem}
+h1{font-size:clamp(1.75rem,4vw,2.75rem);font-weight:900;line-height:1.15;margin-bottom:1rem}
+h1 .blue{color:#3b82f6}
+.hero p{color:#64748b;font-size:1rem;max-width:550px;margin:0 auto 1.5rem;line-height:1.6}
+.legend{display:flex;justify-content:center;gap:1.5rem;flex-wrap:wrap;margin-bottom:2rem}
+.legend-item{display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#64748b}
+.legend-icon{font-size:1.2rem}
+.controls{display:flex;justify-content:center;gap:.75rem;margin-bottom:2rem;flex-wrap:wrap;padding:0 2rem}
+.ctrl-btn{padding:.5rem 1rem;border:1px solid #e2e8f0;background:#fff;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s;color:#64748b}
+.ctrl-btn.active{background:#3b82f6;color:#fff;border-color:#3b82f6}
+.ctrl-btn:hover{border-color:#3b82f6}
+.org-chart{max-width:1100px;margin:0 auto;padding:0 2rem 4rem}
+.dept{margin-bottom:2rem}
+.dept-header{display:flex;align-items:center;gap:1rem;margin-bottom:1rem;padding:.75rem 1rem;background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.04);cursor:pointer;transition:all .2s}
+.dept-header:hover{box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.dept-weather{font-size:1.5rem}
+.dept-name{font-weight:700;font-size:1rem}
+.dept-score{margin-left:auto;font-size:.85rem;font-weight:700;padding:.25rem .75rem;border-radius:6px}
+.dept-members{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.75rem;padding-left:2rem;max-height:0;overflow:hidden;transition:max-height .4s ease}
+.dept.open .dept-members{max-height:1000px}
+.member{background:#fff;border-radius:12px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,.04);transition:all .3s;cursor:pointer;position:relative}
+.member:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.member-top{display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem}
+.member-weather{font-size:1.5rem}
+.member-name{font-size:.85rem;font-weight:600}
+.member-role{font-size:.7rem;color:#94a3b8}
+.member-stats{display:flex;gap:.5rem;margin-top:.5rem}
+.mini-stat{font-size:.65rem;padding:.2rem .5rem;border-radius:4px;background:#f1f5f9;color:#64748b}
+.member-tooltip{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:1rem;border-radius:10px;font-size:.8rem;line-height:1.5;width:220px;z-index:10;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.member-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#1e293b}
+.member:hover .member-tooltip{display:block}
+.summary{max-width:800px;margin:0 auto;padding:2rem;display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem}
+.summary-card{text-align:center;padding:1.5rem;background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.summary-card .sc-icon{font-size:2rem;margin-bottom:.5rem}
+.summary-card .sc-value{font-size:1.5rem;font-weight:800;margin-bottom:.15rem}
+.summary-card .sc-label{font-size:.7rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+.cta-section{text-align:center;padding:4rem 2rem;max-width:600px;margin:0 auto}
+.cta-section h2{font-size:1.5rem;font-weight:800;margin-bottom:1rem}
+.cta-section p{color:#64748b;margin-bottom:2rem;line-height:1.6}
+.cta-btn{display:inline-block;padding:1rem 2.5rem;background:#3b82f6;color:#fff;font-size:1rem;font-weight:700;border:none;border-radius:12px;cursor:pointer;text-decoration:none;transition:all .3s}
+.cta-btn:hover{background:#2563eb;transform:translateY(-2px);box-shadow:0 10px 30px rgba(59,130,246,.3)}
+footer{text-align:center;padding:2rem;color:#94a3b8;font-size:.8rem}
+@media(max-width:768px){.summary{grid-template-columns:repeat(2,1fr)}.dept-members{grid-template-columns:1fr 1fr;padding-left:0}}
+</style>
+</head>
+<body>
+<nav class="nav"><div class="logo">Go2<span>.</span></div><a href="#cta" class="nav-btn">Get Your Weather Map</a></nav>
+
+<section class="hero">
+<h1>Your Team's <span class="blue">Productivity Weather</span></h1>
+<p>See your entire organization at a glance. Sunny skies, gathering clouds, or incoming storms — know before it's too late.</p>
+</section>
+
+<div class="legend">
+<div class="legend-item"><span class="legend-icon">&#9728;&#65039;</span> Thriving</div>
+<div class="legend-item"><span class="legend-icon">&#9925;</span> Mostly Good</div>
+<div class="legend-item"><span class="legend-icon">&#9729;&#65039;</span> Needs Attention</div>
+<div class="legend-item"><span class="legend-icon">&#9928;&#65039;</span> At Risk</div>
+</div>
+
+<div class="controls">
+<button class="ctrl-btn active" onclick="setView('all')">All Teams</button>
+<button class="ctrl-btn" onclick="setView('at-risk')">At Risk Only</button>
+<button class="ctrl-btn" onclick="setView('thriving')">Thriving</button>
+</div>
+
+<div class="summary" id="summary"></div>
+<div class="org-chart" id="orgChart"></div>
+
+<section class="cta-section" id="cta">
+<h2>Know Your Team's Weather Before the Storm</h2>
+<p>Go2 gives you real-time visibility into every team and every person. Spot problems early, celebrate wins, and lead with clarity.</p>
+<a href="#" class="cta-btn">Start Your Free Forecast &rarr;</a>
+</section>
+<footer>&copy; 2026 Go2. Clear skies ahead.</footer>
+
+<script>
+const weatherMap={sunny:{icon:'&#9728;&#65039;',label:'Thriving',color:'#22c55e',bg:'#f0fdf4'},partlyCloudy:{icon:'&#9925;',label:'Good',color:'#3b82f6',bg:'#eff6ff'},cloudy:{icon:'&#9729;&#65039;',label:'Attention',color:'#f59e0b',bg:'#fefce8'},stormy:{icon:'&#9928;&#65039;',label:'At Risk',color:'#ef4444',bg:'#fef2f2'}};
+const depts=[
+  {name:'Engineering',members:[
+    {name:'Alex Rivera',role:'Tech Lead',weather:'sunny',focus:'4.5h',meetings:'1.2h',tip:'Top performer. 92% focus ratio. Shield their calendar.'},
+    {name:'Jordan Lee',role:'Sr Developer',weather:'sunny',focus:'4.1h',meetings:'1.5h',tip:'Consistent deep worker. Code quality trending up 15%.'},
+    {name:'Sam Patel',role:'Developer',weather:'partlyCloudy',focus:'3.2h',meetings:'2.1h',tip:'Meeting load increased 30% this month. Monitor.'},
+    {name:'Casey Kim',role:'Developer',weather:'cloudy',focus:'2.1h',meetings:'3.4h',tip:'Only 2.1h focus/day. Too many cross-team meetings.'},
+    {name:'Taylor Chen',role:'Jr Developer',weather:'sunny',focus:'3.8h',meetings:'1h',tip:'Ramping fast. Ready for more responsibility.'},
+    {name:'Morgan Wu',role:'DevOps',weather:'partlyCloudy',focus:'3.5h',meetings:'1.8h',tip:'On-call stress showing. Consider rotation change.'},
+  ]},
+  {name:'Sales',members:[
+    {name:'Dana Scott',role:'Sales Director',weather:'partlyCloudy',focus:'2.5h',meetings:'4h',tip:'High meeting load but closing deals. Watch for burnout.'},
+    {name:'Riley Brooks',role:'Account Exec',weather:'sunny',focus:'3h',meetings:'2.5h',tip:'Top closer. Pipeline up 40%. Energy is high.'},
+    {name:'Avery Hall',role:'Account Exec',weather:'stormy',focus:'1.5h',meetings:'4.5h',tip:'Struggling. 1.5h focus/day. Pipeline stalled. Needs support.'},
+    {name:'Quinn Davis',role:'SDR',weather:'sunny',focus:'3.5h',meetings:'1.5h',tip:'Outbound machine. 2x quota this month.'},
+  ]},
+  {name:'Marketing',members:[
+    {name:'Jamie Torres',role:'Marketing Lead',weather:'cloudy',focus:'2.2h',meetings:'3h',tip:'Spread too thin. 8 active projects. Prioritization needed.'},
+    {name:'Drew Nakamura',role:'Content',weather:'sunny',focus:'4h',meetings:'1h',tip:'Creative flow state champion. Content quality excellent.'},
+    {name:'Skyler Reeves',role:'Growth',weather:'partlyCloudy',focus:'3h',meetings:'2h',tip:'Good output but campaign results lagging. May need strategy pivot.'},
+  ]},
+  {name:'Customer Success',members:[
+    {name:'Blake Foster',role:'CS Lead',weather:'stormy',focus:'1.8h',meetings:'4.2h',tip:'Overloaded. 45 accounts per rep vs industry avg of 30. Hiring needed.'},
+    {name:'Reese Garcia',role:'CSM',weather:'cloudy',focus:'2.5h',meetings:'3h',tip:'Churn risk on 3 accounts. Needs exec support.'},
+    {name:'Hayden Cho',role:'CSM',weather:'partlyCloudy',focus:'3h',meetings:'2.5h',tip:'Steady performer. NPS scores consistently above 60.'},
+  ]},
+];
+function getDeptWeather(d){
+  const scores=d.members.map(m=>m.weather==='sunny'?4:m.weather==='partlyCloudy'?3:m.weather==='cloudy'?2:1);
+  const avg=scores.reduce((a,b)=>a+b,0)/scores.length;
+  if(avg>=3.5)return'sunny';if(avg>=2.5)return'partlyCloudy';if(avg>=1.5)return'cloudy';return'stormy';
+}
+const orgChart=document.getElementById('orgChart');
+const summaryEl=document.getElementById('summary');
+// Summary
+let counts={sunny:0,partlyCloudy:0,cloudy:0,stormy:0};
+depts.forEach(d=>d.members.forEach(m=>counts[m.weather]++));
+const total=Object.values(counts).reduce((a,b)=>a+b,0);
+summaryEl.innerHTML=[
+  {icon:'&#9728;&#65039;',val:counts.sunny,label:'Thriving'},
+  {icon:'&#9925;',val:counts.partlyCloudy,label:'Mostly Good'},
+  {icon:'&#9729;&#65039;',val:counts.cloudy,label:'Needs Attention'},
+  {icon:'&#9928;&#65039;',val:counts.stormy,label:'At Risk'},
+].map(s=>`<div class="summary-card"><div class="sc-icon">${s.icon}</div><div class="sc-value">${s.val}</div><div class="sc-label">${s.label}</div></div>`).join('');
+// Render org chart
+function render(filter){
+  orgChart.innerHTML='';
+  depts.forEach(d=>{
+    const dw=getDeptWeather(d);const w=weatherMap[dw];
+    let members=d.members;
+    if(filter==='at-risk')members=members.filter(m=>m.weather==='stormy'||m.weather==='cloudy');
+    if(filter==='thriving')members=members.filter(m=>m.weather==='sunny');
+    if(members.length===0&&filter!=='all')return;
+    const div=document.createElement('div');div.className='dept open';
+    div.innerHTML=`
+      <div class="dept-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="dept-weather">${w.icon}</span>
+        <span class="dept-name">${d.name}</span>
+        <span class="dept-score" style="background:${w.bg};color:${w.color}">${w.label} &middot; ${d.members.length} people</span>
+      </div>
+      <div class="dept-members">
+        ${members.map(m=>{const mw=weatherMap[m.weather];return`
+          <div class="member" style="border-left:3px solid ${mw.color}">
+            <div class="member-top"><span class="member-weather">${mw.icon}</span><div><div class="member-name">${m.name}</div><div class="member-role">${m.role}</div></div></div>
+            <div class="member-stats"><span class="mini-stat">Focus: ${m.focus}</span><span class="mini-stat">Mtgs: ${m.meetings}</span></div>
+            <div class="member-tooltip">${m.tip}</div>
+          </div>`}).join('')}
+      </div>`;
+    orgChart.appendChild(div);
+  });
+}
+function setView(v){
+  document.querySelectorAll('.ctrl-btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  render(v);
+}
+render('all');
+</script>
+</body>
+</html>

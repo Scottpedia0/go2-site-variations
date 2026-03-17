@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go2 | Industry Productivity Benchmark Tool</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --chart-avg: #cbd5e1;
+            --chart-top: #10b981;
+            --radius-md: 12px;
+            --radius-lg: 24px;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.01);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Navigation */
+        nav {
+            background: var(--surface);
+            padding: 1rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--secondary);
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-main);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: rgba(79, 70, 229, 0.05);
+            box-shadow: none;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 5rem 5% 3rem;
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .badge {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            letter-spacing: -1px;
+        }
+
+        .hero h1 span {
+            color: var(--primary);
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 700px;
+            margin: 0 auto 2rem;
+        }
+
+        /* Benchmark Tool Container */
+        .tool-container {
+            max-width: 1200px;
+            margin: 0 auto 5rem;
+            padding: 0 5%;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+        }
+
+        .config-panel {
+            background: var(--surface);
+            padding: 2.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            height: fit-content;
+        }
+
+        .config-panel h3 {
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-main);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: var(--bg);
+            color: var(--text-main);
+            transition: all 0.2s;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1em;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            background-color: var(--surface);
+        }
+
+        .trust-note {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(79, 70, 229, 0.05);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .trust-note svg {
+            flex-shrink: 0;
+            color: var(--primary);
+        }
+
+        /* Results Panel */
+        .results-panel {
+            background: var(--surface);
+            padding: 2.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .results-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: opacity 0.5s ease;
+        }
+
+        .results-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .results-overlay-content {
+            text-align: center;
+            max-width: 300px;
+        }
+
+        .results-overlay-content svg {
+            width: 48px;
+            height: 48px;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .industry-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .industry-subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .score-box {
+            text-align: right;
+        }
+
+        .score-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1;
+        }
+
+        .score-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Charts */
+        .metric-group {
+            margin-bottom: 2.5rem;
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .metric-title {
+            font-weight: 600;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tooltip-icon {
+            color: var(--text-muted);
+            cursor: help;
+            position: relative;
+        }
+
+        .tooltip-icon:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--text-main);
+            color: white;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            z-index: 20;
+            margin-bottom: 5px;
+            font-weight: 400;
+        }
+
+        .chart-container {
+            position: relative;
+        }
+
+        .bar-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            gap: 1rem;
+        }
+
+        .bar-label {
+            width: 100px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-align: right;
+        }
+
+        .bar-track {
+            flex-grow: 1;
+            height: 16px;
+            background: var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bar-fill {
+            height: 100%;
+            width: 0%; /* Set by JS */
+            border-radius: 8px;
+            transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+            position: relative;
+        }
+
+        .bar-fill.avg { background: var(--chart-avg); }
+        .bar-fill.top { background: var(--chart-top); }
+        
+        /* Special styling for context switching where lower is better */
+        .reverse-metric .bar-fill.avg { background: #f87171; }
+        .reverse-metric .bar-fill.top { background: var(--chart-top); }
+
+        .bar-value {
+            width: 60px;
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        /* Stats Section */
+        .stats-section {
+            background: #0f172a;
+            color: white;
+            padding: 5rem 5%;
+            margin-top: 2rem;
+        }
+
+        .stats-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 3rem;
+            text-align: center;
+        }
+
+        .stat-item h3 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: var(--secondary);
+            margin-bottom: 0.5rem;
+            line-height: 1;
+        }
+
+        .stat-item p {
+            font-size: 1.1rem;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .coaching-banner {
+            max-width: 800px;
+            margin: 4rem auto 0;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 2rem;
+            border-radius: var(--radius-md);
+            text-align: center;
+        }
+
+        .coaching-banner h4 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .coaching-banner p {
+            color: #cbd5e1;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Footer */
+        footer {
+            background: #020617;
+            color: #64748b;
+            padding: 2rem 5%;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 900px) {
+            .tool-container {
+                grid-template-columns: 1fr;
+            }
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            .nav-links {
+                display: none; /* Simplification for widget mode */
+            }
+            .bar-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.25rem;
+            }
+            .bar-label {
+                text-align: left;
+                width: auto;
+            }
+            .bar-track {
+                width: 100%;
+            }
+            .bar-value {
+                text-align: right;
+                width: 100%;
+                margin-top: 0.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">Go2<span class="logo-dot"></span></div>
+        <div class="nav-links">
+            <a href="#">Product</a>
+            <a href="#">Coaching Methodology</a>
+            <a href="#">Pricing</a>
+        </div>
+        <a href="#" class="btn">Start Free Trial</a>
+    </nav>
+
+    <section class="hero">
+        <div class="badge">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            Data updated for Q4 2023
+        </div>
+        <h1>The SMB Productivity <span>Benchmark</span></h1>
+        <p>Discover how your team's work patterns compare to top performers in your industry. Uncover hidden bottlenecks and empower your team with AI coaching—not surveillance.</p>
+    </section>
+
+    <div class="tool-container">
+        <!-- Input Panel -->
+        <div class="config-panel">
+            <h3>Configure Benchmark</h3>
+            
+            <div class="form-group">
+                <label for="industry">Industry</label>
+                <select id="industry" class="form-control">
+                    <option value="" disabled selected>Select your industry...</option>
+                    <option value="tech">Technology & Software</option>
+                    <option value="agency">Marketing & Agencies</option>
+                    <option value="finance">Finance & Accounting</option>
+                    <option value="health">Healthcare Admin</option>
+                    <option value="legal">Legal Services</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="size">Company Size</label>
+                <select id="size" class="form-control">
+                    <option value="" disabled selected>Select team size...</option>
+                    <option value="small">5 - 20 employees</option>
+                    <option value="medium">21 - 50 employees</option>
+                    <option value="large">51 - 200 employees</option>
+                    <option value="enterprise">201 - 500 employees</option>
+                </select>
+            </div>
+
+            <button id="calculateBtn" class="btn" style="width: 100%; margin-top: 1rem; padding: 1rem; font-size: 1.1rem;">
+                Generate Benchmark Report
+            </button>
+
+            <div class="trust-note">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                <div>
+                    <strong>Privacy-First AI</strong><br>
+                    Go2 aggregates data to provide teams with personal productivity coaching. We never support keystroke logging or screen recording for disciplinary purposes.
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div class="results-panel" id="resultsPanel">
+            <!-- Overlay before calculation -->
+            <div class="results-overlay" id="resultsOverlay">
+                <div class="results-overlay-content">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                    <h3 style="margin-bottom: 0.5rem; color: var(--text-main);">Awaiting Configuration</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Select your industry and company size to see how top-performing teams operate.</p>
+                </div>
+            </div>
+
+            <div class="results-header">
+                <div>
+                    <div class="industry-title" id="displayIndustry">Technology & Software</div>
+                    <div class="industry-subtitle" id="displaySize">51 - 200 employees</div>
+                </div>
+                <div class="score-box">
+                    <div class="score-label">Top Performer Focus Score</div>
+                    <div class="score-value" id="displayScore">0</div>
+                </div>
+            </div>
+
+            <!-- Metric 1: Focus Time -->
+            <div class="metric-group">
+                <div class="metric-header">
+                    <div class="metric-title">
+                        Daily Focus Time
+                        <svg class="tooltip-icon" data-tooltip="Uninterrupted work blocks longer than 30 minutes." xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="bar-row">
+                        <div class="bar-label">Industry Avg</div>
+                        <div class="bar-track"><div class="bar-fill avg" id="bar-focus-avg"></div></div>
+                        <div class="bar-value"><span class="counter" id="val-focus-avg">0</span>h</div>
+                    </div>
+                    <div class="bar-row">
+                        <div class="bar-label" style="color: var(--chart-top); font-weight: 700;">Top 10% Teams</div>
+                        <div class="bar-track"><div class="bar-fill top" id="bar-focus-top"></div></div>
+                        <div class="bar-value" style="color: var(--chart-top);"><span class="counter" id="val-focus-top">0</span>h</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metric 2: Context Switching -->
+            <div class="metric-group reverse-metric">
+                <div class="metric-header">
+                    <div class="metric-title">
+                        Context Switches / Hour
+                        <svg class="tooltip-icon" data-tooltip="Toggling between distinct apps (e.g., Slack to CRM to Email). Lower is better." xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="bar-row">
+                        <div class="bar-label">Industry Avg</div>
+                        <div class="bar-track"><div class="bar-fill avg" id="bar-switch-avg"></div></div>
+                        <div class="bar-value"><span class="counter" id="val-switch-avg">0</span></div>
+                    </div>
+                    <div class="bar-row">
+                        <div class="bar-label" style="color: var(--chart-top); font-weight: 700;">Top 10% Teams</div>
+                        <div class="bar-track"><div class="bar-fill top" id="bar-switch-top"></div></div>
+                        <div class="bar-value" style="color: var(--chart-top);"><span class="counter" id="val-switch-top">0</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metric 3: Collaboration Overload -->
+            <div class="metric-group reverse-metric" style="margin-bottom: 0;">
+                <div class="metric-header">
+                    <div class="metric-title">
+                        Meeting & Chat Time
+                        <svg class="tooltip-icon" data-tooltip="Percentage of day spent in meetings or active chat windows." xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="bar-row">
+                        <div class="bar-label">Industry Avg</div>
+                        <div class="bar-track"><div class="bar-fill avg" id="bar-meet-avg"></div></div>
+                        <div class="bar-value"><span class="counter" id="val-meet-avg">0</span>%</div>
+                    </div>
+                    <div class="bar-row">
+                        <div class="bar-label" style="color: var(--chart-top); font-weight: 700;">Top 10% Teams</div>
+                        <div class="bar-track"><div class="bar-fill top" id="bar-meet-top"></div></div>
+                        <div class="bar-value" style="color: var(--chart-top);"><span class="counter" id="val-meet-top">0</span>%</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Value Prop Section -->
+    <section class="stats-section">
+        <div style="text-align: center; margin-bottom: 4rem;">
+            <h2 style="font-size: 2.5rem; margin-bottom: 1rem;">Stop Monitoring. Start Coaching.</h2>
+            <p style="font-size: 1.2rem; color: #94a3b8; max-width: 600px; margin: 0 auto;">When you give teams visibility into their own work patterns alongside AI-driven suggestions, productivity naturally soars.</p>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-item">
+                <h3>42%</h3>
+                <p>Average Productivity Increase</p>
+            </div>
+            <div class="stat-item">
+                <h3>15.2h</h3>
+                <p>Saved per Employee/Week</p>
+            </div>
+            <div class="stat-item">
+                <h3>892%</h3>
+                <p>Average First-Year ROI</p>
+            </div>
+        </div>
+
+        <div class="coaching-banner">
+            <h4>How Go2 is Different</h4>
+            <p>Tools like Time Doctor or Hubstaff are built for surveillance. Go2 is built for enablement. We process work patterns (app usage, meeting load, context switching) to identify burnout risks and coaching opportunities, shared directly with the employee first.</p>
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <a href="#" class="btn">See Platform Tour</a>
+                <a href="#" class="btn btn-outline" style="border-color: rgba(255,255,255,0.2); color: white;">Pricing: $8/user</a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2023 Go2 Productivity Platform. Empowering SMBs worldwide.</p>
+    </footer>
+
+    <script>
+        // Mock Database
+        const benchmarkData = {
+            tech: {
+                name: "Technology & Software",
+                focusAvg: 2.8, focusTop: 4.5, maxFocus: 8,
+                switchAvg: 48, switchTop: 22, maxSwitch: 80,
+                meetAvg: 45, meetTop: 25, maxMeet: 100,
+                score: 88
+            },
+            agency: {
+                name: "Marketing & Agencies",
+                focusAvg: 2.2, focusTop: 3.8, maxFocus: 8,
+                switchAvg: 65, switchTop: 35, maxSwitch: 80,
+                meetAvg: 55, meetTop: 30, maxMeet: 100,
+                score: 82
+            },
+            finance: {
+                name: "Finance & Accounting",
+                focusAvg: 3.5, focusTop: 5.2, maxFocus: 8,
+                switchAvg: 35, switchTop: 18, maxSwitch: 80,
+                meetAvg: 30, meetTop: 15, maxMeet: 100,
+                score: 91
+            },
+            health: {
+                name: "Healthcare Admin",
+                focusAvg: 2.5, focusTop: 4.0, maxFocus: 8,
+                switchAvg: 72, switchTop: 40, maxSwitch: 80,
+                meetAvg: 40, meetTop: 20, maxMeet: 100,
+                score: 79
+            },
+            legal: {
+                name: "Legal Services",
+                focusAvg: 4.0, focusTop: 5.8, maxFocus: 8,
+                switchAvg: 28, switchTop: 15, maxSwitch: 80,
+                meetAvg: 25, meetTop: 10, maxMeet: 100,
+                score: 94
+            }
+        };
+
+        const sizeNames = {
+            small: "5 - 20 employees",
+            medium: "21 - 50 employees",
+            large: "51 - 200 employees",
+            enterprise: "201 - 500 employees"
+        };
+
+        // UI Elements
+        const industrySelect = document.getElementById('industry');
+        const sizeSelect = document.getElementById('size');
+        const calcBtn = document.getElementById('calculateBtn');
+        const overlay = document.getElementById('resultsOverlay');
+        
+        // Display Elements
+        const displayInd = document.getElementById('displayIndustry');
+        const displaySz = document.getElementById('displaySize');
+        const displayScore = document.getElementById('displayScore');
+
+        // Animation Helper
+        function animateValue(obj, start, end, duration, isFloat = false) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                // Ease out cubic
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                
+                let currentVal = start + (end - start) * easeProgress;
+                obj.innerHTML = isFloat ? currentVal.toFixed(1) : Math.floor(currentVal);
+                
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    obj.innerHTML = isFloat ? end.toFixed(1) : end;
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        function updateChart(barId, valId, value, max, isFloat = false) {
+            const bar = document.getElementById(barId);
+            const valSpan = document.getElementById(valId);
+            
+            // Calculate percentage for width
+            let percentage = (value / max) * 100;
+            if(percentage > 100) percentage = 100;
+
+            // Set width for CSS transition
+            setTimeout(() => {
+                bar.style.width = percentage + '%';
+            }, 50); // slight delay to ensure DOM update
+
+            // Animate number
+            animateValue(valSpan, 0, value, 1500, isFloat);
+        }
+
+        function generateBenchmark() {
+            const indKey = industrySelect.value;
+            const szKey = sizeSelect.value;
+
+            if (!indKey || !szKey) {
+                alert("Please select both Industry and Company Size.");
+                return;
+            }
+
+            const data = benchmarkData[indKey];
+            
+            // Minor data variance based on size to make it feel dynamic
+            let sizeMultiplier = 1;
+            if(szKey === 'small') sizeMultiplier = 1.05; // slightly better focus
+            if(szKey === 'large' || szKey === 'enterprise') sizeMultiplier = 0.9; // more meetings usually
+
+            // Update Headers
+            displayInd.textContent = data.name;
+            displaySz.textContent = sizeNames[szKey];
+            
+            // Hide Overlay
+            overlay.classList.add('hidden');
+
+            // Animate Total Score
+            animateValue(displayScore, 0, Math.floor(data.score * (szKey === 'small' ? 1.02 : 0.98)), 2000, false);
+
+            // Update Charts
+            // Focus Time (Higher is better, scale 0-8)
+            updateChart('bar-focus-avg', 'val-focus-avg', data.focusAvg * sizeMultiplier, data.maxFocus, true);
+            updateChart('bar-focus-top', 'val-focus-top', data.focusTop, data.maxFocus, true);
+
+            // Context Switches (Lower is better, scale 0-80)
+            // For reverse metrics, visually a longer bar for 'Avg' is bad, shorter for 'Top' is good.
+            updateChart('bar-switch-avg', 'val-switch-avg', data.switchAvg / sizeMultiplier, data.maxSwitch, false);
+            updateChart('bar-switch-top', 'val-switch-top', data.switchTop, data.maxSwitch, false);
+
+            // Meetings (Lower is better, scale 0-100%)
+            updateChart('bar-meet-avg', 'val-meet-avg', data.meetAvg / sizeMultiplier, data.maxMeet, false);
+            updateChart('bar-meet-top', 'val-meet-top', data.meetTop, data.maxMeet, false);
+
+            // Change button state
+            calcBtn.textContent = "Update Benchmark";
+            calcBtn.style.background = "var(--secondary)";
+            setTimeout(() => {
+                calcBtn.style.background = "var(--primary)";
+            }, 1000);
+        }
+
+        calcBtn.addEventListener('click', generateBenchmark);
+
+    </script>
+</body>
+</html>

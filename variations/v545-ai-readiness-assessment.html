@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Readiness Assessment | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0a0a1a;color:#fff;min-height:100vh}
+.container{max-width:700px;margin:0 auto;padding:2rem}
+.hero{text-align:center;padding:2rem 0}
+.badge{display:inline-block;padding:.4rem 1.2rem;border-radius:50px;background:rgba(108,99,255,.15);border:1px solid rgba(108,99,255,.3);color:#6c63ff;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:1rem}
+h1{font-size:clamp(2rem,4vw,2.8rem);font-weight:900;margin-bottom:.75rem}
+.sub{color:#8888aa;font-size:1rem;max-width:500px;margin:0 auto;line-height:1.6}
+.progress-bar{display:flex;gap:4px;margin:2rem 0}
+.progress-step{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.08);transition:background .3s}
+.progress-step.done{background:#6c63ff}
+.progress-step.current{background:#6c63ff;animation:pulseBg 1.5s infinite}
+@keyframes pulseBg{0%,100%{opacity:1}50%{opacity:.5}}
+.question-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:2.5rem;margin-bottom:1rem}
+.q-number{font-size:.75rem;color:#6c63ff;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem}
+.q-text{font-size:1.2rem;font-weight:700;line-height:1.4;margin-bottom:1.5rem}
+.options{display:flex;flex-direction:column;gap:.75rem}
+.option{padding:1rem 1.25rem;background:rgba(255,255,255,.03);border:2px solid rgba(255,255,255,.08);border-radius:12px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:.75rem;font-size:.95rem}
+.option:hover{background:rgba(108,99,255,.06);border-color:rgba(108,99,255,.2)}
+.option.selected{background:rgba(108,99,255,.1);border-color:#6c63ff}
+.option .radio{width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.option.selected .radio{border-color:#6c63ff;background:#6c63ff}
+.option.selected .radio::after{content:'';width:8px;height:8px;border-radius:50%;background:#fff}
+.nav-btns{display:flex;gap:1rem;justify-content:space-between;margin-top:1.5rem}
+.nav-btn{padding:.75rem 2rem;border-radius:10px;font-weight:600;font-size:.9rem;cursor:pointer;border:none;font-family:inherit}
+.nav-btn.back{background:rgba(255,255,255,.06);color:#aaa}
+.nav-btn.next{background:linear-gradient(135deg,#6c63ff,#4834d4);color:#fff}
+.nav-btn:disabled{opacity:.3;cursor:default}
+.results-section{display:none;text-align:center}
+.results-section.show{display:block}
+.quiz-section{display:block}
+.quiz-section.hide{display:none}
+.score-ring{position:relative;width:220px;height:220px;margin:2rem auto}
+.score-ring canvas{width:100%;height:100%}
+.score-ring .center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.score-ring .num{font-size:3.5rem;font-weight:900;color:#6c63ff}
+.score-ring .lbl{font-size:.85rem;color:#888}
+.score-label{font-size:1.5rem;font-weight:800;margin-bottom:1rem}
+.score-desc{color:#888;font-size:1rem;max-width:500px;margin:0 auto 2rem;line-height:1.6}
+.radar-container{max-width:400px;margin:2rem auto}
+.radar-container canvas{width:100%;height:auto}
+.recs{text-align:left;margin-top:2rem}
+.recs h2{font-size:1.5rem;font-weight:800;text-align:center;margin-bottom:1.5rem}
+.rec{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:1.5rem;margin-bottom:1rem}
+.rec h3{font-size:1rem;font-weight:700;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem}
+.rec p{font-size:.9rem;color:#8888aa;line-height:1.5}
+.rec .score-badge{font-size:.7rem;padding:.15rem .5rem;border-radius:4px;font-weight:700}
+.sb-high{background:rgba(16,185,129,.12);color:#10b981}
+.sb-med{background:rgba(245,158,11,.12);color:#f59e0b}
+.sb-low{background:rgba(239,68,68,.12);color:#ef4444}
+.cta-btn{display:inline-block;padding:1rem 2.5rem;background:linear-gradient(135deg,#6c63ff,#4834d4);color:#fff;text-decoration:none;border-radius:12px;font-weight:700;font-size:1.05rem;margin-top:2rem;box-shadow:0 4px 20px rgba(108,99,255,.3)}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="hero">
+    <div class="badge">10-Question Assessment</div>
+    <h1>Is Your Team AI-Ready?</h1>
+    <p class="sub">Take this 2-minute assessment to see how prepared your organization is to leverage AI productivity tools effectively.</p>
+  </div>
+  <div class="progress-bar" id="progressBar"></div>
+
+  <div class="quiz-section" id="quizSection"></div>
+
+  <div class="results-section" id="resultsSection">
+    <div class="score-ring"><canvas id="scoreCanvas" width="440" height="440"></canvas><div class="center"><div class="num" id="scoreNum">0</div><div class="lbl">out of 100</div></div></div>
+    <div class="score-label" id="scoreLabel"></div>
+    <div class="score-desc" id="scoreDesc"></div>
+    <h3 style="margin-bottom:1rem;color:#888">Your AI Readiness Profile</h3>
+    <div class="radar-container"><canvas id="radarCanvas" width="640" height="640"></canvas></div>
+    <div class="recs" id="recsContainer"></div>
+    <a href="#" class="cta-btn">Start Your AI Journey with Go2</a>
+  </div>
+</div>
+
+<script>
+const questions=[
+  {q:"How does your team currently track productivity?",cat:"Data",opts:[{t:"We don't track it",s:1},{t:"Manual time tracking / timesheets",s:3},{t:"Basic tool analytics (hours logged)",s:5},{t:"Automated tracking across tools",s:8},{t:"AI-powered insights with recommendations",s:10}]},
+  {q:"How comfortable is your team with data-driven decisions?",cat:"Culture",opts:[{t:"We go with gut feeling mostly",s:2},{t:"We look at data sometimes",s:4},{t:"Data informs most decisions",s:7},{t:"Data-first culture, dashboards everywhere",s:9}]},
+  {q:"What's your biggest productivity challenge right now?",cat:"Awareness",opts:[{t:"I don't really know — that's the problem",s:3},{t:"Too many meetings",s:5},{t:"Context switching / fragmentation",s:6},{t:"We know our challenges and are working on them",s:8}]},
+  {q:"How does leadership view workforce analytics?",cat:"Leadership",opts:[{t:"Never discussed it",s:1},{t:"Interested but skeptical",s:4},{t:"Actively exploring options",s:7},{t:"Budget approved, seeking the right tool",s:10}]},
+  {q:"How do you handle employee privacy concerns?",cat:"Privacy",opts:[{t:"Haven't thought about it",s:2},{t:"We'd need to figure it out",s:4},{t:"We have general data policies",s:7},{t:"Clear privacy framework in place",s:9}]},
+  {q:"How integrated are your work tools?",cat:"Infrastructure",opts:[{t:"Scattered — everyone uses different tools",s:2},{t:"Some tools integrated, many siloed",s:4},{t:"Most tools connected, central platform",s:7},{t:"Fully integrated tech stack",s:9}]},
+  {q:"How does your team respond to new tools?",cat:"Adoption",opts:[{t:"Resistant — too many changes already",s:2},{t:"Cautiously open if it's easy",s:5},{t:"Generally positive about trying new things",s:7},{t:"Eager early adopters",s:9}]},
+  {q:"What's your current meeting culture?",cat:"Process",opts:[{t:"Meetings dominate, few have agendas",s:2},{t:"Some structure, still too many",s:4},{t:"Most meetings have purpose and time limits",s:7},{t:"Lean meeting culture, async by default",s:9}]},
+  {q:"How do you currently identify burnout risk?",cat:"Wellness",opts:[{t:"We don't — we learn when someone quits",s:1},{t:"Annual surveys",s:3},{t:"Regular 1:1s and check-ins",s:6},{t:"Proactive monitoring with early warnings",s:9}]},
+  {q:"What's your budget comfort for productivity tools?",cat:"Budget",opts:[{t:"Very limited — free tools only",s:2},{t:"$1-5/user/month",s:5},{t:"$6-15/user/month",s:8},{t:"$15+/user/month for the right tool",s:10}]}
+];
+
+let current=0,answers=new Array(10).fill(null);
+
+function renderProgress(){
+  const pb=document.getElementById('progressBar');
+  pb.innerHTML=questions.map((_,i)=>`<div class="progress-step${i<current?' done':''}${i===current?' current':''}"></div>`).join('');
+}
+
+function renderQuestion(){
+  const q=questions[current];
+  const qs=document.getElementById('quizSection');
+  qs.innerHTML=`<div class="question-card"><div class="q-number">Question ${current+1} of 10 — ${q.cat}</div><div class="q-text">${q.q}</div><div class="options">${q.opts.map((o,i)=>`<div class="option${answers[current]===i?' selected':''}" onclick="selectOption(${i})"><div class="radio"></div><span>${o.t}</span></div>`).join('')}</div></div><div class="nav-btns"><button class="nav-btn back" onclick="prev()"${current===0?' disabled':''}>Back</button><button class="nav-btn next" onclick="next()"${answers[current]===null?' disabled':''}>${current===9?'See Results':'Next'}</button></div>`;
+  renderProgress();
+}
+
+function selectOption(i){
+  answers[current]=i;
+  renderQuestion();
+}
+
+function next(){
+  if(answers[current]===null)return;
+  if(current<9){current++;renderQuestion()}
+  else showResults();
+}
+function prev(){if(current>0){current--;renderQuestion()}}
+
+function showResults(){
+  document.getElementById('quizSection').classList.add('hide');
+  const rs=document.getElementById('resultsSection');rs.classList.add('show');
+  // Calculate scores per category
+  const catScores={};
+  questions.forEach((q,i)=>{
+    const s=q.opts[answers[i]].s;
+    catScores[q.cat]=(catScores[q.cat]||0)+s;
+  });
+  const total=Object.values(catScores).reduce((a,b)=>a+b,0);
+  const maxTotal=questions.reduce((a,q)=>a+Math.max(...q.opts.map(o=>o.s)),0);
+  const pct=Math.round((total/maxTotal)*100);
+  document.getElementById('scoreNum').textContent=pct;
+  // Score ring
+  const rc=document.getElementById('scoreCanvas').getContext('2d');
+  rc.beginPath();rc.arc(220,220,180,-Math.PI/2,Math.PI*2-Math.PI/2);rc.strokeStyle='rgba(255,255,255,.06)';rc.lineWidth=20;rc.stroke();
+  rc.beginPath();rc.arc(220,220,180,-Math.PI/2,-Math.PI/2+(Math.PI*2*pct/100));
+  const g=rc.createLinearGradient(0,0,440,440);g.addColorStop(0,'#6c63ff');g.addColorStop(1,'#10b981');
+  rc.strokeStyle=g;rc.lineWidth=20;rc.lineCap='round';rc.stroke();
+  // Label
+  const labels=[{max:30,l:'Early Stage',d:'Your organization is at the beginning of its AI journey. There are significant opportunities to build foundations for AI-powered productivity.'},{max:55,l:'Building Foundations',d:'You have some pieces in place but gaps remain. Focus on data culture, tool integration, and leadership buy-in before adopting AI tools.'},{max:75,l:'Ready for AI',d:'Your organization has strong foundations for AI adoption. You have the culture, infrastructure, and awareness to benefit significantly from AI productivity tools.'},{max:100,l:'AI-Ready Leader',d:'Exceptional readiness. Your team has the data culture, tool integration, and leadership support to extract maximum value from AI productivity tools immediately.'}];
+  const label=labels.find(l=>pct<=l.max);
+  document.getElementById('scoreLabel').textContent=label.l;
+  document.getElementById('scoreDesc').textContent=label.d;
+  // Radar
+  const cats=Object.keys(catScores);
+  const maxPerCat=10;
+  const radarCtx=document.getElementById('radarCanvas').getContext('2d');
+  const cx=320,cy=320,r=240,n=cats.length;
+  for(let ring=1;ring<=5;ring++){
+    radarCtx.beginPath();
+    for(let i=0;i<=n;i++){const a=-Math.PI/2+(Math.PI*2/n)*(i%n);const rr=r*(ring/5);const x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr;i===0?radarCtx.moveTo(x,y):radarCtx.lineTo(x,y)}
+    radarCtx.strokeStyle='rgba(255,255,255,.06)';radarCtx.stroke();
+  }
+  for(let i=0;i<n;i++){
+    const a=-Math.PI/2+(Math.PI*2/n)*i;
+    radarCtx.beginPath();radarCtx.moveTo(cx,cy);radarCtx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);radarCtx.strokeStyle='rgba(255,255,255,.06)';radarCtx.stroke();
+    const lx=cx+Math.cos(a)*(r+35),ly=cy+Math.sin(a)*(r+35);
+    radarCtx.fillStyle='#888';radarCtx.font='600 20px Inter';radarCtx.textAlign='center';radarCtx.textBaseline='middle';radarCtx.fillText(cats[i],lx,ly);
+  }
+  radarCtx.beginPath();
+  for(let i=0;i<=n;i++){const idx=i%n;const a=-Math.PI/2+(Math.PI*2/n)*idx;const v=catScores[cats[idx]]/maxPerCat;const x=cx+Math.cos(a)*r*v,y=cy+Math.sin(a)*r*v;i===0?radarCtx.moveTo(x,y):radarCtx.lineTo(x,y)}
+  radarCtx.fillStyle='rgba(108,99,255,.15)';radarCtx.fill();radarCtx.strokeStyle='#6c63ff';radarCtx.lineWidth=3;radarCtx.stroke();
+  for(let i=0;i<n;i++){const a=-Math.PI/2+(Math.PI*2/n)*i;const v=catScores[cats[i]]/maxPerCat;const x=cx+Math.cos(a)*r*v,y=cy+Math.sin(a)*r*v;radarCtx.beginPath();radarCtx.arc(x,y,8,0,Math.PI*2);radarCtx.fillStyle='#6c63ff';radarCtx.fill()}
+  // Recommendations
+  const recs=document.getElementById('recsContainer');
+  const sorted=cats.map(c=>({cat:c,score:catScores[c]})).sort((a,b)=>a.score-b.score);
+  const recItems=sorted.slice(0,4).map(s=>{
+    const badge=s.score<=3?'sb-low':s.score<=6?'sb-med':'sb-high';
+    const level=s.score<=3?'Needs Work':s.score<=6?'Moderate':'Strong';
+    const tips={Data:'Start with basic productivity tracking. Even simple metrics like focus hours and meeting time provide actionable insights.',Culture:'Foster a data-driven culture by sharing team metrics in standups. Celebrate improvements, not just outputs.',Awareness:'Run a team workshop to identify the top 3 productivity blockers. Awareness is the first step to improvement.',Leadership:'Present the ROI case to leadership: 42% productivity increase, 892% ROI. Numbers drive executive buy-in.',Privacy:'Draft a clear data privacy policy before adopting any analytics tool. Transparency builds trust.',Infrastructure:'Audit your tech stack. Identify tools that can integrate via APIs. A connected ecosystem amplifies AI insights.',Adoption:'Start with volunteers. Let early adopters champion the tool. Organic adoption beats top-down mandates.',Process:'Begin with meeting audits. Reduce recurring meetings by 25% and require agendas. Quick wins build momentum.',Wellness:'Implement regular pulse surveys and 1:1 check-ins. Burnout detection should not be reactive.',Budget:'Calculate current productivity losses. Even a conservative estimate shows $6-12/user/month pays for itself in days.'};
+    return`<div class="rec"><h3>${s.cat} <span class="score-badge ${badge}">${level} (${s.score}/10)</span></h3><p>${tips[s.cat]||'Focus on improving this area to increase your overall AI readiness.'}</p></div>`;
+  }).join('');
+  recs.innerHTML=`<h2>Top Recommendations</h2>${recItems}`;
+}
+
+renderQuestion();
+</script>
+</body>
+</html>

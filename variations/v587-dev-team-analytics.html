@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dev Team Analytics | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0D1117;--card:#161B22;--border:#30363D;--green:#3FB950;--blue:#58A6FF;--purple:#BC8CFF;--orange:#D29922;--red:#F85149;--text:#C9D1D9;--muted:#8B949E;--accent:var(--green)}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+h1,h2,h3{font-family:'Inter',sans-serif}
+code,.mono{font-family:'JetBrains Mono',monospace}
+
+/* Terminal-inspired nav */
+nav{position:fixed;top:0;width:100%;z-index:100;padding:.75rem 1.5rem;background:var(--card);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-family:'JetBrains Mono',monospace;font-size:.85rem}
+.nav-left{color:var(--green)}
+.nav-right button{background:var(--green);color:var(--bg);border:none;padding:.5rem 1.25rem;border-radius:6px;font-weight:600;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.8rem}
+
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6rem 2rem 4rem}
+.terminal-prompt{font-family:'JetBrains Mono',monospace;color:var(--green);font-size:1rem;margin-bottom:2rem}
+.terminal-prompt .cursor{display:inline-block;width:8px;height:16px;background:var(--green);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.hero h1{font-size:clamp(2.5rem,6vw,4.5rem);font-weight:800;line-height:1.1;color:#fff;margin-bottom:1.5rem}
+.hero h1 .green{color:var(--green)}
+.hero p{font-size:1.1rem;max-width:600px;color:var(--muted);line-height:1.7;margin-bottom:3rem}
+.btn{background:var(--green);color:var(--bg);border:none;padding:.85rem 2rem;border-radius:8px;font-size:.95rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:'JetBrains Mono',monospace}
+.btn:hover{opacity:.9;transform:translateY(-2px)}
+
+/* Dashboard */
+.dashboard{padding:4rem 2rem}
+.dash-inner{max-width:1100px;margin:0 auto}
+.section-tag{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--green);margin-bottom:1rem}
+.section-title{font-size:2rem;font-weight:700;color:#fff;margin-bottom:.5rem}
+.section-desc{color:var(--muted);margin-bottom:3rem;max-width:550px}
+
+/* Metric Cards */
+.metric-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem}
+.metric-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem}
+.metric-card .label{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:.5rem}
+.metric-card .value{font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:700;color:#fff}
+.metric-card .trend{font-family:'JetBrains Mono',monospace;font-size:.8rem;margin-top:.5rem}
+.trend-up{color:var(--green)}
+.trend-down{color:var(--red)}
+
+/* Terminal Output */
+.terminal{background:#0D1117;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:2rem;font-family:'JetBrains Mono',monospace;font-size:.8rem}
+.terminal-header{background:var(--card);padding:.5rem 1rem;display:flex;align-items:center;gap:.5rem;border-bottom:1px solid var(--border)}
+.term-dot{width:10px;height:10px;border-radius:50%}
+.terminal-body{padding:1rem;max-height:300px;overflow-y:auto;line-height:1.8}
+.term-line{white-space:pre-wrap;word-break:break-all}
+.term-prompt{color:var(--green)}
+.term-cmd{color:#fff}
+.term-output{color:var(--muted)}
+.term-highlight{color:var(--blue)}
+.term-warn{color:var(--orange)}
+.term-success{color:var(--green)}
+.term-error{color:var(--red)}
+
+/* Charts area */
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem}
+.chart-card h3{font-size:.85rem;color:var(--muted);margin-bottom:1rem;text-transform:uppercase;letter-spacing:1px}
+.chart-bars{display:flex;flex-direction:column;gap:.75rem}
+.chart-bar{display:flex;align-items:center;gap:.75rem}
+.chart-bar .name{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text);min-width:60px}
+.chart-bar .track{flex:1;height:20px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden;position:relative}
+.chart-bar .fill{height:100%;border-radius:4px;transition:width 1.5s ease;width:0}
+.chart-bar .fill.animate{width:var(--w)}
+.chart-bar .val{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--muted);min-width:40px;text-align:right}
+
+/* Commit Activity */
+.activity{margin-bottom:2rem}
+.activity h3{font-size:.85rem;color:var(--muted);margin-bottom:1rem;text-transform:uppercase;letter-spacing:1px}
+.commit-grid{display:flex;gap:3px;flex-wrap:wrap}
+.commit-cell{width:14px;height:14px;border-radius:2px;background:rgba(255,255,255,.05)}
+.commit-cell.l1{background:rgba(63,185,80,.2)}
+.commit-cell.l2{background:rgba(63,185,80,.4)}
+.commit-cell.l3{background:rgba(63,185,80,.6)}
+.commit-cell.l4{background:rgba(63,185,80,.9)}
+
+/* Features */
+.features{padding:6rem 2rem}
+.feat-inner{max-width:1000px;margin:0 auto}
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;margin-top:3rem}
+.feat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:2rem}
+.feat-card h3{color:#fff;font-size:1.05rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem}
+.feat-card h3 .icon{font-family:'JetBrains Mono',monospace;color:var(--green)}
+.feat-card p{color:var(--muted);line-height:1.7;font-size:.9rem}
+
+.cta{padding:6rem 2rem;text-align:center}
+.cta h2{font-size:clamp(2rem,4vw,3rem);color:#fff;margin-bottom:1rem;font-weight:700}
+.cta p{color:var(--muted);max-width:500px;margin:0 auto 2rem;line-height:1.7}
+.cta .sub{color:var(--muted);font-size:.8rem;margin-top:1rem;font-family:'JetBrains Mono',monospace}
+
+footer{padding:3rem 2rem;text-align:center;color:var(--muted);font-size:.8rem;border-top:1px solid var(--border);font-family:'JetBrains Mono',monospace}
+
+@media(max-width:768px){.charts{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav>
+<div class="nav-left">~/go2 <span style="color:var(--muted)">main</span></div>
+<div class="nav-right"><button>go2 init</button></div>
+</nav>
+
+<section class="hero">
+<div class="terminal-prompt">$ go2 analyze --team=engineering<span class="cursor"></span></div>
+<h1>Dev Team<br><span class="green">Analytics</span></h1>
+<p>Git commits tell a story. PR velocity reveals bottlenecks. Code review turnaround predicts shipping speed. Go2 gives engineering leaders the dashboard they've always wanted.</p>
+<button class="btn" onclick="document.querySelector('.dashboard').scrollIntoView({behavior:'smooth'})">See the Dashboard</button>
+</section>
+
+<section class="dashboard">
+<div class="dash-inner">
+<div class="section-tag">// engineering_dashboard</div>
+<h2 class="section-title">Real-Time Engineering Metrics</h2>
+<p class="section-desc">Everything your VP of Engineering wishes they had. Updated in real-time.</p>
+
+<div class="metric-row">
+<div class="metric-card"><div class="label">Deploy Frequency</div><div class="value">4.2/day</div><div class="trend trend-up">+18% vs last sprint</div></div>
+<div class="metric-card"><div class="label">PR Cycle Time</div><div class="value">3.1h</div><div class="trend trend-up">-42% vs baseline</div></div>
+<div class="metric-card"><div class="label">Code Review Time</div><div class="value">1.8h</div><div class="trend trend-up">-35% vs Q1</div></div>
+<div class="metric-card"><div class="label">Deep Work / Dev / Day</div><div class="value">5.2h</div><div class="trend trend-up">+1.4h vs before Go2</div></div>
+</div>
+
+<div class="terminal">
+<div class="terminal-header"><div class="term-dot" style="background:#FF5F56"></div><div class="term-dot" style="background:#FFBD2E"></div><div class="term-dot" style="background:#27C93F"></div><span style="color:var(--muted);margin-left:.5rem;font-size:.75rem">go2 engineering report</span></div>
+<div class="terminal-body">
+<div class="term-line"><span class="term-prompt">$</span> <span class="term-cmd">go2 report --sprint=current</span></div>
+<div class="term-line"><span class="term-output">Analyzing sprint data...</span></div>
+<div class="term-line"></div>
+<div class="term-line"><span class="term-highlight">Sprint Velocity Report</span></div>
+<div class="term-line"><span class="term-output">  Stories completed:    </span><span class="term-success">34/38 (89%)</span></div>
+<div class="term-line"><span class="term-output">  Story points burned:  </span><span class="term-success">127/142</span></div>
+<div class="term-line"><span class="term-output">  PRs merged:           </span><span class="term-success">67</span></div>
+<div class="term-line"><span class="term-output">  Avg PR size:          </span><span class="term-highlight">148 lines (optimal)</span></div>
+<div class="term-line"></div>
+<div class="term-line"><span class="term-highlight">Bottleneck Analysis</span></div>
+<div class="term-line"><span class="term-output">  Code review queue:    </span><span class="term-warn">3 PRs waiting >4h</span></div>
+<div class="term-line"><span class="term-output">  Top reviewer load:    </span><span class="term-warn">Sarah K. (18 reviews)</span></div>
+<div class="term-line"><span class="term-output">  Suggestion:           </span><span class="term-success">Distribute reviews to Tom B. and James P.</span></div>
+<div class="term-line"></div>
+<div class="term-line"><span class="term-highlight">Deep Work Analysis</span></div>
+<div class="term-line"><span class="term-output">  Avg focus blocks:     </span><span class="term-success">3.2/day (target: 3)</span></div>
+<div class="term-line"><span class="term-output">  Meeting intrusion:    </span><span class="term-warn">Tue/Thu have 60%+ meeting load</span></div>
+<div class="term-line"><span class="term-output">  Suggestion:           </span><span class="term-success">Move standups to async on Tue/Thu</span></div>
+<div class="term-line"></div>
+<div class="term-line"><span class="term-prompt">$</span> <span class="cursor"></span></div>
+</div>
+</div>
+
+<div class="charts" id="charts">
+<div class="chart-card">
+<h3>PR Cycle Time by Team</h3>
+<div class="chart-bars">
+<div class="chart-bar"><span class="name">Frontend</span><div class="track"><div class="fill" style="background:var(--green);--w:60%"></div></div><span class="val">2.4h</span></div>
+<div class="chart-bar"><span class="name">Backend</span><div class="track"><div class="fill" style="background:var(--green);--w:78%"></div></div><span class="val">3.1h</span></div>
+<div class="chart-bar"><span class="name">Platform</span><div class="track"><div class="fill" style="background:var(--orange);--w:95%"></div></div><span class="val">4.8h</span></div>
+<div class="chart-bar"><span class="name">Mobile</span><div class="track"><div class="fill" style="background:var(--green);--w:70%"></div></div><span class="val">2.8h</span></div>
+<div class="chart-bar"><span class="name">DevOps</span><div class="track"><div class="fill" style="background:var(--green);--w:45%"></div></div><span class="val">1.8h</span></div>
+</div>
+</div>
+<div class="chart-card">
+<h3>Time Allocation (This Sprint)</h3>
+<div class="chart-bars">
+<div class="chart-bar"><span class="name">Coding</span><div class="track"><div class="fill" style="background:var(--green);--w:52%"></div></div><span class="val">52%</span></div>
+<div class="chart-bar"><span class="name">Review</span><div class="track"><div class="fill" style="background:var(--blue);--w:18%"></div></div><span class="val">18%</span></div>
+<div class="chart-bar"><span class="name">Meetings</span><div class="track"><div class="fill" style="background:var(--orange);--w:14%"></div></div><span class="val">14%</span></div>
+<div class="chart-bar"><span class="name">Planning</span><div class="track"><div class="fill" style="background:var(--purple);--w:10%"></div></div><span class="val">10%</span></div>
+<div class="chart-bar"><span class="name">Admin</span><div class="track"><div class="fill" style="background:var(--muted);--w:6%"></div></div><span class="val">6%</span></div>
+</div>
+</div>
+</div>
+
+<div class="activity">
+<h3>Commit Activity (12 Weeks)</h3>
+<div class="commit-grid" id="commitGrid"></div>
+</div>
+</div>
+</section>
+
+<section class="features">
+<div class="feat-inner">
+<div class="section-tag">// features</div>
+<h2 class="section-title">Built for Engineering Leaders</h2>
+<div class="feat-grid">
+<div class="feat-card"><h3><span class="icon">$</span> Sprint Analytics</h3><p>Velocity trends, completion rates, scope creep detection. Know if the sprint is on track by Wednesday, not Friday.</p></div>
+<div class="feat-card"><h3><span class="icon">#</span> PR Flow Analysis</h3><p>Cycle time, review bottlenecks, merge frequency. Identify what's slowing your pipeline and fix it with data.</p></div>
+<div class="feat-card"><h3><span class="icon">></span> Deep Work Protection</h3><p>Meeting intrusion analysis per developer. Identify and protect the focus blocks that drive real output.</p></div>
+<div class="feat-card"><h3><span class="icon">~</span> Burnout Detection</h3><p>After-hours commits, weekend work, shrinking focus blocks. Detect burnout patterns 6 weeks early.</p></div>
+<div class="feat-card"><h3><span class="icon">@</span> Code Review Balance</h3><p>Who's reviewing everything? Who's not reviewing enough? Balance the load and speed up the pipeline.</p></div>
+<div class="feat-card"><h3><span class="icon">!</span> Tech Debt Radar</h3><p>Correlate rework patterns with code areas. Find where technical debt is silently killing velocity.</p></div>
+</div>
+</div>
+</section>
+
+<section class="cta">
+<h2>Ship Faster. Burn Out Less.</h2>
+<p>Your engineering team deserves data-driven management, not gut feelings and Jira guesswork. Go2 gives you the metrics that matter.</p>
+<button class="btn">Start Free Trial</button>
+<p class="sub">$ go2 init --team=engineering # $6/user/month</p>
+</section>
+
+<footer><p>// &copy; 2026 Go2. Built by engineers, for engineering leaders.</p></footer>
+
+<script>
+// Generate commit grid
+const grid = document.getElementById('commitGrid');
+for(let i=0;i<84;i++){
+const cell=document.createElement('div');
+cell.className='commit-cell';
+const r=Math.random();
+if(r>.7)cell.classList.add('l'+(Math.ceil(Math.random()*4)));
+grid.appendChild(cell);
+}
+
+// Animate chart bars
+const obs = new IntersectionObserver((entries) => {
+entries.forEach(e => {
+if(e.isIntersecting) {
+e.target.querySelectorAll('.fill').forEach(f => f.classList.add('animate'));
+obs.unobserve(e.target);
+}
+});
+}, {threshold: 0.3});
+obs.observe(document.getElementById('charts'));
+</script>
+</body>
+</html>

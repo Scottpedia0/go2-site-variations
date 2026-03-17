@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go2 - Growth Impact Calculator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #818cf8;
+            --primary-dark: #3730a3;
+            --secondary: #10b981;
+            --secondary-dark: #059669;
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --chart-base: #cbd5e1;
+            --radius-lg: 16px;
+            --radius-md: 8px;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Header & Hero */
+        header {
+            background-color: var(--bg-card);
+            padding: 20px 5%;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo svg {
+            width: 28px;
+            height: 28px;
+            fill: var(--primary);
+        }
+
+        .hero {
+            text-align: center;
+            padding: 60px 20px 40px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 16px;
+            color: var(--text-main);
+        }
+
+        .hero h1 span {
+            color: var(--primary);
+        }
+
+        .hero p {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            max-width: 700px;
+            margin: 0 auto 32px;
+        }
+
+        /* Stats Row */
+        .stats-container {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+
+        .stat-badge {
+            background: var(--bg-card);
+            padding: 12px 24px;
+            border-radius: 50px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+
+        .stat-badge svg {
+            width: 20px;
+            height: 20px;
+            color: var(--secondary);
+        }
+
+        /* Calculator Layout */
+        .calculator-wrapper {
+            max-width: 1200px;
+            margin: 0 auto 80px;
+            padding: 0 20px;
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 32px;
+            align-items: stretch;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        /* Left Column: Inputs */
+        .input-section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 28px;
+        }
+
+        .input-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 12px;
+        }
+
+        .input-label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+
+        .input-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            background: #e0e7ff;
+            padding: 4px 12px;
+            border-radius: var(--radius-md);
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            height: 8px;
+            border-radius: 4px;
+            outline: none;
+            position: relative;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 3px solid var(--primary);
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: var(--shadow-md);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+        
+        input[type=range]:focus::-webkit-slider-thumb {
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.2);
+        }
+
+        /* JS will update a CSS variable to color the track before the thumb */
+        .range-wrapper {
+            position: relative;
+        }
+        .range-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 8px;
+            background: var(--primary);
+            border-radius: 4px;
+            pointer-events: none;
+        }
+
+        .info-text {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+        }
+        .info-text svg {
+            flex-shrink: 0;
+            width: 16px;
+            height: 16px;
+            margin-top: 2px;
+        }
+
+        /* Right Column: Results & Chart */
+        .results-section {
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .result-box {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .result-box.highlight {
+            background: var(--secondary);
+            color: white;
+            border: none;
+        }
+
+        .result-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+        }
+        .highlight .result-label {
+            color: rgba(255,255,255,0.9);
+        }
+
+        .result-value {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        /* Chart Area */
+        .chart-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 20px 0 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .chart-header {
+            text-align: center;
+            margin-bottom: 24px;
+            font-weight: 600;
+        }
+
+        .chart {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            height: 250px;
+            padding-bottom: 30px;
+            position: relative;
+        }
+
+        /* Grid lines */
+        .chart::before {
+            content: '';
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--border);
+            z-index: 0;
+        }
+        .chart::after {
+            content: '';
+            position: absolute;
+            bottom: 140px;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--border);
+            border-style: dashed;
+            z-index: 0;
+        }
+
+        .chart-group {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+            position: relative;
+            z-index: 1;
+            height: 100%;
+        }
+
+        .bar {
+            width: 40px;
+            border-radius: 6px 6px 0 0;
+            transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            display: flex;
+            justify-content: center;
+        }
+
+        .bar.base {
+            background: var(--chart-base);
+        }
+
+        .bar.go2 {
+            background: var(--secondary);
+            box-shadow: 0 -4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .bar-tooltip {
+            position: absolute;
+            top: -30px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-main);
+            opacity: 0;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+            background: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            box-shadow: var(--shadow-sm);
+            pointer-events: none;
+        }
+        .bar.go2 .bar-tooltip { color: var(--secondary-dark); }
+
+        .bar:hover .bar-tooltip {
+            opacity: 1;
+        }
+
+        .chart-label {
+            position: absolute;
+            bottom: -30px;
+            width: 100%;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .chart-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+            font-size: 0.875rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+        .legend-color.base { background: var(--chart-base); }
+        .legend-color.go2 { background: var(--secondary); }
+
+        .cta-container {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .cta-button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            font-size: 1.125rem;
+            font-weight: 600;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.39);
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .cta-button:hover {
+            background: var(--primary-dark);
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.23);
+            transform: translateY(-2px);
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 900px) {
+            .grid-layout {
+                grid-template-columns: 1fr;
+            }
+            .hero h1 { font-size: 2rem; }
+            .bar { width: 30px; }
+        }
+        @media (max-width: 600px) {
+            .results-grid { grid-template-columns: 1fr; }
+            .stats-container { flex-direction: column; align-items: center; }
+            .bar { width: 20px; }
+            .chart-group { gap: 4px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L2 7L12 12L22 7L12 2Z" />
+                <path d="M2 17L12 22L22 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                <path d="M2 12L12 17L22 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            </svg>
+            Go2
+        </div>
+        <a href="#" class="cta-button" style="padding: 10px 20px; font-size: 0.9rem;">Book Demo</a>
+    </header>
+
+    <main>
+        <section class="hero">
+            <h1>Empower Your Team. <span>Accelerate Growth.</span></h1>
+            <p>Go2 provides AI-driven productivity coaching—not surveillance. We analyze work patterns to prevent burnout, eliminate bottlenecks, and help your team execute faster. See the compound impact on your revenue.</p>
+            
+            <div class="stats-container">
+                <div class="stat-badge">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                    42% Productivity Boost
+                </div>
+                <div class="stat-badge">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    15.2 Hrs Saved / Wk
+                </div>
+                <div class="stat-badge">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    892% First-Year ROI
+                </div>
+            </div>
+        </section>
+
+        <section class="calculator-wrapper">
+            <div class="grid-layout">
+                
+                <!-- Inputs -->
+                <div class="card input-section">
+                    <h2>
+                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        Your Business Profile
+                    </h2>
+                    
+                    <div class="input-group">
+                        <div class="input-header">
+                            <span class="input-label">Current Annual Revenue</span>
+                            <span class="input-value" id="val-rev">$5,000,000</span>
+                        </div>
+                        <div class="range-wrapper">
+                            <div class="range-fill" id="fill-rev"></div>
+                            <input type="range" id="inp-rev" min="500000" max="50000000" step="100000" value="5000000">
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <div class="input-header">
+                            <span class="input-label">Team Size (Employees)</span>
+                            <span class="input-value" id="val-team">50</span>
+                        </div>
+                        <div class="range-wrapper">
+                            <div class="range-fill" id="fill-team"></div>
+                            <input type="range" id="inp-team" min="5" max="500" step="5" value="50">
+                        </div>
+                        <div class="info-text">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Est. Go2 Cost: <strong id="val-cost" style="margin-left:4px;">$6,000/yr</strong> (Based on $10/user/mo)
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <div class="input-header">
+                            <span class="input-label">Target Annual Growth Rate</span>
+                            <span class="input-value" id="val-growth">20%</span>
+                        </div>
+                        <div class="range-wrapper">
+                            <div class="range-fill" id="fill-growth"></div>
+                            <input type="range" id="inp-growth" min="5" max="100" step="1" value="20">
+                        </div>
+                        <div class="info-text">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                            Our data shows Go2 users achieve their growth targets <strong>~40% faster</strong> by recovering 15.2 wasted hours per week per employee.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Outputs & Chart -->
+                <div class="card results-section">
+                    <div class="results-grid">
+                        <div class="result-box">
+                            <div class="result-label">3-Year Baseline Revenue</div>
+                            <div class="result-value" id="out-base-rev" style="color: var(--text-main)">$0</div>
+                        </div>
+                        <div class="result-box highlight">
+                            <div class="result-label">3-Year Revenue with Go2</div>
+                            <div class="result-value" id="out-go2-rev">$0</div>
+                        </div>
+                        <div class="result-box">
+                            <div class="result-label">Additional Revenue Generated</div>
+                            <div class="result-value" id="out-delta" style="color: var(--secondary-dark)">$0</div>
+                        </div>
+                        <div class="result-box">
+                            <div class="result-label">Estimated 3-Year ROI</div>
+                            <div class="result-value" id="out-roi" style="color: var(--primary)">0%</div>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">Revenue Trajectory: Baseline vs. Go2 Coaching</div>
+                        <div class="chart">
+                            <!-- Year 1 -->
+                            <div class="chart-group">
+                                <div class="bar base" id="bar-y1-base"><span class="bar-tooltip" id="tip-y1-base"></span></div>
+                                <div class="bar go2" id="bar-y1-go2"><span class="bar-tooltip" id="tip-y1-go2"></span></div>
+                                <div class="chart-label">Year 1</div>
+                            </div>
+                            <!-- Year 2 -->
+                            <div class="chart-group">
+                                <div class="bar base" id="bar-y2-base"><span class="bar-tooltip" id="tip-y2-base"></span></div>
+                                <div class="bar go2" id="bar-y2-go2"><span class="bar-tooltip" id="tip-y2-go2"></span></div>
+                                <div class="chart-label">Year 2</div>
+                            </div>
+                            <!-- Year 3 -->
+                            <div class="chart-group">
+                                <div class="bar base" id="bar-y3-base"><span class="bar-tooltip" id="tip-y3-base"></span></div>
+                                <div class="bar go2" id="bar-y3-go2"><span class="bar-tooltip" id="tip-y3-go2"></span></div>
+                                <div class="chart-label">Year 3</div>
+                            </div>
+                        </div>
+                        <div class="chart-legend">
+                            <div class="legend-item"><div class="legend-color base"></div> Baseline Growth</div>
+                            <div class="legend-item"><div class="legend-color go2"></div> Growth with Go2</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="cta-container">
+                <a href="#" class="cta-button">Start Your Free Trial</a>
+                <p style="margin-top: 12px; font-size: 0.875rem; color: var(--text-muted);">No credit card required. Setup takes 5 minutes.</p>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Formatters
+        const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+        const numFormat = new Intl.NumberFormat('en-US');
+
+        // Inputs
+        const inpRev = document.getElementById('inp-rev');
+        const inpTeam = document.getElementById('inp-team');
+        const inpGrowth = document.getElementById('inp-growth');
+
+        // Display Values
+        const valRev = document.getElementById('val-rev');
+        const valTeam = document.getElementById('val-team');
+        const valGrowth = document.getElementById('val-growth');
+        const valCost = document.getElementById('val-cost');
+
+        // Fills
+        const fillRev = document.getElementById('fill-rev');
+        const fillTeam = document.getElementById('fill-team');
+        const fillGrowth = document.getElementById('fill-growth');
+
+        // Outputs
+        const outBaseRev = document.getElementById('out-base-rev');
+        const outGo2Rev = document.getElementById('out-go2-rev');
+        const outDelta = document.getElementById('out-delta');
+        const outRoi = document.getElementById('out-roi');
+
+        // Chart Bars & Tooltips
+        const bars = {
+            y1: { base: document.getElementById('bar-y1-base'), go2: document.getElementById('bar-y1-go2') },
+            y2: { base: document.getElementById('bar-y2-base'), go2: document.getElementById('bar-y2-go2') },
+            y3: { base: document.getElementById('bar-y3-base'), go2: document.getElementById('bar-y3-go2') }
+        };
+        const tips = {
+            y1: { base: document.getElementById('tip-y1-base'), go2: document.getElementById('tip-y1-go2') },
+            y2: { base: document.getElementById('tip-y2-base'), go2: document.getElementById('tip-y2-go2') },
+            y3: { base: document.getElementById('tip-y3-base'), go2: document.getElementById('tip-y3-go2') }
+        };
+
+        function updateSliderFill(input, fill) {
+            const min = parseFloat(input.min);
+            const max = parseFloat(input.max);
+            const val = parseFloat(input.value);
+            const percentage = ((val - min) / (max - min)) * 100;
+            fill.style.width = `${percentage}%`;
+        }
+
+        function calculate() {
+            // Get values
+            const rev = parseFloat(inpRev.value);
+            const team = parseInt(inpTeam.value);
+            const baseGrowthRate = parseFloat(inpGrowth.value) / 100;
+
+            // Update Input Displays
+            valRev.textContent = currency.format(rev);
+            valTeam.textContent = numFormat.format(team);
+            valGrowth.textContent = `${inpGrowth.value}%`;
+            
+            updateSliderFill(inpRev, fillRev);
+            updateSliderFill(inpTeam, fillTeam);
+            updateSliderFill(inpGrowth, fillGrowth);
+
+            // Go2 Logic: 42% productivity boost translates to roughly 40% faster execution of growth initiatives
+            // Meaning if target is 20% growth, Go2 helps achieve 28% growth capacity.
+            const go2Multiplier = 1.40; 
+            const go2GrowthRate = baseGrowthRate * go2Multiplier;
+
+            // Costs
+            const annualCostPerUser = 10 * 12; // $10/mo average
+            const annualCost = team * annualCostPerUser;
+            const threeYearCost = annualCost * 3;
+            valCost.textContent = currency.format(annualCost) + '/yr';
+
+            // Projections (Compound)
+            let currentBase = rev;
+            let currentGo2 = rev;
+            
+            const data = { base: [], go2: [] };
+
+            for(let i=1; i<=3; i++) {
+                currentBase = currentBase * (1 + baseGrowthRate);
+                currentGo2 = currentGo2 * (1 + go2GrowthRate);
+                data.base.push(currentBase);
+                data.go2.push(currentGo2);
+            }
+
+            const totalBase3Yr = data.base[2];
+            const totalGo23Yr = data.go2[2];
+            const addedRevenue = totalGo23Yr - totalBase3Yr;
+            
+            // ROI calculation: (Gain from Investment - Cost of Investment) / Cost of Investment
+            // We use the accumulated difference over 3 years vs 3 year cost
+            const roi = ((addedRevenue - threeYearCost) / threeYearCost) * 100;
+
+            // Update Output Text
+            outBaseRev.textContent = currency.format(totalBase3Yr);
+            outGo2Rev.textContent = currency.format(totalGo23Yr);
+            outDelta.textContent = "+" + currency.format(addedRevenue);
+            outRoi.textContent = numFormat.format(roi.toFixed(0)) + "%";
+
+            // Update Chart
+            // To make the chart look good, we don't start Y axis at 0, we start a bit below Year 1 base
+            // But for simplicity of height calculation, we will use a base min value
+            const minChartVal = rev; 
+            const maxChartVal = data.go2[2] * 1.05; // 5% padding top
+            const range = maxChartVal - minChartVal;
+
+            function setBar(barEl, tipEl, value) {
+                // Calculate height percentage relative to the visible range above current revenue
+                // Actually, standard bar charts starting at 0 are more honest. Let's start at 0.
+                const absoluteMax = data.go2[2] * 1.1; // 10% padding
+                const heightPct = Math.max((value / absoluteMax) * 100, 5); // min 5% height
+                
+                barEl.style.height = `${heightPct}%`;
+                
+                // Format tooltip to show millions/thousands cleanly
+                let formattedVal = value;
+                if(value >= 1000000) {
+                    formattedVal = '$' + (value/1000000).toFixed(1) + 'M';
+                } else {
+                    formattedVal = '$' + (value/1000).toFixed(0) + 'k';
+                }
+                tipEl.textContent = formattedVal;
+            }
+
+            setBar(bars.y1.base, tips.y1.base, data.base[0]);
+            setBar(bars.y1.go2, tips.y1.go2, data.go2[0]);
+            
+            setBar(bars.y2.base, tips.y2.base, data.base[1]);
+            setBar(bars.y2.go2, tips.y2.go2, data.go2[1]);
+            
+            setBar(bars.y3.base, tips.y3.base, data.base[2]);
+            setBar(bars.y3.go2, tips.y3.go2, data.go2[2]);
+        }
+
+        // Event Listeners
+        inpRev.addEventListener('input', calculate);
+        inpTeam.addEventListener('input', calculate);
+        inpGrowth.addEventListener('input', calculate);
+
+        // Initial Call
+        calculate();
+
+    </script>
+</body>
+</html>

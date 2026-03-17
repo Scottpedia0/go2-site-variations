@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Competitor Teardown | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0F0F0F;--card:#1A1A1A;--border:#2A2A2A;--accent:#3B82F6;--green:#10B981;--red:#EF4444;--yellow:#F59E0B;--text:#E5E7EB;--muted:#6B7280}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+h1,h2,h3{font-family:'Inter',sans-serif}
+code,.mono{font-family:'JetBrains Mono',monospace}
+
+nav{position:fixed;top:0;width:100%;z-index:100;padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;background:rgba(15,15,15,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.logo{font-family:'JetBrains Mono',monospace;font-size:1.2rem;font-weight:700;color:#fff}
+.logo span{color:var(--accent)}
+nav button{background:var(--accent);color:#fff;border:none;padding:.6rem 1.5rem;border-radius:6px;font-weight:600;cursor:pointer;font-size:.85rem}
+
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6rem 2rem 4rem}
+.hero-badge{font-family:'JetBrains Mono',monospace;background:rgba(239,68,68,.1);color:var(--red);padding:.4rem 1rem;border-radius:4px;font-size:.8rem;margin-bottom:2rem;display:inline-block}
+.hero h1{font-size:clamp(2.5rem,6vw,4.5rem);font-weight:800;line-height:1.1;margin-bottom:1.5rem;color:#fff}
+.hero h1 .blue{color:var(--accent)}
+.hero p{font-size:1.1rem;max-width:600px;color:var(--muted);line-height:1.7;margin-bottom:3rem}
+
+/* Competitor Profiles */
+.competitors{padding:2rem;max-width:1200px;margin:0 auto}
+.comp-header{text-align:center;margin-bottom:3rem}
+.comp-header h2{font-size:2rem;font-weight:700;color:#fff;margin-bottom:.5rem}
+.comp-header p{color:var(--muted)}
+
+.comp-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2.5rem;margin-bottom:2rem;opacity:0;transform:translateY(20px);transition:all .5s}
+.comp-card.visible{opacity:1;transform:translateY(0)}
+.comp-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;flex-wrap:wrap;gap:1rem}
+.comp-name{font-size:1.5rem;font-weight:700;color:#fff}
+.comp-verdict{padding:.4rem 1rem;border-radius:4px;font-size:.8rem;font-weight:600;font-family:'JetBrains Mono',monospace}
+.verdict-surveillance{background:rgba(239,68,68,.15);color:var(--red)}
+.verdict-outdated{background:rgba(245,158,11,.15);color:var(--yellow)}
+.verdict-coaching{background:rgba(16,185,129,.15);color:var(--green)}
+
+.comp-screenshot{background:#111;border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:2rem;font-family:'JetBrains Mono',monospace;font-size:.8rem;overflow-x:auto}
+.comp-screenshot .bar{display:flex;gap:.5rem;margin-bottom:.75rem}
+.comp-screenshot .dot{width:10px;height:10px;border-radius:50%}
+.comp-screenshot .titlebar{color:var(--muted);font-size:.7rem;margin-left:auto}
+.ss-line{color:var(--muted);padding:.15rem 0;white-space:nowrap}
+.ss-line .highlight-red{color:var(--red)}
+.ss-line .highlight-yellow{color:var(--yellow)}
+.ss-line .highlight-green{color:var(--green)}
+
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}
+.feature{padding:1rem;border:1px solid var(--border);border-radius:8px;font-size:.9rem}
+.feature .status{font-family:'JetBrains Mono',monospace;font-size:.75rem;margin-bottom:.5rem}
+.feature .fname{font-weight:600;color:#fff;margin-bottom:.25rem}
+.feature .fdesc{color:var(--muted);font-size:.8rem;line-height:1.5}
+
+/* Comparison Table */
+.table-section{padding:4rem 2rem}
+.table-wrap{max-width:1100px;margin:0 auto;overflow-x:auto}
+.comp-table{width:100%;border-collapse:collapse;font-size:.9rem}
+.comp-table th{background:var(--card);padding:1rem;text-align:left;border-bottom:2px solid var(--border);color:#fff;font-weight:600;position:sticky;top:0}
+.comp-table td{padding:.85rem 1rem;border-bottom:1px solid var(--border);color:var(--muted)}
+.comp-table tr:hover td{background:rgba(59,130,246,.03)}
+.comp-table .go2-col{color:var(--green);font-weight:600}
+.comp-table .icon-yes{color:var(--green)}
+.comp-table .icon-no{color:var(--red)}
+.comp-table .icon-partial{color:var(--yellow)}
+
+/* Philosophy */
+.philosophy{padding:6rem 2rem;text-align:center}
+.phil-grid{max-width:900px;margin:3rem auto 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem}
+.phil-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:2rem;text-align:left}
+.phil-card h3{color:#fff;font-size:1.1rem;margin-bottom:.75rem}
+.phil-card p{color:var(--muted);line-height:1.7;font-size:.9rem}
+.phil-label{font-family:'JetBrains Mono',monospace;font-size:.7rem;text-transform:uppercase;letter-spacing:2px;margin-bottom:.75rem}
+.phil-label.them{color:var(--red)}
+.phil-label.us{color:var(--green)}
+
+.cta{padding:6rem 2rem;text-align:center}
+.cta h2{font-size:clamp(2rem,4vw,3rem);font-weight:800;color:#fff;margin-bottom:1rem}
+.cta p{color:var(--muted);max-width:500px;margin:0 auto 2rem;line-height:1.7}
+.cta button{background:var(--accent);color:#fff;border:none;padding:1rem 2.5rem;border-radius:8px;font-size:1.05rem;font-weight:600;cursor:pointer;transition:all .2s}
+.cta button:hover{background:#60A5FA;transform:translateY(-2px)}
+.cta .sub{color:var(--muted);font-size:.85rem;margin-top:1rem}
+
+footer{padding:3rem 2rem;text-align:center;color:var(--muted);font-size:.8rem;border-top:1px solid var(--border)}
+
+@media(max-width:768px){.comp-top{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body>
+
+<nav>
+<div class="logo">go2<span>.io</span></div>
+<button>Start Free Trial</button>
+</nav>
+
+<section class="hero">
+<div class="hero-badge">// COMPETITOR_ANALYSIS</div>
+<h1>The Brutal <span class="blue">Teardown</span></h1>
+<p>Time Doctor. Hubstaff. Teramind. We examined every feature, every philosophy, every dark pattern. Here's what we found. And why Go2 is fundamentally different.</p>
+</section>
+
+<section class="competitors">
+<div class="comp-header">
+<h2>The Lineup</h2>
+<p>Three surveillance tools. One coaching platform.</p>
+</div>
+
+<div class="comp-card">
+<div class="comp-top">
+<div class="comp-name">Time Doctor</div>
+<span class="comp-verdict verdict-surveillance">SURVEILLANCE</span>
+</div>
+<div class="comp-screenshot">
+<div class="bar"><div class="dot" style="background:#FF5F56"></div><div class="dot" style="background:#FFBD2E"></div><div class="dot" style="background:#27C93F"></div><span class="titlebar">Time Doctor Dashboard</span></div>
+<div class="ss-line">&#9632; Employee: John D. &nbsp;&nbsp; Status: <span class="highlight-red">IDLE 4m 32s</span></div>
+<div class="ss-line">&#9632; Screenshot #47 &nbsp;&nbsp;&nbsp; Time: 2:34 PM &nbsp; App: <span class="highlight-yellow">reddit.com</span></div>
+<div class="ss-line">&#9632; Keystroke rate: <span class="highlight-red">LOW</span> &nbsp; Mouse activity: <span class="highlight-red">MINIMAL</span></div>
+<div class="ss-line">&#9632; Alert: Employee may be <span class="highlight-red">UNPRODUCTIVE</span> &#9888;</div>
+</div>
+<div class="feature-grid">
+<div class="feature"><div class="status" style="color:var(--red)">&#9679; INVASIVE</div><div class="fname">Random Screenshots</div><div class="fdesc">Takes screenshots every 3-10 min. Employees feel watched.</div></div>
+<div class="feature"><div class="status" style="color:var(--red)">&#9679; INVASIVE</div><div class="fname">Keystroke Logging</div><div class="fdesc">Counts keystrokes and mouse movements. Penalizes thinking.</div></div>
+<div class="feature"><div class="status" style="color:var(--yellow)">&#9679; FLAWED</div><div class="fname">Productivity Scoring</div><div class="fdesc">Binary productive/unproductive based on app lists. No nuance.</div></div>
+<div class="feature"><div class="status" style="color:var(--red)">&#9679; TOXIC</div><div class="fname">Idle Time Alerts</div><div class="fdesc">Managers get alerts when employees stop typing. Kills trust.</div></div>
+</div>
+</div>
+
+<div class="comp-card">
+<div class="comp-top">
+<div class="comp-name">Hubstaff</div>
+<span class="comp-verdict verdict-surveillance">SURVEILLANCE</span>
+</div>
+<div class="comp-screenshot">
+<div class="bar"><div class="dot" style="background:#FF5F56"></div><div class="dot" style="background:#FFBD2E"></div><div class="dot" style="background:#27C93F"></div><span class="titlebar">Hubstaff Activity Monitor</span></div>
+<div class="ss-line">&#9632; Activity Level: <span class="highlight-yellow">47%</span> &nbsp; (Below team average of 62%)</div>
+<div class="ss-line">&#9632; GPS: Office - Desk 14 &nbsp; <span class="highlight-green">IN ZONE</span></div>
+<div class="ss-line">&#9632; Screen recording: <span class="highlight-red">ACTIVE</span> &nbsp; Buffer: 2.3GB</div>
+<div class="ss-line">&#9632; App usage: Slack 42%, Figma 31%, <span class="highlight-red">YouTube 8%</span></div>
+</div>
+<div class="feature-grid">
+<div class="feature"><div class="status" style="color:var(--red)">&#9679; INVASIVE</div><div class="fname">GPS Tracking</div><div class="fdesc">Tracks employee location. Designed for distrust, not productivity.</div></div>
+<div class="feature"><div class="status" style="color:var(--red)">&#9679; INVASIVE</div><div class="fname">Screen Recording</div><div class="fdesc">Records full screen video. Employees have zero privacy.</div></div>
+<div class="feature"><div class="status" style="color:var(--yellow)">&#9679; CRUDE</div><div class="fname">Activity %</div><div class="fdesc">Mouse/keyboard activity percentage. Thinking = 0% activity.</div></div>
+<div class="feature"><div class="status" style="color:var(--yellow)">&#9679; FLAWED</div><div class="fname">App Categories</div><div class="fdesc">YouTube is always "unproductive." Even for research or learning.</div></div>
+</div>
+</div>
+
+<div class="comp-card">
+<div class="comp-top">
+<div class="comp-name">Teramind</div>
+<span class="comp-verdict verdict-surveillance">SURVEILLANCE</span>
+</div>
+<div class="comp-screenshot">
+<div class="bar"><div class="dot" style="background:#FF5F56"></div><div class="dot" style="background:#FFBD2E"></div><div class="dot" style="background:#27C93F"></div><span class="titlebar">Teramind Insider Threat Prevention</span></div>
+<div class="ss-line">&#9632; DLP Alert: Employee copied <span class="highlight-red">CONFIDENTIAL</span> file to USB</div>
+<div class="ss-line">&#9632; Email scan: 3 messages contain <span class="highlight-yellow">FLAGGED KEYWORDS</span></div>
+<div class="ss-line">&#9632; Behavior score: <span class="highlight-red">ANOMALOUS</span> &nbsp; Risk level: <span class="highlight-red">HIGH</span></div>
+<div class="ss-line">&#9632; Session recording: <span class="highlight-red">RECORDING</span> &nbsp; OCR scan: <span class="highlight-red">ACTIVE</span></div>
+</div>
+<div class="feature-grid">
+<div class="feature"><div class="status" style="color:var(--red)">&#9679; EXTREME</div><div class="fname">Email Content Scanning</div><div class="fdesc">Reads email contents and flags keywords. Orwellian.</div></div>
+<div class="feature"><div class="status" style="color:var(--red)">&#9679; EXTREME</div><div class="fname">OCR Screen Reading</div><div class="fdesc">Uses OCR to read text on screen. Captures everything you type and see.</div></div>
+<div class="feature"><div class="status" style="color:var(--red)">&#9679; EXTREME</div><div class="fname">Insider Threat Scoring</div><div class="fdesc">Treats employees as potential criminals. Security tool marketed as productivity.</div></div>
+<div class="feature"><div class="status" style="color:var(--red)">&#9679; EXTREME</div><div class="fname">Session Recording</div><div class="fdesc">Records everything. Stores it indefinitely. Full surveillance state.</div></div>
+</div>
+</div>
+
+<div class="comp-card" style="border-color:var(--green);border-width:2px">
+<div class="comp-top">
+<div class="comp-name" style="color:var(--green)">Go2</div>
+<span class="comp-verdict verdict-coaching">AI COACHING</span>
+</div>
+<div class="comp-screenshot" style="border-color:rgba(16,185,129,.3)">
+<div class="bar"><div class="dot" style="background:#FF5F56"></div><div class="dot" style="background:#FFBD2E"></div><div class="dot" style="background:#27C93F"></div><span class="titlebar">Go2 Productivity Coach</span></div>
+<div class="ss-line">&#9632; Team deep work: <span class="highlight-green">4.2h avg</span> (+18% from last month)</div>
+<div class="ss-line">&#9632; Meeting load: <span class="highlight-yellow">32%</span> &nbsp; Suggestion: async standup for Team B</div>
+<div class="ss-line">&#9632; Collaboration health: <span class="highlight-green">STRONG</span> &nbsp; Cross-team flow: <span class="highlight-green">UP</span></div>
+<div class="ss-line">&#9632; AI Coach: "Engineering has 3h more focus time this sprint" <span class="highlight-green">&#10003;</span></div>
+</div>
+<div class="feature-grid">
+<div class="feature"><div class="status" style="color:var(--green)">&#9679; COACHING</div><div class="fname">AI Productivity Coach</div><div class="fdesc">Personalized recommendations for better work patterns. Employees see their own data.</div></div>
+<div class="feature"><div class="status" style="color:var(--green)">&#9679; RESPECTFUL</div><div class="fname">Pattern Analytics</div><div class="fdesc">Aggregate patterns, not individual surveillance. Focus time, collaboration, flow states.</div></div>
+<div class="feature"><div class="status" style="color:var(--green)">&#9679; TRANSPARENT</div><div class="fname">Employee Dashboard</div><div class="fdesc">Everyone sees their own data. Managers see team trends. No hidden monitoring.</div></div>
+<div class="feature"><div class="status" style="color:var(--green)">&#9679; SMART</div><div class="fname">Outcome Measurement</div><div class="fdesc">Measures productivity by outcomes and patterns. Not keystrokes, not screenshots.</div></div>
+</div>
+</div>
+</section>
+
+<section class="table-section">
+<h2 style="text-align:center;font-size:2rem;color:#fff;margin-bottom:2rem">Feature-by-Feature</h2>
+<div class="table-wrap">
+<table class="comp-table">
+<thead><tr><th>Feature</th><th>Time Doctor</th><th>Hubstaff</th><th>Teramind</th><th>Go2</th></tr></thead>
+<tbody>
+<tr><td>Screenshots</td><td class="icon-yes">Yes (random)</td><td class="icon-yes">Yes (timed)</td><td class="icon-yes">Yes (continuous)</td><td class="go2-col">No. Never.</td></tr>
+<tr><td>Keystroke logging</td><td class="icon-yes">Yes</td><td class="icon-partial">Optional</td><td class="icon-yes">Yes + OCR</td><td class="go2-col">No. Never.</td></tr>
+<tr><td>GPS tracking</td><td class="icon-partial">Optional</td><td class="icon-yes">Yes</td><td class="icon-partial">Optional</td><td class="go2-col">No. Never.</td></tr>
+<tr><td>AI coaching</td><td class="icon-no">No</td><td class="icon-no">No</td><td class="icon-no">No</td><td class="go2-col">Yes, per employee</td></tr>
+<tr><td>Employee sees own data</td><td class="icon-no">Limited</td><td class="icon-no">Limited</td><td class="icon-no">No</td><td class="go2-col">Full dashboard</td></tr>
+<tr><td>Deep work measurement</td><td class="icon-no">No</td><td class="icon-no">No</td><td class="icon-no">No</td><td class="go2-col">Yes, AI-detected</td></tr>
+<tr><td>Burnout detection</td><td class="icon-no">No</td><td class="icon-no">No</td><td class="icon-no">No</td><td class="go2-col">Yes, with alerts</td></tr>
+<tr><td>Meeting effectiveness</td><td class="icon-no">No</td><td class="icon-no">No</td><td class="icon-no">No</td><td class="go2-col">Yes, scored</td></tr>
+<tr><td>Avg employee sentiment</td><td>Fear</td><td>Resentment</td><td>Distrust</td><td class="go2-col">Trust & growth</td></tr>
+<tr><td>Starting price</td><td>$7/user/mo</td><td>$7/user/mo</td><td>$12/user/mo</td><td class="go2-col">$6/user/mo</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section class="philosophy">
+<h2 style="font-size:2rem;color:#fff;margin-bottom:.5rem">The Core Difference</h2>
+<p style="color:var(--muted);max-width:500px;margin:0 auto">It's not about features. It's about philosophy.</p>
+<div class="phil-grid">
+<div class="phil-card">
+<div class="phil-label them">THEIR PHILOSOPHY</div>
+<h3>Employees are problems to monitor</h3>
+<p>Watch everything. Record everything. Catch people slacking. Punish idle time. Trust nobody. Activity = productivity.</p>
+</div>
+<div class="phil-card" style="border:1px solid rgba(16,185,129,.3)">
+<div class="phil-label us">GO2 PHILOSOPHY</div>
+<h3>Employees are people to empower</h3>
+<p>Understand work patterns. Coach improvement. Prevent burnout. Build trust through transparency. Outcomes = productivity. 42% avg increase proves it.</p>
+</div>
+</div>
+</section>
+
+<section class="cta">
+<h2>Choose Your Side</h2>
+<p>Surveillance destroys trust, kills culture, and drives away your best people. Coaching builds all three. The choice should be obvious.</p>
+<button>Start Free Trial</button>
+<p class="sub">$6/user/month. No screenshots. No keystroke logging. Ever.</p>
+</section>
+
+<footer><p>&copy; 2026 Go2. Coaching, not surveillance.</p></footer>
+
+<script>
+const obs = new IntersectionObserver((entries) => {
+entries.forEach(e => { if(e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }});
+}, {threshold: 0.1});
+document.querySelectorAll('.comp-card').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

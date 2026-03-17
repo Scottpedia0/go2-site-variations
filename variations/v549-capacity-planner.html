@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capacity Planner | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0a0a1a;color:#fff;min-height:100vh}
+.hero{text-align:center;padding:3rem 2rem 1.5rem}
+.badge{display:inline-block;padding:.4rem 1.2rem;border-radius:50px;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.25);color:#3b82f6;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:1rem}
+h1{font-size:clamp(2rem,4vw,2.8rem);font-weight:900;margin-bottom:.75rem}
+.sub{color:#8888aa;font-size:1rem;max-width:550px;margin:0 auto}
+.planner{max-width:1100px;margin:2rem auto;padding:0 1.5rem}
+.input-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem}
+.field{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:1.25rem}
+.field label{display:block;font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem;font-weight:600}
+.field input,.field select{width:100%;padding:.6rem .75rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:.9rem;font-family:inherit;outline:none}
+.field input:focus,.field select:focus{border-color:#3b82f6}
+.field select option{background:#1a1a2e}
+.projects-panel{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:1.5rem;margin-bottom:1.5rem}
+.projects-panel h3{font-size:1rem;font-weight:700;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center}
+.add-btn{padding:.4rem 1rem;border-radius:8px;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#3b82f6;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit}
+.project-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:.75rem;align-items:center;padding:.75rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.project-row:last-child{border-bottom:none}
+.project-row input,.project-row select{padding:.5rem .6rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:#fff;font-size:.85rem;font-family:inherit;outline:none}
+.project-row .color-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.remove-btn{background:none;border:none;color:#ff6b6b;cursor:pointer;font-size:1.2rem;padding:.25rem}
+.gen-btn{width:100%;padding:1rem;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:1rem;cursor:pointer;font-family:inherit;margin-bottom:2rem}
+.timeline{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:1.5rem;overflow-x:auto;display:none}
+.timeline.show{display:block}
+.timeline h3{font-size:1rem;font-weight:700;margin-bottom:1rem}
+.timeline-chart{position:relative;min-width:700px}
+.timeline-header{display:flex;border-bottom:1px solid rgba(255,255,255,.06);padding-bottom:.5rem;margin-bottom:.5rem}
+.timeline-header .week{flex:1;text-align:center;font-size:.65rem;color:#555;font-weight:600}
+.timeline-row{display:flex;align-items:center;margin-bottom:.25rem}
+.timeline-label{width:120px;font-size:.75rem;color:#888;flex-shrink:0;padding-right:.5rem;text-overflow:ellipsis;overflow:hidden;white-space:nowrap}
+.timeline-bars{flex:1;display:flex;position:relative;height:28px;gap:1px}
+.timeline-cell{flex:1;border-radius:3px;position:relative}
+.capacity-line{position:absolute;top:0;bottom:0;left:0;right:0;display:flex}
+.capacity-segment{flex:1;display:flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:700;color:#fff;border-radius:2px}
+.cap-ok{background:rgba(16,185,129,.3)}.cap-warn{background:rgba(245,158,11,.4)}.cap-over{background:rgba(239,68,68,.5)}
+.summary-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-top:1.5rem}
+.sum-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:1.25rem;text-align:center}
+.sum-card .val{font-size:1.8rem;font-weight:900}
+.sum-card .val.ok{color:#10b981}.sum-card .val.warn{color:#f59e0b}.sum-card .val.bad{color:#ef4444}
+.sum-card .lbl{font-size:.8rem;color:#888;margin-top:.25rem}
+.alerts{margin-top:1.5rem}
+.alert{padding:1rem;border-radius:10px;margin-bottom:.75rem;font-size:.9rem;display:flex;align-items:start;gap:.75rem}
+.alert.danger{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.15);color:#ff8888}
+.alert.warning{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.15);color:#fbbf24}
+.alert.success{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.15);color:#34d399}
+.alert-icon{font-size:1.2rem;flex-shrink:0}
+.cta{text-align:center;padding:4rem 2rem}
+.cta h2{font-size:2rem;font-weight:800;margin-bottom:1rem}
+.cta p{color:#8888aa;margin-bottom:2rem}
+.cta-btn{display:inline-block;padding:1rem 2.5rem;background:linear-gradient(135deg,#6c63ff,#4834d4);color:#fff;text-decoration:none;border-radius:12px;font-weight:700;font-size:1.05rem;box-shadow:0 4px 20px rgba(108,99,255,.3)}
+@media(max-width:768px){.project-row{grid-template-columns:1fr 1fr;gap:.5rem}}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="badge">Capacity Planner</div>
+  <h1>Is Your Team Over or Under Capacity?</h1>
+  <p class="sub">Input your workload, projects, and deadlines. See a visual timeline of capacity vs demand with highlights for over/under allocation.</p>
+</div>
+<div class="planner">
+  <div class="input-row">
+    <div class="field"><label>Team Size</label><input type="number" id="teamSize" value="8" min="1" max="100"></div>
+    <div class="field"><label>Avg Productive Hours/Day</label><input type="number" id="prodHours" value="6" min="2" max="10" step=".5"></div>
+    <div class="field"><label>Planning Horizon</label><select id="horizon"><option value="4">4 Weeks</option><option value="8" selected>8 Weeks</option><option value="12">12 Weeks</option></select></div>
+    <div class="field"><label>Buffer %</label><input type="number" id="buffer" value="15" min="0" max="40"></div>
+  </div>
+  <div class="projects-panel">
+    <h3>Projects <button class="add-btn" onclick="addProject()">+ Add Project</button></h3>
+    <div id="projectList"></div>
+  </div>
+  <button class="gen-btn" onclick="generate()">Generate Capacity Plan</button>
+  <div class="timeline" id="timeline">
+    <h3>Capacity Timeline</h3>
+    <div class="timeline-chart" id="timelineChart"></div>
+    <div class="summary-cards" id="summaryCards"></div>
+    <div class="alerts" id="alerts"></div>
+  </div>
+</div>
+<div class="cta">
+  <h2>Plan with Real Data</h2>
+  <p>Go2 connects to your actual workload and generates capacity plans automatically. Free for 14 days.</p>
+  <a href="#" class="cta-btn">Start Free Trial</a>
+</div>
+
+<script>
+const colors=['#6c63ff','#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#14b8a6'];
+let projects=[
+  {name:'API Redesign',effort:320,start:0,end:6,people:3,priority:'high'},
+  {name:'Mobile App v2',effort:480,start:1,end:7,people:4,priority:'high'},
+  {name:'Dashboard Update',effort:120,start:2,end:4,people:2,priority:'medium'},
+  {name:'Onboarding Flow',effort:80,start:4,end:6,people:2,priority:'low'},
+];
+function renderProjects(){
+  const list=document.getElementById('projectList');
+  const horizon=+document.getElementById('horizon').value;
+  list.innerHTML=projects.map((p,i)=>`<div class="project-row"><input value="${p.name}" onchange="projects[${i}].name=this.value" placeholder="Project name"><input type="number" value="${p.effort}" onchange="projects[${i}].effort=+this.value" placeholder="Hours" min="10" max="5000"><input type="number" value="${p.people}" onchange="projects[${i}].people=+this.value" placeholder="People" min="1" max="20"><select onchange="projects[${i}].priority=this.value"><option value="high"${p.priority==='high'?' selected':''}>High</option><option value="medium"${p.priority==='medium'?' selected':''}>Medium</option><option value="low"${p.priority==='low'?' selected':''}>Low</option></select><button class="remove-btn" onclick="projects.splice(${i},1);renderProjects()">x</button></div>`).join('');
+}
+function addProject(){
+  const h=+document.getElementById('horizon').value;
+  projects.push({name:'New Project',effort:100,start:0,end:Math.min(h,4),people:2,priority:'medium'});
+  renderProjects();
+}
+function generate(){
+  const teamSize=+document.getElementById('teamSize').value;
+  const prodHours=+document.getElementById('prodHours').value;
+  const horizon=+document.getElementById('horizon').value;
+  const buffer=+document.getElementById('buffer').value/100;
+  const weeklyCapacity=teamSize*prodHours*5*(1-buffer);
+  const tl=document.getElementById('timeline');tl.classList.add('show');
+  const chart=document.getElementById('timelineChart');
+  // Build week headers
+  let html='<div class="timeline-header"><div style="width:120px;flex-shrink:0"></div>';
+  for(let w=1;w<=horizon;w++)html+=`<div class="week">W${w}</div>`;
+  html+='</div>';
+  // Demand per week
+  const weekDemand=new Array(horizon).fill(0);
+  projects.forEach((p,pi)=>{
+    const weeks=Math.max(1,Math.ceil(p.effort/(p.people*prodHours*5)));
+    const start=Math.min(pi,horizon-weeks);
+    const end=Math.min(horizon,start+weeks);
+    p._start=start;p._end=end;
+    const weeklyDemand=p.effort/(end-start);
+    for(let w=start;w<end;w++)weekDemand[w]+=weeklyDemand;
+  });
+  // Project rows
+  projects.forEach((p,pi)=>{
+    const col=colors[pi%colors.length];
+    html+=`<div class="timeline-row"><div class="timeline-label" title="${p.name}">${p.name}</div><div class="timeline-bars">`;
+    for(let w=0;w<horizon;w++){
+      if(w>=p._start&&w<p._end){
+        html+=`<div class="timeline-cell" style="background:${col}88;border:1px solid ${col}"></div>`;
+      } else{
+        html+=`<div class="timeline-cell" style="background:rgba(255,255,255,.02)"></div>`;
+      }
+    }
+    html+='</div></div>';
+  });
+  // Capacity utilization row
+  html+='<div style="border-top:2px solid rgba(255,255,255,.06);margin-top:.5rem;padding-top:.5rem"><div class="timeline-row"><div class="timeline-label" style="font-weight:700;color:#fff">Utilization</div><div class="timeline-bars">';
+  for(let w=0;w<horizon;w++){
+    const util=weekDemand[w]/weeklyCapacity;
+    const cls=util>1?'cap-over':util>.8?'cap-warn':'cap-ok';
+    html+=`<div class="timeline-cell ${cls}">${Math.round(util*100)}%</div>`;
+  }
+  html+='</div></div></div>';
+  chart.innerHTML=html;
+  // Summary
+  const avgUtil=weekDemand.reduce((a,b)=>a+b,0)/horizon/weeklyCapacity;
+  const peakUtil=Math.max(...weekDemand.map(d=>d/weeklyCapacity));
+  const overWeeks=weekDemand.filter(d=>d/weeklyCapacity>1).length;
+  const underWeeks=weekDemand.filter(d=>d/weeklyCapacity<.5).length;
+  document.getElementById('summaryCards').innerHTML=`
+    <div class="sum-card"><div class="val ${avgUtil>.9?'bad':avgUtil>.7?'warn':'ok'}">${Math.round(avgUtil*100)}%</div><div class="lbl">Avg Utilization</div></div>
+    <div class="sum-card"><div class="val ${peakUtil>1?'bad':'warn'}">${Math.round(peakUtil*100)}%</div><div class="lbl">Peak Utilization</div></div>
+    <div class="sum-card"><div class="val ${overWeeks>0?'bad':'ok'}">${overWeeks}</div><div class="lbl">Over-Capacity Weeks</div></div>
+    <div class="sum-card"><div class="val ${underWeeks>2?'warn':'ok'}">${underWeeks}</div><div class="lbl">Under-Utilized Weeks</div></div>`;
+  // Alerts
+  const alerts=[];
+  if(overWeeks>0)alerts.push({type:'danger',icon:'!',text:`${overWeeks} weeks are over capacity (>100%). Your team will need to cut scope, shift deadlines, or add resources for weeks ${weekDemand.map((d,i)=>d/weeklyCapacity>1?'W'+(i+1):null).filter(Boolean).join(', ')}.`});
+  if(peakUtil>1.3)alerts.push({type:'danger',icon:'!',text:`Peak utilization hits ${Math.round(peakUtil*100)}% — this level of overload leads to quality drops, burnout, and missed deadlines. Go2 data shows quality degrades 40% above 110% utilization.`});
+  if(underWeeks>2)alerts.push({type:'warning',icon:'?',text:`${underWeeks} weeks are under 50% utilized. Consider pulling work forward or starting the next project earlier to keep momentum.`});
+  if(avgUtil>=.7&&avgUtil<=.9&&overWeeks===0)alerts.push({type:'success',icon:'+',text:`Average utilization of ${Math.round(avgUtil*100)}% is in the healthy zone (70-90%). Your capacity plan looks sustainable.`});
+  if(buffer<.1)alerts.push({type:'warning',icon:'?',text:`Buffer is only ${Math.round(buffer*100)}%. Industry best practice is 15-20% to absorb unexpected work. Consider increasing your buffer.`});
+  document.getElementById('alerts').innerHTML=alerts.map(a=>`<div class="alert ${a.type}"><div class="alert-icon">${a.icon}</div><div>${a.text}</div></div>`).join('');
+  tl.scrollIntoView({behavior:'smooth'});
+}
+renderProjects();
+</script>
+</body>
+</html>

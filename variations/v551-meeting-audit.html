@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meeting Audit Calculator | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0a0a1a;color:#fff;min-height:100vh}
+.hero{text-align:center;padding:4rem 2rem 2rem}
+.badge{display:inline-block;padding:.4rem 1.2rem;border-radius:50px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);color:#ef4444;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:1rem}
+h1{font-size:clamp(2rem,4vw,3rem);font-weight:900;margin-bottom:.75rem}
+h1 span{color:#ef4444}
+.sub{color:#8888aa;font-size:1.05rem;max-width:580px;margin:0 auto;line-height:1.6}
+.calculator{max-width:1000px;margin:2rem auto;padding:0 2rem;display:grid;grid-template-columns:1fr 1.3fr;gap:2rem}
+@media(max-width:768px){.calculator{grid-template-columns:1fr}}
+.panel{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:2rem}
+.panel h2{font-size:1.2rem;font-weight:700;margin-bottom:1.5rem}
+.field{margin-bottom:1.25rem}
+.field label{display:block;font-size:.85rem;color:#aaa;margin-bottom:.4rem;font-weight:500}
+.field input[type=number],.field select{width:100%;padding:.75rem 1rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-size:.95rem;font-family:inherit;outline:none}
+.field input:focus,.field select:focus{border-color:#ef4444}
+.field select option{background:#1a1a2e}
+.slider-field{margin-bottom:1.25rem}
+.slider-field label{display:flex;justify-content:space-between;font-size:.85rem;color:#aaa;margin-bottom:.5rem}
+.slider-field label span{color:#ef4444;font-weight:700}
+input[type=range]{width:100%;-webkit-appearance:none;height:6px;border-radius:3px;background:rgba(255,255,255,.1);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#ef4444;cursor:pointer}
+.calc-btn{width:100%;padding:1rem;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:1rem;cursor:pointer;font-family:inherit;margin-top:.5rem}
+.results{display:none}.results.show{display:block}
+.result-hero{text-align:center;padding:1.5rem 0;margin-bottom:1.5rem;border-bottom:2px solid rgba(255,255,255,.06)}
+.result-hero .big{font-size:3.5rem;font-weight:900;color:#ef4444;line-height:1}
+.result-hero .sub-r{font-size:.95rem;color:#888;margin-top:.5rem}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
+.result-box{background:rgba(255,255,255,.03);border-radius:12px;padding:1.25rem;text-align:center}
+.result-box .val{font-size:1.6rem;font-weight:800;margin-bottom:.25rem}
+.result-box .val.red{color:#ef4444}.result-box .val.yellow{color:#f59e0b}.result-box .val.green{color:#10b981}.result-box .val.blue{color:#3b82f6}
+.result-box .lbl{font-size:.75rem;color:#888}
+.benchmark-section{margin:1.5rem 0}
+.benchmark-section h3{font-size:.9rem;font-weight:700;margin-bottom:1rem}
+.bench-row{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem}
+.bench-label{width:100px;font-size:.8rem;color:#888;text-align:right;flex-shrink:0}
+.bench-track{flex:1;height:20px;border-radius:6px;background:rgba(255,255,255,.04);position:relative;overflow:hidden}
+.bench-fill{height:100%;border-radius:6px;display:flex;align-items:center;padding:0 .5rem;font-size:.65rem;font-weight:700;color:#fff}
+.bench-marker{position:absolute;top:0;bottom:0;width:3px;background:#fff;border-radius:2px;z-index:2}
+.bench-val{font-size:.8rem;font-weight:700;width:50px;text-align:left;flex-shrink:0}
+.rec-section{margin-top:1.5rem}
+.rec-section h3{font-size:.9rem;font-weight:700;margin-bottom:1rem}
+.rec-item{background:rgba(255,255,255,.03);border-radius:12px;padding:1.25rem;margin-bottom:.75rem;border-left:3px solid}
+.rec-item.high{border-color:#ef4444}
+.rec-item.med{border-color:#f59e0b}
+.rec-item.low{border-color:#10b981}
+.rec-item h4{font-size:.9rem;font-weight:700;margin-bottom:.3rem}
+.rec-item p{font-size:.85rem;color:#8888aa;line-height:1.5}
+.rec-item .savings{font-size:.8rem;font-weight:600;margin-top:.5rem;color:#10b981}
+.cta{text-align:center;padding:4rem 2rem}
+.cta h2{font-size:2rem;font-weight:800;margin-bottom:1rem}
+.cta p{color:#8888aa;margin-bottom:2rem}
+.cta-btn{display:inline-block;padding:1rem 2.5rem;background:linear-gradient(135deg,#6c63ff,#4834d4);color:#fff;text-decoration:none;border-radius:12px;font-weight:700;font-size:1.05rem;box-shadow:0 4px 20px rgba(108,99,255,.3)}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="badge">Meeting Audit</div>
+  <h1>How Much Do Your<br><span>Meetings Really Cost?</span></h1>
+  <p class="sub">Most teams underestimate meeting costs by 3-5x. Input your meeting habits and see the true impact — hours consumed, dollars burned, and what to fix.</p>
+</div>
+<div class="calculator">
+  <div class="panel">
+    <h2>Your Meeting Profile</h2>
+    <div class="field"><label>Team Size</label><input type="number" id="teamSize" value="15" min="2" max="200"></div>
+    <div class="field"><label>Avg Salary (annual, per person)</label><input type="number" id="salary" value="85000" min="30000" max="500000" step="5000"></div>
+    <div class="slider-field"><label>Meetings per person per week <span id="mtgVal">12</span></label><input type="range" id="mtgCount" min="2" max="30" value="12" oninput="document.getElementById('mtgVal').textContent=this.value"></div>
+    <div class="slider-field"><label>Avg meeting duration (min) <span id="durVal">45</span></label><input type="range" id="duration" min="15" max="90" value="45" step="5" oninput="document.getElementById('durVal').textContent=this.value"></div>
+    <div class="slider-field"><label>Avg attendees per meeting <span id="attVal">5</span></label><input type="range" id="attendees" min="2" max="15" value="5" oninput="document.getElementById('attVal').textContent=this.value"></div>
+    <div class="slider-field"><label>% of meetings that are productive <span id="prodVal">45</span>%</label><input type="range" id="productive" min="10" max="90" value="45" oninput="document.getElementById('prodVal').textContent=this.value"></div>
+    <button class="calc-btn" onclick="audit()">Run Meeting Audit</button>
+  </div>
+  <div class="panel">
+    <h2>Audit Results</h2>
+    <div id="placeholder" style="text-align:center;color:#555;padding:4rem 0"><p style="font-size:3rem;margin-bottom:1rem">?</p><p>Fill in your meeting habits and click Run Audit</p></div>
+    <div class="results" id="results">
+      <div class="result-hero">
+        <div class="big" id="costYear">$0</div>
+        <div class="sub-r">Annual cost of meetings for your team</div>
+      </div>
+      <div class="result-grid">
+        <div class="result-box"><div class="val red" id="hoursWeek">0</div><div class="lbl">Hours consumed / week (team)</div></div>
+        <div class="result-box"><div class="val yellow" id="pctWeek">0%</div><div class="lbl">% of work week in meetings</div></div>
+        <div class="result-box"><div class="val red" id="wastedHours">0</div><div class="lbl">Unproductive hours / week</div></div>
+        <div class="result-box"><div class="val green" id="recoverable">$0</div><div class="lbl">Recoverable value / year</div></div>
+      </div>
+      <div class="benchmark-section">
+        <h3>vs. Industry Benchmarks</h3>
+        <div id="benchmarks"></div>
+      </div>
+      <div class="rec-section">
+        <h3>Recommendations</h3>
+        <div id="recs"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="cta">
+  <h2>Fix Your Meeting Culture</h2>
+  <p>Go2 automatically audits every meeting, flags the wasteful ones, and coaches your team to better habits. Free for 14 days.</p>
+  <a href="#" class="cta-btn">Start Free Trial</a>
+</div>
+
+<script>
+const fmt=n=>'$'+Math.round(n).toLocaleString();
+function audit(){
+  const team=+document.getElementById('teamSize').value;
+  const salary=+document.getElementById('salary').value;
+  const mtg=+document.getElementById('mtgCount').value;
+  const dur=+document.getElementById('duration').value;
+  const att=+document.getElementById('attendees').value;
+  const prod=+document.getElementById('productive').value/100;
+  const hourlyRate=salary/2080;
+  // Per person: meetings * duration
+  const hoursPerPersonWeek=(mtg*dur)/60;
+  // Team hours = per person * team (but adjusted for overlapping attendance)
+  const totalMtgHoursWeek=hoursPerPersonWeek*team;
+  const pctWeek=(hoursPerPersonWeek/40)*100;
+  const costPerWeek=totalMtgHoursWeek*hourlyRate;
+  const costPerYear=costPerWeek*50;
+  // Wasted
+  const wastedHoursWeek=totalMtgHoursWeek*(1-prod);
+  const wastedCostYear=wastedHoursWeek*hourlyRate*50;
+  // Recoverable (realistic: recover 60% of wasted)
+  const recoverableYear=wastedCostYear*.6;
+
+  document.getElementById('costYear').textContent=fmt(costPerYear);
+  document.getElementById('hoursWeek').textContent=Math.round(totalMtgHoursWeek)+'h';
+  document.getElementById('pctWeek').textContent=Math.round(pctWeek)+'%';
+  document.getElementById('wastedHours').textContent=Math.round(wastedHoursWeek)+'h';
+  document.getElementById('recoverable').textContent=fmt(recoverableYear);
+
+  // Benchmarks
+  const benchData=[
+    {label:'You',val:pctWeek,color:'#ef4444'},
+    {label:'Industry Avg',val:25,color:'#f59e0b'},
+    {label:'Top Performers',val:15,color:'#10b981'},
+  ];
+  document.getElementById('benchmarks').innerHTML=benchData.map(b=>`<div class="bench-row"><div class="bench-label">${b.label}</div><div class="bench-track"><div class="bench-fill" style="width:${Math.min(100,b.val*1.5)}%;background:${b.color}">${Math.round(b.val)}%</div></div></div>`).join('');
+
+  // Recommendations
+  const recs=[];
+  if(pctWeek>30)recs.push({p:'high',title:'Radical Meeting Reduction Needed',text:`${Math.round(pctWeek)}% of your work week is in meetings — nearly double the industry average. Implement a 50% meeting cut: eliminate all meetings without clear agendas and outcomes.`,savings:`Potential: ${fmt(wastedCostYear*.4)}/year saved`});
+  if(att>5)recs.push({p:'high',title:'Reduce Meeting Attendance',text:`Average ${att} attendees per meeting is high. The "two pizza rule" suggests max 6-8. For every person removed from a meeting, you save ${Math.round(dur)} minutes of productive capacity.`,savings:`Potential: ${fmt(totalMtgHoursWeek*(att-4)/att*hourlyRate*50*.3)}/year saved`});
+  if(dur>30)recs.push({p:'med',title:'Shorten Default Meeting Duration',text:`${dur}-minute meetings are your default. Research shows 80% of decisions can be made in 25 minutes. Set your calendar default to 25 minutes instead of ${dur}.`,savings:`Potential: ${fmt(totalMtgHoursWeek*((dur-25)/dur)*hourlyRate*50*.4)}/year saved`});
+  if(prod<50)recs.push({p:'high',title:'Require Agendas for All Meetings',text:`Only ${Math.round(prod*100)}% of your meetings are productive. Meetings without agendas are 2.4x more likely to be rated "waste of time." Make agendas mandatory.`,savings:`Potential: +${Math.round((60-prod*100)*.5)}% meeting effectiveness`});
+  if(mtg>10)recs.push({p:'med',title:'Implement No-Meeting Days',text:`${mtg} meetings per person per week is excessive. Companies that implement 2 no-meeting days per week see a 35% increase in focus time and 28% improvement in job satisfaction.`,savings:`Potential: +${Math.round(mtg*2/5*dur/60)} hours of focus time/person/week`});
+  recs.push({p:'low',title:'Async by Default',text:'Make async communication the default. Only schedule meetings for decisions that require real-time discussion, brainstorming with whiteboarding, or sensitive conversations.',savings:'Go2 tracks which meetings produce outcomes vs those that could have been an email'});
+
+  document.getElementById('recs').innerHTML=recs.map(r=>`<div class="rec-item ${r.p}"><h4>${r.title}</h4><p>${r.text}</p><div class="savings">${r.savings}</div></div>`).join('');
+
+  document.getElementById('results').classList.add('show');
+  document.getElementById('placeholder').style.display='none';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Org Health Dashboard | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f8f9fc;color:#1a1a2e;min-height:100vh}
+.dash{max-width:1100px;margin:0 auto;padding:2rem 1.5rem}
+.dash-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;flex-wrap:wrap;gap:1rem}
+.dash-title{display:flex;align-items:center;gap:.75rem}
+.dash-title .logo{font-size:1.4rem;font-weight:800;color:#6c63ff}
+.dash-title .sep{width:1px;height:24px;background:#ddd}
+.dash-title h1{font-size:1.1rem;font-weight:700;color:#333}
+.dash-meta{display:flex;align-items:center;gap:1rem;font-size:.85rem;color:#888}
+.last-update{display:flex;align-items:center;gap:.4rem}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#10b981;animation:p 2s infinite}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.3}}
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-bottom:2rem}
+@media(max-width:768px){.kpi-grid{grid-template-columns:1fr}}
+.kpi-card{background:#fff;border-radius:16px;padding:2rem;box-shadow:0 2px 12px rgba(0,0,0,.04);position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
+.kpi-card.prod::before{background:linear-gradient(90deg,#6c63ff,#a78bfa)}
+.kpi-card.engage::before{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+.kpi-card.burnout::before{background:linear-gradient(90deg,#10b981,#34d399)}
+.kpi-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.kpi-label span{font-size:.8rem;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.kpi-label .trend{font-size:.75rem;font-weight:600;padding:.15rem .5rem;border-radius:4px}
+.trend-up{background:#e6f9f0;color:#10b981}
+.trend-down-good{background:#e6f9f0;color:#10b981}
+.trend-down-bad{background:#fef2f2;color:#ef4444}
+.kpi-value{font-size:3rem;font-weight:900;line-height:1;margin-bottom:.5rem}
+.kpi-value.purple{color:#6c63ff}.kpi-value.blue{color:#3b82f6}.kpi-value.green{color:#10b981}
+.kpi-sub{font-size:.85rem;color:#888;margin-bottom:1rem}
+.sparkline-container{height:40px;position:relative}
+.sparkline-container canvas{width:100%;height:100%}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;margin-bottom:2rem}
+.metric-card{background:#fff;border-radius:16px;padding:1.75rem;box-shadow:0 2px 12px rgba(0,0,0,.04)}
+.metric-card h3{font-size:.9rem;font-weight:700;margin-bottom:1.25rem;display:flex;justify-content:space-between;align-items:center}
+.metric-card h3 .badge{font-size:.7rem;padding:.15rem .5rem;border-radius:4px;font-weight:600}
+.badge-good{background:#e6f9f0;color:#10b981}
+.badge-warn{background:#fff7ed;color:#f59e0b}
+.badge-bad{background:#fef2f2;color:#ef4444}
+.metric-row{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid #f5f5f5}
+.metric-row:last-child{border-bottom:none}
+.metric-row .label{font-size:.85rem;color:#666}
+.metric-row .val{font-size:.9rem;font-weight:700}
+.bar-metric{margin-top:.75rem}
+.bar-label-row{display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:.3rem}
+.bar-track{height:8px;border-radius:4px;background:#f0f0f0;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width 1s}
+.dept-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-top:1rem}
+.dept-card{text-align:center;padding:1rem;border-radius:12px;background:#f8f9fc}
+.dept-card .score{font-size:1.5rem;font-weight:800}
+.dept-card .name{font-size:.75rem;color:#888;margin-top:.25rem}
+.dept-card .mini-bar{height:4px;border-radius:2px;background:#e8e8e8;margin-top:.5rem;overflow:hidden}
+.dept-card .mini-fill{height:100%;border-radius:2px}
+.ai-section{background:#fff;border-radius:16px;padding:1.75rem;box-shadow:0 2px 12px rgba(0,0,0,.04);margin-bottom:2rem}
+.ai-section h3{font-size:.9rem;font-weight:700;margin-bottom:1rem}
+.ai-item{display:flex;gap:1rem;padding:.75rem 0;border-bottom:1px solid #f5f5f5}
+.ai-item:last-child{border-bottom:none}
+.ai-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:.35rem}
+.ai-dot.red{background:#ef4444}.ai-dot.yellow{background:#f59e0b}.ai-dot.green{background:#10b981}
+.ai-item p{font-size:.9rem;color:#555;line-height:1.5}
+.ai-item p strong{color:#1a1a2e}
+.cta-banner{text-align:center;padding:3rem;background:linear-gradient(135deg,#6c63ff,#4834d4);border-radius:16px;color:#fff}
+.cta-banner h2{font-size:1.5rem;font-weight:800;margin-bottom:.75rem}
+.cta-banner p{opacity:.8;margin-bottom:1.5rem}
+.cta-btn-w{display:inline-block;padding:.85rem 2rem;background:#fff;color:#6c63ff;text-decoration:none;border-radius:10px;font-weight:700;font-size:.95rem}
+</style>
+</head>
+<body>
+<div class="dash">
+  <div class="dash-header">
+    <div class="dash-title"><span class="logo">Go2</span><span class="sep"></span><h1>Executive Health Dashboard</h1></div>
+    <div class="dash-meta"><span class="last-update"><span class="live-dot"></span> Live</span><span id="dateStr"></span></div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card prod">
+      <div class="kpi-label"><span>Productivity Index</span><span class="trend trend-up">+4.2% this month</span></div>
+      <div class="kpi-value purple">86.4</div>
+      <div class="kpi-sub">Up from 82.9 last month &bull; 73rd percentile</div>
+      <div class="sparkline-container"><canvas id="spark1"></canvas></div>
+    </div>
+    <div class="kpi-card engage">
+      <div class="kpi-label"><span>Engagement Score</span><span class="trend trend-up">+2.8% this month</span></div>
+      <div class="kpi-value blue">78.1</div>
+      <div class="kpi-sub">Steady improvement &bull; 65th percentile</div>
+      <div class="sparkline-container"><canvas id="spark2"></canvas></div>
+    </div>
+    <div class="kpi-card burnout">
+      <div class="kpi-label"><span>Burnout Risk</span><span class="trend trend-down-good">-12% this month</span></div>
+      <div class="kpi-value green">Low</div>
+      <div class="kpi-sub">2 of 28 employees flagged &bull; Down from 5</div>
+      <div class="sparkline-container"><canvas id="spark3"></canvas></div>
+    </div>
+  </div>
+
+  <div class="metric-grid">
+    <div class="metric-card">
+      <h3>Focus & Deep Work <span class="badge badge-good">Healthy</span></h3>
+      <div class="metric-row"><span class="label">Avg Focus Hours/Day</span><span class="val" style="color:#10b981">6.2h</span></div>
+      <div class="metric-row"><span class="label">Flow States/Week (team avg)</span><span class="val">3.8</span></div>
+      <div class="metric-row"><span class="label">Context Switches/Day</span><span class="val">8.4</span></div>
+      <div class="bar-metric"><div class="bar-label-row"><span style="color:#888;font-size:.8rem">Focus vs Target (6h)</span><span style="font-weight:700;font-size:.8rem">103%</span></div><div class="bar-track"><div class="bar-fill" style="width:100%;background:linear-gradient(90deg,#10b981,#34d399)"></div></div></div>
+    </div>
+    <div class="metric-card">
+      <h3>Meeting Health <span class="badge badge-warn">Needs Work</span></h3>
+      <div class="metric-row"><span class="label">Avg Meeting Hours/Day</span><span class="val" style="color:#f59e0b">2.8h</span></div>
+      <div class="metric-row"><span class="label">Meetings w/o Agenda</span><span class="val" style="color:#ef4444">31%</span></div>
+      <div class="metric-row"><span class="label">Avg Attendees</span><span class="val">5.4</span></div>
+      <div class="bar-metric"><div class="bar-label-row"><span style="color:#888;font-size:.8rem">Meeting Load vs Target (2h)</span><span style="font-weight:700;font-size:.8rem;color:#f59e0b">140%</span></div><div class="bar-track"><div class="bar-fill" style="width:100%;background:linear-gradient(90deg,#f59e0b,#ef4444)"></div></div></div>
+    </div>
+    <div class="metric-card">
+      <h3>Collaboration <span class="badge badge-good">Strong</span></h3>
+      <div class="metric-row"><span class="label">Cross-Team Interactions</span><span class="val" style="color:#10b981">14.2/wk</span></div>
+      <div class="metric-row"><span class="label">Avg Response Time</span><span class="val">16 min</span></div>
+      <div class="metric-row"><span class="label">Knowledge Sharing</span><span class="val">8.1/10</span></div>
+      <div class="bar-metric"><div class="bar-label-row"><span style="color:#888;font-size:.8rem">Collaboration Score</span><span style="font-weight:700;font-size:.8rem">82/100</span></div><div class="bar-track"><div class="bar-fill" style="width:82%;background:linear-gradient(90deg,#3b82f6,#6c63ff)"></div></div></div>
+    </div>
+    <div class="metric-card">
+      <h3>Department Scores</h3>
+      <div class="dept-grid">
+        <div class="dept-card"><div class="score" style="color:#10b981">91</div><div class="name">Engineering</div><div class="mini-bar"><div class="mini-fill" style="width:91%;background:#10b981"></div></div></div>
+        <div class="dept-card"><div class="score" style="color:#3b82f6">84</div><div class="name">Design</div><div class="mini-bar"><div class="mini-fill" style="width:84%;background:#3b82f6"></div></div></div>
+        <div class="dept-card"><div class="score" style="color:#6c63ff">79</div><div class="name">Product</div><div class="mini-bar"><div class="mini-fill" style="width:79%;background:#6c63ff"></div></div></div>
+        <div class="dept-card"><div class="score" style="color:#f59e0b">72</div><div class="name">Marketing</div><div class="mini-bar"><div class="mini-fill" style="width:72%;background:#f59e0b"></div></div></div>
+        <div class="dept-card"><div class="score" style="color:#f59e0b">68</div><div class="name">Sales</div><div class="mini-bar"><div class="mini-fill" style="width:68%;background:#f59e0b"></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ai-section">
+    <h3>AI-Powered Insights</h3>
+    <div class="ai-item"><div class="ai-dot red"></div><p><strong>Burnout Alert:</strong> Jamie M. and Alex T. have logged 11+ hour days for 4 consecutive days. Historical data shows burnout risk increases 340% after 5 consecutive heavy days. Recommend intervention today.</p></div>
+    <div class="ai-item"><div class="ai-dot yellow"></div><p><strong>Meeting Optimization:</strong> 31% of meetings this week lacked agendas. These meetings are 2.4x more likely to run over time and 60% less likely to produce action items. Implementing a mandatory agenda policy could save 4.1 team hours/week.</p></div>
+    <div class="ai-item"><div class="ai-dot green"></div><p><strong>Team Win:</strong> Engineering hit a new quarterly record with 6.8h avg daily focus time. The "No Meeting Wednesday" policy (implemented 3 weeks ago) contributed to a 22% increase in deep work across the department.</p></div>
+    <div class="ai-item"><div class="ai-dot yellow"></div><p><strong>Capacity Watch:</strong> With the Q2 roadmap, the Design team will be at 118% utilization in weeks 3-5. Consider shifting the dashboard redesign by 1 week or adding a contractor.</p></div>
+  </div>
+
+  <div class="cta-banner">
+    <h2>This Dashboard, With Your Data</h2>
+    <p>Executive-level visibility in 5 minutes. No IT required.</p>
+    <a href="#" class="cta-btn-w">Start Free Trial</a>
+  </div>
+</div>
+
+<script>
+document.getElementById('dateStr').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+function drawSparkline(id,data,color,fill){
+  const c=document.getElementById(id);const ctx=c.getContext('2d');
+  const w=c.offsetWidth,h=40;c.width=w*2;c.height=h*2;ctx.scale(2,2);
+  const mn=Math.min(...data),mx=Math.max(...data),range=mx-mn||1;
+  ctx.beginPath();
+  data.forEach((v,i)=>{const x=(i/(data.length-1))*w,y=h-5-((v-mn)/range)*(h-10);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)});
+  ctx.strokeStyle=color;ctx.lineWidth=2;ctx.stroke();
+  if(fill){ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.closePath();ctx.fillStyle=fill;ctx.fill()}
+  // Last dot
+  const lastX=w,lastY=h-5-((data[data.length-1]-mn)/range)*(h-10);
+  ctx.beginPath();ctx.arc(lastX,lastY,4,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
+}
+drawSparkline('spark1',[72,74,76,78,79,80,81,82,83,82,84,85,86,86.4],'#6c63ff','rgba(108,99,255,.08)');
+drawSparkline('spark2',[68,69,70,71,72,73,74,74,75,76,77,77,78,78.1],'#3b82f6','rgba(59,130,246,.08)');
+drawSparkline('spark3',[32,30,28,25,24,22,20,18,16,14,12,10,8,7],'#10b981','rgba(16,185,129,.08)');
+</script>
+</body>
+</html>

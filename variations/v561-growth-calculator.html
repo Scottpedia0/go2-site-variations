@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Growth Calculator | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: #0a0a0f; color: #e0e0e0; min-height: 100vh; }
+.hero { text-align: center; padding: 60px 20px 30px; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 900; margin-bottom: 12px; }
+.hero h1 span { background: linear-gradient(135deg, #22c55e, #4ade80); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.hero p { color: #888; max-width: 550px; margin: 0 auto; }
+.calc-container { max-width: 900px; margin: 0 auto; padding: 30px 20px; }
+.input-section { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 32px; }
+.input-card { background: rgba(255,255,255,0.02); border: 1px solid #1a1a2e; border-radius: 14px; padding: 20px; }
+.input-card label { display: block; font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.input-card input[type="range"] { width: 100%; -webkit-appearance: none; height: 6px; border-radius: 3px; background: #1a1a2e; outline: none; margin-bottom: 8px; }
+.input-card input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #22c55e; cursor: pointer; }
+.input-val { font-size: 1.8rem; font-weight: 800; color: #fff; }
+.input-hint { font-size: 0.7rem; color: #555; margin-top: 4px; }
+.results { margin-bottom: 40px; }
+.results h2 { font-size: 1.4rem; font-weight: 700; margin-bottom: 20px; text-align: center; }
+.comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.comparison-card { border-radius: 14px; padding: 24px; text-align: center; }
+.comparison-card.without { background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.2); }
+.comparison-card.with { background: rgba(34,197,94,0.05); border: 1px solid rgba(34,197,94,0.2); }
+.comparison-card .comp-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+.comparison-card.without .comp-label { color: #f87171; }
+.comparison-card.with .comp-label { color: #4ade80; }
+.comp-stat { margin-bottom: 12px; }
+.comp-stat .num { font-size: 2rem; font-weight: 900; }
+.comparison-card.without .num { color: #f87171; }
+.comparison-card.with .num { color: #4ade80; }
+.comp-stat .desc { font-size: 0.8rem; color: #888; }
+.year-timeline { display: flex; flex-direction: column; gap: 12px; margin: 32px 0; }
+.year-row { display: flex; align-items: center; gap: 16px; }
+.year-label { min-width: 70px; font-size: 0.85rem; font-weight: 600; color: #888; }
+.year-bars { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.year-bar-track { height: 28px; background: #1a1a2e; border-radius: 6px; overflow: hidden; position: relative; }
+.year-bar-fill { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 10px; font-size: 0.7rem; font-weight: 600; transition: width 0.8s ease; }
+.year-bar-fill.without { background: rgba(239,68,68,0.3); color: #f87171; }
+.year-bar-fill.with { background: rgba(34,197,94,0.3); color: #4ade80; }
+.year-value { min-width: 80px; text-align: right; font-size: 0.85rem; font-weight: 700; }
+.year-value.go2 { color: #4ade80; }
+.delta-section { background: linear-gradient(135deg, rgba(34,197,94,0.05), rgba(34,197,94,0.02)); border: 1px solid rgba(34,197,94,0.2); border-radius: 16px; padding: 32px; text-align: center; margin: 32px 0; }
+.delta-section h3 { font-size: 1.2rem; margin-bottom: 8px; }
+.delta-num { font-size: 3.5rem; font-weight: 900; background: linear-gradient(135deg, #22c55e, #4ade80); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.delta-sub { color: #888; font-size: 0.9rem; margin-top: 4px; }
+.assumptions { max-width: 600px; margin: 0 auto; padding: 24px; }
+.assumptions h4 { font-size: 0.8rem; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.assumptions ul { list-style: none; }
+.assumptions li { padding: 6px 0; font-size: 0.8rem; color: #666; display: flex; gap: 8px; }
+.assumptions li::before { content: '*'; color: #555; }
+.cta-section { text-align: center; padding: 50px 20px; }
+.cta-btn { display: inline-block; padding: 14px 36px; background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 1rem; border: none; cursor: pointer; }
+.cta-section p { color: #888; margin-bottom: 20px; }
+@media (max-width: 768px) { .comparison-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="hero">
+  <h1>How Go2 <span>Accelerates Growth</span></h1>
+  <p>Input your numbers. See the compound effect of AI-powered productivity optimization over 3 years.</p>
+</div>
+
+<div class="calc-container">
+  <div class="input-section">
+    <div class="input-card">
+      <label>Current Annual Revenue</label>
+      <input type="range" id="revenue" min="500000" max="50000000" step="100000" value="5000000" oninput="calc()">
+      <div class="input-val" id="revenueVal">$5M</div>
+      <div class="input-hint">Your company's current annual revenue</div>
+    </div>
+    <div class="input-card">
+      <label>Team Size</label>
+      <input type="range" id="team" min="5" max="500" step="5" value="50" oninput="calc()">
+      <div class="input-val" id="teamVal">50</div>
+      <div class="input-hint">Number of employees</div>
+    </div>
+    <div class="input-card">
+      <label>Annual Growth Target</label>
+      <input type="range" id="growth" min="5" max="100" step="5" value="25" oninput="calc()">
+      <div class="input-val" id="growthVal">25%</div>
+      <div class="input-hint">Your target annual growth rate</div>
+    </div>
+  </div>
+
+  <div class="results">
+    <h2>3-Year Growth Projection</h2>
+    <div class="comparison-grid" id="compGrid"></div>
+    <div class="year-timeline" id="yearTimeline"></div>
+    <div class="delta-section">
+      <h3>Additional Revenue with Go2</h3>
+      <div class="delta-num" id="deltaNum">$0</div>
+      <div class="delta-sub" id="deltaSub">over 3 years compared to baseline growth</div>
+    </div>
+  </div>
+
+  <div class="assumptions">
+    <h4>Assumptions</h4>
+    <ul>
+      <li>Go2's 42% productivity improvement translates to effective team capacity increase</li>
+      <li>Revenue per employee scales linearly with productivity gains</li>
+      <li>Compound effect: Year 1 = 15% capacity boost, Year 2 = 30%, Year 3 = 42%</li>
+      <li>Go2 cost of ~$8/user/month factored into projections</li>
+      <li>Conservative estimate — many teams exceed these numbers</li>
+    </ul>
+  </div>
+
+  <div class="cta-section">
+    <p>These projections are based on average Go2 customer results. Your results may vary (they're usually better).</p>
+    <button class="cta-btn">Start Your Growth Journey</button>
+  </div>
+</div>
+
+<script>
+function fmt(n) {
+  if (n >= 1e9) return '$' + (n/1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return '$' + (n/1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return '$' + (n/1e3).toFixed(0) + 'K';
+  return '$' + Math.round(n).toLocaleString();
+}
+
+function calc() {
+  const revenue = parseInt(document.getElementById('revenue').value);
+  const team = parseInt(document.getElementById('team').value);
+  const growth = parseInt(document.getElementById('growth').value);
+
+  document.getElementById('revenueVal').textContent = fmt(revenue);
+  document.getElementById('teamVal').textContent = team;
+  document.getElementById('growthVal').textContent = growth + '%';
+
+  const g = growth / 100;
+  const boosts = [0.15, 0.30, 0.42]; // Go2 productivity boost by year
+  const go2Cost = team * 8 * 12; // annual Go2 cost
+
+  const years = [];
+  let revWithout = revenue, revWith = revenue;
+  for (let y = 0; y < 3; y++) {
+    revWithout *= (1 + g);
+    revWith *= (1 + g + g * boosts[y]);
+    revWith -= go2Cost; // subtract Go2 cost
+    years.push({ year: y + 1, without: revWithout, with: revWith });
+  }
+
+  const maxRev = Math.max(years[2].with, years[2].without) * 1.1;
+  const delta = years[2].with - years[2].without;
+
+  document.getElementById('compGrid').innerHTML = `
+    <div class="comparison-card without">
+      <div class="comp-label">Without Go2</div>
+      <div class="comp-stat"><div class="num">${fmt(years[2].without)}</div><div class="desc">Year 3 Revenue</div></div>
+      <div class="comp-stat"><div class="num">${fmt(years[2].without - revenue)}</div><div class="desc">Total Growth</div></div>
+    </div>
+    <div class="comparison-card with">
+      <div class="comp-label">With Go2</div>
+      <div class="comp-stat"><div class="num">${fmt(years[2].with)}</div><div class="desc">Year 3 Revenue</div></div>
+      <div class="comp-stat"><div class="num">${fmt(years[2].with - revenue)}</div><div class="desc">Total Growth</div></div>
+    </div>
+  `;
+
+  document.getElementById('yearTimeline').innerHTML = [
+    { label: 'Today', without: revenue, with: revenue },
+    ...years.map(y => ({ label: `Year ${y.year}`, without: y.without, with: y.with }))
+  ].map(y => {
+    const woPct = (y.without / maxRev * 100).toFixed(1);
+    const wPct = (y.with / maxRev * 100).toFixed(1);
+    return `
+      <div class="year-row">
+        <span class="year-label">${y.label}</span>
+        <div class="year-bars">
+          <div class="year-bar-track"><div class="year-bar-fill without" style="width:${woPct}%">Baseline</div></div>
+          <div class="year-bar-track"><div class="year-bar-fill with" style="width:${wPct}%">+ Go2</div></div>
+        </div>
+        <div>
+          <div class="year-value">${fmt(y.without)}</div>
+          <div class="year-value go2">${fmt(y.with)}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('deltaNum').textContent = fmt(delta > 0 ? delta : 0);
+  const roiOnGo2 = delta / (go2Cost * 3);
+  document.getElementById('deltaSub').textContent = `over 3 years | ${Math.round(roiOnGo2 * 100)}x return on Go2 investment`;
+}
+
+calc();
+</script>
+</body>
+</html>

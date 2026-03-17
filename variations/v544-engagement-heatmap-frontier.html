@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go2 - AI Productivity Engagement Heatmap</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Brand Colors */
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary: #0ea5e9;
+            --dark: #0f172a;
+            --text-main: #334155;
+            --text-light: #64748b;
+            --bg-main: #f8fafc;
+            --bg-card: #ffffff;
+            --border: #e2e8f0;
+
+            /* Heatmap Colors (Gradient from Light Gray to Deep Indigo) */
+            --heat-0: #f1f5f9; /* No data / Offline */
+            --heat-1: #e0e7ff; /* Very Low */
+            --heat-2: #a5b4fc; /* Low */
+            --heat-3: #6366f1; /* Medium */
+            --heat-4: #4f46e5; /* High */
+            --heat-5: #312e81; /* Peak */
+
+            /* UI Elements */
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Outfit', sans-serif;
+            color: var(--dark);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Navbar */
+        nav {
+            background-color: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Outfit', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .logo-dot {
+            width: 10px;
+            height: 10px;
+            background-color: var(--secondary);
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-main);
+            font-weight: 500;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            transition: background-color 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--bg-main);
+            color: var(--dark);
+        }
+
+        /* Header / Hero */
+        .hero {
+            padding: 60px 0 40px;
+            text-align: center;
+        }
+
+        .badge {
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(14, 165, 233, 0.1));
+            color: var(--primary);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 16px;
+        }
+
+        .hero h1 {
+            font-size: 42px;
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: var(--text-light);
+            max-width: 600px;
+            margin: 0 auto 32px;
+        }
+
+        /* Stats Row */
+        .stats-row {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-bottom: 48px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-light);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Main Content Grid */
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 24px;
+            margin-bottom: 80px;
+        }
+
+        @media (max-width: 992px) {
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Card Styles */
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            padding: 24px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Heatmap Specifics */
+        .heatmap-controls {
+            display: flex;
+            gap: 12px;
+        }
+
+        .select-input {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            color: var(--text-main);
+            background-color: var(--bg-card);
+            outline: none;
+            cursor: pointer;
+        }
+
+        .heatmap-container-scroll {
+            width: 100%;
+            overflow-x: auto;
+            padding-bottom: 16px;
+            /* Custom Scrollbar */
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
+        }
+
+        .heatmap-container-scroll::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .heatmap-container-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .heatmap-container-scroll::-webkit-scrollbar-thumb {
+            background-color: var(--border);
+            border-radius: 10px;
+        }
+
+        /* Grid Layout for Heatmap */
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: 50px repeat(24, minmax(28px, 1fr));
+            gap: 4px;
+            min-width: 800px; /* Ensure columns don't squish too much */
+        }
+
+        /* Axis Labels */
+        .axis-label {
+            font-size: 12px;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+        }
+
+        .axis-label.y-axis {
+            justify-content: flex-end;
+            padding-right: 12px;
+        }
+
+        .axis-label.x-axis {
+            margin-bottom: 8px;
+        }
+
+        /* Heatmap Cells */
+        .heat-cell {
+            aspect-ratio: 1 / 1;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+            position: relative;
+        }
+
+        .heat-cell:hover {
+            transform: scale(1.15);
+            box-shadow: 0 0 0 1px white, 0 0 0 3px var(--primary);
+            z-index: 10;
+        }
+
+        /* Color Scale Classes */
+        .val-0 { background-color: var(--heat-0); }
+        .val-1 { background-color: var(--heat-1); }
+        .val-2 { background-color: var(--heat-2); }
+        .val-3 { background-color: var(--heat-3); }
+        .val-4 { background-color: var(--heat-4); }
+        .val-5 { background-color: var(--heat-5); }
+
+        /* Legend */
+        .heatmap-legend {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 16px;
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        .legend-scale {
+            display: flex;
+            gap: 2px;
+        }
+
+        .legend-box {
+            width: 16px;
+            height: 16px;
+            border-radius: 2px;
+        }
+
+        /* Tooltip */
+        #tooltip {
+            position: absolute;
+            background: var(--dark);
+            color: white;
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 1000;
+            box-shadow: var(--shadow-lg);
+            width: max-content;
+            max-width: 250px;
+            transform: translate(-50%, -100%);
+            margin-top: -10px;
+        }
+
+        #tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -6px;
+            border-width: 6px;
+            border-style: solid;
+            border-color: var(--dark) transparent transparent transparent;
+        }
+
+        .tt-header {
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: block;
+            color: #e2e8f0;
+        }
+
+        .tt-score {
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .tt-score span {
+            font-size: 12px;
+            font-weight: 400;
+            color: #94a3b8;
+        }
+
+        .tt-ai-insight {
+            background-color: rgba(79, 70, 229, 0.2);
+            border-left: 2px solid var(--secondary);
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #cbd5e1;
+            display: flex;
+            gap: 6px;
+        }
+
+        /* AI Insights Sidebar */
+        .ai-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .insight-card {
+            background: linear-gradient(to bottom right, #ffffff, #f8fafc);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .insight-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background-color: var(--primary);
+        }
+
+        .insight-card.positive::before { background-color: #10b981; }
+        .insight-card.neutral::before { background-color: var(--secondary); }
+
+        .insight-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: var(--dark);
+        }
+
+        .insight-icon {
+            color: var(--primary);
+        }
+
+        .insight-text {
+            font-size: 13px;
+            color: var(--text-light);
+            line-height: 1.5;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .hero h1 { font-size: 32px; }
+            .card { padding: 16px; }
+            .heatmap-grid { min-width: 600px; }
+            .stats-row { gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="container nav-content">
+            <a href="#" class="logo">
+                Go2<span class="logo-dot"></span>
+            </a>
+            <div class="nav-links">
+                <a href="#">Features</a>
+                <a href="#">How it Works</a>
+                <a href="#">Pricing</a>
+                <a href="#">Resources</a>
+            </div>
+            <div>
+                <button class="btn btn-outline" style="margin-right: 8px;">Login</button>
+                <button class="btn">Start Free Trial</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero container">
+        <div class="badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            AI-Powered Coaching, Not Surveillance
+        </div>
+        <h1>Understand how work actually gets done.</h1>
+        <p>Go2 tracks work patterns to provide AI coaching that helps your team find their flow, avoid burnout, and increase productivity by an average of 42%.</p>
+        
+        <div class="stats-row">
+            <div class="stat-item">
+                <div class="stat-value">42%</div>
+                <div class="stat-label">Avg Productivity Inc.</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">15.2h</div>
+                <div class="stat-label">Saved / Week / Emp</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">892%</div>
+                <div class="stat-label">First Year ROI</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard -->
+    <main class="container">
+        <div class="dashboard-layout">
+            
+            <!-- Heatmap Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><path d="M3 9h18M9 21V9"/></svg>
+                        Team Engagement Heatmap
+                    </h2>
+                    <div class="heatmap-controls">
+                        <select class="select-input">
+                            <option>Engineering Team</option>
+                            <option>Marketing Team</option>
+                            <option>Sales Team</option>
+                            <option>All Company</option>
+                        </select>
+                        <select class="select-input">
+                            <option>Focus Score</option>
+                            <option>Collaboration</option>
+                            <option>App Usage</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="heatmap-container-scroll">
+                    <div class="heatmap-grid" id="heatmap-grid">
+                        <!-- Grid generated by JS -->
+                    </div>
+                </div>
+
+                <div class="heatmap-legend">
+                    <span>Low Focus</span>
+                    <div class="legend-scale">
+                        <div class="legend-box val-1"></div>
+                        <div class="legend-box val-2"></div>
+                        <div class="legend-box val-3"></div>
+                        <div class="legend-box val-4"></div>
+                        <div class="legend-box val-5"></div>
+                    </div>
+                    <span>Peak Flow</span>
+                </div>
+            </div>
+
+            <!-- AI Insights Sidebar -->
+            <div class="ai-sidebar">
+                <h3 style="font-size: 18px; margin-bottom: 8px;">Go2 AI Coach Insights</h3>
+                
+                <div class="insight-card positive">
+                    <div class="insight-header">
+                        <svg class="insight-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                        Peak Focus Identified
+                    </div>
+                    <div class="insight-text">
+                        The Engineering team achieves maximum flow state on <strong>Tuesdays between 1:00 PM and 4:00 PM</strong>. Consider blocking this time from internal meetings.
+                    </div>
+                </div>
+
+                <div class="insight-card neutral">
+                    <div class="insight-header">
+                        <svg class="insight-icon" style="color: var(--secondary);" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        Friday Fatigue
+                    </div>
+                    <div class="insight-text">
+                        Engagement drops by 35% after 2:00 PM on Fridays. This is an optimal time for lightweight tasks, team bonding, or administrative work rather than deep coding.
+                    </div>
+                </div>
+
+                <div class="insight-card">
+                    <div class="insight-header">
+                        <svg class="insight-icon" style="color: #f59e0b;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                        Meeting Overload
+                    </div>
+                    <div class="insight-text">
+                        Wednesday mornings show fragmented focus blocks (avg 12 mins). Analyzing calendar integrations suggests this is due to back-to-back status meetings.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Tooltip Element -->
+    <div id="tooltip">
+        <span class="tt-header" id="tt-time">Tue, 2:00 PM - 3:00 PM</span>
+        <div class="tt-score"><span id="tt-value">88</span><span>/100 Focus Score</span></div>
+        <div class="tt-ai-insight">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span id="tt-insight">Deep work zone. Team experiences minimal context switching.</span>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gridContainer = document.getElementById('heatmap-grid');
+            const tooltip = document.getElementById('tooltip');
+            
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const hours = Array.from({length: 24}, (_, i) => i);
+
+            // Format hour for display (e.g., 0 -> 12 AM, 14 -> 2 PM)
+            const formatHour = (h) => {
+                const ampm = h >= 12 ? 'PM' : 'AM';
+                const hour12 = h % 12 || 12;
+                return `${hour12} ${ampm}`;
+            };
+
+            // Generate pseudo-realistic engagement data
+            // Logic: High focus mid-morning and mid-afternoon. Low at night/lunch. Weekends very low.
+            function generateData() {
+                const data = [];
+                days.forEach((day, dIdx) => {
+                    const isWeekend = dIdx > 4;
+                    hours.forEach(hour => {
+                        let score = 0;
+                        let insight = "Standard activity levels.";
+
+                        if (isWeekend) {
+                            score = Math.floor(Math.random() * 20); // 0-20
+                            insight = "Weekend rest period. Minimal activity detected.";
+                        } else {
+                            // Night
+                            if (hour < 7 || hour > 19) {
+                                score = Math.floor(Math.random() * 15); // 0-15
+                                insight = "Off-hours. Team is disconnected.";
+                            } 
+                            // Morning Ramp up
+                            else if (hour >= 7 && hour < 9) {
+                                score = 20 + Math.floor(Math.random() * 30); // 20-50
+                                insight = "Morning routine: checking emails and planning day.";
+                            }
+                            // Peak Morning
+                            else if (hour >= 9 && hour < 12) {
+                                score = 60 + Math.floor(Math.random() * 30); // 60-90
+                                insight = "Strong morning focus. High usage of core apps.";
+                            }
+                            // Lunch dip
+                            else if (hour >= 12 && hour < 14) {
+                                score = 30 + Math.floor(Math.random() * 25); // 30-55
+                                insight = "Activity dip likely due to lunch breaks.";
+                            }
+                            // Peak Afternoon (Especially Tuesday/Wednesday)
+                            else if (hour >= 14 && hour < 17) {
+                                score = 65 + Math.floor(Math.random() * 35); // 65-100
+                                if (dIdx === 1 || dIdx === 2) score = Math.min(100, score + 15); // Boost Tue/Wed
+                                insight = score > 85 ? "Deep work zone. Team is in flow state." : "Solid afternoon productivity block.";
+                            }
+                            // Evening Ramp down
+                            else {
+                                score = 40 + Math.floor(Math.random() * 30); // 40-70
+                                if (dIdx === 4) score -= 20; // Friday afternoon dip
+                                insight = dIdx === 4 ? "Friday wind-down. Transitioning to light tasks." : "Wrapping up daily tasks.";
+                            }
+                        }
+
+                        // Determine color class based on score
+                        let classVal = 0;
+                        if (score > 0 && score <= 20) classVal = 1;
+                        else if (score > 20 && score <= 45) classVal = 2;
+                        else if (score > 45 && score <= 70) classVal = 3;
+                        else if (score > 70 && score <= 85) classVal = 4;
+                        else if (score > 85) classVal = 5;
+
+                        data.push({ day, hour, score, classVal, insight });
+                    });
+                });
+                return data;
+            }
+
+            const heatmapData = generateData();
+
+            // Render Grid Header (X-Axis: Hours)
+            gridContainer.appendChild(document.createElement('div')); // Empty top-left cell
+            hours.forEach(hour => {
+                const label = document.createElement('div');
+                label.className = 'axis-label x-axis';
+                // Show label every 2 hours to avoid clutter
+                label.textContent = hour % 2 === 0 ? formatHour(hour) : '';
+                gridContainer.appendChild(label);
+            });
+
+            // Render Rows (Y-Axis + Data Cells)
+            days.forEach((day, dIdx) => {
+                // Y-Axis Label
+                const dayLabel = document.createElement('div');
+                dayLabel.className = 'axis-label y-axis';
+                dayLabel.textContent = day;
+                gridContainer.appendChild(dayLabel);
+
+                // Data Cells for this day
+                hours.forEach(hour => {
+                    const dataPoint = heatmapData.find(d => d.day === day && d.hour === hour);
+                    const cell = document.createElement('div');
+                    cell.className = `heat-cell val-${dataPoint.classVal}`;
+                    
+                    // Store data for tooltip
+                    cell.dataset.day = dataPoint.day;
+                    cell.dataset.hour = dataPoint.hour;
+                    cell.dataset.score = dataPoint.score;
+                    cell.dataset.insight = dataPoint.insight;
+
+                    // Event Listeners for Tooltip
+                    cell.addEventListener('mouseenter', showTooltip);
+                    cell.addEventListener('mousemove', moveTooltip);
+                    cell.addEventListener('mouseleave', hideTooltip);
+
+                    gridContainer.appendChild(cell);
+                });
+            });
+
+            // Tooltip Logic
+            function showTooltip(e) {
+                const ds = e.target.dataset;
+                const h = parseInt(ds.hour);
+                const timeStr = `${formatHour(h)} - ${formatHour((h + 1) % 24)}`;
+                
+                document.getElementById('tt-time').textContent = `${ds.day}, ${timeStr}`;
+                document.getElementById('tt-value').textContent = ds.score;
+                document.getElementById('tt-insight').textContent = ds.insight;
+                
+                tooltip.style.opacity = '1';
+                
+                // Colorize score based on value
+                const scoreEl = document.getElementById('tt-value');
+                const scoreVal = parseInt(ds.score);
+                if(scoreVal >= 85) scoreEl.style.color = '#a5b4fc';
+                else if(scoreVal >= 50) scoreEl.style.color = '#e2e8f0';
+                else scoreEl.style.color = '#94a3b8';
+
+                moveTooltip(e);
+            }
+
+            function moveTooltip(e) {
+                // Adjust position relative to viewport so it doesn't get cut off
+                let x = e.pageX;
+                let y = e.pageY;
+                
+                tooltip.style.left = x + 'px';
+                tooltip.style.top = y + 'px';
+            }
+
+            function hideTooltip() {
+                tooltip.style.opacity = '0';
+            }
+        });
+    </script>
+</body>
+</html>

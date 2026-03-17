@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Go2 — From Chaos to Clarity</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#07111f;
+      --bg-2:#0b1729;
+      --panel:#0e1c31;
+      --panel-2:#13233d;
+      --card:#10213a;
+      --card-2:#162a47;
+      --line:rgba(255,255,255,.08);
+      --text:#eaf2ff;
+      --muted:#97abc8;
+      --danger:#ff6b6b;
+      --danger-2:#ff8e72;
+      --warning:#ffbe55;
+      --success:#38d39f;
+      --success-2:#19c37d;
+      --blue:#59a8ff;
+      --purple:#9b7bff;
+      --cyan:#39d0ff;
+      --shadow:0 20px 60px rgba(0,0,0,.35);
+      --radius:24px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(89,168,255,.18), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(56,211,159,.14), transparent 55%),
+      linear-gradient(180deg, #06101d 0%, #091423 45%, #07111f 100%);
+      color:var(--text);
+      min-height:100%;
+    }
+
+    body{
+      overflow-x:hidden;
+    }
+
+    .grid-bg{
+      position:fixed;
+      inset:0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+      background-size:36px 36px;
+      mask-image:linear-gradient(180deg, rgba(255,255,255,.4), transparent 85%);
+      pointer-events:none;
+      z-index:0;
+    }
+
+    .container{
+      width:min(1280px, calc(100% - 32px));
+      margin:0 auto;
+      position:relative;
+      z-index:1;
+    }
+
+    .hero{
+      padding:56px 0 28px;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom:28px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-weight:800;
+      letter-spacing:-0.02em;
+    }
+
+    .brand-mark{
+      width:42px;height:42px;border-radius:14px;
+      background:linear-gradient(135deg, var(--success), var(--blue));
+      box-shadow:0 10px 30px rgba(56,211,159,.25), inset 0 1px 0 rgba(255,255,255,.18);
+      position:relative;
+      overflow:hidden;
+    }
+    .brand-mark:before,.brand-mark:after{
+      content:"";
+      position:absolute;
+      border-radius:999px;
+      background:rgba(255,255,255,.95);
+    }
+    .brand-mark:before{width:22px;height:6px;left:10px;top:12px;transform:rotate(-35deg)}
+    .brand-mark:after{width:13px;height:6px;left:19px;top:20px;transform:rotate(38deg)}
+
+    .brand span{
+      font-size:1.1rem;
+    }
+
+    .nav-note{
+      color:var(--muted);
+      font-size:.95rem;
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--line);
+      padding:10px 14px;
+      border-radius:999px;
+      backdrop-filter: blur(10px);
+    }
+
+    .headline{
+      display:grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap:28px;
+      align-items:end;
+      margin-bottom:22px;
+    }
+
+    h1{
+      margin:0;
+      font-size:clamp(2.5rem, 5vw, 5.4rem);
+      line-height:.96;
+      letter-spacing:-0.06em;
+      font-weight:900;
+      max-width:10.5ch;
+    }
+
+    .gradient-text{
+      background:linear-gradient(90deg, #ffffff 0%, #d7e8ff 30%, #82f0c0 65%, #5db0ff 100%);
+      -webkit-background-clip:text;
+      background-clip:text;
+      color:transparent;
+    }
+
+    .subcopy{
+      color:var(--muted);
+      font-size:1.08rem;
+      line-height:1.7;
+      max-width:58ch;
+      margin-left:auto;
+    }
+
+    .pill-row{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin:26px 0 34px;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:12px 14px;
+      border-radius:999px;
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid rgba(255,255,255,.08);
+      color:#dce8fb;
+      font-size:.95rem;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+    }
+
+    .dot{
+      width:8px;height:8px;border-radius:50%;
+      background:var(--success);
+      box-shadow:0 0 0 6px rgba(56,211,159,.12);
+    }
+
+    .showcase{
+      position:relative;
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:30px;
+      padding:18px;
+      box-shadow:var(--shadow), inset 0 1px 0 rgba(255,255,255,.05);
+      overflow:hidden;
+    }
+
+    .showcase-glow{
+      position:absolute;
+      inset:auto auto -120px -120px;
+      width:280px;height:280px;border-radius:50%;
+      background:radial-gradient(circle, rgba(255,107,107,.18), transparent 65%);
+      pointer-events:none;
+    }
+    .showcase-glow.right{
+      left:auto; right:-90px; bottom:-80px;
+      width:340px;height:340px;
+      background:radial-gradient(circle, rgba(56,211,159,.18), transparent 65%);
+    }
+
+    .dashboard-frame{
+      position:relative;
+      aspect-ratio: 16 / 9;
+      border-radius:24px;
+      overflow:hidden;
+      background:#081221;
+      border:1px solid rgba(255,255,255,.07);
+    }
+
+    .split-pane{
+      position:absolute;
+      inset:0;
+    }
+
+    .split-side{
+      position:absolute;
+      inset:0;
+      padding:16px;
+    }
+
+    .split-side.before{
+      background:
+        radial-gradient(600px 300px at 20% 0%, rgba(255,107,107,.12), transparent 55%),
+        linear-gradient(180deg, #101726 0%, #0c1524 100%);
+    }
+
+    .split-side.after{
+      background:
+        radial-gradient(700px 320px at 80% 0%, rgba(56,211,159,.14), transparent 55%),
+        linear-gradient(180deg, #0b192d 0%, #0d1d33 100%);
+      clip-path: inset(0 0 0 var(--after-clip, 50%));
+    }
+
+    .dash-shell{
+      width:100%;
+      height:100%;
+      display:grid;
+      grid-template-columns: 250px 1fr;
+      gap:16px;
+    }
+
+    .sidebar{
+      border-radius:20px;
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.025));
+      border:1px solid rgba(255,255,255,.06);
+      padding:16px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      min-width:0;
+    }
+
+    .side-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:4px;
+    }
+
+    .side-title{
+      font-weight:700;
+      font-size:1rem;
+    }
+
+    .badge{
+      font-size:.73rem;
+      padding:6px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.08);
+      color:#d6e2f7;
+      background:rgba(255,255,255,.04);
+    }
+
+    .nav-list{
+      display:grid;
+      gap:8px;
+    }
+
+    .nav-item{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:11px 12px;
+      border-radius:14px;
+      color:#bfd0ec;
+      background:rgba(255,255,255,.025);
+      border:1px solid transparent;
+      font-size:.93rem;
+      min-width:0;
+    }
+
+    .nav-item.active{
+      color:white;
+      border-color:rgba(255,255,255,.09);
+      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+    }
+
+    .nav-icon{
+      width:10px;height:10px;border-radius:50%;
+      flex:0 0 auto;
+    }
+
+    .danger .nav-icon{background:var(--danger)}
+    .warning .nav-icon{background:var(--warning)}
+    .success .nav-icon{background:var(--success)}
+    .blue .nav-icon{background:var(--blue)}
+
+    .mini-note{
+      margin-top:auto;
+      padding:14px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.06);
+      background:rgba(255,255,255,.03);
+      color:var(--muted);
+      line-height:1.5;
+      font-size:.85rem;
+    }
+
+    .main{
+      display:grid;
+      grid-template-rows:auto 1fr;
+      gap:16px;
+      min-width:0;
+    }
+
+    .toolbar{
+      border-radius:20px;
+      background:linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.025));
+      border:1px solid rgba(255,255,255,.06);
+      padding:14px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      min-width:0;
+    }
+
+    .toolbar-left{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width:0;
+    }
+
+    .title-block h2{
+      margin:0;
+      font-size:1.05rem;
+      letter-spacing:-0.02em;
+    }
+
+    .title-block p{
+      margin:4px 0 0;
+      color:var(--muted);
+      font-size:.84rem;
+    }
+
+    .toolbar-right{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .chip{
+      padding:9px 11px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.07);
+      background:rgba(255,255,255,.04);
+      color:#d6e4fb;
+      font-size:.82rem;
+      white-space:nowrap;
+    }
+
+    .content-grid{
+      display:grid;
+      grid-template-columns:1.2fr .8fr;
+      grid-template-rows: auto 1fr;
+      gap:16px;
+      min-height:0;
+    }
+
+    .card{
+      border-radius:20px;
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid rgba(255,255,255,.06);
+      padding:16px;
+      min-width:0;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .card h3{
+      margin:0 0 6px;
+      font-size:1rem;
+      letter-spacing:-0.02em;
+    }
+
+    .card-sub{
+      color:var(--muted);
+      font-size:.84rem;
+      margin-bottom:14px;
+    }
+
+    .metric-grid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .metric{
+      border-radius:16px;
+      padding:14px;
+      background:rgba(255,255,255,.035);
+      border:1px solid rgba(255,255,255,.06);
+    }
+
+    .metric-label{
+      font-size:.78rem;color:var(--muted);margin-bottom:8px;
+    }
+
+    .metric-value{
+      font-size:1.6rem;font-weight:800;letter-spacing:-0.03em;
+    }
+
+    .metric-change{
+      margin-top:8px;
+      font-size:.78rem;
+      color:#cddcf4;
+    }
+
+    .metric-change.good{color:#98f0c6}
+    .metric-change.bad{color:#ff9f9f}
+
+    .chart-area{
+      height:180px;
+      position:relative;
+      border-radius:16px;
+      background:
+        linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size:100% 25%, 10% 100%;
+      border:1px solid rgba(255,255,255,.05);
+      overflow:hidden;
+    }
+
+    .bars{
+      position:absolute; inset:18px 14px 16px;
+      display:flex; align-items:end; gap:10px;
+    }
+
+    .bar-col{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:8px;
+      min-width:0;
+    }
+
+    .bar-stack{
+      width:100%;
+      display:flex;
+      align-items:end;
+      justify-content:center;
+      gap:6px;
+      height:120px;
+    }
+
+    .bar{
+      width:34%;
+      border-radius:10px 10px 4px 4px;
+      min-height:16px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.14);
+    }
+
+    .bar.red{background:linear-gradient(180deg, #ff8f8f, #ff6464)}
+    .bar.green{background:linear-gradient(180deg, #5de8b1, #20be79)}
+    .bar.blue{background:linear-gradient(180deg, #85c6ff, #4f94ff)}
+    .bar.amber{background:linear-gradient(180deg, #ffd38c, #ffb340)}
+
+    .bar-label{
+      font-size:.74rem;color:var(--muted);
+    }
+
+    .legend{
+      display:flex; gap:14px; flex-wrap:wrap; margin-top:12px;
+      font-size:.77rem;color:#d5e3f8;
+    }
+    .legend .key{
+      display:flex;align-items:center;gap:7px;
+    }
+    .legend i{
+      display:inline-block;width:10px;height:10px;border-radius:3px;
+    }
+
+    .line-card{
+      display:flex;
+      flex-direction:column;
+    }
+
+    .line-graph{
+      flex:1;
+      min-height:220px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.05);
+      background:
+        linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size:100% 20%, 12.5% 100%;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .line-graph svg{
+      position:absolute; inset:0;
+      width:100%; height:100%;
+    }
+
+    .kpis{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+    }
+
+    .kpi{
+      border-radius:16px;
+      padding:14px;
+      border:1px solid rgba(255,255,255,.06);
+      background:rgba(255,255,255,.035);
+    }
+
+    .kpi .label{
+      color:var(--muted); font-size:.77rem; margin-bottom:8px;
+    }
+
+    .kpi .val{
+      font-size:1.5rem; font-weight:800; letter-spacing:-0.03em;
+    }
+
+    .kpi .meta{
+      margin-top:8px; font-size:.78rem; color:#d8e7fb;
+    }
+
+    .alert-list{
+      display:grid; gap:10px;
+    }
+
+    .alert{
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      padding:12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.05);
+      background:rgba(255,255,255,.03);
+    }
+
+    .alert-dot{
+      width:10px;height:10px;border-radius:50%;margin-top:5px;flex:0 0 auto;
+    }
+
+    .alert h4{
+      margin:0 0 5px; font-size:.87rem;
+    }
+
+    .alert p{
+      margin:0; font-size:.77rem; line-height:1.45; color:var(--muted);
+    }
+
+    .overlay-labels{
+      position:absolute;
+      left:18px; right:18px; top:18px;
+      display:flex;
+      justify-content:space-between;
+      pointer-events:none;
+      z-index:4;
+    }
+
+    .state-label{
+      padding:10px 14px;
+      border-radius:999px;
+      font-weight:700;
+      font-size:.82rem;
+      letter-spacing:.02em;
+      text-transform:uppercase;
+      border:1px solid rgba(255,255,255,.08);
+      backdrop-filter: blur(10px);
+      box-shadow:0 8px 24px rgba(0,0,0,.22);
+    }
+
+    .state-label.before{
+      background:rgba(255,107,107,.12);
+      color:#ffd7d7;
+    }
+
+    .state-label.after{
+      background:rgba(56,211,159,.12);
+      color:#d7ffed;
+    }
+
+    .slider-wrap{
+      padding:18px 6px 6px;
+    }
+
+    .slider-top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      margin-bottom:12px;
+      flex-wrap:wrap;
+    }
+
+    .slider-caption{
+      color:var(--muted);
+      font-size:.95rem;
+    }
+
+    .slider-value{
+      font-weight:800;
+      color:#e7f3ff;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      padding:10px 14px;
+      border-radius:12px;
+    }
+
+    .range-row{
+      position:relative;
+      padding:10px 4px 2px;
+    }
+
+    input[type="range"]{
+      -webkit-appearance:none;
+      appearance:none;
+      width:100%;
+      height:14px;
+      border-radius:999px;
+      background:linear-gradient(90deg, rgba(255,107,107,.55) 0%, rgba(255,107,107,.28) 45%, rgba(255,255,255,.08) 50%, rgba(56,211,159,.28) 55%, rgba(56,211,159,.55) 100%);
+      outline:none;
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow: inset 0 1px 4px rgba(0,0,0,.25);
+    }
+
+    input[type="range"]::-webkit-slider-thumb{
+      -webkit-appearance:none;
+      appearance:none;
+      width:28px;height:28px;border-radius:50%;
+      background:linear-gradient(180deg, #ffffff, #cfe1ff);
+      border:3px solid #0a1627;
+      box-shadow:0 8px 24px rgba(0,0,0,.35);
+      cursor:pointer;
+    }
+
+    input[type="range"]::-moz-range-thumb{
+      width:28px;height:28px;border-radius:50%;
+      background:linear-gradient(180deg, #ffffff, #cfe1ff);
+      border:3px solid #0a1627;
+      box-shadow:0 8px 24px rgba(0,0,0,.35);
+      cursor:pointer;
+    }
+
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:16px;
+      margin:26px 0 10px;
+    }
+
+    .stat-card{
+      padding:18px;
+      border-radius:20px;
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.025));
+      border:1px solid rgba(255,255,255,.07);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+    }
+
+    .stat-value{
+      font-size:clamp(1.8rem, 3vw, 2.8rem);
+      font-weight:900;
+      letter-spacing:-0.05em;
+      margin-bottom:8px;
+    }
+
+    .stat-label{
+      color:#dcebff;
+      font-weight:600;
+      margin-bottom:6px;
+    }
+
+    .stat-copy{
+      color:var(--muted);
+      font-size:.92rem;
+      line-height:1.55;
+    }
+
+    .footer-note{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      color:var(--muted);
+      font-size:.9rem;
+      padding:20px 0 34px;
+      flex-wrap:wrap;
+    }
+
+    .emphasis{
+      color:#dff9ec;
+      font-weight:700;
+    }
+
+    .pricing{
+      color:#dceafe;
+      padding:10px 14px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.04);
+    }
+
+    .divider{
+      position:absolute;
+      top:0; bottom:0;
+      left:var(--divider-left, 50%);
+      width:2px;
+      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.85), rgba(255,255,255,.08));
+      z-index:3;
+      box-shadow:0 0 0 1px rgba(255,255,255,.08), 0 0 40px rgba(255,255,255,.18);
+      pointer-events:none;
+    }
+
+    .divider-handle{
+      position:absolute;
+      top:50%;
+      left:var(--divider-left, 50%);
+      transform:translate(-50%, -50%);
+      z-index:4;
+      width:54px;height:54px;border-radius:50%;
+      border:1px solid rgba(255,255,255,.16);
+      background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.07));
+      box-shadow:0 15px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.18);
+      display:grid; place-items:center;
+      pointer-events:none;
+      backdrop-filter: blur(10px);
+    }
+
+    .divider-handle:before{
+      content:"⇆";
+      font-size:1.1rem;
+      color:white;
+      opacity:.95;
+    }
+
+    .tiny{
+      font-size:.74rem;color:var(--muted);
+    }
+
+    .coaching-banner{
+      margin-top:12px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px;
+      border-radius:16px;
+      border:1px solid rgba(56,211,159,.22);
+      background:linear-gradient(180deg, rgba(56,211,159,.10), rgba(56,211,159,.04));
+    }
+
+    .coaching-banner strong{
+      display:block;
+      margin-bottom:5px;
+      font-size:.9rem;
+    }
+
+    .coaching-banner p{
+      margin:0;
+      color:#cfe8da;
+      font-size:.8rem;
+      line-height:1.5;
+    }
+
+    .cta-chip{
+      padding:8px 12px;
+      border-radius:12px;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.08);
+      white-space:nowrap;
+      font-size:.8rem;
+      color:white;
+    }
+
+    @media (max-width: 1100px){
+      .headline{grid-template-columns:1fr}
+      .subcopy{margin-left:0}
+      .dash-shell{grid-template-columns:1fr}
+      .sidebar{display:none}
+      .content-grid{grid-template-columns:1fr}
+    }
+
+    @media (max-width: 760px){
+      .container{width:min(100% - 20px, 1280px)}
+      .hero{padding-top:22px}
+      .topbar{margin-bottom:18px}
+      .nav-note{display:none}
+      .showcase{padding:10px}
+      .dashboard-frame{aspect-ratio: 9 / 13}
+      .toolbar{padding:12px}
+      .toolbar-right{display:none}
+      .metric-grid,.kpis,.stats{grid-template-columns:1fr}
+      .overlay-labels{top:12px;left:12px;right:12px}
+      .state-label{font-size:.72rem;padding:8px 10px}
+      .slider-top{align-items:flex-start}
+      .footer-note{padding-bottom:26px}
+    }
+  </style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+
+  <main class="hero">
+    <div class="container">
+      <div class="topbar">
+        <div class="brand">
+          <div class="brand-mark"></div>
+          <span>Go2</span>
+        </div>
+        <div class="nav-note">AI productivity coaching for SMBs • 5–500 employees</div>
+      </div>
+
+      <section class="headline">
+        <div>
+          <h1>See the work.<br><span class="gradient-text">Coach the team.</span></h1>
+        </div>
+        <div class="subcopy">
+          Go2 turns hidden work patterns — keystrokes, app usage, meetings, and focus time — into AI-powered coaching that helps teams work smarter. Not surveillance. Operational clarity for SMB owners, ops leaders, and HR.
+        </div>
+      </section>
+
+      <div class="pill-row">
+        <div class="pill"><span class="dot"></span> 42% average productivity increase</div>
+        <div class="pill"><span class="dot"></span> 15.2 hours saved per employee / week</div>
+        <div class="pill"><span class="dot"></span> 892% ROI in year one</div>
+      </div>
+
+      <section class="showcase">
+        <div class="showcase-glow"></div>
+        <div class="showcase-glow right"></div>
+
+        <div class="dashboard-frame" id="dashboardFrame">
+          <div class="overlay-labels">
+            <div class="state-label before">Before: guessing & bottlenecks</div>
+            <div class="state-label after">After: Go2 coaching & clarity</div>
+          </div>
+
+          <div class="split-pane">
+            <div class="split-side before">
+              <div class="dash-shell">
+                <aside class="sidebar">
+                  <div class="side-header">
+                    <div class="side-title">Team Ops</div>
+                    <div class="badge">Low visibility</div>
+                  </div>
+
+                  <div class="nav-list">
+                    <div class="nav-item danger active"><span class="nav-icon"></span> Productivity</div>
+                    <div class="nav-item warning"><span class="nav-icon"></span> Meeting Load</div>
+                    <div class="nav-item danger"><span class="nav-icon"></span> App Switching</div>
+                    <div class="nav-item blue"><span class="nav-icon"></span> Attendance</div>
+                    <div class="nav-item warning"><span class="nav-icon"></span> Burnout Risk</div>
+                  </div>
+
+                  <div class="mini-note">
+                    Managers are reacting to lagging signals, fragmented tools, and anecdotal feedback. No clear view of where time is really going.
+                  </div>
+                </aside>
+
+                <div class="main">
+                  <div class="toolbar">
+                    <div class="toolbar-left">
+                      <div class="title-block">
+                        <h2>Weekly Operations Snapshot</h2>
+                        <p>Last 7 days • fragmented reporting across the team</p>
+                      </div>
+                    </div>
+                    <div class="toolbar-right">
+                      <div class="chip">29 employees</div>
+                      <div class="chip">3 offices</div>
+                      <div class="chip">12 manual reports</div>
+                    </div>
+                  </div>
+
+                  <div class="content-grid">
+                    <div class="card">
+                      <h3>Visibility gaps by team</h3>
+                      <div class="card-sub">Performance varies, but causes are unclear.</div>
+
+                      <div class="metric-grid">
+                        <div class="metric">
+                          <div class="metric-label">Missed follow-ups</div>
+                          <div class="metric-value">18%</div>
+                          <div class="metric-change bad">↑ 6% vs last week</div>
+                        </div>
+                        <div class="metric">
+                          <div class="metric-label">Meeting overload</div>
+                          <div class="metric-value">11.4h</div>
+                          <div class="metric-change bad">per employee / week</div>
+                        </div>
+                        <div class="metric">
+                          <div class="metric-label">Focus time</div>
+                          <div class="metric-value">1.7h</div>
+                          <div class="metric-change bad">↓ 22% from baseline</div>
+                        </div>
+                      </div>
+
+                      <div class="chart-area">
+                        <div class="bars">
+                          <div class="bar-col">
+                            <div class="bar-stack">
+                              <div class="bar red" style="height:78%"></div>
+                              <div class="bar amber" style="height:45%"></div>
+                            </div>
+                            <div class="bar-label">Sales</div>
+                          </div>
+                          <div class="bar-col">
+                            <div class="bar-stack">
+                              <div class="bar red" style="height:64%"></div>
+                              <div class="bar amber" style="height:58%"></div>
+                            </div>
+                            <div class="bar-label">Ops</div>
+                          </div>
+                          <div class="bar-col">
+                            <div class="bar-stack">
+                              <div class="bar red" style="height:86%"></div>
+                              <div class="bar amber" style="height:40%"></div>
+                            </div>
+                            <div class="bar-label">Support</div>
+                          </div>
+                          <div class="bar-col">
+                            <div class="bar-stack">
+                              <div class="bar red" style="height:56%"></div>
+                              <div class="bar amber" style="height:70%"></div>
+                            </div>
+                            <div class="bar-label">HR</div>
+                          </div>
+                          <div class="bar-col">
+                            <div class="bar-stack">
+                              <div class="bar red" style="height:72%"></div>
+                              <div class="bar amber" style="height:61%"></div>
+                            </div>
+                            <div class="bar-label">Finance</div>
+                          </div>
+                          <div class="bar-col">
+                            <div class="bar-stack">
+                              <div class="bar red" style="height:90%"></div>
+                              <div class="bar amber" style="height:35%"></div>
+                            </div>
+                            <div class="bar-label">CS</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="legend">
+                        <span class="key"><i style="background:#ff6b6b"></i> Unclear non-productive time</span>
+                        <span class="key"><i style="background:#ffbe55"></i> Meeting hours</span>
+                      </div>
+                    </div>
+
+                    <div class="card line-card">
+                      <h3>Manager confidence</h3>
+                      <div class="card-sub">Decision-making is driven by assumptions.</div>
+                      <div class="line-graph">
+                        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                          <defs>
+                            <linearGradient id="beforeLine" x1="0" x2="0" y1="0" y2="1">
+                              <stop offset="0%" stop-color="#ff8f8f"/>
+                              <stop offset="100%" stop-color="#ff6464"/>
+                            </linearGradient>
+                          </defs>
+                          <path d="M0,72 C8,66 14,74 22,65 C31,54 37,58 46,63 C54,67 60,44 69,53 C76,60 83,38 90,48 C95,54 98,52 100,51"
+                                fill="none" stroke="url(#beforeLine)" stroke-width="3.2" stroke-linecap="round"/>
+                          <path d="M0,100 L0,72 C8,66 14,74 22,65 C31,54 37,58 46,63 C54,67 60,44 69,53 C76,60 83,38 90,48 C95,54 98,52 100,51 L100,100 Z"
+                                fill="rgba(255,107,107,.14)"/>
+                        </svg>
+                      </div>
+                    </div>
+
+                    <div class="card">
+                      <h3>Issues surfacing too late</h3>
+                      <div class="card-sub">Symptoms appear in output, not in the workflow.</div>
+                      <div class="alert-list">
+                        <div class="alert">
+                          <div class="alert-dot" style="background:var(--danger)"></div>
+                          <div>
+                            <h4>High context switching in customer success</h4>
+                            <p>Employees are jumping across 9+ tools daily, but the underlying workflow friction isn't mapped.</p>
+                          </div>
+                        </div>
+                        <div class="alert">
+                          <div class="alert-dot" style="background:var(--warning)"></div>
+                          <div>
+                            <h4>Meetings consuming peak focus hours</h4>
+                            <p>Ops team calendars are overloaded from 10am–2pm, compressing real execution into late afternoons.</p>
+                          </div>
+                        </div>
+                        <div class="alert">
+                          <div class="alert-dot" style="background:var(--danger)"></div>
+                          <div>
+                            <h4>Quiet burnout signals missed</h4>
+                            <p>Long active hours are rising, but leaders only see this after morale or performance slips.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="card">
+                      <h3>Outcomes</h3>
+                      <div class="card-sub">No coaching layer, only raw activity.</div>
+                      <div class="kpis">
+                        <div class="kpi">
+                          <div class="label">Time lost</div>
+                          <div class="val">12.8h</div>
+                          <div class="meta">per employee / week</div>
+                        </div>
+                        <div class="kpi">
+                          <div class="label">Reporting effort</div>
+                          <div class="val">6.2h</div>
+                          <div class="meta">manager admin weekly</div>
+                        </div>
+                        <div class="kpi">
+                          <div class="label">Decision confidence</div>
+                          <div class="val">54%</div>
+                          <div class="meta">self-reported by leaders</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
+            <div class="split-side after" id="afterSide">
+              <div class="dash-shell">
+                <aside class="sidebar">
+                  <div class="side-header">
+                    <div class="side-title">Go2 Intelligence</div>
+                    <div class="badge">AI coaching</div>
+                  </div>
+
+                  <div class="nav-list">
+                    <div class="nav-item success active"><span class="nav-icon"></span> Productivity Coaching</div>
+                    <div class="nav-item blue"><span class="nav-icon"></span> Workflow Insights</div>
+                    <div class="nav-item success"><span class="nav-icon"></span> Focus Optimization</div>
+                    <div class="nav-item blue"><span class="nav-icon"></span> Team Trends</div>
+                    <div class="nav-item success"><span class="nav-icon"></span> ROI Dashboard</div>
+                  </div>
+
+                  <div class="mini-note">
+                    Go2 translates work patterns into recommendations managers can act on: fewer interruptions, better scheduling, healthier focus time, and measurable ROI.
+                  </div>
+                </aside>
+
+                <div class="main">
+                  <div class="toolbar">
+                    <div class="toolbar-left">
+                      <div class="title-block">
+                        <h2>Go2 Coaching Dashboard</h2>
+                        <p>Live AI insights • productivity coaching, not surveillance</p>
+                      </div>
+                    </div>
+                    <div class="toolbar-right">
+                      <div class="chip">42% productivity gain</div>
+                      <div class="chip">15.2 hrs saved</div>
+                      <div class="chip">892% ROI</div>
+                    </div>
+                  </div>
+
+                  <div class="content-grid">
+                    <div class="card">
+                      <h3>Work pattern optimization</h3>
+                      <div class="card-sub">Visibility into how work gets done — and where coaching helps most.</div>
+
+                      <div class="metric-grid">
+                        <div class="metric">
+                          <div class="metric-label">Focused work time</div>
+                          <div class="metric-value">4.8h</div>
+                          <div class="metric-change good">↑ 182% after coaching</div>
+                        </div>
+                        <div class="metric">
+                          <div class="metric-label">Meetings streamlined</div>
+                          <div class="metric-value">6.1h</div>
+                          <div class="metric-change good">↓ 46% unnecessary load</div>
+                        </div>
+                        <div class="metric">
+                          <div class="metric-label">Productive time</div>
+                          <div class="metric-value">42%</div>
+                          <div class="metric-change good">avg increase across SMB teams</div>
+                        </div>
+                      </div>
+
+                      <div class="chart-area">
+                        <div class="bars">
+                          <div class="bar-col">
+                            <div class="bar-stack">
+                              <div class="bar blue" style="height:54%"></div>
+                              <div class="bar green" style="height:88%"></div>
+                            </div>
+                            <div class="bar-label">Sales</div>
+                          </div>
+                          <div class="bar-col">
+                            <div class="bar-stack">
+                              <div class="bar blue" style="height:60%"></div>
+                              <div class="bar green" style="height:84%"></div>
+                            </div>
+                            <div class="bar-label">Ops</div>
+                          </div>
+                          <div class="bar-col">
+                            <div class="bar-stack">
+                              <div class="bar blue" style="height:48%"></div>
+                              <div class="bar green" style="height:86%"></div>
+                            </div>
+                            <div class="bar-label">Support</div>
+                          </div>
+                          <div class="bar-col">
+                            <div class="bar-stack">
+                              <div class="bar blue" style="height:58%"></div>
+                              <div class="bar green" style="height:80%"></div>
+                            </div>
+                            <div class="bar-label">HR</div>
+                          </div>
+                          <div class="bar-col">
+                            <div class="bar-stack">
+                              <div class="bar blue" style="height:52%"></div>
+                              <div class="bar green" style="height:83%"></div>
+                            </div>
+                            <div class="bar-label">Finance</div>
+                          </div>
+                          <div class="bar-col">
+                            <div class="bar-stack">
+                              <div class="bar blue" style="height:50%"></div>
+                              <div class="bar green" style="height:91%"></div>
+                            </div>
+                            <div class="bar-label">CS</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="legend">
+                        <span class="key"><i style="background:#59a8ff"></i> Baseline productive time</span>
+                        <span class="key"><i style="background:#38d39f"></i> Post-Go2 coached output</span>
+                      </div>
+                    </div>
+
+                    <div class="card line-card">
+                      <h3>Clarity & performance trend</h3>
+                      <div class="card-sub">From reactive management to continuous coaching.</div>
+                      <div class="line-graph">
+                        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                          <defs>
+                            <linearGradient id="afterLine" x1="0" x2="0" y1="0" y2="1">
+                              <stop offset="0%" stop-color="#6cf0bb"/>
+                              <stop offset="100%" stop-color="#20be79"/>
+                            </linearGradient>
+                          </defs>
+                          <path d="M0,76 C8,74 14,68 22,66 C31,63 37,56 46,49 C54,43 60,37 69,30 C76,25 83,17 90,13 C95,10 98,9 100,8"
+                                fill="none" stroke="url(#afterLine)" stroke-width="3.2" stroke-linecap="round"/>
+                          <path d="M0,100 L0,76 C8,74 14,68 22,66 C31,63 37,56 46,49 C54,43 60,37 69,30 C76,25 83,17 90,13 C95,10 98,9 100,8 L100,100 Z"
+                                fill="rgba(56,211,159,.14)"/>
+                        </svg>
+                      </div>
+                    </div>
+
+                    <div class="card">
+                      <h3>AI coaching recommendations</h3>
+                      <div class="card-sub">Actionable, team-friendly guidance from real work patterns.</div>
+                      <div class="alert-list">
+                        <div class="alert">
+                          <div class="alert-dot" style="background:var(--success)"></div>
+                          <div>
+                            <h4>Protect 9:00–11:00am as focus blocks</h4>
+                            <p>Expected gain: +1.6 hours of uninterrupted execution per employee by shifting recurring check-ins later.</p>
+                          </div>
+                        </div>
+                        <div class="alert">
+                          <div class="alert-dot" style="background:var(--blue)"></div>
+                          <div>
+                            <h4>Reduce app switching in customer success</h4>
+                            <p>Consolidate three handoff steps into one workflow. Predicted impact: 11% faster case resolution.</p>
+                          </div>
+                        </div>
+                        <div class="alert">
+                          <div class="alert-dot" style="background:var(--success)"></div>
+                          <div>
+                            <h4>Coach managers on meeting hygiene</h4>
+                            <p>Cancel or shorten low-value syncs. Go2 estimates 15.2 hours saved per week per employee across similar teams.</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="coaching-banner">
+                        <div>
+                          <strong>Human-centered insight</strong>
+                          <p>Go2 surfaces patterns to coach performance and improve workflows — not to micromanage individuals.</p>
+                        </div>
+                        <div class="cta-chip">Privacy-first</div>
+                      </div>
+                    </div>
+
+                    <div class="card">
+                      <h3>Business impact</h3>
+                      <div class="card-sub">Designed for SMBs that need ROI, not complexity.</div>
+                      <div class="kpis">
+                        <div class="kpi">
+                          <div class="label">Time saved</div>
+                          <div class="val">15.2h</div>
+                          <div class="meta">weekly per employee</div>
+                        </div>
+                        <div class="kpi">
+                          <div class="label">First-year ROI</div>
+                          <div class="val">892%</div>
+                          <div class="meta">measured customer impact</div>
+                        </div>
+                        <div class="kpi">
+                          <div class="label">Price point</div>
+                          <div class="val">$6–12</div>
+                          <div class="meta">per user / month</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="divider" id="divider"></div>
+            <div class="divider-handle" id="dividerHandle"></div>
+          </div>
+        </div>
+
+        <div class="slider-wrap">
+          <div class="slider-top">
+            <div class="slider-caption">Drag to reveal the difference between reactive management and Go2-powered productivity coaching.</div>
+            <div class="slider-value"><span id="clarityLabel">50%</span> clarity unlocked</div>
+          </div>
+          <div class="range-row">
+            <input type="range" id="splitSlider" min="0" max="100" value="50" aria-label="Before and after dashboard comparison slider">
+          </div>
+        </div>
+      </section>
+
+      <section class="stats">
+        <div class="stat-card">
+          <div class="stat-value">42%</div>
+          <div class="stat-label">Average productivity increase</div>
+          <div class="stat-copy">Go2 identifies hidden friction in work habits and turns it into practical coaching for managers and teams.</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">15.2 hrs</div>
+          <div class="stat-label">Saved each week, per employee</div>
+          <div class="stat-copy">By reducing unnecessary meetings, context switching, and low-value workflows, teams regain meaningful execution time.</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">892%</div>
+          <div class="stat-label">ROI in the first year</div>
+          <div class="stat-copy">A lightweight SaaS investment with enterprise-grade insight, built specifically for SMBs with 5–500 employees.</div>
+        </div>
+      </section>
+
+      <div class="footer-note">
+        <div>Go2 competes with tools like Time Doctor, Hubstaff, and Teramind — but stands apart by focusing on <span class="emphasis">coaching, workflow improvement, and team effectiveness</span>, not surveillance.</div>
+        <div class="pricing">Typical pricing: $6–12 / user / month</div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (function(){
+      const slider = document.getElementById('splitSlider');
+      const afterSide = document.getElementById('afterSide');
+      const divider = document.getElementById('divider');
+      const handle = document.getElementById('dividerHandle');
+      const frame = document.getElementById('dashboardFrame');
+      const label = document.getElementById('clarityLabel');
+
+      function updateSplit(value){
+        const v = Math.max(0, Math.min(100, Number(value)));
+        afterSide.style.setProperty('--after-clip', v + '%');
+        divider.style.setProperty('--divider-left', v + '%');
+        handle.style.setProperty('--divider-left', v + '%');
+        frame.style.setProperty('--divider-left', v + '%');
+        label.textContent = v + '%';
+      }
+
+      slider.addEventListener('input', e => updateSplit(e.target.value));
+      updateSplit(slider.value);
+
+      let dragging = false;
+
+      function setFromPointer(clientX){
+        const rect = frame.getBoundingClientRect();
+        const x = clientX - rect.left;
+        const percent = (x / rect.width) * 100;
+        slider.value = Math.max(0, Math.min(100, percent));
+        updateSplit(slider.value);
+      }
+
+      frame.addEventListener('mousedown', (e) => {
+        dragging = true;
+        setFromPointer(e.clientX);
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if(!dragging) return;
+        setFromPointer(e.clientX);
+      });
+
+      window.addEventListener('mouseup', () => dragging = false);
+
+      frame.addEventListener('touchstart', (e) => {
+        dragging = true;
+        if (e.touches[0]) setFromPointer(e.touches[0].clientX);
+      }, {passive:true});
+
+      frame.addEventListener('touchmove', (e) => {
+        if(!dragging) return;
+        if (e.touches[0]) setFromPointer(e.touches[0].clientX);
+      }, {passive:true});
+
+      window.addEventListener('touchend', () => dragging = false);
+    })();
+  </script>
+</body>
+</html>

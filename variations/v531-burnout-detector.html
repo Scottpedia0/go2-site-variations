@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Burnout Detector | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#fafbfc;color:#1e293b;overflow-x:hidden}
+.nav{padding:1.5rem 2rem;display:flex;justify-content:space-between;align-items:center;max-width:1200px;margin:0 auto}
+.logo{font-size:1.25rem;font-weight:800}.logo span{color:#ec4899}
+.nav-btn{padding:.5rem 1.5rem;background:#ec4899;color:#fff;border:none;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;text-decoration:none}
+.hero{max-width:700px;margin:0 auto;text-align:center;padding:4rem 2rem 2rem}
+.hero-icon{font-size:3rem;margin-bottom:1rem}
+h1{font-size:clamp(1.75rem,4vw,2.75rem);font-weight:900;line-height:1.15;margin-bottom:1rem}
+h1 .pink{color:#ec4899}
+.hero p{color:#64748b;font-size:1.05rem;max-width:550px;margin:0 auto 2rem;line-height:1.7}
+.quiz-container{max-width:650px;margin:0 auto;padding:0 2rem 4rem}
+.quiz-card{background:#fff;border-radius:20px;box-shadow:0 4px 30px rgba(0,0,0,.05);border:1px solid #e5e7eb;overflow:hidden}
+.quiz-header{padding:1.5rem 2rem;background:linear-gradient(135deg,#fdf2f8,#fce7f3);border-bottom:1px solid #fbcfe8}
+.quiz-header h2{font-size:1.1rem;font-weight:700;color:#be185d;margin-bottom:.25rem}
+.quiz-header p{font-size:.8rem;color:#9d174d}
+.progress-bar{height:6px;background:#f1f5f9;position:relative}
+.progress-fill{height:100%;background:linear-gradient(90deg,#ec4899,#be185d);border-radius:0 3px 3px 0;transition:width .5s}
+.question-area{padding:2rem}
+.q-number{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:#ec4899;font-weight:700;margin-bottom:1rem}
+.q-text{font-size:1.1rem;font-weight:600;line-height:1.4;margin-bottom:1.5rem;min-height:60px}
+.answers{display:flex;flex-direction:column;gap:.5rem}
+.answer-btn{width:100%;text-align:left;padding:1rem 1.25rem;background:#fafbfc;border:1px solid #e5e7eb;border-radius:12px;font-size:.9rem;color:#475569;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;line-height:1.4;display:flex;align-items:center;gap:.75rem}
+.answer-btn:hover{background:#fdf2f8;border-color:#fbcfe8;color:#be185d}
+.answer-btn .a-dot{width:20px;height:20px;border-radius:50%;border:2px solid #d1d5db;flex-shrink:0;transition:all .2s;display:flex;align-items:center;justify-content:center}
+.answer-btn:hover .a-dot{border-color:#ec4899}
+.results-area{padding:2rem;display:none}
+.result-gauge{text-align:center;margin-bottom:2rem}
+.gauge-circle{width:160px;height:160px;border-radius:50%;margin:0 auto 1rem;position:relative;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.gauge-circle svg{position:absolute;transform:rotate(-90deg)}
+.gauge-value{font-size:2.5rem;font-weight:900;z-index:1}
+.gauge-label{font-size:.75rem;color:#64748b;z-index:1}
+.result-level{font-size:1.25rem;font-weight:800;margin-bottom:.5rem}
+.result-desc{font-size:.9rem;color:#64748b;line-height:1.6;max-width:450px;margin:0 auto 2rem}
+.recommendations{display:flex;flex-direction:column;gap:1rem}
+.rec-item{display:flex;gap:1rem;padding:1rem;background:#fdf2f8;border-radius:12px;border:1px solid #fce7f3}
+.rec-icon{font-size:1.25rem;flex-shrink:0;margin-top:.1rem}
+.rec-text h4{font-size:.85rem;font-weight:700;color:#be185d;margin-bottom:.25rem}
+.rec-text p{font-size:.8rem;color:#9d174d;line-height:1.5}
+.restart-btn{display:block;margin:1.5rem auto 0;padding:.75rem 2rem;background:none;border:1px solid #d1d5db;border-radius:8px;font-size:.85rem;color:#64748b;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
+.restart-btn:hover{border-color:#ec4899;color:#ec4899}
+.awareness{max-width:800px;margin:0 auto;padding:0 2rem 3rem}
+.awareness-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+.awareness-card{padding:1.5rem;background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.04);border:1px solid #e5e7eb;text-align:center}
+.awareness-card .ac-icon{font-size:2rem;margin-bottom:.75rem}
+.awareness-card h3{font-size:1rem;font-weight:700;margin-bottom:.5rem}
+.awareness-card p{font-size:.8rem;color:#64748b;line-height:1.5}
+.awareness-card .ac-stat{font-size:1.75rem;font-weight:800;color:#ec4899;margin:.5rem 0}
+.cta-section{text-align:center;padding:4rem 2rem;max-width:600px;margin:0 auto}
+.cta-section h2{font-size:1.5rem;font-weight:800;margin-bottom:1rem}
+.cta-section p{color:#64748b;margin-bottom:2rem;line-height:1.6}
+.cta-btn{display:inline-block;padding:1rem 2.5rem;background:#ec4899;color:#fff;font-size:1rem;font-weight:700;border:none;border-radius:12px;cursor:pointer;text-decoration:none;transition:all .3s}
+.cta-btn:hover{background:#db2777;transform:translateY(-2px);box-shadow:0 10px 30px rgba(236,72,153,.3)}
+footer{text-align:center;padding:3rem 2rem;color:#bbb;font-size:.8rem}
+@media(max-width:768px){.awareness-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav class="nav"><div class="logo">Go2<span>.</span></div><a href="#cta" class="nav-btn">Protect Your Team</a></nav>
+
+<section class="hero">
+<div class="hero-icon">&#128150;</div>
+<h1>Is Your Team <span class="pink">Burning Out?</span></h1>
+<p>Burnout doesn't announce itself. It builds slowly until it's too late. Take this 2-minute quiz to assess your team's risk — then learn how Go2 catches it early.</p>
+</section>
+
+<div class="quiz-container">
+<div class="quiz-card">
+<div class="quiz-header"><h2>Team Burnout Risk Assessment</h2><p>Answer honestly — this is about your team's health, not judgment.</p></div>
+<div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+<div class="question-area" id="questionArea"></div>
+<div class="results-area" id="resultsArea"></div>
+</div>
+</div>
+
+<section class="awareness">
+<div class="awareness-grid">
+<div class="awareness-card">
+<div class="ac-icon">&#9200;</div>
+<h3>Early Detection</h3>
+<div class="ac-stat">3 weeks</div>
+<p>Go2 detects burnout risk 3 weeks before it becomes a crisis — by tracking work pattern changes.</p>
+</div>
+<div class="awareness-card">
+<div class="ac-icon">&#128200;</div>
+<h3>Recovery Rate</h3>
+<div class="ac-stat">92%</div>
+<p>When caught early, 92% of burnout cases can be reversed with simple interventions like workload adjustment.</p>
+</div>
+<div class="awareness-card">
+<div class="ac-icon">&#128176;</div>
+<h3>Cost of Inaction</h3>
+<div class="ac-stat">$78K</div>
+<p>Average cost of replacing a burned-out employee who quits. Prevention costs a fraction of that.</p>
+</div>
+</div>
+</section>
+
+<section class="cta-section" id="cta">
+<h2>Don't Wait for the Resignation Letter</h2>
+<p>Go2 monitors work patterns and catches burnout signals before they become crises. Caring for your team shouldn't require a crystal ball.</p>
+<a href="#" class="cta-btn">Start Protecting Your Team &rarr;</a>
+</section>
+<footer>&copy; 2026 Go2. Because your team's wellbeing matters.</footer>
+
+<script>
+const questions=[
+  {q:"How often does your team work past normal hours?",answers:[{t:"Rarely — we have strong boundaries",s:1},{t:"Sometimes during crunch periods",s:2},{t:"Regularly — late nights are common",s:3},{t:"Almost always — it's just how we work",s:4}]},
+  {q:"When was the last time your team had a truly meeting-free day?",answers:[{t:"This week",s:1},{t:"A few weeks ago",s:2},{t:"I honestly can't remember",s:3},{t:"We've never had one",s:4}]},
+  {q:"How do you think your team would describe their workload?",answers:[{t:"Manageable and well-distributed",s:1},{t:"Busy but sustainable",s:2},{t:"Heavy — some people are stretched thin",s:3},{t:"Overwhelming — people are drowning",s:4}]},
+  {q:"Do team members regularly take breaks during the day?",answers:[{t:"Yes, we encourage it and I see it happen",s:1},{t:"Most people do, but some skip breaks",s:2},{t:"Breaks are rare — too much to do",s:3},{t:"What breaks? People eat at their desks",s:4}]},
+  {q:"How would you rate team energy in meetings lately?",answers:[{t:"High — people are engaged and contributing",s:1},{t:"Normal — usual levels of participation",s:2},{t:"Lower than usual — people seem tired",s:3},{t:"Flat — cameras off, minimal engagement",s:4}]},
+  {q:"Has anyone on your team mentioned feeling stressed or overwhelmed recently?",answers:[{t:"No, things seem stable",s:1},{t:"One or two people, briefly",s:2},{t:"Several people have mentioned it",s:3},{t:"It's a constant topic",s:4}]},
+  {q:"How much uninterrupted focus time does your team get per day?",answers:[{t:"4+ hours — we protect focus time",s:1},{t:"2-3 hours on good days",s:2},{t:"Maybe 1-2 hours if they're lucky",s:3},{t:"Almost none — constant interruptions",s:4}]},
+  {q:"When was the last time someone on your team took a real vacation (fully disconnected)?",answers:[{t:"Within the last month",s:1},{t:"Within the last quarter",s:2},{t:"More than 6 months ago",s:3},{t:"People don't fully disconnect on vacation",s:4}]},
+];
+let currentQ=0,score=0;
+const questionArea=document.getElementById('questionArea');
+const resultsArea=document.getElementById('resultsArea');
+const progressFill=document.getElementById('progressFill');
+function showQuestion(){
+  if(currentQ>=questions.length){showResults();return;}
+  const q=questions[currentQ];
+  progressFill.style.width=((currentQ/questions.length)*100)+'%';
+  questionArea.innerHTML=`
+    <div class="q-number">Question ${currentQ+1} of ${questions.length}</div>
+    <div class="q-text">${q.q}</div>
+    <div class="answers">${q.answers.map((a,i)=>`<button class="answer-btn" onclick="answer(${a.s})"><span class="a-dot"></span>${a.t}</button>`).join('')}</div>
+  `;
+}
+function answer(s){
+  score+=s;currentQ++;showQuestion();
+}
+function showResults(){
+  progressFill.style.width='100%';
+  questionArea.style.display='none';
+  resultsArea.style.display='block';
+  const maxScore=questions.length*4;
+  const pct=Math.round((score/maxScore)*100);
+  let level,color,desc,recs;
+  if(pct<=30){
+    level='Low Risk';color='#22c55e';
+    desc="Your team appears to be in a healthy place. Good boundaries, reasonable workloads, and people seem energized. Keep it up — but stay vigilant. Burnout can creep in fast.";
+    recs=[
+      {icon:'&#9989;',title:'Maintain Your Standards',desc:'Whatever you\'re doing is working. Document your practices so they survive growth.'},
+      {icon:'&#128161;',title:'Stay Proactive',desc:'Even healthy teams benefit from monitoring. Go2 can ensure you catch early signals before they become problems.'},
+    ];
+  }else if(pct<=55){
+    level='Moderate Risk';color='#f59e0b';
+    desc="There are warning signs. Your team is managing for now, but the foundations are showing cracks. Without intervention, these patterns will escalate within 2-3 months.";
+    recs=[
+      {icon:'&#9888;&#65039;',title:'Audit Your Meeting Load',desc:'Start by cutting 20% of recurring meetings. Most teams find that 1 in 3 meetings doesn\'t need to exist.'},
+      {icon:'&#128337;',title:'Protect Focus Time',desc:'Institute at least one meeting-free day per week. Go2 can identify optimal focus windows for each person.'},
+      {icon:'&#128172;',title:'Have Honest Conversations',desc:'Check in with the team members showing the most stress. Sometimes acknowledgment alone reduces pressure.'},
+    ];
+  }else if(pct<=80){
+    level='High Risk';color='#ef4444';
+    desc="Your team is showing significant burnout indicators. Multiple stress signals are present, and without action, you're likely to see turnover, declining quality, and health impacts within weeks.";
+    recs=[
+      {icon:'&#128680;',title:'Immediate Workload Review',desc:'Identify the top 3 overloaded team members and redistribute work this week. Don\'t wait.'},
+      {icon:'&#128197;',title:'Cancel Non-Essential Meetings',desc:'Do a zero-based meeting audit. Cancel everything for a week, then only add back what\'s truly needed.'},
+      {icon:'&#128150;',title:'Signal That You Care',desc:'Explicitly tell your team that their wellbeing matters more than any deadline. Then prove it with actions.'},
+      {icon:'&#129302;',title:'Deploy Go2 Now',desc:'You need visibility into who\'s struggling and why. Go2 provides this in days, not months.'},
+    ];
+  }else{
+    level='Critical Risk';color='#dc2626';
+    desc="Your team is in a burnout crisis. The patterns you described suggest widespread exhaustion, disengagement, and potential departures. This requires immediate leadership action.";
+    recs=[
+      {icon:'&#128680;',title:'Emergency Stand-Down',desc:'Consider a company-wide reset day. Cancel all non-customer-facing work for 24-48 hours. Let people breathe.'},
+      {icon:'&#128101;',title:'1:1 Check-Ins This Week',desc:'Meet individually with every team member. Listen. Don\'t problem-solve — just hear them out.'},
+      {icon:'&#128202;',title:'Structural Changes Needed',desc:'This isn\'t a quick fix. You need to fundamentally rethink workload, meeting culture, and expectations.'},
+      {icon:'&#129302;',title:'Go2 as a Recovery Tool',desc:'Go2 can help you monitor recovery, ensure changes are working, and prevent relapse. Start today.'},
+    ];
+  }
+  // Draw gauge
+  const circumference=2*Math.PI*65;
+  const offset=circumference-(pct/100)*circumference;
+  resultsArea.innerHTML=`
+    <div class="result-gauge">
+      <div class="gauge-circle">
+        <svg width="160" height="160"><circle cx="80" cy="80" r="65" fill="none" stroke="#f1f5f9" stroke-width="10"/><circle cx="80" cy="80" r="65" fill="none" stroke="${color}" stroke-width="10" stroke-linecap="round" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}" style="transition:stroke-dashoffset 1s ease"/></svg>
+        <div class="gauge-value" style="color:${color}">${pct}%</div>
+        <div class="gauge-label">Risk Score</div>
+      </div>
+      <div class="result-level" style="color:${color}">${level}</div>
+      <div class="result-desc">${desc}</div>
+    </div>
+    <div class="recommendations">${recs.map(r=>`<div class="rec-item"><div class="rec-icon">${r.icon}</div><div class="rec-text"><h4>${r.title}</h4><p>${r.desc}</p></div></div>`).join('')}</div>
+    <button class="restart-btn" onclick="restart()">&#8635; Retake Quiz</button>
+  `;
+}
+function restart(){
+  currentQ=0;score=0;
+  questionArea.style.display='block';
+  resultsArea.style.display='none';
+  showQuestion();
+}
+showQuestion();
+</script>
+</body>
+</html>

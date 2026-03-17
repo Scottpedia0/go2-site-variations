@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Focus Time Optimizer | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: #0a0a0f; color: #e0e0e0; min-height: 100vh; }
+.hero { text-align: center; padding: 60px 20px 30px; background: linear-gradient(180deg, #0f0f1a 0%, #0a0a0f 100%); }
+.hero h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 800; background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 12px; }
+.hero p { font-size: 1.1rem; color: #888; max-width: 600px; margin: 0 auto; }
+.app-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+.toolbar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+.toolbar-section { display: flex; gap: 8px; align-items: center; }
+.toolbar-label { font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-right: 4px; }
+.block-btn { padding: 8px 16px; border-radius: 8px; border: 1px solid #333; background: #1a1a2e; color: #ccc; cursor: grab; font-size: 0.85rem; font-weight: 500; transition: all 0.2s; user-select: none; }
+.block-btn:hover { border-color: #6366f1; color: #fff; }
+.block-btn.meeting { border-color: #ef4444; background: rgba(239,68,68,0.1); color: #f87171; }
+.block-btn.focus { border-color: #22c55e; background: rgba(34,197,94,0.1); color: #4ade80; }
+.block-btn.break { border-color: #f59e0b; background: rgba(245,158,11,0.1); color: #fbbf24; }
+.block-btn.lunch { border-color: #3b82f6; background: rgba(59,130,246,0.1); color: #60a5fa; }
+.score-panel { background: linear-gradient(135deg, #1a1a2e, #16213e); border: 1px solid #333; border-radius: 16px; padding: 24px; margin-bottom: 20px; display: flex; gap: 30px; flex-wrap: wrap; align-items: center; }
+.score-circle { width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; position: relative; flex-shrink: 0; }
+.score-circle svg { position: absolute; transform: rotate(-90deg); }
+.score-circle .score-value { font-size: 1.8rem; font-weight: 800; z-index: 1; }
+.score-circle .score-label { font-size: 0.65rem; color: #888; z-index: 1; }
+.score-details { flex: 1; min-width: 200px; }
+.score-details h3 { font-size: 1rem; margin-bottom: 8px; color: #fff; }
+.suggestion { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.85rem; color: #aaa; }
+.suggestion:last-child { border: none; }
+.suggestion-icon { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; }
+.suggestion-icon.good { background: rgba(34,197,94,0.2); color: #4ade80; }
+.suggestion-icon.warn { background: rgba(245,158,11,0.2); color: #fbbf24; }
+.suggestion-icon.bad { background: rgba(239,68,68,0.2); color: #f87171; }
+.calendar { display: grid; grid-template-columns: 60px repeat(5, 1fr); gap: 1px; background: #1a1a2e; border: 1px solid #333; border-radius: 12px; overflow: hidden; }
+.time-label { padding: 0; height: 60px; display: flex; align-items: flex-start; justify-content: flex-end; padding-right: 8px; padding-top: 2px; font-size: 0.7rem; color: #555; background: #0f0f1a; }
+.day-header { padding: 12px; text-align: center; font-weight: 600; font-size: 0.85rem; background: #16213e; color: #aaa; border-bottom: 1px solid #333; }
+.day-header:first-of-type { border-radius: 0; }
+.corner { background: #0f0f1a; }
+.calendar-cell { background: #0f0f1a; height: 60px; position: relative; border: 1px solid transparent; transition: all 0.15s; }
+.calendar-cell:hover { background: #16213e; border-color: #333; }
+.calendar-cell.drag-over { background: rgba(99,102,241,0.1); border-color: #6366f1; }
+.calendar-block { position: absolute; inset: 2px; border-radius: 6px; padding: 4px 8px; font-size: 0.7rem; font-weight: 500; cursor: grab; display: flex; align-items: center; gap: 4px; z-index: 2; transition: transform 0.1s, box-shadow 0.1s; }
+.calendar-block:hover { transform: scale(1.02); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+.calendar-block.dragging { opacity: 0.5; }
+.calendar-block.meeting { background: rgba(239,68,68,0.2); border: 1px solid rgba(239,68,68,0.4); color: #f87171; }
+.calendar-block.focus { background: rgba(34,197,94,0.2); border: 1px solid rgba(34,197,94,0.4); color: #4ade80; }
+.calendar-block.break { background: rgba(245,158,11,0.2); border: 1px solid rgba(245,158,11,0.4); color: #fbbf24; }
+.calendar-block.lunch { background: rgba(59,130,246,0.2); border: 1px solid rgba(59,130,246,0.4); color: #60a5fa; }
+.delete-zone { text-align: center; padding: 16px; border: 2px dashed #333; border-radius: 12px; margin-top: 16px; color: #555; font-size: 0.85rem; transition: all 0.2s; }
+.delete-zone.drag-over { border-color: #ef4444; color: #f87171; background: rgba(239,68,68,0.05); }
+.cta-section { text-align: center; padding: 60px 20px; }
+.cta-section h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 12px; color: #fff; }
+.cta-section p { color: #888; margin-bottom: 24px; }
+.cta-btn { display: inline-block; padding: 14px 36px; background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 1rem; border: none; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+.cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(99,102,241,0.3); }
+.optimize-btn { padding: 10px 20px; background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s; }
+.optimize-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
+.reset-btn { padding: 10px 20px; background: transparent; color: #888; border: 1px solid #333; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 0.85rem; transition: all 0.2s; }
+.reset-btn:hover { border-color: #666; color: #ccc; }
+@media (max-width: 768px) {
+  .calendar { grid-template-columns: 40px repeat(5, 1fr); }
+  .time-label { font-size: 0.6rem; }
+  .score-panel { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+<div class="hero">
+  <h1>Focus Time Optimizer</h1>
+  <p>Drag blocks onto your calendar. Go2's AI scores your schedule and suggests improvements for peak productivity.</p>
+</div>
+
+<div class="app-container">
+  <div class="toolbar">
+    <div class="toolbar-section">
+      <span class="toolbar-label">Drag to add:</span>
+      <div class="block-btn meeting" draggable="true" data-type="meeting">Meeting</div>
+      <div class="block-btn focus" draggable="true" data-type="focus">Focus Block</div>
+      <div class="block-btn break" draggable="true" data-type="break">Break</div>
+      <div class="block-btn lunch" draggable="true" data-type="lunch">Lunch</div>
+    </div>
+    <div style="flex:1"></div>
+    <button class="optimize-btn" onclick="optimizeSchedule()">AI Optimize</button>
+    <button class="reset-btn" onclick="resetCalendar()">Clear All</button>
+  </div>
+
+  <div class="score-panel" id="scorePanel">
+    <div class="score-circle" id="scoreCircle">
+      <svg width="100" height="100" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="42" fill="none" stroke="#1a1a2e" stroke-width="6"/>
+        <circle id="scoreArc" cx="50" cy="50" r="42" fill="none" stroke="#6366f1" stroke-width="6" stroke-dasharray="264" stroke-dashoffset="264" stroke-linecap="round"/>
+      </svg>
+      <span class="score-value" id="scoreValue">0</span>
+      <span class="score-label">SCORE</span>
+    </div>
+    <div class="score-details">
+      <h3>Schedule Analysis</h3>
+      <div id="suggestions">
+        <div class="suggestion"><span class="suggestion-icon warn">!</span> Add blocks to your calendar to get started</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="calendar" id="calendar"></div>
+  <div class="delete-zone" id="deleteZone">Drop here to remove</div>
+</div>
+
+<div class="cta-section">
+  <h2>Go2 optimizes your team's entire week</h2>
+  <p>This is one person, one week. Imagine AI-optimizing schedules across your whole organization.</p>
+  <a href="#" class="cta-btn">Start Free Trial</a>
+</div>
+
+<script>
+const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+const hours = ['8 AM','9 AM','10 AM','11 AM','12 PM','1 PM','2 PM','3 PM','4 PM','5 PM'];
+const blockNames = { meeting: 'Meeting', focus: 'Focus', break: 'Break', lunch: 'Lunch' };
+let calendarData = {};
+let dragType = null;
+let dragSource = null;
+
+function buildCalendar() {
+  const cal = document.getElementById('calendar');
+  cal.innerHTML = '';
+  cal.appendChild(Object.assign(document.createElement('div'), { className: 'corner' }));
+  days.forEach(d => {
+    const h = document.createElement('div');
+    h.className = 'day-header';
+    h.textContent = d;
+    cal.appendChild(h);
+  });
+  hours.forEach((hour, hi) => {
+    const tl = document.createElement('div');
+    tl.className = 'time-label';
+    tl.textContent = hour;
+    cal.appendChild(tl);
+    days.forEach((day, di) => {
+      const cell = document.createElement('div');
+      cell.className = 'calendar-cell';
+      cell.dataset.day = di;
+      cell.dataset.hour = hi;
+      const key = `${di}-${hi}`;
+      cell.addEventListener('dragover', e => { e.preventDefault(); cell.classList.add('drag-over'); });
+      cell.addEventListener('dragleave', () => cell.classList.remove('drag-over'));
+      cell.addEventListener('drop', e => {
+        e.preventDefault();
+        cell.classList.remove('drag-over');
+        if (dragSource) { delete calendarData[dragSource]; dragSource = null; }
+        if (dragType) { calendarData[key] = dragType; }
+        render();
+      });
+      cal.appendChild(cell);
+    });
+  });
+}
+
+function render() {
+  document.querySelectorAll('.calendar-block').forEach(b => b.remove());
+  Object.entries(calendarData).forEach(([key, type]) => {
+    const [di, hi] = key.split('-').map(Number);
+    const cells = document.querySelectorAll('.calendar-cell');
+    const cell = cells[hi * 5 + di];
+    if (!cell) return;
+    const block = document.createElement('div');
+    block.className = `calendar-block ${type}`;
+    block.textContent = blockNames[type];
+    block.draggable = true;
+    block.addEventListener('dragstart', e => {
+      dragType = type;
+      dragSource = key;
+      block.classList.add('dragging');
+    });
+    block.addEventListener('dragend', () => block.classList.remove('dragging'));
+    cell.appendChild(block);
+  });
+  updateScore();
+}
+
+function updateScore() {
+  const blocks = Object.values(calendarData);
+  if (blocks.length === 0) {
+    animateScore(0);
+    document.getElementById('suggestions').innerHTML = '<div class="suggestion"><span class="suggestion-icon warn">!</span> Add blocks to your calendar to get started</div>';
+    return;
+  }
+  let score = 50;
+  const suggestions = [];
+  const focusCount = blocks.filter(b => b === 'focus').length;
+  const meetingCount = blocks.filter(b => b === 'meeting').length;
+  const breakCount = blocks.filter(b => b === 'break').length;
+  const lunchCount = blocks.filter(b => b === 'lunch').length;
+
+  if (focusCount >= 10) { score += 15; suggestions.push({ icon: 'good', text: 'Great focus time allocation! Deep work is prioritized.' }); }
+  else if (focusCount >= 5) { score += 8; suggestions.push({ icon: 'warn', text: `${focusCount} focus blocks. Aim for 10+ per week for optimal deep work.` }); }
+  else { score -= 5; suggestions.push({ icon: 'bad', text: `Only ${focusCount} focus blocks. Your team needs 2+ hours of uninterrupted focus daily.` }); }
+
+  if (meetingCount > 15) { score -= 15; suggestions.push({ icon: 'bad', text: `${meetingCount} meetings! That's meeting overload. Go2 users cut meetings by 35%.` }); }
+  else if (meetingCount > 8) { score -= 5; suggestions.push({ icon: 'warn', text: `${meetingCount} meetings. Consider consolidating into fewer, longer sessions.` }); }
+  else { score += 10; suggestions.push({ icon: 'good', text: 'Meeting load is manageable. Nice work.' }); }
+
+  // Check for consecutive meetings
+  days.forEach((day, di) => {
+    let consecutive = 0;
+    hours.forEach((h, hi) => {
+      if (calendarData[`${di}-${hi}`] === 'meeting') consecutive++;
+      else consecutive = 0;
+    });
+    if (consecutive >= 3) { score -= 5; }
+  });
+
+  // Morning focus blocks are best
+  let morningFocus = 0;
+  Object.entries(calendarData).forEach(([key, type]) => {
+    const hi = parseInt(key.split('-')[1]);
+    if (type === 'focus' && hi <= 2) morningFocus++;
+  });
+  if (morningFocus >= 3) { score += 10; suggestions.push({ icon: 'good', text: 'Morning focus blocks detected. Peak cognitive hours well-used.' }); }
+  else { suggestions.push({ icon: 'warn', text: 'Try placing focus blocks in the morning (8-11 AM) when cognition peaks.' }); }
+
+  if (breakCount < 3) { score -= 5; suggestions.push({ icon: 'warn', text: 'Add more breaks. Regular breaks improve sustained performance by 23%.' }); }
+  else { score += 5; suggestions.push({ icon: 'good', text: 'Good break cadence. Recovery drives sustained performance.' }); }
+
+  if (lunchCount < 3) { suggestions.push({ icon: 'warn', text: 'Schedule lunch every day. Skipping lunch drops afternoon productivity by 40%.' }); }
+
+  score = Math.max(0, Math.min(100, score));
+  animateScore(score);
+
+  const sugHTML = suggestions.map(s => `<div class="suggestion"><span class="suggestion-icon ${s.icon}">${s.icon === 'good' ? '✓' : s.icon === 'warn' ? '!' : '✗'}</span> ${s.text}</div>`).join('');
+  document.getElementById('suggestions').innerHTML = sugHTML;
+}
+
+function animateScore(target) {
+  const arc = document.getElementById('scoreArc');
+  const val = document.getElementById('scoreValue');
+  const offset = 264 - (264 * target / 100);
+  arc.style.transition = 'stroke-dashoffset 0.8s ease';
+  arc.style.strokeDashoffset = offset;
+  if (target >= 70) arc.style.stroke = '#22c55e';
+  else if (target >= 40) arc.style.stroke = '#f59e0b';
+  else arc.style.stroke = '#ef4444';
+  let current = parseInt(val.textContent) || 0;
+  const step = target > current ? 1 : -1;
+  const interval = setInterval(() => {
+    current += step;
+    if ((step > 0 && current >= target) || (step < 0 && current <= target)) { current = target; clearInterval(interval); }
+    val.textContent = current;
+  }, 15);
+}
+
+function optimizeSchedule() {
+  calendarData = {};
+  // AI-optimized schedule
+  const optimal = [
+    // Monday
+    ['0-0','focus'],['0-1','focus'],['0-2','focus'],['0-3','break'],['0-4','lunch'],['0-5','meeting'],['0-6','focus'],['0-7','meeting'],['0-8','break'],
+    // Tuesday
+    ['1-0','focus'],['1-1','focus'],['1-2','meeting'],['1-3','break'],['1-4','lunch'],['1-5','focus'],['1-6','focus'],['1-7','break'],['1-8','meeting'],
+    // Wednesday
+    ['2-0','focus'],['2-1','focus'],['2-2','focus'],['2-3','break'],['2-4','lunch'],['2-5','meeting'],['2-6','focus'],['2-7','focus'],['2-8','break'],
+    // Thursday
+    ['3-0','focus'],['3-1','meeting'],['3-2','focus'],['3-3','break'],['3-4','lunch'],['3-5','focus'],['3-6','focus'],['3-7','meeting'],['3-8','break'],
+    // Friday
+    ['4-0','focus'],['4-1','focus'],['4-2','meeting'],['4-3','break'],['4-4','lunch'],['4-5','focus'],['4-6','break'],['4-7','focus'],['4-8','focus'],
+  ];
+  let i = 0;
+  const addNext = () => {
+    if (i >= optimal.length) return;
+    calendarData[optimal[i][0]] = optimal[i][1];
+    i++;
+    render();
+    setTimeout(addNext, 40);
+  };
+  addNext();
+}
+
+function resetCalendar() {
+  calendarData = {};
+  render();
+}
+
+// Toolbar drag
+document.querySelectorAll('.block-btn').forEach(btn => {
+  btn.addEventListener('dragstart', e => {
+    dragType = btn.dataset.type;
+    dragSource = null;
+  });
+});
+
+// Delete zone
+const dz = document.getElementById('deleteZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('drag-over');
+  if (dragSource) { delete calendarData[dragSource]; dragSource = null; render(); }
+});
+
+buildCalendar();
+render();
+</script>
+</body>
+</html>

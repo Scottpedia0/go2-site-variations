@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Work Pattern Analyzer | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0a0a1a;color:#fff;min-height:100vh}
+.hero{text-align:center;padding:4rem 2rem 2rem}
+.badge{display:inline-block;padding:.4rem 1.2rem;border-radius:50px;background:rgba(108,99,255,.15);border:1px solid rgba(108,99,255,.3);color:#6c63ff;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:1rem}
+h1{font-size:clamp(2rem,4vw,3rem);font-weight:900;margin-bottom:.75rem}
+.sub{color:#8888aa;font-size:1.05rem;max-width:550px;margin:0 auto}
+.analyzer{max-width:1000px;margin:2rem auto;padding:0 2rem;display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+@media(max-width:768px){.analyzer{grid-template-columns:1fr}}
+.input-panel{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:2rem}
+.input-panel h2{font-size:1.2rem;font-weight:700;margin-bottom:1.5rem}
+.slider-group{margin-bottom:1.5rem}
+.slider-group label{display:flex;justify-content:space-between;font-size:.85rem;color:#aaa;margin-bottom:.5rem}
+.slider-group label span{color:#6c63ff;font-weight:700;font-size:1rem}
+input[type=range]{width:100%;-webkit-appearance:none;height:6px;border-radius:3px;background:rgba(255,255,255,.1);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#6c63ff;cursor:pointer}
+.total-bar{margin-top:1.5rem;padding:1rem;background:rgba(255,255,255,.04);border-radius:12px}
+.total-bar .label{font-size:.8rem;color:#888;margin-bottom:.5rem}
+.total-bar .bar{height:8px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden}
+.total-bar .fill{height:100%;border-radius:4px;transition:width .3s}
+.total-bar .hours{font-size:.8rem;color:#888;margin-top:.3rem;text-align:right}
+.analyze-btn{width:100%;padding:1rem;background:linear-gradient(135deg,#6c63ff,#4834d4);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:1rem;cursor:pointer;margin-top:1.5rem;font-family:inherit}
+.results-panel{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:2rem;display:flex;flex-direction:column}
+.results-panel h2{font-size:1.2rem;font-weight:700;margin-bottom:1.5rem}
+.radar-container{flex:1;display:flex;align-items:center;justify-content:center;min-height:300px}
+.radar-container canvas{max-width:320px;max-height:320px}
+.analysis{max-width:1000px;margin:2rem auto;padding:0 2rem;display:none}
+.analysis.show{display:block}
+.analysis h2{font-size:1.5rem;font-weight:800;text-align:center;margin-bottom:2rem}
+.score-hero{text-align:center;margin-bottom:2rem}
+.score-hero .big{font-size:4rem;font-weight:900;background:linear-gradient(135deg,#6c63ff,#10b981);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.score-hero .label{color:#888;font-size:1rem}
+.rec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem}
+.rec-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:1.75rem}
+.rec-card .priority{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem;padding:.2rem .5rem;border-radius:4px;display:inline-block}
+.priority.high{background:rgba(239,68,68,.12);color:#ef4444}
+.priority.med{background:rgba(245,158,11,.12);color:#f59e0b}
+.priority.low{background:rgba(16,185,129,.12);color:#10b981}
+.rec-card h3{font-size:1rem;font-weight:700;margin-bottom:.5rem}
+.rec-card p{font-size:.9rem;color:#8888aa;line-height:1.5}
+.rec-card .impact{margin-top:.75rem;font-size:.85rem;font-weight:600;color:#6c63ff}
+.cta{text-align:center;padding:4rem 2rem}
+.cta-btn{display:inline-block;padding:1rem 2.5rem;background:linear-gradient(135deg,#6c63ff,#4834d4);color:#fff;text-decoration:none;border-radius:12px;font-weight:700;font-size:1.05rem;box-shadow:0 4px 20px rgba(108,99,255,.3)}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="badge">Interactive Analyzer</div>
+  <h1>What Does Your Typical Week Look Like?</h1>
+  <p class="sub">Adjust the sliders to match your reality. Our AI will analyze your patterns and give specific recommendations.</p>
+</div>
+<div class="analyzer">
+  <div class="input-panel">
+    <h2>Your Typical Week</h2>
+    <div class="slider-group"><label>Meetings <span id="v1">12</span>h</label><input type="range" min="0" max="30" value="12" id="s1" oninput="updateSlider(this,'v1')"></div>
+    <div class="slider-group"><label>Deep/Focus Work <span id="v2">15</span>h</label><input type="range" min="0" max="30" value="15" id="s2" oninput="updateSlider(this,'v2')"></div>
+    <div class="slider-group"><label>Email & Slack <span id="v3">8</span>h</label><input type="range" min="0" max="20" value="8" id="s3" oninput="updateSlider(this,'v3')"></div>
+    <div class="slider-group"><label>Collaboration (non-meeting) <span id="v4">4</span>h</label><input type="range" min="0" max="15" value="4" id="s4" oninput="updateSlider(this,'v4')"></div>
+    <div class="slider-group"><label>Admin / Overhead <span id="v5">3</span>h</label><input type="range" min="0" max="15" value="3" id="s5" oninput="updateSlider(this,'v5')"></div>
+    <div class="slider-group"><label>Learning / Development <span id="v6">1</span>h</label><input type="range" min="0" max="10" value="1" id="s6" oninput="updateSlider(this,'v6')"></div>
+    <div class="total-bar">
+      <div class="label">Total Accounted Hours</div>
+      <div class="bar"><div class="fill" id="totalFill" style="width:86%;background:#6c63ff"></div></div>
+      <div class="hours" id="totalHours">43h / 40h target</div>
+    </div>
+    <button class="analyze-btn" onclick="analyze()">Analyze My Week</button>
+  </div>
+  <div class="results-panel">
+    <h2>Work Pattern Radar</h2>
+    <div class="radar-container"><canvas id="radar" width="640" height="640"></canvas></div>
+  </div>
+</div>
+<div class="analysis" id="analysis">
+  <div class="score-hero"><div class="big" id="scoreVal">--</div><div class="label">Work Pattern Score</div></div>
+  <h2>AI Recommendations</h2>
+  <div class="rec-grid" id="recGrid"></div>
+</div>
+<div class="cta">
+  <h2 style="font-size:2rem;font-weight:800;margin-bottom:1rem">Get Your Real Work Pattern</h2>
+  <p style="color:#8888aa;margin-bottom:2rem">These estimates are a start. Go2 measures your actual patterns — no guessing. Free for 14 days.</p>
+  <a href="#" class="cta-btn">Start Free Trial</a>
+</div>
+
+<script>
+function updateSlider(el,id){document.getElementById(id).textContent=el.value;updateTotal();drawRadar()}
+function getVals(){return[+document.getElementById('s1').value,+document.getElementById('s2').value,+document.getElementById('s3').value,+document.getElementById('s4').value,+document.getElementById('s5').value,+document.getElementById('s6').value]}
+function updateTotal(){
+  const vals=getVals();const total=vals.reduce((a,b)=>a+b,0);
+  const pct=Math.min(100,(total/50)*100);
+  const fill=document.getElementById('totalFill');
+  fill.style.width=pct+'%';
+  fill.style.background=total>45?'#ef4444':total>40?'#f59e0b':'#6c63ff';
+  document.getElementById('totalHours').textContent=total+'h / 40h target';
+}
+function drawRadar(){
+  const c=document.getElementById('radar');const ctx=c.getContext('2d');
+  ctx.clearRect(0,0,640,640);
+  const cx=320,cy=320,r=240;
+  const labels=['Meetings','Deep Work','Comms','Collaboration','Admin','Learning'];
+  const maxVals=[30,30,20,15,15,10];
+  const vals=getVals();
+  const n=6;
+  // Grid
+  for(let ring=1;ring<=5;ring++){
+    ctx.beginPath();
+    for(let i=0;i<=n;i++){
+      const angle=-Math.PI/2+(Math.PI*2/n)*i;
+      const rr=r*(ring/5);
+      const x=cx+Math.cos(angle)*rr,y=cy+Math.sin(angle)*rr;
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle='rgba(255,255,255,.06)';ctx.lineWidth=1;ctx.stroke();
+  }
+  // Axes
+  for(let i=0;i<n;i++){
+    const angle=-Math.PI/2+(Math.PI*2/n)*i;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(angle)*r,cy+Math.sin(angle)*r);
+    ctx.strokeStyle='rgba(255,255,255,.06)';ctx.stroke();
+    // Label
+    const lx=cx+Math.cos(angle)*(r+30),ly=cy+Math.sin(angle)*(r+30);
+    ctx.fillStyle='#888';ctx.font='600 22px Inter';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(labels[i],lx,ly);
+  }
+  // Data polygon
+  ctx.beginPath();
+  for(let i=0;i<=n;i++){
+    const idx=i%n;
+    const angle=-Math.PI/2+(Math.PI*2/n)*idx;
+    const pct=vals[idx]/maxVals[idx];
+    const x=cx+Math.cos(angle)*r*pct,y=cy+Math.sin(angle)*r*pct;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.fillStyle='rgba(108,99,255,.15)';ctx.fill();
+  ctx.strokeStyle='#6c63ff';ctx.lineWidth=3;ctx.stroke();
+  // Dots
+  for(let i=0;i<n;i++){
+    const angle=-Math.PI/2+(Math.PI*2/n)*i;
+    const pct=vals[i]/maxVals[i];
+    const x=cx+Math.cos(angle)*r*pct,y=cy+Math.sin(angle)*r*pct;
+    ctx.beginPath();ctx.arc(x,y,8,0,Math.PI*2);ctx.fillStyle='#6c63ff';ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+  }
+  // Ideal overlay
+  const ideal=[5,20,4,6,2,3];
+  ctx.beginPath();
+  for(let i=0;i<=n;i++){
+    const idx=i%n;const angle=-Math.PI/2+(Math.PI*2/n)*idx;
+    const pct=ideal[idx]/maxVals[idx];
+    const x=cx+Math.cos(angle)*r*pct,y=cy+Math.sin(angle)*r*pct;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.strokeStyle='rgba(16,185,129,.4)';ctx.lineWidth=2;ctx.setLineDash([8,4]);ctx.stroke();ctx.setLineDash([]);
+}
+function analyze(){
+  const vals=getVals();const[meetings,deep,comms,collab,admin,learn]=vals;
+  const total=vals.reduce((a,b)=>a+b,0);
+  // Score
+  let score=50;
+  if(deep>=18)score+=20;else if(deep>=14)score+=10;else score-=5;
+  if(meetings<=8)score+=15;else if(meetings<=12)score+=5;else score-=10;
+  if(comms<=5)score+=10;else if(comms<=8)score+=5;else score-=5;
+  if(learn>=3)score+=5;
+  if(total<=42)score+=5;else if(total>48)score-=10;
+  score=Math.max(10,Math.min(98,score));
+  document.getElementById('scoreVal').textContent=score;
+  // Recommendations
+  const recs=[];
+  if(meetings>10)recs.push({p:'high',title:'Reduce Meeting Load',text:`At ${meetings}h/week, you're spending ${Math.round(meetings/total*100)}% of your time in meetings. The optimal range is 5-8h. Audit recurring meetings — cancel any without clear agendas or outcomes.`,impact:`Potential: +${Math.round((meetings-8)*.7)}h focus time/week`});
+  if(deep<16)recs.push({p:'high',title:'Protect Deep Work Blocks',text:`${deep}h of focus work is below the ${deep<12?'minimum':'optimal'} threshold. Block 2-3 hour chunks on your calendar for uninterrupted work. Morning slots are 2.3x more productive for complex tasks.`,impact:'Potential: +35% output quality'});
+  if(comms>6)recs.push({p:'med',title:'Batch Communication',text:`${comms}h on email/Slack is above average. Try checking messages only 3-4 times daily instead of continuously. Each Slack interruption costs ~23 minutes of refocus time.`,impact:`Potential: +${Math.round((comms-4)*.8)}h recovered/week`});
+  if(learn<2)recs.push({p:'med',title:'Invest in Learning',text:`Only ${learn}h on development is below the recommended 3-5h. Teams that invest in learning grow skills 40% faster and have 25% lower turnover.`,impact:'Potential: +40% skill growth rate'});
+  if(total>44)recs.push({p:'high',title:'Reduce Total Hours',text:`${total}h is unsustainable. Research shows productivity drops sharply after 50h and burnout risk triples after 55h. Focus on elimination, not time management.`,impact:'Potential: Reduced burnout risk by 60%'});
+  if(admin>4)recs.push({p:'low',title:'Automate Admin Tasks',text:`${admin}h on admin/overhead is high. Audit which tasks can be automated or eliminated. Go2 identifies repetitive admin patterns that can be streamlined.`,impact:`Potential: -${Math.round(admin*.4)}h admin/week`});
+  if(recs.length===0)recs.push({p:'low',title:'Great Work Pattern!',text:'Your work distribution is well-balanced. Keep monitoring for drift — patterns change over time as projects and teams evolve.',impact:'Maintain and optimize'});
+  document.getElementById('recGrid').innerHTML=recs.map(r=>`<div class="rec-card"><div class="priority ${r.p}">${r.p==='high'?'High Priority':r.p==='med'?'Medium':'Nice to Have'}</div><h3>${r.title}</h3><p>${r.text}</p><div class="impact">${r.impact}</div></div>`).join('');
+  document.getElementById('analysis').classList.add('show');
+  document.getElementById('analysis').scrollIntoView({behavior:'smooth'});
+}
+updateTotal();drawRadar();
+</script>
+</body>
+</html>

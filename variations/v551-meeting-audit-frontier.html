@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go2 | Meeting Audit Tool</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #10b981;
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+            --radius-md: 12px;
+            --radius-lg: 24px;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Typography */
+        h1, h2, h3, h4 { color: var(--text-main); font-weight: 700; line-height: 1.2; }
+        h1 { font-size: 2.5rem; margin-bottom: 1rem; letter-spacing: -0.02em; }
+        h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        p { color: var(--text-muted); margin-bottom: 1rem; }
+        .text-gradient {
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Layout */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        header {
+            background-color: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .logo-badge {
+            background: var(--primary);
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 20px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .tagline {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            display: none;
+        }
+
+        @media(min-width: 768px) {
+            .tagline { display: block; }
+        }
+
+        /* Hero */
+        .hero {
+            text-align: center;
+            padding: 4rem 0 3rem;
+        }
+
+        .hero p {
+            max-width: 600px;
+            margin: 0 auto;
+            font-size: 1.125rem;
+        }
+
+        /* Tool Grid */
+        .tool-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            padding-bottom: 4rem;
+        }
+
+        @media(min-width: 992px) {
+            .tool-grid {
+                grid-template-columns: 1fr 1fr;
+                align-items: start;
+            }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .card-header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        /* Form Controls */
+        .control-group {
+            margin-bottom: 2rem;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .control-label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+
+        .control-value {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 1.125rem;
+            background: #eff6ff;
+            padding: 0.25rem 0.75rem;
+            border-radius: 8px;
+        }
+
+        /* Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            border: 2px solid white;
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+
+        input[type=range]::-moz-range-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 4px;
+        }
+
+        input[type=range]::-moz-range-thumb {
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* Results Display */
+        .results-card {
+            position: sticky;
+            top: 100px;
+            background: linear-gradient(to bottom right, #ffffff, #f8fafc);
+            border: 2px solid var(--primary);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-box {
+            background: var(--bg-body);
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+            line-height: 1;
+        }
+
+        .stat-value.highlight {
+            color: var(--danger);
+        }
+
+        .stat-sub {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        /* Benchmarks */
+        .benchmark-section {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .bar-container {
+            height: 24px;
+            background: var(--border);
+            border-radius: 12px;
+            margin: 1rem 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            transition: width 0.5s ease, background-color 0.5s ease;
+        }
+
+        .bar-markers {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .marker {
+            position: absolute;
+            height: 100%;
+            border-right: 2px dashed rgba(255,255,255,0.7);
+            top: 0;
+        }
+
+        .marker-label {
+            position: absolute;
+            top: 28px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            transform: translateX(-50%);
+            font-weight: 600;
+        }
+
+        /* Recommendations */
+        .recommendations {
+            margin-top: 2rem;
+            background: #eff6ff;
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+            border-left: 4px solid var(--primary);
+        }
+        
+        .recommendations h3 {
+            font-size: 1.125rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        #rec-list {
+            list-style: none;
+        }
+
+        #rec-list li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        #rec-list li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        /* Bottom CTA */
+        .cta-section {
+            background: var(--text-main);
+            color: white;
+            text-align: center;
+            padding: 5rem 1.5rem;
+            border-radius: var(--radius-lg);
+            margin-bottom: 4rem;
+        }
+
+        .cta-section h2 {
+            color: white;
+            font-size: 2rem;
+        }
+
+        .cta-section p {
+            color: #94a3b8;
+            font-size: 1.125rem;
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.2s, transform 0.2s;
+            border: none;
+            cursor: pointer;
+            font-size: 1.125rem;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            max-width: 800px;
+            margin: 3rem auto 0;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 3rem;
+        }
+
+        .mini-stat h4 {
+            color: var(--secondary);
+            font-size: 2rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .mini-stat p {
+            font-size: 0.875rem;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        @media(max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container nav-inner">
+            <a href="#" class="logo">
+                Go2 <span class="logo-badge">AI Coaching</span>
+            </a>
+            <div class="tagline">Empowering teams. Coaching over surveillance.</div>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <h1>The <span class="text-gradient">Meeting Audit</span> Tool</h1>
+            <p>Calculate the true financial and temporal cost of internal meetings. Discover how much time you can reclaim for deep work and coaching.</p>
+        </section>
+
+        <section class="tool-grid">
+            <!-- Left Column: Inputs -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Your Team's Meeting Habits</h2>
+                    <p>Adjust the sliders to reflect your current reality.</p>
+                </div>
+
+                <form id="audit-form">
+                    <div class="control-group">
+                        <div class="control-header">
+                            <label class="control-label">Total Employees</label>
+                            <span class="control-value" id="val-emp">50</span>
+                        </div>
+                        <input type="range" id="input-emp" min="5" max="500" step="5" value="50">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-header">
+                            <label class="control-label">Avg. Meetings per Employee (Weekly)</label>
+                            <span class="control-value" id="val-freq">8</span>
+                        </div>
+                        <input type="range" id="input-freq" min="1" max="25" step="1" value="8">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-header">
+                            <label class="control-label">Avg. Meeting Duration (Minutes)</label>
+                            <span class="control-value" id="val-dur">45</span>
+                        </div>
+                        <input type="range" id="input-dur" min="15" max="120" step="5" value="45">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-header">
+                            <label class="control-label">Avg. Hourly Blended Rate ($)</label>
+                            <span class="control-value" id="val-rate">$45</span>
+                        </div>
+                        <input type="range" id="input-rate" min="15" max="150" step="5" value="45">
+                        <p style="font-size: 0.8rem; margin-top: 0.5rem; margin-bottom: 0;">*Consider salary, benefits, and overhead.</p>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Right Column: Results -->
+            <div class="card results-card">
+                <div class="card-header">
+                    <h2>The Annual Impact</h2>
+                    <p>What meeting bloat is costing your organization.</p>
+                </div>
+
+                <div class="stat-box">
+                    <div class="stat-label">Total Cost of Meetings (Yearly)</div>
+                    <div class="stat-value highlight" id="out-cost">$0</div>
+                    <div class="stat-sub" id="out-cost-weekly">That's $0 per week burned.</div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="stat-box" style="margin-bottom: 0;">
+                        <div class="stat-label">Hours Consumed</div>
+                        <div class="stat-value" id="out-hours" style="font-size: 2rem;">0</div>
+                        <div class="stat-sub">per year, company-wide</div>
+                    </div>
+                    <div class="stat-box" style="margin-bottom: 0;">
+                        <div class="stat-label">% of Work Week</div>
+                        <div class="stat-value" id="out-percent" style="font-size: 2rem;">0%</div>
+                        <div class="stat-sub">spent in meetings</div>
+                    </div>
+                </div>
+
+                <div class="benchmark-section">
+                    <h3>Industry Benchmark</h3>
+                    <p style="font-size: 0.9rem;">How your meeting load compares to healthy organizations.</p>
+                    
+                    <div class="bar-container">
+                        <div class="bar-fill" id="benchmark-bar"></div>
+                        <div class="bar-markers">
+                            <div class="marker" style="width: 15%;">
+                                <span class="marker-label">Healthy (15%)</span>
+                            </div>
+                            <div class="marker" style="width: 25%;">
+                                <span class="marker-label">Bloated (25%)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recommendations" id="rec-box">
+                    <h3>AI Coaching Insights</h3>
+                    <ul id="rec-list">
+                        <!-- Populated by JS -->
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="cta-section">
+            <h2>Stop tracking. Start coaching.</h2>
+            <p>Unlike legacy software that spies on employees, Go2 uses AI to analyze work patterns and provide actionable coaching to managers and teams. Cut the bloat, regain focus.</p>
+            <a href="#" class="btn">Start Your Free Trial</a>
+            
+            <div class="stats-grid">
+                <div class="mini-stat">
+                    <h4>42%</h4>
+                    <p>Avg. Productivity Increase</p>
+                </div>
+                <div class="mini-stat">
+                    <h4>15.2 hrs</h4>
+                    <p>Saved per Employee/Week</p>
+                </div>
+                <div class="mini-stat">
+                    <h4>892%</h4>
+                    <p>First-Year ROI</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // DOM Elements
+        const inputs = {
+            emp: document.getElementById('input-emp'),
+            freq: document.getElementById('input-freq'),
+            dur: document.getElementById('input-dur'),
+            rate: document.getElementById('input-rate')
+        };
+
+        const displays = {
+            emp: document.getElementById('val-emp'),
+            freq: document.getElementById('val-freq'),
+            dur: document.getElementById('val-dur'),
+            rate: document.getElementById('val-rate')
+        };
+
+        const outputs = {
+            cost: document.getElementById('out-cost'),
+            costWeekly: document.getElementById('out-cost-weekly'),
+            hours: document.getElementById('out-hours'),
+            percent: document.getElementById('out-percent'),
+            bar: document.getElementById('benchmark-bar'),
+            recList: document.getElementById('rec-list'),
+            recBox: document.getElementById('rec-box')
+        };
+
+        // Formatters
+        const formatCurrency = (num) => {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(num);
+        };
+        const formatNumber = (num) => {
+            return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(num);
+        };
+
+        // Calculation Logic
+        function calculate() {
+            const emp = parseInt(inputs.emp.value);
+            const freq = parseInt(inputs.freq.value);
+            const dur = parseInt(inputs.dur.value);
+            const rate = parseInt(inputs.rate.value);
+
+            // Update display values
+            displays.emp.innerText = emp;
+            displays.freq.innerText = freq;
+            displays.dur.innerText = dur;
+            displays.rate.innerText = `$${rate}`;
+
+            // Math
+            const hoursPerMeeting = dur / 60;
+            const hoursPerEmpWeekly = freq * hoursPerMeeting;
+            const totalHoursWeekly = hoursPerEmpWeekly * emp;
+            const totalHoursYearly = totalHoursWeekly * 52;
+            
+            const costWeekly = totalHoursWeekly * rate;
+            const costYearly = costWeekly * 52;
+
+            // Assuming 40 hour work week
+            const percentOfWeek = (hoursPerEmpWeekly / 40) * 100;
+
+            // Update Outputs
+            outputs.cost.innerText = formatCurrency(costYearly);
+            outputs.costWeekly.innerText = `That's ${formatCurrency(costWeekly)} per week burned.`;
+            outputs.hours.innerText = formatNumber(totalHoursYearly);
+            outputs.percent.innerText = `${percentOfWeek.toFixed(1)}%`;
+
+            // Update Benchmark Bar
+            let barWidth = percentOfWeek;
+            if (barWidth > 100) barWidth = 100; // Cap visual at 100%
+            outputs.bar.style.width = `${barWidth}%`;
+
+            // Color coding the bar based on health
+            if (percentOfWeek <= 15) {
+                outputs.bar.style.backgroundColor = 'var(--success)';
+                outputs.percent.style.color = 'var(--text-main)';
+                outputs.cost.style.color = 'var(--text-main)';
+            } else if (percentOfWeek <= 25) {
+                outputs.bar.style.backgroundColor = 'var(--warning)';
+                outputs.percent.style.color = 'var(--warning)';
+                outputs.cost.style.color = 'var(--warning)';
+            } else {
+                outputs.bar.style.backgroundColor = 'var(--danger)';
+                outputs.percent.style.color = 'var(--danger)';
+                outputs.cost.style.color = 'var(--danger)';
+            }
+
+            updateRecommendations(percentOfWeek, costYearly, emp);
+        }
+
+        function updateRecommendations(percent, cost, emp) {
+            let recs = [];
+            const savedHours = emp * 15.2; // Based on Go2 stat
+
+            if (percent <= 15) {
+                outputs.recBox.style.borderLeftColor = 'var(--success)';
+                recs.push("Your meeting load is healthy! Focus on ensuring meeting quality remains high.");
+                recs.push("Use Go2 to analyze deep-work patterns and protect these focused hours.");
+            } else if (percent <= 25) {
+                outputs.recBox.style.borderLeftColor = 'var(--warning)';
+                recs.push("Warning: Meeting bloat is creeping in. Consider instituting 'No Meeting Wednesdays'.");
+                recs.push(`Go2 coaching could help you reclaim ~${formatNumber(savedHours)} hours/week across your team by flagging low-value syncs.`);
+                recs.push("Audit recurring meetings: Cancel any status update meeting that could be an asynchronous message.");
+            } else {
+                outputs.recBox.style.borderLeftColor = 'var(--danger)';
+                recs.push("Critical: Your team is trapped in a meeting culture. Burnout risk is high.");
+                recs.push(`By reducing meeting time to 15%, you could redirect ${formatCurrency(cost * 0.4)} worth of salary back to productive work.`);
+                recs.push("Implement Go2 immediately to identify which meetings have the lowest engagement and coach managers on asynchronous communication.");
+            }
+
+            outputs.recList.innerHTML = recs.map(r => `<li>${r}</li>`).join('');
+        }
+
+        // Event Listeners
+        Object.values(inputs).forEach(input => {
+            input.addEventListener('input', calculate);
+        });
+
+        // Initialize
+        calculate();
+    </script>
+</body>
+</html>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 SSO Integration — Okta, Azure AD, Google Workspace | Go2.io</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; color: #1a1a2e; background: #fff; line-height: 1.7; }
+code, pre { font-family: 'JetBrains Mono', monospace; }
+.container { max-width: 880px; margin: 0 auto; padding: 0 24px; }
+
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(255,255,255,0.97); backdrop-filter: blur(20px); border-bottom: 1px solid #eee; padding: 14px 0; }
+nav .container { display: flex; justify-content: space-between; align-items: center; }
+.logo { font-size: 22px; font-weight: 800; color: #1e40af; }
+.nav-links { display: flex; gap: 20px; align-items: center; }
+.nav-links a { color: #666; text-decoration: none; font-size: 13px; font-weight: 500; }
+
+.hero { padding: 120px 0 48px; background: linear-gradient(180deg, #eff6ff 0%, #fff 100%); text-align: center; }
+.hero h1 { font-size: 40px; font-weight: 800; color: #1e3a5f; margin-bottom: 12px; }
+.hero p { font-size: 17px; color: #666; max-width: 600px; margin: 0 auto 24px; }
+.provider-logos { display: flex; justify-content: center; gap: 16px; margin-top: 24px; }
+.provider-btn { padding: 12px 28px; background: #fff; border: 2px solid #e5e7eb; border-radius: 10px; font-weight: 700; font-size: 15px; cursor: pointer; transition: all 0.2s; color: #555; }
+.provider-btn.active { border-color: #1e40af; color: #1e40af; background: #eff6ff; }
+
+.guide-content { padding: 48px 0; }
+.guide-section { margin-bottom: 48px; }
+.guide-section h2 { font-size: 24px; font-weight: 800; color: #1e3a5f; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+.step-num { display: inline-flex; width: 32px; height: 32px; background: #1e40af; color: #fff; border-radius: 50%; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; flex-shrink: 0; }
+.guide-section p { color: #555; margin-bottom: 12px; }
+
+.code-block { background: #1e293b; border-radius: 10px; overflow: hidden; margin: 16px 0; }
+.code-header { display: flex; justify-content: space-between; padding: 8px 16px; background: #0f172a; font-size: 12px; color: #64748b; }
+.code-body { padding: 16px; overflow-x: auto; }
+.code-body pre { font-size: 13px; color: #e2e8f0; line-height: 1.6; }
+.ck { color: #7dd3fc; }
+.cs { color: #86efac; }
+.cc { color: #475569; }
+
+.config-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+.config-table th { text-align: left; padding: 10px 14px; background: #f1f5f9; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; }
+.config-table td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+.config-table td:first-child { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #1e40af; }
+
+.callout { border-radius: 10px; padding: 16px 20px; margin: 16px 0; display: flex; gap: 12px; }
+.callout.info { background: #eff6ff; border: 1px solid #bfdbfe; }
+.callout.warning { background: #fffbeb; border: 1px solid #fde68a; }
+.callout.success { background: #ecfdf5; border: 1px solid #a7f3d0; }
+.callout-icon { font-size: 18px; flex-shrink: 0; }
+.callout p { font-size: 14px; color: #555; margin: 0; }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.checklist { list-style: none; margin: 16px 0; }
+.checklist li { padding: 8px 0; display: flex; gap: 10px; font-size: 14px; color: #555; border-bottom: 1px solid #f5f5f5; }
+.checklist li:last-child { border: none; }
+.check-icon { color: #1e40af; font-weight: 700; flex-shrink: 0; }
+
+.diagram { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 32px; margin: 24px 0; text-align: center; }
+.diagram-row { display: flex; justify-content: center; align-items: center; gap: 24px; margin: 12px 0; flex-wrap: wrap; }
+.diagram-box { background: #fff; border: 2px solid #e2e8f0; border-radius: 8px; padding: 12px 20px; font-size: 13px; font-weight: 600; min-width: 120px; }
+.diagram-box.idp { border-color: #1e40af; color: #1e40af; }
+.diagram-box.go2 { border-color: #059669; color: #059669; }
+.diagram-arrow { color: #94a3b8; font-size: 20px; }
+
+.support-section { background: #f8fafc; border-radius: 16px; padding: 32px; margin: 40px 0; text-align: center; }
+.support-section h3 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.support-section p { color: #666; margin-bottom: 16px; }
+.support-btn { display: inline-block; background: #1e40af; color: #fff; padding: 12px 28px; border-radius: 8px; font-weight: 600; text-decoration: none; }
+
+footer { padding: 32px 0; border-top: 1px solid #eee; text-align: center; color: #999; font-size: 13px; }
+
+@media (max-width: 768px) {
+  .hero h1 { font-size: 30px; }
+  .provider-logos { flex-direction: column; align-items: center; }
+  .diagram-row { flex-direction: column; }
+  .nav-links { display: none; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <div class="logo">Go2 Docs</div>
+    <div class="nav-links">
+      <a href="#okta">Okta</a>
+      <a href="#azure">Azure AD</a>
+      <a href="#google">Google</a>
+      <a href="#scim">SCIM</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="container">
+    <h1>SSO & Identity Integration</h1>
+    <p>Configure single sign-on and automated user provisioning with your identity provider. Supports SAML 2.0, OIDC, and SCIM 2.0.</p>
+    <div class="provider-logos">
+      <div class="provider-btn active" onclick="showProvider('okta')">Okta</div>
+      <div class="provider-btn" onclick="showProvider('azure')">Azure AD</div>
+      <div class="provider-btn" onclick="showProvider('google')">Google Workspace</div>
+    </div>
+  </div>
+</section>
+
+<section class="guide-content">
+  <div class="container">
+
+    <div class="diagram">
+      <div style="font-size:12px;color:#64748b;margin-bottom:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Authentication Flow</div>
+      <div class="diagram-row">
+        <div class="diagram-box">User Browser</div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box go2">Go2 Login</div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box idp">Identity Provider</div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box go2">Go2 Dashboard</div>
+      </div>
+      <p style="font-size:12px;color:#94a3b8;margin-top:12px;">SAML 2.0 SP-initiated flow with signed assertions</p>
+    </div>
+
+    <!-- Okta Guide -->
+    <div class="tab-content active" id="tab-okta">
+      <div class="guide-section">
+        <h2><span class="step-num">1</span> Create Go2 App in Okta</h2>
+        <p>Log into your Okta Admin Console and create a new SAML 2.0 application.</p>
+        <ul class="checklist">
+          <li><span class="check-icon">&#9744;</span>Go to Applications &rarr; Create App Integration</li>
+          <li><span class="check-icon">&#9744;</span>Select SAML 2.0 as the sign-on method</li>
+          <li><span class="check-icon">&#9744;</span>Name: "Go2 Productivity"</li>
+          <li><span class="check-icon">&#9744;</span>Logo: Download from Go2 admin &rarr; SSO &rarr; Assets</li>
+        </ul>
+      </div>
+
+      <div class="guide-section">
+        <h2><span class="step-num">2</span> Configure SAML Settings</h2>
+        <p>Enter the following SAML configuration values in the Okta app setup wizard:</p>
+        <table class="config-table">
+          <thead><tr><th>Field</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Single Sign-On URL</td><td>https://auth.go2.io/saml/acs</td></tr>
+            <tr><td>Audience URI (SP Entity ID)</td><td>https://auth.go2.io/saml/metadata</td></tr>
+            <tr><td>Name ID Format</td><td>EmailAddress</td></tr>
+            <tr><td>Application Username</td><td>Email</td></tr>
+            <tr><td>Response</td><td>Signed</td></tr>
+            <tr><td>Assertion Signature</td><td>Signed</td></tr>
+            <tr><td>Signature Algorithm</td><td>RSA-SHA256</td></tr>
+          </tbody>
+        </table>
+        <div class="callout info">
+          <span class="callout-icon">&#9432;</span>
+          <p>Your unique tenant ID will be provided in the Go2 admin console under Settings &rarr; SSO. Replace the base URL if you're on a custom domain.</p>
+        </div>
+      </div>
+
+      <div class="guide-section">
+        <h2><span class="step-num">3</span> Configure Attribute Mapping</h2>
+        <table class="config-table">
+          <thead><tr><th>Okta Attribute</th><th>Go2 Attribute</th><th>Required</th></tr></thead>
+          <tbody>
+            <tr><td>user.email</td><td>email</td><td>Yes</td></tr>
+            <tr><td>user.firstName</td><td>first_name</td><td>Yes</td></tr>
+            <tr><td>user.lastName</td><td>last_name</td><td>Yes</td></tr>
+            <tr><td>user.department</td><td>department</td><td>No</td></tr>
+            <tr><td>user.title</td><td>title</td><td>No</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="guide-section">
+        <h2><span class="step-num">4</span> Complete Setup in Go2</h2>
+        <p>Copy the Identity Provider metadata from Okta and paste it into Go2:</p>
+        <ul class="checklist">
+          <li><span class="check-icon">&#9744;</span>In Okta: Go to Sign On tab &rarr; Copy Identity Provider metadata URL</li>
+          <li><span class="check-icon">&#9744;</span>In Go2: Go to Admin &rarr; Settings &rarr; SSO &rarr; Paste metadata URL</li>
+          <li><span class="check-icon">&#9744;</span>Click "Test Connection" to verify</li>
+          <li><span class="check-icon">&#9744;</span>Enable SSO for your organization</li>
+        </ul>
+        <div class="callout success">
+          <span class="callout-icon">&#10003;</span>
+          <p>Once enabled, users will be redirected to Okta for authentication. Existing sessions will continue until expiry.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Azure AD Guide -->
+    <div class="tab-content" id="tab-azure">
+      <div class="guide-section">
+        <h2><span class="step-num">1</span> Register Go2 in Azure AD</h2>
+        <p>Navigate to Azure Active Directory &rarr; Enterprise Applications &rarr; New Application &rarr; Create your own application.</p>
+        <table class="config-table">
+          <thead><tr><th>Setting</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Identifier (Entity ID)</td><td>https://auth.go2.io/saml/metadata</td></tr>
+            <tr><td>Reply URL (ACS)</td><td>https://auth.go2.io/saml/acs</td></tr>
+            <tr><td>Sign on URL</td><td>https://app.go2.io/login</td></tr>
+            <tr><td>Relay State</td><td>(leave blank)</td></tr>
+            <tr><td>Logout URL</td><td>https://auth.go2.io/saml/slo</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="guide-section">
+        <h2><span class="step-num">2</span> Download Federation Metadata</h2>
+        <p>Download the Federation Metadata XML from Azure AD and upload it to Go2 Admin &rarr; Settings &rarr; SSO.</p>
+        <div class="callout info"><span class="callout-icon">&#9432;</span><p>Azure AD supports both SAML 2.0 and OIDC. We recommend SAML for enterprise SSO and OIDC for developer integrations.</p></div>
+      </div>
+    </div>
+
+    <!-- Google Guide -->
+    <div class="tab-content" id="tab-google">
+      <div class="guide-section">
+        <h2><span class="step-num">1</span> Configure SAML App in Google Admin</h2>
+        <p>Go to Google Admin Console &rarr; Apps &rarr; Web and mobile apps &rarr; Add app &rarr; Add custom SAML app.</p>
+        <table class="config-table">
+          <thead><tr><th>Setting</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>ACS URL</td><td>https://auth.go2.io/saml/acs</td></tr>
+            <tr><td>Entity ID</td><td>https://auth.go2.io/saml/metadata</td></tr>
+            <tr><td>Name ID Format</td><td>EMAIL</td></tr>
+            <tr><td>Name ID</td><td>Basic Information > Primary email</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SCIM -->
+    <div class="guide-section" id="scim">
+      <h2 style="margin-top:48px;padding-top:48px;border-top:1px solid #eee;">SCIM 2.0 Provisioning</h2>
+      <p>Automate user provisioning and deprovisioning with SCIM. When you add or remove users in your IdP, Go2 updates automatically.</p>
+      <div class="code-block">
+        <div class="code-header"><span>SCIM Configuration</span><span>All Providers</span></div>
+        <div class="code-body"><pre><span class="cc">// SCIM Endpoint</span>
+<span class="ck">Base URL</span>: <span class="cs">https://api.go2.io/scim/v2</span>
+
+<span class="cc">// Authentication</span>
+<span class="ck">Method</span>:   <span class="cs">Bearer Token</span>
+<span class="ck">Token</span>:    <span class="cs">(Generated in Go2 Admin → SSO → SCIM)</span>
+
+<span class="cc">// Supported Resources</span>
+<span class="ck">Users</span>:    <span class="cs">/scim/v2/Users</span>
+<span class="ck">Groups</span>:   <span class="cs">/scim/v2/Groups</span>
+
+<span class="cc">// Supported Operations</span>
+<span class="cs">CREATE, READ, UPDATE, DELETE, SEARCH</span></pre></div>
+      </div>
+      <div class="callout warning">
+        <span class="callout-icon">&#9888;</span>
+        <p><strong>Important:</strong> SCIM provisioning is available on Business and Enterprise plans. The SCIM bearer token should be stored securely and rotated every 90 days.</p>
+      </div>
+    </div>
+
+    <div class="support-section">
+      <h3>Need Help With SSO Setup?</h3>
+      <p>Our integration team can do a screenshare and walk you through the entire setup process. Usually takes 15 minutes.</p>
+      <a href="#" class="support-btn">Schedule Setup Call</a>
+    </div>
+  </div>
+</section>
+
+<footer><div class="container">&copy; 2026 Go2.io &mdash; SSO Integration Guide v2.1</div></footer>
+
+<script>
+function showProvider(p) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.provider-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + p).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>

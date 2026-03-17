@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bad Hire Cost Calculator | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f0f1e;color:#fff;min-height:100vh}
+.hero{text-align:center;padding:4rem 2rem 2rem}
+.badge{display:inline-block;padding:.4rem 1.2rem;border-radius:50px;background:rgba(255,107,107,.12);border:1px solid rgba(255,107,107,.25);color:#ff6b6b;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:1.5rem}
+h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:900;line-height:1.15;margin-bottom:1rem}
+h1 span{background:linear-gradient(135deg,#ff6b6b,#ff8e53);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:#8888aa;font-size:1.1rem;max-width:550px;margin:0 auto;line-height:1.6}
+.calculator{max-width:900px;margin:3rem auto;padding:0 1.5rem;display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+@media(max-width:768px){.calculator{grid-template-columns:1fr}}
+.input-panel{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:2.5rem}
+.input-panel h2{font-size:1.3rem;font-weight:700;margin-bottom:2rem}
+.field{margin-bottom:2rem}
+.field label{display:block;font-size:.85rem;color:#aaa;margin-bottom:.5rem;font-weight:500}
+.field input[type="number"],.field select{width:100%;padding:.9rem 1rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-size:1rem;font-family:inherit;outline:none;transition:border-color .3s}
+.field input:focus,.field select:focus{border-color:#6c63ff}
+.field select option{background:#1a1a2e;color:#fff}
+.slider-field{margin-bottom:2rem}
+.slider-field label{display:flex;justify-content:space-between;font-size:.85rem;color:#aaa;margin-bottom:.75rem;font-weight:500}
+.slider-field label span{color:#6c63ff;font-weight:700}
+input[type="range"]{width:100%;-webkit-appearance:none;height:6px;border-radius:3px;background:rgba(255,255,255,.1);outline:none}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#6c63ff;cursor:pointer;box-shadow:0 2px 10px rgba(108,99,255,.4)}
+.results-panel{background:linear-gradient(135deg,rgba(108,99,255,.08),rgba(255,107,107,.05));border:1px solid rgba(108,99,255,.15);border-radius:20px;padding:2.5rem}
+.results-panel h2{font-size:1.3rem;font-weight:700;margin-bottom:2rem;color:#6c63ff}
+.result-item{padding:1.25rem 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.result-item:last-child{border-bottom:none}
+.result-label{font-size:.85rem;color:#8888aa;margin-bottom:.35rem}
+.result-value{font-size:1.6rem;font-weight:800}
+.result-value.danger{color:#ff6b6b}
+.result-value.warning{color:#f59e0b}
+.result-value.success{color:#10b981}
+.result-detail{font-size:.8rem;color:#666;margin-top:.3rem}
+.total-cost{background:rgba(255,107,107,.1);border:2px solid rgba(255,107,107,.2);border-radius:16px;padding:1.5rem;text-align:center;margin-top:1.5rem}
+.total-cost .label{font-size:.9rem;color:#ff8888;margin-bottom:.5rem;font-weight:600}
+.total-cost .amount{font-size:2.5rem;font-weight:900;color:#ff6b6b}
+.total-cost .note{font-size:.8rem;color:#888;margin-top:.5rem}
+.go2-savings{background:rgba(16,185,129,.08);border:2px solid rgba(16,185,129,.2);border-radius:16px;padding:1.5rem;text-align:center;margin-top:1rem}
+.go2-savings .label{font-size:.9rem;color:#10b981;margin-bottom:.5rem;font-weight:600}
+.go2-savings .amount{font-size:2rem;font-weight:900;color:#10b981}
+.bottom-section{max-width:900px;margin:3rem auto;padding:0 1.5rem 4rem}
+.insight-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem;margin-top:2rem}
+.insight-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:1.75rem}
+.insight-card h3{font-size:1rem;font-weight:700;margin-bottom:.5rem}
+.insight-card p{font-size:.9rem;color:#8888aa;line-height:1.5}
+.final-cta{text-align:center;padding:4rem 2rem;border-top:1px solid rgba(255,255,255,.05)}
+.cta-btn{display:inline-block;padding:1rem 2.5rem;background:linear-gradient(135deg,#6c63ff,#4834d4);color:#fff;text-decoration:none;border-radius:12px;font-weight:700;font-size:1.05rem;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(108,99,255,.3)}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="badge">Interactive Calculator</div>
+  <h1>The True Cost of a<br><span>Bad Hire</span></h1>
+  <p>It's not just the salary. It's the recruiting, onboarding, lost productivity, team disruption, and doing it all over again. Calculate your real exposure.</p>
+</div>
+
+<div class="calculator">
+  <div class="input-panel">
+    <h2>Your Inputs</h2>
+    <div class="field"><label>Annual Salary ($)</label><input type="number" id="salary" value="85000" min="30000" max="500000" step="5000" oninput="calculate()"></div>
+    <div class="slider-field"><label>Ramp Time (months) <span id="rampVal">3</span></label><input type="range" id="ramp" min="1" max="12" value="3" oninput="document.getElementById('rampVal').textContent=this.value;calculate()"></div>
+    <div class="slider-field"><label>Time to Identify (months) <span id="identifyVal">6</span></label><input type="range" id="identify" min="1" max="18" value="6" oninput="document.getElementById('identifyVal').textContent=this.value;calculate()"></div>
+    <div class="slider-field"><label>Team Size Affected <span id="teamVal">5</span></label><input type="range" id="team" min="1" max="30" value="5" oninput="document.getElementById('teamVal').textContent=this.value;calculate()"></div>
+    <div class="field"><label>Role Level</label><select id="level" onchange="calculate()"><option value="1">Individual Contributor</option><option value="1.5">Senior IC</option><option value="2" selected>Manager</option><option value="3">Director+</option></select></div>
+  </div>
+  <div class="results-panel">
+    <h2>True Cost Breakdown</h2>
+    <div class="result-item"><div class="result-label">Recruiting & Hiring</div><div class="result-value danger" id="r1">$0</div><div class="result-detail">Job posts, recruiter fees, interview time</div></div>
+    <div class="result-item"><div class="result-label">Onboarding & Training</div><div class="result-value warning" id="r2">$0</div><div class="result-detail">Training, reduced output during ramp</div></div>
+    <div class="result-item"><div class="result-label">Lost Productivity</div><div class="result-value danger" id="r3">$0</div><div class="result-detail">Underperformance during tenure</div></div>
+    <div class="result-item"><div class="result-label">Team Disruption</div><div class="result-value warning" id="r4">$0</div><div class="result-detail">Morale, manager time, collaboration drag</div></div>
+    <div class="result-item"><div class="result-label">Replacement Cost</div><div class="result-value danger" id="r5">$0</div><div class="result-detail">Doing it all again + vacancy gap</div></div>
+    <div class="total-cost">
+      <div class="label">TOTAL COST OF ONE BAD HIRE</div>
+      <div class="amount" id="total">$0</div>
+      <div class="note">That's <span id="multiplier">0x</span> the annual salary</div>
+    </div>
+    <div class="go2-savings">
+      <div class="label">GO2 IDENTIFIES FIT ISSUES IN WEEKS, NOT MONTHS</div>
+      <div class="amount" id="savings">Save $0</div>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-section">
+  <h2 style="text-align:center;font-size:1.8rem;font-weight:800">How Go2 Catches It Early</h2>
+  <div class="insight-cards">
+    <div class="insight-card"><h3>Onboarding Velocity</h3><p>Go2 tracks ramp speed compared to role benchmarks. If a new hire is 40% below peers at week 4, you know immediately — not at month 6.</p></div>
+    <div class="insight-card"><h3>Collaboration Patterns</h3><p>See if the new hire integrates with the team or stays siloed. Low cross-team interaction in the first month is a leading indicator of poor fit.</p></div>
+    <div class="insight-card"><h3>Focus vs. Struggle</h3><p>There's a difference between productive focus and wheel-spinning. Go2's AI distinguishes between the two, flagging when someone is stuck early.</p></div>
+  </div>
+</div>
+
+<div class="final-cta">
+  <h2 style="font-size:2rem;font-weight:800;margin-bottom:1rem">Stop Paying the Bad Hire Tax</h2>
+  <p style="color:#8888aa;margin-bottom:2rem;font-size:1.05rem">Identify fit issues in weeks, not months. Free for 14 days.</p>
+  <a href="#" class="cta-btn">Start Free Trial</a>
+</div>
+
+<script>
+function fmt(n){return '$'+Math.round(n).toLocaleString()}
+function calculate(){
+  const salary=+document.getElementById('salary').value;
+  const ramp=+document.getElementById('ramp').value;
+  const identify=+document.getElementById('identify').value;
+  const team=+document.getElementById('team').value;
+  const level=+document.getElementById('level').value;
+  const recruiting=salary*.3*level;
+  const onboarding=(salary/12)*ramp*.6;
+  const lostProd=(salary/12)*identify*.4*level;
+  const disruption=(salary/12)*identify*.15*Math.min(team,10);
+  const replacement=recruiting*.8+(salary/12)*1.5;
+  const total=recruiting+onboarding+lostProd+disruption+replacement;
+  document.getElementById('r1').textContent=fmt(recruiting);
+  document.getElementById('r2').textContent=fmt(onboarding);
+  document.getElementById('r3').textContent=fmt(lostProd);
+  document.getElementById('r4').textContent=fmt(disruption);
+  document.getElementById('r5').textContent=fmt(replacement);
+  document.getElementById('total').textContent=fmt(total);
+  document.getElementById('multiplier').textContent=(total/salary).toFixed(1)+'x';
+  const earlyDetect=identify>2?(identify-2):0;
+  const saved=(lostProd/identify)*earlyDetect+(disruption/identify)*earlyDetect;
+  document.getElementById('savings').textContent='Save '+fmt(saved);
+}
+calculate();
+</script>
+</body>
+</html>

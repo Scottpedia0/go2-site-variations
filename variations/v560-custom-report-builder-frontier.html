@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go2 - AI Productivity Coaching | Custom Report Builder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary: #10b981; /* Emerald for positive coaching */
+            --bg-app: #f1f5f9;
+            --bg-panel: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --border-focus: #cbd5e1;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            
+            /* Chart Colors */
+            --chart-1: #4f46e5;
+            --chart-2: #10b981;
+            --chart-3: #f59e0b;
+            --chart-4: #ec4899;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Top Navigation / Marketing Bar */
+        .top-nav {
+            background-color: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--primary);
+            letter-spacing: -0.5px;
+        }
+
+        .brand-pill {
+            background-color: #e0e7ff;
+            color: var(--primary);
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .marketing-stats {
+            display: none;
+            gap: 24px;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        @media (min-width: 1024px) {
+            .marketing-stats { display: flex; }
+        }
+
+        .stat-item strong {
+            color: var(--secondary);
+            font-weight: 600;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+
+        .btn-outline:hover {
+            background: var(--bg-app);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Builder Layout */
+        .builder-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Left Panel: Widget Library */
+        .panel-left {
+            width: 280px;
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            z-index: 5;
+            transition: transform 0.3s ease;
+        }
+
+        .panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+        }
+
+        .widget-list {
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .draggable-widget {
+            background: var(--bg-app);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .draggable-widget:active {
+            cursor: grabbing;
+        }
+
+        .draggable-widget:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-sm);
+            transform: translateY(-1px);
+        }
+
+        .widget-icon {
+            width: 32px;
+            height: 32px;
+            background: white;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            border: 1px solid var(--border);
+        }
+
+        .widget-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .widget-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .widget-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Center: Canvas */
+        .canvas-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-app);
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .canvas-header {
+            padding: 24px 32px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .report-title-input {
+            font-size: 1.5rem;
+            font-weight: 700;
+            border: none;
+            background: transparent;
+            color: var(--text-main);
+            outline: none;
+            width: 100%;
+            max-width: 400px;
+            font-family: inherit;
+        }
+        
+        .report-title-input:focus {
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .date-range {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            background: white;
+            padding: 6px 12px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .canvas-wrapper {
+            padding: 24px 32px;
+            flex: 1;
+        }
+
+        .canvas-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 20px;
+            min-height: 400px;
+            padding: 20px;
+            background: var(--bg-panel);
+            border-radius: var(--radius-lg);
+            border: 2px dashed var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .canvas-grid.drag-over {
+            background: #e0e7ff;
+            border-color: var(--primary);
+        }
+
+        .canvas-empty-state {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            text-align: center;
+            height: 100%;
+            min-height: 300px;
+            pointer-events: none;
+        }
+
+        .canvas-empty-state svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        /* Rendered Widgets on Canvas */
+        .canvas-widget {
+            background: var(--bg-panel);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            padding: 16px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .canvas-widget:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .canvas-widget.selected {
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .canvas-widget-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .canvas-widget-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .widget-delete {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .canvas-widget:hover .widget-delete {
+            opacity: 1;
+        }
+
+        .widget-delete:hover {
+            color: #ef4444;
+        }
+
+        .widget-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Grid Sizing classes */
+        .col-span-3 { grid-column: span 3; }
+        .col-span-4 { grid-column: span 4; }
+        .col-span-6 { grid-column: span 6; }
+        .col-span-8 { grid-column: span 8; }
+        .col-span-12 { grid-column: span 12; }
+
+
+        /* Right Panel: Configuration */
+        .panel-right {
+            width: 300px;
+            background: var(--bg-panel);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            z-index: 5;
+        }
+
+        .config-empty {
+            padding: 32px 20px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .config-form {
+            padding: 20px;
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .config-form.active {
+            display: flex;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .form-control {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+        }
+        
+        select.form-control {
+            background-color: white;
+            cursor: pointer;
+        }
+
+        .ai-insight-box {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 0.75rem;
+            color: #166534;
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+        }
+
+        /* --- Mock Chart Styles (CSS Only) --- */
+        
+        /* Metric Card */
+        .mock-metric {
+            text-align: left;
+            width: 100%;
+        }
+        .mock-metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-main);
+            line-height: 1;
+        }
+        .mock-metric-trend {
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .trend-up { color: var(--secondary); }
+        .trend-down { color: #ef4444; }
+
+        /* Bar Chart */
+        .mock-bar-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            width: 100%;
+            height: 120px;
+            padding-top: 20px;
+            gap: 8px;
+        }
+        .mock-bar {
+            flex: 1;
+            background-color: var(--chart-1);
+            border-radius: 4px 4px 0 0;
+            position: relative;
+            transition: height 0.5s ease;
+        }
+        .mock-bar:hover::after {
+            content: attr(data-val);
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--text-main);
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* Doughnut Chart */
+        .mock-doughnut-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            gap: 24px;
+        }
+        .mock-doughnut {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(
+                var(--chart-2) 0% 45%, 
+                var(--chart-1) 45% 80%, 
+                #cbd5e1 80% 100%
+            );
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .mock-doughnut::after {
+            content: '';
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: var(--bg-panel);
+            border-radius: 50%;
+        }
+        .mock-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 0.75rem;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .legend-color {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+        }
+
+        /* Line Chart (using inline SVG) */
+        .mock-line-chart {
+            width: 100%;
+            height: 120px;
+        }
+        .mock-line-chart svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+        .line-path {
+            fill: none;
+            stroke: var(--chart-1);
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .line-area {
+            fill: url(#line-gradient);
+            opacity: 0.2;
+        }
+
+        /* AI Feedback Widget */
+        .mock-ai-feedback {
+            text-align: left;
+            width: 100%;
+        }
+        .ai-message {
+            background: #f8fafc;
+            border-left: 3px solid var(--primary);
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+        .ai-message strong {
+            color: var(--primary);
+        }
+
+        /* Mobile adjustments */
+        .mobile-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-main);
+        }
+
+        @media (max-width: 1024px) {
+            .panel-right {
+                position: absolute;
+                right: -300px;
+                height: calc(100vh - 64px);
+                box-shadow: var(--shadow-lg);
+                transition: right 0.3s ease;
+            }
+            .panel-right.open {
+                right: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-toggle { display: block; }
+            .builder-container { flex-direction: column; }
+            .panel-left {
+                width: 100%;
+                height: 200px;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+            .widget-list {
+                flex-direction: row;
+                overflow-x: auto;
+                overflow-y: hidden;
+            }
+            .draggable-widget {
+                min-width: 200px;
+            }
+            .canvas-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .canvas-grid {
+                display: flex;
+                flex-direction: column;
+            }
+            .canvas-widget {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation -->
+    <header class="top-nav">
+        <div class="brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+            Go2
+            <span class="brand-pill">Coaching Platform</span>
+        </div>
+        
+        <div class="marketing-stats">
+            <span class="stat-item">Avg Productivity: <strong>+42%</strong></span>
+            <span class="stat-item">Time Saved: <strong>15.2h/wk</strong></span>
+            <span class="stat-item">First Yr ROI: <strong>892%</strong></span>
+        </div>
+
+        <div class="nav-actions">
+            <button class="btn btn-outline">Preview</button>
+            <button class="btn btn-primary" onclick="alert('Demo: Report Saved successfully!')">Save Report</button>
+        </div>
+    </header>
+
+    <!-- Main Builder Area -->
+    <div class="builder-container">
+        
+        <!-- Left Panel: Library -->
+        <aside class="panel-left">
+            <div class="panel-header">Components</div>
+            <div class="widget-list">
+                
+                <div class="draggable-widget" draggable="true" data-type="metric" data-title="Deep Work Hours" data-size="col-span-3">
+                    <div class="widget-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+                    </div>
+                    <div class="widget-info">
+                        <span class="widget-title">Metric Card</span>
+                        <span class="widget-desc">Single KPI & trend</span>
+                    </div>
+                </div>
+
+                <div class="draggable-widget" draggable="true" data-type="bar" data-title="Focus vs Meetings" data-size="col-span-6">
+                    <div class="widget-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="18" y="3" width="4" height="18"></rect><rect x="10" y="8" width="4" height="13"></rect><rect x="2" y="13" width="4" height="8"></rect></svg>
+                    </div>
+                    <div class="widget-info">
+                        <span class="widget-title">Bar Chart</span>
+                        <span class="widget-desc">Compare categories</span>
+                    </div>
+                </div>
+
+                <div class="draggable-widget" draggable="true" data-type="doughnut" data-title="App Usage Breakdown" data-size="col-span-6">
+                    <div class="widget-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+                    </div>
+                    <div class="widget-info">
+                        <span class="widget-title">Doughnut Chart</span>
+                        <span class="widget-desc">Distribution</span>
+                    </div>
+                </div>
+
+                <div class="draggable-widget" draggable="true" data-type="line" data-title="Burnout Risk Trend" data-size="col-span-8">
+                    <div class="widget-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    </div>
+                    <div class="widget-info">
+                        <span class="widget-title">Line Chart</span>
+                        <span class="widget-desc">Data over time</span>
+                    </div>
+                </div>
+
+                <div class="draggable-widget" draggable="true" data-type="ai" data-title="Coaching Insights" data-size="col-span-4">
+                    <div class="widget-icon" style="color: var(--secondary);">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg>
+                    </div>
+                    <div class="widget-info">
+                        <span class="widget-title">AI Coaching</span>
+                        <span class="widget-desc">Auto-generated tips</span>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div style="padding: 16px; font-size: 0.75rem; color: var(--text-muted); text-align: center; border-top: 1px solid var(--border); margin-top: auto;">
+                Drag widgets to canvas.<br>Tap to add on mobile.
+            </div>
+        </aside>
+
+        <!-- Center: Canvas -->
+        <main class="canvas-area">
+            <div class="canvas-header">
+                <div>
+                    <input type="text" class="report-title-input" value="Q3 Engineering Team Health">
+                </div>
+                <div class="date-range">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    Last 30 Days
+                </div>
+            </div>
+
+            <div class="canvas-wrapper">
+                <div class="canvas-grid" id="drop-zone">
+                    <div class="canvas-empty-state" id="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 4v16m8-8H4"></path></svg>
+                        <p>Drag and drop widgets here</p>
+                        <p style="font-size: 0.75rem; margin-top: 8px;">Build custom views to coach your team without micromanaging.</p>
+                    </div>
+                    <!-- Widgets will be injected here -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Panel: Properties -->
+        <aside class="panel-right" id="properties-panel">
+            <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
+                Properties
+                <button class="mobile-toggle" onclick="closeProperties()" style="font-size: 1rem;">✕</button>
+            </div>
+            
+            <div class="config-empty" id="config-empty">
+                Select a widget on the canvas to configure its properties.
+            </div>
+
+            <div class="config-form" id="config-form">
+                <div class="form-group">
+                    <label>Widget Title</label>
+                    <input type="text" class="form-control" id="prop-title">
+                </div>
+                
+                <div class="form-group">
+                    <label>Data Source</label>
+                    <select class="form-control" id="prop-source">
+                        <option>Keystroke Intensity (Anonymized)</option>
+                        <option>App Usage Categories</option>
+                        <option>Meeting Metadata</option>
+                        <option>Self-Reported Focus</option>
+                        <option>Go2 AI Analysis Engine</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Time Aggregation</label>
+                    <select class="form-control">
+                        <option>Daily</option>
+                        <option>Weekly</option>
+                        <option>Monthly</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" style="flex-direction: row; align-items: center; gap: 8px; margin-top: 10px;">
+                    <input type="checkbox" id="prop-benchmark" checked>
+                    <label style="text-transform: none;" for="prop-benchmark">Show Company Benchmark</label>
+                </div>
+
+                <div class="ai-insight-box">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                    <span><strong>Go2 Tip:</strong> Tracking "Deep Work" vs "Meetings" is the #1 way our clients find an extra 10 hours a week for their teams.</span>
+                </div>
+            </div>
+        </aside>
+
+    </div>
+
+    <script>
+        // State
+        let canvasWidgets = [];
+        let selectedWidgetId = null;
+        let dragCounter = 0;
+
+        // DOM Elements
+        const dropZone = document.getElementById('drop-zone');
+        const emptyState = document.getElementById('empty-state');
+        const draggables = document.querySelectorAll('.draggable-widget');
+        
+        const configEmpty = document.getElementById('config-empty');
+        const configForm = document.getElementById('config-form');
+        const propTitle = document.getElementById('prop-title');
+        const propSource = document.getElementById('prop-source');
+        const propertiesPanel = document.getElementById('properties-panel');
+
+        // Mock Rendering Templates (Simulating charts with CSS)
+        const renderTemplates = {
+            metric: () => `
+                <div class="mock-metric">
+                    <div class="mock-metric-value">4.2h</div>
+                    <div class="mock-metric-trend trend-up">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                        +12% vs last week
+                    </div>
+                </div>
+            `,
+            bar: () => `
+                <div class="mock-bar-chart">
+                    <div class="mock-bar" style="height: 40%; background: #94a3b8;" data-val="Mon"></div>
+                    <div class="mock-bar" style="height: 70%;" data-val="Tue"></div>
+                    <div class="mock-bar" style="height: 85%;" data-val="Wed"></div>
+                    <div class="mock-bar" style="height: 50%; background: #94a3b8;" data-val="Thu"></div>
+                    <div class="mock-bar" style="height: 90%; background: var(--secondary);" data-val="Fri"></div>
+                </div>
+            `,
+            doughnut: () => `
+                <div class="mock-doughnut-container">
+                    <div class="mock-doughnut"></div>
+                    <div class="mock-legend">
+                        <div class="legend-item"><div class="legend-color" style="background: var(--chart-2)"></div> Deep Work (45%)</div>
+                        <div class="legend-item"><div class="legend-color" style="background: var(--chart-1)"></div> Meetings (35%)</div>
+                        <div class="legend-item"><div class="legend-color" style="background: #cbd5e1"></div> Admin/Other (20%)</div>
+                    </div>
+                </div>
+            `,
+            line: () => `
+                <div class="mock-line-chart">
+                    <svg viewBox="0 0 100 40" preserveAspectRatio="none">
+                        <defs>
+                            <linearGradient id="line-gradient" x1="0" x2="0" y1="0" y2="1">
+                                <stop offset="0%" stop-color="var(--chart-1)" stop-opacity="0.5"/>
+                                <stop offset="100%" stop-color="var(--chart-1)" stop-opacity="0"/>
+                            </linearGradient>
+                        </defs>
+                        <path class="line-area" d="M0,30 L20,25 L40,35 L60,15 L80,20 L100,5 L100,40 L0,40 Z"></path>
+                        <path class="line-path" d="M0,30 L20,25 L40,35 L60,15 L80,20 L100,5"></path>
+                    </svg>
+                </div>
+            `,
+            ai: () => `
+                <div class="mock-ai-feedback">
+                    <div class="ai-message"><strong>Observation:</strong> The engineering team averaged 3.5 hours of meetings on Tuesdays, causing a 40% drop in coding time.</div>
+                    <div class="ai-message"><strong>Actionable Tip:</strong> Consider implementing "No Meeting Tuesdays" to increase unbroken focus time.</div>
+                </div>
+            `
+        };
+
+        // Initialize Drag & Drop
+        draggables.forEach(draggable => {
+            draggable.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('type', draggable.dataset.type);
+                e.dataTransfer.setData('title', draggable.dataset.title);
+                e.dataTransfer.setData('size', draggable.dataset.size);
+            });
+            
+            // Mobile fallback: click to add
+            draggable.addEventListener('click', () => {
+                addWidget(draggable.dataset.type, draggable.dataset.title, draggable.dataset.size);
+            });
+        });
+
+        dropZone.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            dragCounter++;
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault(); // Necessary to allow dropping
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dragCounter--;
+            if (dragCounter === 0) {
+                dropZone.classList.remove('drag-over');
+            }
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragCounter = 0;
+            dropZone.classList.remove('drag-over');
+
+            const type = e.dataTransfer.getData('type');
+            const title = e.dataTransfer.getData('title');
+            const size = e.dataTransfer.getData('size');
+            
+            if(type) addWidget(type, title, size);
+        });
+
+        // Core Logic
+        function addWidget(type, title, size) {
+            const id = 'widget_' + Math.random().toString(36).substr(2, 9);
+            const widgetData = { id, type, title, size };
+            canvasWidgets.push(widgetData);
+            
+            renderCanvas();
+            selectWidget(id);
+        }
+
+        function removeWidget(id, event) {
+            event.stopPropagation(); // Prevent triggering selection
+            canvasWidgets = canvasWidgets.filter(w => w.id !== id);
+            if (selectedWidgetId === id) {
+                selectedWidgetId = null;
+                updatePropertiesPanel();
+            }
+            renderCanvas();
+        }
+
+        function selectWidget(id) {
+            selectedWidgetId = id;
+            
+            // Update UI selection state
+            document.querySelectorAll('.canvas-widget').forEach(el => {
+                el.classList.remove('selected');
+                if (el.id === id) el.classList.add('selected');
+            });
+
+            updatePropertiesPanel();
+            
+            // Open panel on mobile
+            if(window.innerWidth <= 1024) {
+                propertiesPanel.classList.add('open');
+            }
+        }
+
+        function closeProperties() {
+            propertiesPanel.classList.remove('open');
+        }
+
+        function updatePropertiesPanel() {
+            if (!selectedWidgetId) {
+                configEmpty.style.display = 'block';
+                configForm.classList.remove('active');
+                return;
+            }
+
+            const widget = canvasWidgets.find(w => w.id === selectedWidgetId);
+            if (widget) {
+                configEmpty.style.display = 'none';
+                configForm.classList.add('active');
+                propTitle.value = widget.title;
+                
+                // Auto-select a data source based on type to make it look real
+                if(widget.type === 'ai') propSource.selectedIndex = 4;
+                else if(widget.type === 'doughnut') propSource.selectedIndex = 1;
+                else propSource.selectedIndex = 0;
+            }
+        }
+
+        // Handle Property Changes
+        propTitle.addEventListener('input', (e) => {
+            if (selectedWidgetId) {
+                const widget = canvasWidgets.find(w => w.id === selectedWidgetId);
+                if (widget) {
+                    widget.title = e.target.value;
+                    // Update DOM directly for performance instead of full re-render
+                    const titleEl = document.querySelector(`#${selectedWidgetId} .canvas-widget-title`);
+                    if(titleEl) titleEl.textContent = widget.title;
+                }
+            }
+        });
+
+        function renderCanvas() {
+            // Clear current widgets (keep empty state)
+            const elementsToRemove = dropZone.querySelectorAll('.canvas-widget');
+            elementsToRemove.forEach(el => el.remove());
+
+            if (canvasWidgets.length === 0) {
+                emptyState.style.display = 'flex';
+                dropZone.style.border = '2px dashed var(--border)';
+            } else {
+                emptyState.style.display = 'none';
+                dropZone.style.border = '2px solid transparent'; // Hide dashed border when items exist
+                
+                canvasWidgets.forEach(widget => {
+                    const widgetEl = document.createElement('div');
+                    widgetEl.className = `canvas-widget ${widget.size}`;
+                    widgetEl.id = widget.id;
+                    if(widget.id === selectedWidgetId) widgetEl.classList.add('selected');
+                    
+                    widgetEl.onclick = () => selectWidget(widget.id);
+
+                    widgetEl.innerHTML = `
+                        <div class="canvas-widget-header">
+                            <span class="canvas-widget-title">${widget.title}</span>
+                            <button class="widget-delete" onclick="removeWidget('${widget.id}', event)" title="Remove">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                        <div class="widget-content">
+                            ${renderTemplates[widget.type] ? renderTemplates[widget.type]() : '<p>Widget Content</p>'}
+                        </div>
+                    `;
+                    dropZone.appendChild(widgetEl);
+                });
+            }
+        }
+
+        // Pre-populate with one widget to demonstrate initial state
+        setTimeout(() => {
+            addWidget('bar', 'Focus vs Meetings by Day', 'col-span-8');
+            addWidget('metric', 'Avg Deep Work', 'col-span-4');
+        }, 300);
+
+    </script>
+</body>
+</html>

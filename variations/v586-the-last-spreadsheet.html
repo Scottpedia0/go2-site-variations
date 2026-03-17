@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Last Spreadsheet | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#F8FAFC;--dark:#0F172A;--accent:#2563EB;--green:#10B981;--red:#EF4444;--text:#334155;--muted:#64748B;--card:#fff;--border:#E2E8F0;--ss-green:#217346;--ss-bg:#E8F5E9}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+h1,h2,h3{font-family:'Inter',sans-serif}
+
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:4rem 2rem}
+.hero-icon{font-size:4rem;margin-bottom:1.5rem;filter:grayscale(50%)}
+.hero h1{font-size:clamp(2.5rem,6vw,4.5rem);font-weight:800;line-height:1.1;color:var(--dark);margin-bottom:1.5rem}
+.hero h1 .blue{color:var(--accent)}
+.hero p{font-size:1.15rem;max-width:600px;color:var(--muted);line-height:1.7;margin-bottom:3rem}
+.btn{background:var(--accent);color:#fff;border:none;padding:1rem 2.5rem;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s}
+.btn:hover{background:#3B82F6;transform:translateY(-2px)}
+
+/* Spreadsheet Simulation */
+.ss-section{padding:4rem 2rem}
+.ss-inner{max-width:900px;margin:0 auto}
+.section-tag{font-size:.8rem;color:var(--accent);letter-spacing:3px;text-transform:uppercase;font-weight:600;margin-bottom:1rem;text-align:center}
+.section-title{font-size:2rem;font-weight:700;color:var(--dark);margin-bottom:1rem;text-align:center}
+.section-desc{color:var(--muted);text-align:center;max-width:550px;margin:0 auto 3rem;line-height:1.7}
+
+.spreadsheet{background:#fff;border:1px solid #C8C8C8;border-radius:4px;overflow:hidden;font-family:'Space Mono',monospace;font-size:.75rem;margin-bottom:2rem;box-shadow:0 4px 20px rgba(0,0,0,.08)}
+.ss-toolbar{background:#217346;padding:.5rem 1rem;display:flex;align-items:center;gap:1rem;color:#fff;font-size:.7rem}
+.ss-toolbar .title{font-weight:700}
+.ss-formula{background:#F5F5F5;padding:.4rem 1rem;border-bottom:1px solid #C8C8C8;color:#333;font-size:.7rem}
+.ss-grid{overflow-x:auto}
+.ss-grid table{width:100%;border-collapse:collapse;min-width:700px}
+.ss-grid th{background:#F0F0F0;border:1px solid #C8C8C8;padding:.4rem .6rem;font-weight:400;color:#666;text-align:center;min-width:90px}
+.ss-grid th:first-child{width:30px;min-width:30px}
+.ss-grid td{border:1px solid #D4D4D4;padding:.4rem .6rem;color:#333;white-space:nowrap}
+.ss-grid td:first-child{background:#F0F0F0;color:#666;text-align:center;font-size:.7rem}
+.cell-error{color:var(--red);font-weight:700}
+.cell-warn{background:#FFF3CD;color:#856404}
+.cell-dup{background:#FCE4EC;color:#C62828}
+.cell-formula{color:#1565C0;font-style:italic}
+.cell-stale{color:#9E9E9E;text-decoration:line-through}
+
+/* Transformation */
+.transform{padding:4rem 2rem;text-align:center}
+.transform-inner{max-width:900px;margin:0 auto}
+.transform-btn{background:var(--accent);color:#fff;border:none;padding:1.25rem 3rem;border-radius:12px;font-size:1.15rem;font-weight:700;cursor:pointer;transition:all .3s;font-family:'Inter',sans-serif;position:relative;overflow:hidden}
+.transform-btn:hover{background:#3B82F6;transform:scale(1.02)}
+.transform-btn.clicked{background:var(--green);pointer-events:none}
+.transform-btn .sparkle{position:absolute;animation:sparkle .6s forwards;pointer-events:none;font-size:1.5rem}
+@keyframes sparkle{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0)}}
+
+/* Dashboard Preview */
+.dashboard{background:var(--dark);border-radius:16px;padding:2rem;margin-top:2rem;display:none;animation:dashFade .8s ease}
+.dashboard.show{display:block}
+@keyframes dashFade{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.dash-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;flex-wrap:wrap;gap:1rem}
+.dash-header h3{color:#fff;font-size:1.1rem}
+.dash-badge{background:rgba(16,185,129,.15);color:var(--green);padding:.35rem .75rem;border-radius:6px;font-size:.75rem;font-weight:600}
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:2rem}
+.dash-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:1.25rem;text-align:center}
+.dash-card .num{font-size:1.8rem;font-weight:700;color:#fff}
+.dash-card .label{font-size:.75rem;color:rgba(255,255,255,.5);margin-top:.25rem}
+.dash-card .trend{font-size:.7rem;margin-top:.5rem;font-weight:600}
+.trend-up{color:var(--green)}
+.trend-down{color:var(--red)}
+.dash-bars{display:flex;gap:1rem;flex-wrap:wrap}
+.dash-bar-group{flex:1;min-width:200px}
+.dash-bar-group .title{font-size:.75rem;color:rgba(255,255,255,.5);margin-bottom:.75rem;text-transform:uppercase;letter-spacing:1px}
+.dash-bar{margin-bottom:.75rem}
+.dash-bar .label{display:flex;justify-content:space-between;font-size:.75rem;color:rgba(255,255,255,.7);margin-bottom:.25rem}
+.bar-track{height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:width 1.5s ease;width:0}
+.bar-fill.animate{width:var(--w)}
+
+/* Pain Points */
+.pain{padding:6rem 2rem}
+.pain-inner{max-width:900px;margin:0 auto}
+.pain-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem;margin-top:3rem}
+.pain-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem}
+.pain-card h3{font-size:1.05rem;color:var(--dark);margin-bottom:.75rem}
+.pain-card p{color:var(--muted);line-height:1.7;font-size:.9rem}
+.pain-card .tag{display:inline-block;background:rgba(37,99,235,.06);color:var(--accent);padding:.2rem .6rem;border-radius:4px;font-size:.75rem;font-weight:600;margin-top:.75rem}
+
+.cta{padding:8rem 2rem;text-align:center}
+.cta h2{font-size:clamp(2rem,4vw,3rem);color:var(--dark);margin-bottom:1rem;font-weight:800}
+.cta p{color:var(--muted);max-width:500px;margin:0 auto 2rem;line-height:1.7;font-size:1.05rem}
+.cta .sub{color:var(--muted);font-size:.85rem;margin-top:1rem}
+
+footer{padding:3rem 2rem;text-align:center;color:var(--muted);font-size:.8rem;border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+
+<section class="hero">
+<div class="hero-icon">&#128202;</div>
+<h1>The Last<br><span class="blue">Spreadsheet</span></h1>
+<p>You're tracking your team's productivity in Excel. It's a mess. Stale data, broken formulas, conflicting versions. Let us show you what it looks like when you upgrade to Go2.</p>
+<button class="btn" onclick="document.querySelector('.ss-section').scrollIntoView({behavior:'smooth'})">See the Transformation</button>
+</section>
+
+<section class="ss-section">
+<div class="ss-inner">
+<div class="section-tag">Before</div>
+<h2 class="section-title">Your Current "System"</h2>
+<p class="section-desc">This is what productivity tracking looks like in most companies. Recognize it?</p>
+<div class="spreadsheet">
+<div class="ss-toolbar"><span class="title">Team_Productivity_FINAL_v3_ACTUALLY_FINAL.xlsx</span></div>
+<div class="ss-formula">=VLOOKUP(B2,'Q1 Data (OLD)'!A:D,3,FALSE) <span style="color:#C62828">#REF!</span></div>
+<div class="ss-grid"><table>
+<thead><tr><th></th><th>Name</th><th>Dept</th><th>Hours</th><th>Output</th><th>Status</th><th>Notes</th><th>Last Updated</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Sarah K.</td><td>Engineering</td><td>42</td><td>Good</td><td class="cell-warn">Needs review</td><td>See email from Jan</td><td class="cell-stale">Jan 14</td></tr>
+<tr><td>2</td><td>Mike R.</td><td>Sales</td><td>38</td><td class="cell-error">#REF!</td><td>Active</td><td class="cell-formula">=IF(D2>40,"OK","???")</td><td class="cell-stale">Feb 2</td></tr>
+<tr><td>3</td><td class="cell-dup">Sarah K.</td><td class="cell-dup">Eng</td><td>45</td><td>Great</td><td>Active</td><td>duplicate?</td><td>Mar 1</td></tr>
+<tr><td>4</td><td>Tom B.</td><td>Marketing</td><td class="cell-error">N/A</td><td>???</td><td class="cell-warn">On leave?</td><td>Check with HR</td><td class="cell-stale">Dec 8</td></tr>
+<tr><td>5</td><td>Lisa M.</td><td>Support</td><td>40</td><td>Average</td><td>Active</td><td></td><td class="cell-stale">Jan 22</td></tr>
+<tr><td>6</td><td>James P.</td><td>Engineering</td><td>55</td><td>High</td><td class="cell-warn">burnout?</td><td>working too much</td><td>Feb 15</td></tr>
+<tr><td>7</td><td>Amy W.</td><td>Design</td><td class="cell-error">MISSING</td><td class="cell-error">MISSING</td><td>???</td><td>never filled in</td><td class="cell-stale">Never</td></tr>
+</tbody>
+</table></div>
+</div>
+</div>
+</section>
+
+<section class="transform">
+<div class="transform-inner">
+<p style="color:var(--muted);margin-bottom:1.5rem;font-size:1.1rem">Ready to see the difference?</p>
+<button class="transform-btn" id="transformBtn" onclick="transform()">Transform to Go2 Dashboard</button>
+<div class="dashboard" id="dashboard">
+<div class="dash-header">
+<h3>Go2 Productivity Dashboard</h3>
+<div class="dash-badge">Real-time data</div>
+</div>
+<div class="dash-grid">
+<div class="dash-card"><div class="num">42%</div><div class="label">Productivity Increase</div><div class="trend trend-up">+8% this month</div></div>
+<div class="dash-card"><div class="num">4.2h</div><div class="label">Avg Deep Work/Day</div><div class="trend trend-up">+0.6h vs last month</div></div>
+<div class="dash-card"><div class="num">15.2h</div><div class="label">Hours Saved/Week/Person</div><div class="trend trend-up">Steady improvement</div></div>
+<div class="dash-card"><div class="num">87</div><div class="label">Team Health Score</div><div class="trend trend-up">+12 from baseline</div></div>
+</div>
+<div class="dash-bars">
+<div class="dash-bar-group">
+<div class="title">Team Productivity</div>
+<div class="dash-bar"><div class="label"><span>Engineering</span><span>91%</span></div><div class="bar-track"><div class="bar-fill" style="background:var(--green);--w:91%"></div></div></div>
+<div class="dash-bar"><div class="label"><span>Sales</span><span>84%</span></div><div class="bar-track"><div class="bar-fill" style="background:var(--green);--w:84%"></div></div></div>
+<div class="dash-bar"><div class="label"><span>Marketing</span><span>78%</span></div><div class="bar-track"><div class="bar-fill" style="background:var(--accent);--w:78%"></div></div></div>
+<div class="dash-bar"><div class="label"><span>Support</span><span>82%</span></div><div class="bar-track"><div class="bar-fill" style="background:var(--green);--w:82%"></div></div></div>
+<div class="dash-bar"><div class="label"><span>Design</span><span>88%</span></div><div class="bar-track"><div class="bar-fill" style="background:var(--green);--w:88%"></div></div></div>
+</div>
+<div class="dash-bar-group">
+<div class="title">Work Distribution</div>
+<div class="dash-bar"><div class="label"><span>Deep Work</span><span>52%</span></div><div class="bar-track"><div class="bar-fill" style="background:var(--green);--w:52%"></div></div></div>
+<div class="dash-bar"><div class="label"><span>Collaboration</span><span>24%</span></div><div class="bar-track"><div class="bar-fill" style="background:var(--accent);--w:24%"></div></div></div>
+<div class="dash-bar"><div class="label"><span>Meetings</span><span>16%</span></div><div class="bar-track"><div class="bar-fill" style="background:#F59E0B;--w:16%"></div></div></div>
+<div class="dash-bar"><div class="label"><span>Admin</span><span>8%</span></div><div class="bar-track"><div class="bar-fill" style="background:var(--muted);--w:8%"></div></div></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<section class="pain">
+<div class="pain-inner">
+<div class="section-tag">Why Spreadsheets Fail</div>
+<h2 class="section-title">The Problems Go2 Eliminates</h2>
+<div class="pain-grid">
+<div class="pain-card"><h3>Stale Data</h3><p>Spreadsheet data is weeks or months old. Go2 updates in real-time. No manual entry. No "I'll fill it in later."</p><div class="tag">Real-time vs. monthly</div></div>
+<div class="pain-card"><h3>Human Error</h3><p>Duplicates, broken formulas, wrong cells. Go2 data is automatically captured. No typos. No #REF! errors.</p><div class="tag">Automated vs. manual</div></div>
+<div class="pain-card"><h3>Subjective Ratings</h3><p>"Good," "Average," "???" -- spreadsheet productivity is opinion. Go2 measures actual work patterns objectively.</p><div class="tag">Objective vs. subjective</div></div>
+<div class="pain-card"><h3>No Insights</h3><p>A spreadsheet tells you what happened. Go2 tells you why and what to do about it. AI coaching, not data entry.</p><div class="tag">Insights vs. numbers</div></div>
+<div class="pain-card"><h3>Version Chaos</h3><p>FINAL_v3_ACTUALLY_FINAL.xlsx. Everyone has a different version. Go2 is one source of truth, always current.</p><div class="tag">Single source vs. chaos</div></div>
+<div class="pain-card"><h3>Time Wasted</h3><p>Managers spend 5+ hours/week maintaining tracking spreadsheets. Go2 takes zero manual effort. 5 hours reclaimed.</p><div class="tag">5 hours/week saved</div></div>
+</div>
+</div>
+</section>
+
+<section class="cta">
+<h2>Delete the Spreadsheet.</h2>
+<p>Your team deserves better than FINAL_v3_ACTUALLY_FINAL.xlsx. Go2 replaces manual tracking with automatic insights. 892% ROI. No more data entry.</p>
+<button class="btn">Start Free Trial</button>
+<p class="sub">$6/user/month. Setup in 5 minutes. Spreadsheet-free forever.</p>
+</section>
+
+<footer><p>&copy; 2026 Go2. The last spreadsheet you'll ever need.</p></footer>
+
+<script>
+function transform() {
+const btn = document.getElementById('transformBtn');
+btn.classList.add('clicked');
+btn.textContent = 'Transforming...';
+// Sparkle effect
+for(let i=0;i<8;i++){
+const s=document.createElement('span');
+s.className='sparkle';
+s.textContent='&#10024;';
+s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;--tx:${(Math.random()-0.5)*100}px;--ty:${(Math.random()-0.5)*100}px`;
+btn.appendChild(s);
+}
+setTimeout(()=>{
+btn.textContent = 'Transformed!';
+const dash = document.getElementById('dashboard');
+dash.classList.add('show');
+dash.scrollIntoView({behavior:'smooth',block:'center'});
+setTimeout(()=>{
+dash.querySelectorAll('.bar-fill').forEach(b=>b.classList.add('animate'));
+},400);
+},1200);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI vs Gut Feeling | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0B0F1A;--card:#111827;--accent:#8B5CF6;--gut:#F59E0B;--data:#06B6D4;--green:#10B981;--red:#EF4444;--text:#E5E7EB;--muted:#6B7280;--border:#1F2937}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif}
+
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:4rem 2rem}
+.hero-badge{background:rgba(139,92,246,.1);color:var(--accent);padding:.5rem 1.25rem;border-radius:100px;font-size:.85rem;font-weight:600;display:inline-block;margin-bottom:2rem;border:1px solid rgba(139,92,246,.3)}
+.hero h1{font-size:clamp(2.5rem,6vw,4.5rem);font-weight:700;line-height:1.1;margin-bottom:1.5rem;color:#fff}
+.hero h1 .gut{color:var(--gut)}
+.hero h1 .ai{color:var(--data)}
+.hero p{font-size:1.15rem;max-width:600px;color:var(--muted);line-height:1.7;margin-bottom:2.5rem}
+.hero-btn{background:var(--accent);color:#fff;border:none;padding:1rem 2.5rem;border-radius:10px;font-size:1.05rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Space Grotesk',sans-serif}
+.hero-btn:hover{background:#A78BFA;transform:translateY(-2px)}
+
+/* Game */
+.game-section{padding:4rem 2rem}
+.game-inner{max-width:800px;margin:0 auto}
+.game-header{text-align:center;margin-bottom:3rem}
+.game-header h2{font-size:2rem;color:#fff;margin-bottom:.5rem}
+.game-header p{color:var(--muted)}
+
+.scoreboard{display:flex;justify-content:center;gap:3rem;margin-bottom:3rem;flex-wrap:wrap}
+.score-item{text-align:center;min-width:100px}
+.score-label{font-size:.75rem;text-transform:uppercase;letter-spacing:2px;margin-bottom:.5rem}
+.score-label.gut-l{color:var(--gut)}
+.score-label.data-l{color:var(--data)}
+.score-label.you-l{color:var(--accent)}
+.score-val{font-family:'Space Grotesk',sans-serif;font-size:2.5rem;font-weight:700;color:#fff}
+
+.scenario{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:2.5rem;display:none}
+.scenario.active{display:block;animation:fadeIn .4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.scenario-number{font-size:.75rem;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:1rem}
+.scenario h3{font-size:1.3rem;color:#fff;margin-bottom:1rem;line-height:1.4}
+.scenario p{color:var(--muted);line-height:1.7;margin-bottom:2rem}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.choice{padding:1.5rem;border:2px solid var(--border);border-radius:12px;cursor:pointer;transition:all .3s;text-align:center}
+.choice:hover{transform:translateY(-2px)}
+.choice-gut{border-color:rgba(245,158,11,.2)}
+.choice-gut:hover{border-color:var(--gut);background:rgba(245,158,11,.05)}
+.choice-data{border-color:rgba(6,182,212,.2)}
+.choice-data:hover{border-color:var(--data);background:rgba(6,182,212,.05)}
+.choice .label{font-size:.7rem;text-transform:uppercase;letter-spacing:2px;margin-bottom:.5rem;font-weight:600}
+.choice-gut .label{color:var(--gut)}
+.choice-data .label{color:var(--data)}
+.choice .text{font-size:.95rem;color:var(--text);line-height:1.5}
+.choice.disabled{pointer-events:none;opacity:.4}
+.choice.correct{border-color:var(--green);background:rgba(16,185,129,.1)}
+.choice.wrong{border-color:var(--red);background:rgba(239,68,68,.1)}
+
+.result-box{margin-top:1.5rem;padding:1.5rem;border-radius:12px;display:none}
+.result-box.show{display:block;animation:fadeIn .3s ease}
+.result-box h4{font-size:1rem;margin-bottom:.5rem}
+.result-box p{font-size:.9rem;line-height:1.6}
+.result-correct{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2)}
+.result-correct h4{color:var(--green)}
+.result-correct p{color:var(--muted)}
+.result-wrong{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2)}
+.result-wrong h4{color:var(--red)}
+.result-wrong p{color:var(--muted)}
+
+.next-btn{background:var(--accent);color:#fff;border:none;padding:.75rem 2rem;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer;margin-top:1.5rem;display:none;transition:all .2s;font-family:'Space Grotesk',sans-serif}
+.next-btn.show{display:inline-block}
+.next-btn:hover{background:#A78BFA}
+
+/* Final score */
+.final-score{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:3rem;text-align:center;display:none}
+.final-score.show{display:block;animation:fadeIn .5s ease}
+.final-score h2{font-size:2rem;color:#fff;margin-bottom:1rem}
+.final-score p{color:var(--muted);line-height:1.7;margin-bottom:2rem}
+.final-score .big-stat{font-family:'Space Grotesk',sans-serif;font-size:4rem;font-weight:700;background:linear-gradient(135deg,var(--data),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+/* Lesson section */
+.lessons{padding:6rem 2rem}
+.lessons-inner{max-width:900px;margin:0 auto;text-align:center}
+.lessons h2{font-size:2rem;color:#fff;margin-bottom:3rem}
+.lesson-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem;text-align:left}
+.lesson-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem}
+.lesson-card h3{color:#fff;font-size:1.05rem;margin-bottom:.75rem}
+.lesson-card p{color:var(--muted);line-height:1.7;font-size:.9rem}
+
+.cta{padding:6rem 2rem;text-align:center}
+.cta h2{font-size:clamp(2rem,4vw,3rem);color:#fff;margin-bottom:1rem}
+.cta p{color:var(--muted);max-width:500px;margin:0 auto 2rem;line-height:1.7}
+.cta button{background:var(--accent);color:#fff;border:none;padding:1rem 2.5rem;border-radius:10px;font-size:1.05rem;font-weight:600;cursor:pointer;font-family:'Space Grotesk',sans-serif}
+.cta .sub{color:var(--muted);font-size:.85rem;margin-top:1rem}
+
+footer{padding:3rem 2rem;text-align:center;color:var(--muted);font-size:.8rem;border-top:1px solid var(--border)}
+
+@media(max-width:600px){.choices{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<section class="hero">
+<div class="hero-badge">Interactive Challenge</div>
+<h1><span class="gut">Gut Feeling</span> vs<br><span class="ai">AI Data</span></h1>
+<p>You make management decisions every day based on instinct. But how often is your gut actually right? Play 7 scenarios and find out.</p>
+<button class="hero-btn" onclick="document.querySelector('.game-section').scrollIntoView({behavior:'smooth'})">Take the Challenge</button>
+</section>
+
+<section class="game-section">
+<div class="game-inner">
+<div class="game-header">
+<h2>The Challenge</h2>
+<p>Each scenario has a gut-instinct answer and a data-driven answer. Choose wisely.</p>
+</div>
+<div class="scoreboard">
+<div class="score-item"><div class="score-label you-l">Your Score</div><div class="score-val" id="userScore">0</div></div>
+<div class="score-item"><div class="score-label gut-l">Gut Wins</div><div class="score-val" id="gutWins">0</div></div>
+<div class="score-item"><div class="score-label data-l">Data Wins</div><div class="score-val" id="dataWins">0</div></div>
+</div>
+
+<div id="gameContainer"></div>
+<div class="final-score" id="finalScore">
+<div class="big-stat" id="finalPct">0%</div>
+<h2 id="finalTitle">Results</h2>
+<p id="finalText"></p>
+<button class="hero-btn" style="margin-top:1rem" onclick="document.querySelector('.cta').scrollIntoView({behavior:'smooth'})">See How Go2 Helps</button>
+</div>
+</div>
+</section>
+
+<section class="lessons">
+<div class="lessons-inner">
+<h2>What the Data Teaches Us</h2>
+<div class="lesson-grid">
+<div class="lesson-card"><h3>Gut is Biased</h3><p>We favor the visible over the effective. The loudest contributor, the latest worker, the busiest calendar. Data reveals what actually drives results.</p></div>
+<div class="lesson-card"><h3>Data is Nuanced</h3><p>Gut feeling gives binary answers. Data reveals gradients, patterns, and exceptions. The right answer is rarely the obvious one.</p></div>
+<div class="lesson-card"><h3>Patterns Beat Intuitions</h3><p>Go2's AI sees patterns across thousands of data points that no human could process. 42% productivity increase comes from acting on patterns, not hunches.</p></div>
+<div class="lesson-card"><h3>Gut + Data = Optimal</h3><p>The best managers use data to inform their instincts, not replace them. Go2 gives you the data. You add the human judgment. Together: 892% ROI.</p></div>
+</div>
+</div>
+</section>
+
+<section class="cta">
+<h2>Stop Guessing. Start Knowing.</h2>
+<p>Every gut decision is a coin flip. Every data-driven decision is an informed bet. Go2 turns your management from gambling to investing.</p>
+<button class="hero-btn">Start Free Trial</button>
+<p class="sub">$6/user/month. Replace guesswork with data.</p>
+</section>
+
+<footer><p>&copy; 2026 Go2. Data-driven decisions, human-led teams.</p></footer>
+
+<script>
+const scenarios = [
+{q:"Your top-performing salesperson wants to work from home 3 days/week. Your gut says in-person drives more sales.",scenario:"Sales manager reports that your #1 rep closed 40% more deals than anyone last quarter. Now they want remote flexibility. Other reps work in-office full time.",gut:"Deny it. Sales is a team sport. In-office energy drives results. If you let one go remote, everyone will want it.",data:"Approve it. Remote sales reps actually outperform by 11% due to fewer interruptions during client calls and proposal writing.",correct:"data",explain:"Go2 data across 200+ sales teams shows remote reps make 18% more client calls and close 11% more deals. The 'energy' of the office actually interrupts focused sales work."},
+{q:"Two teams are behind on a project. Your gut says the problem is the newer team.",scenario:"Project Alpha is 3 weeks behind schedule. Team A (experienced, 2yr avg tenure) and Team B (newer, 6mo avg tenure) are both involved.",gut:"Put pressure on Team B. They're newer and probably slower. Assign a senior lead to oversee their work.",data:"Check the data first. The bottleneck might not be where you think.",correct:"data",explain:"Go2 analysis reveals Team A's meeting load is 62% — they're stuck in reviews and approvals. Team B has 23% meeting load and is actually shipping faster per-person. The bottleneck is Team A's process, not Team B's experience."},
+{q:"An employee's output dropped last month. Your gut says they're slacking off.",scenario:"A previously strong performer's output metrics dropped 28% last month. They seem distracted in meetings. Their manager is concerned.",gut:"Schedule a performance conversation. Set clear expectations. Put them on a 30-day improvement plan if needed.",data:"Check their workload and context data before assuming performance issues.",correct:"data",explain:"Go2 shows this employee took on mentoring 3 new hires last month, attended 14 additional onboarding meetings, and their deep work time dropped 40%. Their individual output dropped because they were building team capacity. Net team output actually rose 15%."},
+{q:"You need to cut meeting time. Your gut says cancel all recurring meetings.",scenario:"Your company spends 42% of work hours in meetings. Productivity is suffering. You want to make a bold move.",gut:"Cancel all recurring meetings. Fresh start. If a meeting is important enough, people will reschedule it.",data:"Audit meetings by impact first. Some recurring meetings are critical. Kill the wrong ones and you lose alignment.",correct:"data",explain:"Go2's meeting audit shows 31% of meetings should be eliminated, but 22% are high-impact alignment sessions. Blanket cancellation causes a 2-week chaos period. Targeted cuts based on data improve productivity 35% without losing coordination."},
+{q:"You're deciding between hiring 2 more devs or optimizing the current team.",scenario:"Engineering is behind on the roadmap. The VP of Engineering wants 2 more senior developers. That's $400K/year.",gut:"Hire. More engineers means more output. You're behind and need to catch up. The cost is worth it.",data:"Analyze current team efficiency first. The problem might not be headcount.",correct:"data",explain:"Go2 reveals the current team spends 38% of time in code reviews (bottleneck: 2 senior devs review everything), 15% in standup/retros, and only 47% writing code. Restructuring review processes would increase effective coding time by 40% — equivalent to 2.5 new hires, at zero cost."},
+{q:"Your best engineer wants to become a manager. Your gut says great performers make great managers.",scenario:"Your lead engineer consistently delivers exceptional work. They've expressed interest in management. A team lead position just opened up.",gut:"Promote them. They've earned it. Great performers inspire others. Their technical excellence will lift the whole team.",data:"Assess management fit separately from technical performance. The skills are completely different.",correct:"data",explain:"Go2 data shows 60% of top individual contributors underperform as managers in the first year. The best engineers often have deep-focus work styles that conflict with management's interrupt-driven nature. Go2's role-fit analysis can predict management success with 84% accuracy."},
+{q:"Friday productivity seems low. Your gut says people are slacking before the weekend.",scenario:"You notice the office seems quieter on Fridays. Fewer Slack messages. Less visible activity. It feels like people are checked out.",gut:"Institute Friday standups or check-ins. Make sure people are engaged. Maybe move deadlines to Friday to create urgency.",data:"Check the actual productivity data before adding process overhead.",correct:"data",explain:"Go2 data shows Fridays have 22% MORE deep work time than Tuesday-Thursday. Fewer meetings and less Slack activity means people are actually doing focused, creative work. The 'quiet' Friday is your most productive day. Adding meetings would destroy it."}
+];
+
+let current = 0, userScore = 0, gutW = 0, dataW = 0;
+const container = document.getElementById('gameContainer');
+
+function renderScenario(i) {
+const s = scenarios[i];
+container.innerHTML = `
+<div class="scenario active" id="s${i}">
+<div class="scenario-number">Scenario ${i+1} of ${scenarios.length}</div>
+<h3>${s.q}</h3>
+<p>${s.scenario}</p>
+<div class="choices">
+<div class="choice choice-gut" onclick="choose(${i},'gut')"><div class="label">Gut Feeling</div><div class="text">${s.gut}</div></div>
+<div class="choice choice-data" onclick="choose(${i},'data')"><div class="label">Data Says</div><div class="text">${s.data}</div></div>
+</div>
+<div class="result-box" id="result${i}"></div>
+<button class="next-btn" id="next${i}" onclick="nextScenario()">Next Scenario &#8594;</button>
+</div>`;
+}
+
+function choose(i, choice) {
+const s = scenarios[i];
+const correct = choice === s.correct;
+const choices = container.querySelectorAll('.choice');
+choices.forEach(c => c.classList.add('disabled'));
+if(choice === 'gut') { choices[0].classList.add(correct?'correct':'wrong'); choices[1].classList.add(correct?'wrong':'correct'); }
+else { choices[1].classList.add(correct?'correct':'wrong'); choices[0].classList.add(correct?'wrong':'correct'); }
+if(correct) userScore++;
+if(s.correct === 'gut') gutW++; else dataW++;
+document.getElementById('userScore').textContent = userScore;
+document.getElementById('gutWins').textContent = gutW;
+document.getElementById('dataWins').textContent = dataW;
+const rb = document.getElementById('result'+i);
+rb.className = 'result-box show '+(correct?'result-correct':'result-wrong');
+rb.innerHTML = `<h4>${correct?'Correct!':'Not quite.'}</h4><p>${s.explain}</p>`;
+document.getElementById('next'+i).classList.add('show');
+}
+
+function nextScenario() {
+current++;
+if(current >= scenarios.length) { showFinal(); return; }
+renderScenario(current);
+container.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+function showFinal() {
+container.innerHTML = '';
+const pct = Math.round((userScore/scenarios.length)*100);
+const fs = document.getElementById('finalScore');
+fs.classList.add('show');
+document.getElementById('finalPct').textContent = pct+'%';
+if(pct >= 80) { document.getElementById('finalTitle').textContent = 'Data-Driven Leader'; document.getElementById('finalText').textContent = `You got ${userScore}/${scenarios.length} right. Your instincts align with data. Imagine what you could do with Go2's real-time insights backing every decision.`; }
+else if(pct >= 50) { document.getElementById('finalTitle').textContent = 'Mixed Signals'; document.getElementById('finalText').textContent = `You got ${userScore}/${scenarios.length} right. Your gut is sometimes right, sometimes costly. Go2 fills the gaps between instinct and reality.`; }
+else { document.getElementById('finalTitle').textContent = 'Gut-Driven (and it shows)'; document.getElementById('finalText').textContent = `You got ${userScore}/${scenarios.length} right. Don't worry — most managers score similarly. That's exactly why Go2 exists. Replace guesswork with a 42% productivity increase.`; }
+fs.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+renderScenario(0);
+</script>
+</body>
+</html>

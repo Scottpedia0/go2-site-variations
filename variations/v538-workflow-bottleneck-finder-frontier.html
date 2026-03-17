@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go2 | AI Workflow Bottleneck Finder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Core Brand Colors */
+            --primary: #2563EB;
+            --primary-dark: #1E40AF;
+            --primary-light: #EFF6FF;
+            --secondary: #10B981;
+            
+            /* Status Colors */
+            --bottleneck: #EF4444;
+            --bottleneck-light: #FEF2F2;
+            --efficient: #10B981;
+            --neutral: #94A3B8;
+            
+            /* Surface & Text */
+            --bg-color: #F8FAFC;
+            --surface: #FFFFFF;
+            --text-main: #0F172A;
+            --text-muted: #64748B;
+            --border: #E2E8F0;
+            
+            /* Shadows & Transitions */
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* --- Header & Typography --- */
+        header {
+            background-color: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .logo span {
+            color: var(--text-main);
+        }
+
+        .tagline {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            background: var(--primary-light);
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+        }
+
+        /* --- Main Layout --- */
+        main {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .intro {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto 1rem;
+        }
+
+        .intro h1 {
+            font-size: 2.25rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+        }
+
+        .intro p {
+            color: var(--text-muted);
+            font-size: 1.125rem;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 250px 1fr 300px;
+            gap: 1.5rem;
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+        }
+
+        /* --- Controls Panel --- */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            border-right: 1px solid var(--border);
+            padding-right: 1.5rem;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        select, button.btn-outline {
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            background: var(--surface);
+            font-family: inherit;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .legend {
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 4px;
+            border-radius: 2px;
+        }
+
+        .legend-color.thick { height: 8px; background: var(--neutral); }
+        .legend-color.thin { height: 2px; background: var(--neutral); }
+        .legend-color.red { background: var(--bottleneck); height: 6px; }
+
+        /* --- Visualization Area (The Setup) --- */
+        .viz-container {
+            position: relative;
+            min-height: 500px;
+            overflow-x: auto;
+            background: radial-gradient(#e2e8f0 1px, transparent 1px);
+            background-size: 20px 20px;
+            border-radius: 0.5rem;
+        }
+
+        .diagram-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            min-width: 600px; /* Ensure it doesn't squash too much */
+            display: flex;
+            justify-content: space-between;
+            padding: 2rem 4rem;
+        }
+
+        /* SVG Overlay for Connections */
+        #connections-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Let clicks pass through to paths */
+            z-index: 10;
+        }
+
+        .flow-path {
+            fill: none;
+            stroke-linecap: round;
+            pointer-events: auto; /* Make paths clickable */
+            cursor: pointer;
+            transition: stroke 0.3s ease, opacity 0.3s ease;
+        }
+        
+        .flow-path:hover {
+            opacity: 0.8;
+            filter: drop-shadow(0 0 4px rgba(0,0,0,0.2));
+        }
+
+        .flow-path.bottleneck {
+            stroke: var(--bottleneck);
+            animation: flowDash 20s linear infinite;
+            stroke-dasharray: 10 5;
+        }
+
+        .flow-path.normal {
+            stroke: #CBD5E1;
+        }
+
+        @keyframes flowDash {
+            to { stroke-dashoffset: -1000; }
+        }
+
+        /* HTML Nodes */
+        .stage-column {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 3rem;
+            z-index: 20; /* Above SVG */
+            position: relative;
+            width: 160px;
+        }
+
+        .col-title {
+            position: absolute;
+            top: -20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .node {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow-sm);
+            text-align: center;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .node:hover {
+            box-shadow: var(--shadow-md);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .node .time-metric {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* --- Insights Panel --- */
+        .insights {
+            border-left: 1px solid var(--border);
+            padding-left: 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .insights h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .insight-card {
+            background: var(--primary-light);
+            border: 1px solid #BFDBFE;
+            border-radius: 0.5rem;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            display: none; /* Hidden by default */
+            animation: fadeIn 0.3s ease;
+        }
+
+        .insight-card.active {
+            display: block;
+        }
+
+        .insight-card.bottleneck-alert {
+            background: var(--bottleneck-light);
+            border-color: #FECACA;
+        }
+
+        .ic-header {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--primary-dark);
+        }
+        
+        .bottleneck-alert .ic-header {
+            color: #B91C1C;
+        }
+
+        .ic-metric {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .ic-desc {
+            font-size: 0.875rem;
+            color: var(--text-main);
+            margin-bottom: 1rem;
+        }
+
+        .ai-coach {
+            background: var(--surface);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        .ai-coach::before {
+            content: "✨ AI Coaching Insight";
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.05em;
+        }
+        
+        .ai-coach p {
+            font-size: 0.875rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            stroke: var(--neutral);
+            margin-bottom: 1rem;
+        }
+
+        /* --- Footer Stats --- */
+        .bottom-stats {
+            background: var(--text-main);
+            color: white;
+            padding: 1.5rem 2rem;
+            margin-top: auto;
+        }
+
+        .stats-grid {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            text-align: center;
+        }
+
+        .stat-item h3 {
+            font-size: 2.5rem;
+            color: var(--secondary);
+            margin-bottom: 0.25rem;
+            line-height: 1;
+        }
+
+        .stat-item p {
+            font-size: 0.875rem;
+            color: #94A3B8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            .controls {
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                padding-right: 0;
+                padding-bottom: 1.5rem;
+                flex-direction: row;
+                flex-wrap: wrap;
+                align-items: flex-end;
+            }
+            .legend {
+                border-top: none;
+                padding-top: 0;
+                margin-top: 0;
+                flex-direction: row;
+                margin-left: auto;
+            }
+            .insights {
+                border-left: none;
+                border-top: 1px solid var(--border);
+                padding-left: 0;
+                padding-top: 1.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            .diagram-wrapper {
+                padding: 1rem;
+            }
+            .stage-column {
+                width: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+            </svg>
+            Go2<span>Platform</span>
+        </div>
+        <div class="tagline">AI Productivity Coaching</div>
+    </header>
+
+    <main>
+        <div class="intro">
+            <h1>Workflow Bottleneck Finder</h1>
+            <p>Discover how time actually flows through your team. We identify friction points not to monitor, but to coach teams toward healthier, more efficient work habits.</p>
+        </div>
+
+        <div class="dashboard">
+            <!-- Left Controls -->
+            <div class="controls">
+                <div class="control-group">
+                    <label for="dept-select">Analyze Department</label>
+                    <select id="dept-select">
+                        <option value="sales">Sales & Revenue</option>
+                        <option value="engineering">Engineering</option>
+                        <option value="support">Customer Support</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="timeframe">Timeframe</label>
+                    <select id="timeframe">
+                        <option>Last 30 Days</option>
+                        <option>Last Quarter</option>
+                    </select>
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color thick"></div>
+                        <span>High Time Investment</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color thin"></div>
+                        <span>Efficient Process</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color red"></div>
+                        <span>Identified Bottleneck</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Viz -->
+            <div class="viz-container">
+                <div class="diagram-wrapper" id="diagram-wrapper">
+                    <svg id="connections-svg"></svg>
+                    
+                    <!-- Nodes will be injected here by JS -->
+                    <div class="stage-column" id="col-1">
+                        <div class="col-title">Input / Comms</div>
+                    </div>
+                    <div class="stage-column" id="col-2">
+                        <div class="col-title">Core Work</div>
+                    </div>
+                    <div class="stage-column" id="col-3">
+                        <div class="col-title">Admin / Output</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Insights -->
+            <div class="insights">
+                <h2>Analysis Panel</h2>
+                
+                <div id="empty-insight" class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <p>Click on any flow line or bottleneck (red) to view AI coaching insights and recommendations.</p>
+                </div>
+
+                <div id="insight-content">
+                    <!-- Dynamic Insight Card inserted here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="bottom-stats">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <h3>42%</h3>
+                <p>Avg. Productivity Increase</p>
+            </div>
+            <div class="stat-item">
+                <h3>15.2h</h3>
+                <p>Saved per week / employee</p>
+            </div>
+            <div class="stat-item">
+                <h3>892%</h3>
+                <p>First Year ROI</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Mock Data Structure ---
+        const workflowData = {
+            sales: {
+                nodes: [
+                    { id: 's1', label: 'Email Outreach', col: 1, time: '12h/wk' },
+                    { id: 's2', label: 'Internal Syncs', col: 1, time: '8h/wk' },
+                    { id: 's3', label: 'Client Meetings', col: 2, time: '15h/wk' },
+                    { id: 's4', label: 'Proposal Gen', col: 2, time: '10h/wk' },
+                    { id: 's5', label: 'CRM Data Entry', col: 3, time: '14h/wk' },
+                    { id: 's6', label: 'Closing / Docs', col: 3, time: '5h/wk' }
+                ],
+                links: [
+                    { source: 's1', target: 's3', value: 4, label: 'Outreach to Meetings' },
+                    { source: 's2', target: 's4', value: 3, label: 'Sync to Drafts' },
+                    { source: 's3', target: 's5', value: 12, isBottleneck: true, label: 'Post-Meeting CRM Update', 
+                      insight: {
+                          title: "Friction Point: Manual CRM Updates",
+                          metric: "14 hours/week spent on data entry",
+                          desc: "Sales reps are spending excessive time manually logging meeting notes and updating deal stages in Salesforce after client calls.",
+                          coach: "Implement Go2's AI meeting summarizer to auto-populate CRM fields. Projected to recover 9 hours per week per rep for active selling."
+                      }
+                    },
+                    { source: 's4', target: 's6', value: 5, label: 'Proposals to Close' },
+                    { source: 's3', target: 's4', value: 6, label: 'Meeting to Proposal' }
+                ]
+            },
+            engineering: {
+                nodes: [
+                    { id: 'e1', label: 'Slack Triage', col: 1, time: '9h/wk' },
+                    { id: 'e2', label: 'Standups/Planning', col: 1, time: '12h/wk' },
+                    { id: 'e3', label: 'Deep Work (IDE)', col: 2, time: '22h/wk' },
+                    { id: 'e4', label: 'Code Review', col: 2, time: '8h/wk' },
+                    { id: 'e5', label: 'Jira Updates', col: 3, time: '5h/wk' },
+                    { id: 'e6', label: 'Deployments', col: 3, time: '4h/wk' }
+                ],
+                links: [
+                    { source: 'e1', target: 'e3', value: 4, label: 'Chat to Code' },
+                    { source: 'e2', target: 'e3', value: 10, isBottleneck: true, label: 'Context Switching via Meetings',
+                      insight: {
+                          title: "Friction Point: Meeting Fragmentation",
+                          metric: "45% of focus blocks interrupted",
+                          desc: "Engineers have fragmented schedules due to ad-hoc planning meetings, preventing sustained 'Deep Work' states required for complex problem solving.",
+                          coach: "Institute 'No Meeting Tuesdays & Thursdays'. Consolidate planning into asynchronous updates. Expected velocity increase: +22%."
+                      }
+                    },
+                    { source: 'e3', target: 'e4', value: 8, label: 'Code to PR' },
+                    { source: 'e4', target: 'e6', value: 4, label: 'Review to Deploy' },
+                    { source: 'e3', target: 'e5', value: 3, label: 'Code to Ticket Update' }
+                ]
+            },
+            support: {
+                nodes: [
+                    { id: 'c1', label: 'Ticket Triage', col: 1, time: '15h/wk' },
+                    { id: 'c2', label: 'Knowledge Base', col: 2, time: '10h/wk' },
+                    { id: 'c3', label: 'Customer Comms', col: 2, time: '20h/wk' },
+                    { id: 'c4', label: 'Escalations', col: 3, time: '8h/wk' },
+                    { id: 'c5', label: 'Tagging/Filing', col: 3, time: '12h/wk' }
+                ],
+                links: [
+                    { source: 'c1', target: 'c2', value: 8, label: 'Triage to Research' },
+                    { source: 'c1', target: 'c3', value: 12, label: 'Direct Responses' },
+                    { source: 'c2', target: 'c3', value: 6, label: 'Research to Reply' },
+                    { source: 'c3', target: 'c5', value: 10, isBottleneck: true, label: 'Post-Resolution Admin',
+                      insight: {
+                          title: "Friction Point: Redundant Ticket Tagging",
+                          metric: "12 hours/week on categorization",
+                          desc: "Agents spend significant time manually applying tags and categorizing tickets after the issue is resolved.",
+                          coach: "Enable Go2 Auto-Tagging based on conversation sentiment and keywords. Will save approx 1.5 mins per ticket, improving SLA response times."
+                      }
+                    },
+                    { source: 'c3', target: 'c4', value: 4, label: 'Reply to Escalation' }
+                ]
+            }
+        };
+
+        // --- DOM Elements ---
+        const svgContainer = document.getElementById('connections-svg');
+        const deptSelect = document.getElementById('dept-select');
+        const insightContent = document.getElementById('insight-content');
+        const emptyInsight = document.getElementById('empty-insight');
+
+        // --- Core Logic ---
+
+        function initDiagram() {
+            loadDepartment(deptSelect.value);
+            
+            // Redraw lines on window resize
+            window.addEventListener('resize', () => {
+                requestAnimationFrame(() => drawConnections(workflowData[deptSelect.value]));
+            });
+
+            deptSelect.addEventListener('change', (e) => {
+                loadDepartment(e.target.value);
+                resetInsights();
+            });
+        }
+
+        function loadDepartment(deptKey) {
+            const data = workflowData[deptKey];
+            
+            // 1. Clear existing nodes (except titles)
+            [1, 2, 3].forEach(colNum => {
+                const col = document.getElementById(`col-${colNum}`);
+                const title = col.querySelector('.col-title');
+                col.innerHTML = '';
+                col.appendChild(title);
+            });
+
+            // 2. Render Nodes
+            data.nodes.forEach(node => {
+                const nodeEl = document.createElement('div');
+                nodeEl.className = 'node';
+                nodeEl.id = `node-${node.id}`;
+                nodeEl.innerHTML = `
+                    ${node.label}
+                    <span class="time-metric">${node.time}</span>
+                `;
+                document.getElementById(`col-${node.col}`).appendChild(nodeEl);
+            });
+
+            // 3. Draw Connections (need a slight delay for DOM to calculate layout)
+            setTimeout(() => drawConnections(data), 50);
+        }
+
+        function drawConnections(data) {
+            svgContainer.innerHTML = ''; // Clear SVG
+            const wrapperRect = document.getElementById('diagram-wrapper').getBoundingClientRect();
+
+            data.links.forEach((link, index) => {
+                const sourceEl = document.getElementById(`node-${link.source}`);
+                const targetEl = document.getElementById(`node-${link.target}`);
+
+                if (!sourceEl || !targetEl) return;
+
+                const sRect = sourceEl.getBoundingClientRect();
+                const tRect = targetEl.getBoundingClientRect();
+
+                // Calculate relative coordinates within the SVG container
+                // Start from right middle of source, end at left middle of target
+                const startX = (sRect.right - wrapperRect.left);
+                const startY = (sRect.top - wrapperRect.top) + (sRect.height / 2);
+                
+                const endX = (tRect.left - wrapperRect.left);
+                const endY = (tRect.top - wrapperRect.top) + (tRect.height / 2);
+
+                // Create SVG Path (Cubic Bezier)
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                
+                // Adjust curvature based on distance
+                const curveOffset = Math.max(50, (endX - startX) * 0.5);
+                const d = `M ${startX} ${startY} C ${startX + curveOffset} ${startY}, ${endX - curveOffset} ${endY}, ${endX} ${endY}`;
+                
+                path.setAttribute('d', d);
+                
+                // Styling based on data
+                const baseWidth = Math.max(2, link.value); // Map value to stroke-width
+                path.setAttribute('stroke-width', baseWidth);
+                path.setAttribute('class', `flow-path ${link.isBottleneck ? 'bottleneck' : 'normal'}`);
+                
+                // Interaction
+                path.addEventListener('click', () => handleFlowClick(link));
+
+                svgContainer.appendChild(path);
+            });
+        }
+
+        function handleFlowClick(link) {
+            emptyInsight.style.display = 'none';
+            
+            // If it's a normal link with no specific insight, show generic info
+            if (!link.insight) {
+                insightContent.innerHTML = `
+                    <div class="insight-card active">
+                        <div class="ic-header">Standard Workflow Flow</div>
+                        <div class="ic-metric">${link.label}</div>
+                        <div class="ic-desc">Relative time volume: ${link.value} units. This flow appears to be operating within normal efficiency parameters based on team benchmarks.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Show Bottleneck Insight
+            const insight = link.insight;
+            insightContent.innerHTML = `
+                <div class="insight-card bottleneck-alert active">
+                    <div class="ic-header">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline; vertical-align:middle; margin-right:4px;">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                        ${insight.title}
+                    </div>
+                    <div class="ic-metric">${insight.metric}</div>
+                    <div class="ic-desc">${insight.desc}</div>
+                    <div class="ai-coach">
+                        <p>${insight.coach}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function resetInsights() {
+            emptyInsight.style.display = 'block';
+            insightContent.innerHTML = '';
+        }
+
+        // Run on load
+        window.addEventListener('DOMContentLoaded', initDiagram);
+
+    </script>
+</body>
+</html>

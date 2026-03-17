@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 Pricing — Interactive Calculator & Plan Comparison | Go2.io</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; color: #1a1a2e; background: #f9fafb; line-height: 1.6; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(249,250,251,0.97); backdrop-filter: blur(20px); border-bottom: 1px solid #e5e7eb; padding: 14px 0; }
+nav .container { display: flex; justify-content: space-between; align-items: center; }
+.logo { font-size: 24px; font-weight: 800; color: #4f46e5; }
+.logo span { color: #1a1a2e; }
+.nav-links { display: flex; align-items: center; gap: 24px; }
+.nav-links a { color: #666; text-decoration: none; font-size: 13px; font-weight: 500; }
+.nav-cta { background: #4f46e5 !important; color: #fff !important; padding: 8px 20px !important; border-radius: 8px !important; }
+
+.hero { padding: 120px 0 40px; text-align: center; }
+.hero h1 { font-size: 44px; font-weight: 800; margin-bottom: 12px; }
+.hero p { font-size: 18px; color: #666; margin-bottom: 8px; }
+.billing-toggle { display: inline-flex; background: #e5e7eb; border-radius: 8px; padding: 4px; margin-top: 16px; }
+.billing-btn { padding: 8px 20px; border-radius: 6px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; background: transparent; color: #666; transition: all 0.2s; }
+.billing-btn.active { background: #fff; color: #1a1a2e; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.save-badge { font-size: 12px; color: #059669; font-weight: 700; margin-left: 4px; }
+
+.plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin: 40px 0; }
+.plan { background: #fff; border: 2px solid #e5e7eb; border-radius: 16px; padding: 32px; position: relative; transition: all 0.3s; }
+.plan:hover { border-color: #c7d2fe; box-shadow: 0 8px 32px rgba(79,70,229,0.08); }
+.plan.featured { border-color: #4f46e5; }
+.plan.featured::before { content: 'Most Popular'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #4f46e5; color: #fff; padding: 4px 16px; border-radius: 12px; font-size: 12px; font-weight: 700; }
+.plan-name { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.plan-desc { font-size: 13px; color: #888; margin-bottom: 16px; }
+.plan-price { font-size: 48px; font-weight: 800; color: #1a1a2e; }
+.plan-price span { font-size: 16px; color: #888; font-weight: 400; }
+.plan-billing { font-size: 13px; color: #888; margin-bottom: 20px; }
+.plan-features { list-style: none; margin-bottom: 24px; }
+.plan-features li { padding: 6px 0; font-size: 14px; color: #555; display: flex; gap: 8px; align-items: flex-start; }
+.plan-features li::before { content: '\2713'; color: #4f46e5; font-weight: 700; flex-shrink: 0; }
+.plan-btn { display: block; width: 100%; text-align: center; padding: 14px; border-radius: 10px; font-weight: 600; font-size: 15px; text-decoration: none; transition: all 0.3s; border: none; cursor: pointer; }
+.plan-btn.primary { background: #4f46e5; color: #fff; }
+.plan-btn.primary:hover { background: #4338ca; }
+.plan-btn.secondary { background: #f5f3ff; color: #4f46e5; border: 2px solid #e0e7ff; }
+.plan-btn.secondary:hover { background: #e0e7ff; }
+
+.calculator { padding: 60px 0; }
+.calc-card { background: #fff; border: 2px solid #e5e7eb; border-radius: 20px; padding: 40px; max-width: 800px; margin: 0 auto; }
+.calc-card h2 { font-size: 28px; font-weight: 800; text-align: center; margin-bottom: 8px; }
+.calc-card > p { text-align: center; color: #888; margin-bottom: 32px; }
+.slider-group { margin-bottom: 28px; }
+.slider-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.slider-header label { font-weight: 600; font-size: 15px; }
+.slider-header .val { font-weight: 700; color: #4f46e5; font-size: 15px; }
+input[type="range"] { width: 100%; height: 8px; -webkit-appearance: none; background: #e0e7ff; border-radius: 4px; outline: none; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; background: #4f46e5; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 8px rgba(79,70,229,0.3); }
+.plan-select { display: flex; gap: 8px; margin-bottom: 28px; }
+.plan-option { flex: 1; padding: 12px; border: 2px solid #e5e7eb; border-radius: 10px; text-align: center; cursor: pointer; transition: all 0.2s; }
+.plan-option.active { border-color: #4f46e5; background: #f5f3ff; }
+.plan-option .name { font-weight: 700; font-size: 14px; }
+.plan-option .price { font-size: 12px; color: #888; }
+
+.results-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 32px; }
+.result-card { background: #f5f3ff; border-radius: 12px; padding: 20px; text-align: center; }
+.result-card .num { font-size: 32px; font-weight: 800; color: #4f46e5; }
+.result-card .lbl { font-size: 13px; color: #888; margin-top: 4px; }
+.result-card.highlight { background: #4f46e5; }
+.result-card.highlight .num { color: #fff; }
+.result-card.highlight .lbl { color: rgba(255,255,255,0.7); }
+
+.roi-bar { margin-top: 24px; }
+.roi-bar h4 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.roi-track { height: 32px; background: #e0e7ff; border-radius: 8px; overflow: hidden; position: relative; }
+.roi-fill { height: 100%; background: linear-gradient(90deg, #4f46e5, #7c3aed); border-radius: 8px; transition: width 0.5s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 12px; }
+.roi-fill span { color: #fff; font-weight: 700; font-size: 14px; }
+.roi-labels { display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; color: #888; }
+
+.comparison { padding: 60px 0; }
+.comp-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb; }
+.comp-table th { padding: 14px 16px; text-align: left; font-size: 13px; font-weight: 700; background: #f9fafb; border-bottom: 1px solid #e5e7eb; }
+.comp-table td { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+.comp-table td:first-child { font-weight: 600; }
+.check { color: #4f46e5; }
+.dash { color: #d1d5db; }
+
+.faq { padding: 60px 0; }
+.faq h2 { font-size: 28px; font-weight: 800; text-align: center; margin-bottom: 32px; }
+.faq-item { max-width: 700px; margin: 0 auto 12px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; }
+.faq-q { padding: 16px 20px; font-weight: 600; font-size: 15px; cursor: pointer; display: flex; justify-content: space-between; }
+.faq-a { padding: 0 20px 16px; font-size: 14px; color: #666; display: none; }
+.faq-item.open .faq-a { display: block; }
+
+.cta { padding: 60px 0; text-align: center; background: #fff; border-top: 1px solid #e5e7eb; }
+.cta h2 { font-size: 28px; font-weight: 800; margin-bottom: 12px; }
+.cta p { color: #666; margin-bottom: 24px; }
+.btn-primary { background: #4f46e5; color: #fff; padding: 14px 32px; border-radius: 10px; font-weight: 600; text-decoration: none; display: inline-block; }
+
+footer { padding: 32px 0; text-align: center; color: #999; font-size: 13px; }
+
+@media (max-width: 768px) {
+  .plans { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 32px; }
+  .results-grid { grid-template-columns: 1fr; }
+  .plan-select { flex-direction: column; }
+  .nav-links { display: none; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <div class="logo">Go2<span>.io</span></div>
+    <div class="nav-links">
+      <a href="#plans-section">Plans</a>
+      <a href="#calc">Calculator</a>
+      <a href="#compare">Compare</a>
+      <a href="#" class="nav-cta">Start Free Trial</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="container">
+    <h1>Simple, Transparent Pricing</h1>
+    <p>No hidden fees. No per-feature charges. Cancel anytime.</p>
+    <div class="billing-toggle">
+      <button class="billing-btn active" id="btn-monthly" onclick="setBilling('monthly')">Monthly</button>
+      <button class="billing-btn" id="btn-annual" onclick="setBilling('annual')">Annual <span class="save-badge">Save 20%</span></button>
+    </div>
+  </div>
+</section>
+
+<section id="plans-section">
+  <div class="container">
+    <div class="plans">
+      <div class="plan">
+        <div class="plan-name">Starter</div>
+        <div class="plan-desc">For small teams getting started</div>
+        <div class="plan-price" id="price-starter">$6<span>/user/mo</span></div>
+        <div class="plan-billing" id="billing-starter">Billed monthly</div>
+        <ul class="plan-features">
+          <li>Up to 25 users</li>
+          <li>Individual productivity dashboards</li>
+          <li>AI coaching recommendations</li>
+          <li>Basic team analytics</li>
+          <li>Email support</li>
+          <li>14-day free trial</li>
+        </ul>
+        <button class="plan-btn secondary">Start Free Trial</button>
+      </div>
+      <div class="plan featured">
+        <div class="plan-name">Business</div>
+        <div class="plan-desc">For growing companies</div>
+        <div class="plan-price" id="price-business">$10<span>/user/mo</span></div>
+        <div class="plan-billing" id="billing-business">Billed monthly</div>
+        <ul class="plan-features">
+          <li>Unlimited users</li>
+          <li>Everything in Starter</li>
+          <li>Team & department analytics</li>
+          <li>Manager coaching dashboard</li>
+          <li>SSO (Google, Okta, Azure AD)</li>
+          <li>API access</li>
+          <li>Priority support</li>
+        </ul>
+        <button class="plan-btn primary">Start Free Trial</button>
+      </div>
+      <div class="plan">
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-desc">For large organizations</div>
+        <div class="plan-price" id="price-enterprise">$12<span>/user/mo</span></div>
+        <div class="plan-billing" id="billing-enterprise">Billed monthly</div>
+        <ul class="plan-features">
+          <li>Unlimited users</li>
+          <li>Everything in Business</li>
+          <li>SCIM provisioning</li>
+          <li>Custom data retention</li>
+          <li>Data residency (US/EU/APAC)</li>
+          <li>Dedicated CSM</li>
+          <li>SLA guarantee (99.99%)</li>
+          <li>BAA for HIPAA</li>
+        </ul>
+        <button class="plan-btn secondary">Contact Sales</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="calculator" id="calc">
+  <div class="container">
+    <div class="calc-card">
+      <h2>ROI Calculator</h2>
+      <p>See exactly what Go2 costs and what you'll save. Adjust the sliders to match your company.</p>
+
+      <div class="slider-group">
+        <div class="slider-header"><label>Team Size</label><span class="val" id="v-team">50 people</span></div>
+        <input type="range" id="s-team" min="5" max="500" value="50">
+      </div>
+      <div class="slider-group">
+        <div class="slider-header"><label>Avg. Salary (Fully Loaded)</label><span class="val" id="v-salary">$75,000/yr</span></div>
+        <input type="range" id="s-salary" min="30000" max="200000" value="75000" step="5000">
+      </div>
+
+      <div class="plan-select">
+        <div class="plan-option active" data-plan="starter" onclick="selectPlan('starter')"><div class="name">Starter</div><div class="price" id="po-starter">$6/user/mo</div></div>
+        <div class="plan-option" data-plan="business" onclick="selectPlan('business')"><div class="name">Business</div><div class="price" id="po-business">$10/user/mo</div></div>
+        <div class="plan-option" data-plan="enterprise" onclick="selectPlan('enterprise')"><div class="name">Enterprise</div><div class="price" id="po-enterprise">$12/user/mo</div></div>
+      </div>
+
+      <div class="results-grid">
+        <div class="result-card"><div class="num" id="r-monthly">$300</div><div class="lbl">Monthly Cost</div></div>
+        <div class="result-card"><div class="num" id="r-annual">$3,600</div><div class="lbl">Annual Cost</div></div>
+        <div class="result-card"><div class="num" id="r-savings">$1.4M</div><div class="lbl">Projected Annual Savings</div></div>
+        <div class="result-card highlight"><div class="num" id="r-roi">389x</div><div class="lbl">Return on Investment</div></div>
+      </div>
+
+      <div class="roi-bar">
+        <h4>Payback Period</h4>
+        <div class="roi-track"><div class="roi-fill" id="roi-fill" style="width:5%"><span id="roi-days">2 days</span></div></div>
+        <div class="roi-labels"><span>Day 1</span><span>1 month</span><span>3 months</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="comparison" id="compare">
+  <div class="container">
+    <h2 style="font-size:28px;font-weight:800;text-align:center;margin-bottom:24px;">Plan Comparison</h2>
+    <table class="comp-table">
+      <thead><tr><th>Feature</th><th>Starter</th><th>Business</th><th>Enterprise</th></tr></thead>
+      <tbody>
+        <tr><td>Users</td><td>Up to 25</td><td>Unlimited</td><td>Unlimited</td></tr>
+        <tr><td>Individual Dashboards</td><td class="check">&#10003;</td><td class="check">&#10003;</td><td class="check">&#10003;</td></tr>
+        <tr><td>AI Coaching</td><td class="check">&#10003;</td><td class="check">&#10003;</td><td class="check">&#10003;</td></tr>
+        <tr><td>Team Analytics</td><td>Basic</td><td class="check">&#10003; Advanced</td><td class="check">&#10003; Advanced</td></tr>
+        <tr><td>Manager Dashboard</td><td class="dash">&mdash;</td><td class="check">&#10003;</td><td class="check">&#10003;</td></tr>
+        <tr><td>SSO</td><td class="dash">&mdash;</td><td class="check">&#10003;</td><td class="check">&#10003;</td></tr>
+        <tr><td>SCIM Provisioning</td><td class="dash">&mdash;</td><td class="dash">&mdash;</td><td class="check">&#10003;</td></tr>
+        <tr><td>API Access</td><td class="dash">&mdash;</td><td class="check">&#10003;</td><td class="check">&#10003;</td></tr>
+        <tr><td>Data Residency</td><td>US only</td><td>US only</td><td>US/EU/APAC</td></tr>
+        <tr><td>SLA</td><td>99.9%</td><td>99.95%</td><td>99.99%</td></tr>
+        <tr><td>Support</td><td>Email</td><td>Priority</td><td>Dedicated CSM</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="faq">
+  <div class="container">
+    <h2>Pricing FAQ</h2>
+    <div class="faq-item"><div class="faq-q">Is there really a free trial?<span>+</span></div><div class="faq-a">Yes. 14 days, full features, no credit card required. We'll even give you a 1-week extension if you need more time to evaluate.</div></div>
+    <div class="faq-item"><div class="faq-q">What happens if I go over 25 users on Starter?<span>+</span></div><div class="faq-a">We'll let you know and help you upgrade to Business. No surprise charges, no service interruption.</div></div>
+    <div class="faq-item"><div class="faq-q">Do you offer nonprofit discounts?<span>+</span></div><div class="faq-a">Yes! 50% off any plan for registered nonprofits. Free for organizations under 10 people.</div></div>
+    <div class="faq-item"><div class="faq-q">Can I switch plans anytime?<span>+</span></div><div class="faq-a">Upgrade instantly, downgrade at end of billing cycle. Pro-rated credits applied automatically.</div></div>
+    <div class="faq-item"><div class="faq-q">Do you offer volume discounts?<span>+</span></div><div class="faq-a">For organizations over 200 users, contact our sales team for custom pricing.</div></div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="container">
+    <h2>Start Your Free Trial Today</h2>
+    <p>14 days, full features. No credit card required.</p>
+    <a href="#" class="btn-primary">Start Free Trial</a>
+  </div>
+</section>
+
+<footer><div class="container">&copy; 2026 Go2.io</div></footer>
+
+<script>
+const prices = { starter: {m:6,a:4.80}, business: {m:10,a:8}, enterprise: {m:12,a:9.60} };
+let billing = 'monthly';
+let selectedPlan = 'starter';
+
+function setBilling(b) {
+  billing = b;
+  document.getElementById('btn-monthly').classList.toggle('active', b==='monthly');
+  document.getElementById('btn-annual').classList.toggle('active', b==='annual');
+  const k = b==='monthly'?'m':'a';
+  document.getElementById('price-starter').innerHTML = '$'+prices.starter[k]+'<span>/user/mo</span>';
+  document.getElementById('price-business').innerHTML = '$'+prices.business[k]+'<span>/user/mo</span>';
+  document.getElementById('price-enterprise').innerHTML = '$'+prices.enterprise[k]+'<span>/user/mo</span>';
+  const bl = b==='monthly'?'Billed monthly':'Billed annually';
+  document.getElementById('billing-starter').textContent = bl;
+  document.getElementById('billing-business').textContent = bl;
+  document.getElementById('billing-enterprise').textContent = bl;
+  updatePlanOptions(); calcROI();
+}
+function updatePlanOptions() {
+  const k = billing==='monthly'?'m':'a';
+  document.getElementById('po-starter').textContent = '$'+prices.starter[k]+'/user/mo';
+  document.getElementById('po-business').textContent = '$'+prices.business[k]+'/user/mo';
+  document.getElementById('po-enterprise').textContent = '$'+prices.enterprise[k]+'/user/mo';
+}
+function selectPlan(p) {
+  selectedPlan = p;
+  document.querySelectorAll('.plan-option').forEach(el => el.classList.toggle('active', el.dataset.plan===p));
+  calcROI();
+}
+function calcROI() {
+  const team = +document.getElementById('s-team').value;
+  const salary = +document.getElementById('s-salary').value;
+  document.getElementById('v-team').textContent = team + ' people';
+  document.getElementById('v-salary').textContent = '$' + (salary/1000).toFixed(0) + ',000/yr';
+  const k = billing==='monthly'?'m':'a';
+  const ppu = prices[selectedPlan][k];
+  const monthly = team * ppu;
+  const annual = monthly * 12;
+  const hourlyRate = salary / 2080;
+  const hoursSaved = team * 15.2 * 50;
+  const savings = hoursSaved * hourlyRate;
+  const roi = Math.round(savings / annual);
+  const payback = Math.max(1, Math.round(annual / (savings/365)));
+  document.getElementById('r-monthly').textContent = '$' + monthly.toLocaleString();
+  document.getElementById('r-annual').textContent = '$' + annual.toLocaleString();
+  document.getElementById('r-savings').textContent = savings >= 1000000 ? '$' + (savings/1000000).toFixed(1) + 'M' : '$' + Math.round(savings/1000) + 'K';
+  document.getElementById('r-roi').textContent = roi + 'x';
+  const pct = Math.min(Math.max(payback / 90 * 100, 3), 100);
+  document.getElementById('roi-fill').style.width = pct + '%';
+  document.getElementById('roi-days').textContent = payback + ' days';
+}
+document.getElementById('s-team').addEventListener('input', calcROI);
+document.getElementById('s-salary').addEventListener('input', calcROI);
+calcROI();
+document.querySelectorAll('.faq-item').forEach(i => i.querySelector('.faq-q').addEventListener('click', () => i.classList.toggle('open')));
+</script>
+</body>
+</html>

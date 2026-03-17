@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Real-Time Dashboard | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0b0d17;color:#e0e0f0;min-height:100vh}
+.dashboard{max-width:1200px;margin:0 auto;padding:1.5rem}
+.dash-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem}
+.dash-brand{display:flex;align-items:center;gap:.75rem}
+.dash-brand .logo{font-size:1.3rem;font-weight:800;color:#6c63ff}
+.dash-brand .divider{width:1px;height:24px;background:rgba(255,255,255,.1)}
+.dash-brand .title{font-size:.9rem;color:#888}
+.dash-time{font-size:.85rem;color:#888;display:flex;align-items:center;gap:.75rem}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#10b981;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem}
+.kpi{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:1.25rem}
+.kpi .label{font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem}
+.kpi .value{font-size:2rem;font-weight:800;display:flex;align-items:baseline;gap:.5rem}
+.kpi .change{font-size:.75rem;font-weight:600;padding:.15rem .5rem;border-radius:4px}
+.change.up{background:rgba(16,185,129,.12);color:#10b981}
+.change.down{background:rgba(239,68,68,.12);color:#ef4444}
+.sparkline{margin-top:.75rem;height:30px}
+.main-grid{display:grid;grid-template-columns:2fr 1fr;gap:1.5rem;margin-bottom:1.5rem}
+@media(max-width:900px){.main-grid{grid-template-columns:1fr}}
+.card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:1.5rem}
+.card-title{font-size:.85rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center}
+.card-title .tag{font-size:.7rem;padding:.2rem .6rem;border-radius:4px;background:rgba(108,99,255,.12);color:#6c63ff}
+.heatmap{display:grid;grid-template-columns:repeat(24,1fr);gap:2px}
+.heatmap-cell{aspect-ratio:1;border-radius:3px;position:relative;cursor:default;transition:transform .15s}
+.heatmap-cell:hover{transform:scale(1.4);z-index:2}
+.heatmap-labels{display:flex;justify-content:space-between;margin-top:.5rem;font-size:.65rem;color:#555}
+.heatmap-day-labels{display:flex;flex-direction:column;gap:2px;margin-right:.5rem;font-size:.6rem;color:#555;justify-content:space-around}
+.heatmap-wrapper{display:flex}
+.heatmap-grid{flex:1}
+.gauge-container{display:flex;justify-content:center;align-items:center;padding:1rem 0}
+.gauge-container canvas{max-width:200px}
+.gauge-label{text-align:center;margin-top:.5rem}
+.gauge-label .val{font-size:2.5rem;font-weight:900;color:#6c63ff}
+.gauge-label .lbl{font-size:.8rem;color:#888}
+.chart-container{position:relative;height:200px}
+.chart-container canvas{width:100%!important;height:100%!important}
+.ai-panel{margin-bottom:1.5rem}
+.ai-item{display:flex;gap:1rem;padding:1rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.ai-item:last-child{border-bottom:none}
+.ai-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0}
+.ai-icon.alert{background:rgba(255,107,107,.12)}
+.ai-icon.tip{background:rgba(108,99,255,.12)}
+.ai-icon.win{background:rgba(16,185,129,.12)}
+.ai-text h4{font-size:.85rem;font-weight:600;margin-bottom:.25rem}
+.ai-text p{font-size:.8rem;color:#888;line-height:1.4}
+.bottom-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem}
+.team-row{display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.team-row:last-child{border-bottom:none}
+.avatar{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#fff}
+.team-info{flex:1}
+.team-info .name{font-size:.85rem;font-weight:600}
+.team-info .status{font-size:.7rem;color:#888}
+.team-score{font-size:1rem;font-weight:800}
+.progress-bar{width:60px;height:6px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden}
+.progress-fill{height:100%;border-radius:3px}
+.cta-banner{text-align:center;padding:3rem 2rem;margin-top:2rem;background:linear-gradient(135deg,rgba(108,99,255,.08),rgba(16,185,129,.05));border:1px solid rgba(108,99,255,.1);border-radius:16px}
+.cta-banner h2{font-size:1.5rem;font-weight:800;margin-bottom:.75rem}
+.cta-banner p{color:#888;margin-bottom:1.5rem;font-size:.95rem}
+.cta-btn{display:inline-block;padding:.85rem 2rem;background:linear-gradient(135deg,#6c63ff,#4834d4);color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:.95rem;box-shadow:0 4px 20px rgba(108,99,255,.3)}
+</style>
+</head>
+<body>
+<div class="dashboard">
+  <div class="dash-header">
+    <div class="dash-brand"><span class="logo">Go2</span><span class="divider"></span><span class="title">Team Dashboard</span></div>
+    <div class="dash-time"><span class="live-dot"></span><span>Live</span><span id="clock">--:--:--</span></div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="label">Productivity Score</div><div class="value"><span id="kpi1">86</span><span class="change up">+4%</span></div><canvas class="sparkline" id="spark1"></canvas></div>
+    <div class="kpi"><div class="label">Focus Hours Today</div><div class="value"><span id="kpi2">5.4</span>h<span class="change up">+12%</span></div><canvas class="sparkline" id="spark2"></canvas></div>
+    <div class="kpi"><div class="label">Meeting Load</div><div class="value"><span id="kpi3">2.1</span>h<span class="change up" style="background:rgba(16,185,129,.12);color:#10b981">-18%</span></div><canvas class="sparkline" id="spark3"></canvas></div>
+    <div class="kpi"><div class="label">Active Team Members</div><div class="value"><span id="kpi4">23</span>/28</div><canvas class="sparkline" id="spark4"></canvas></div>
+    <div class="kpi"><div class="label">AI Recommendations</div><div class="value"><span>7</span><span class="change" style="background:rgba(108,99,255,.12);color:#6c63ff">3 new</span></div></div>
+  </div>
+
+  <div class="main-grid">
+    <div class="card">
+      <div class="card-title">Activity Heatmap — This Week <span class="tag">7 days</span></div>
+      <div class="heatmap-wrapper">
+        <div class="heatmap-day-labels" id="dayLabels"></div>
+        <div class="heatmap-grid">
+          <div class="heatmap" id="heatmap"></div>
+          <div class="heatmap-labels"><span>12am</span><span>6am</span><span>12pm</span><span>6pm</span><span>11pm</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Meeting Gauge</div>
+      <div class="gauge-container"><canvas id="gauge" width="200" height="120"></canvas></div>
+      <div class="gauge-label"><div class="val" id="gaugeVal">24%</div><div class="lbl">of time in meetings (target: &lt;25%)</div></div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <div class="card">
+      <div class="card-title">Focus Hours — Last 14 Days</div>
+      <div class="chart-container"><canvas id="focusChart"></canvas></div>
+    </div>
+    <div class="card ai-panel">
+      <div class="card-title">AI Insights</div>
+      <div class="ai-item"><div class="ai-icon alert">!</div><div class="ai-text"><h4>Burnout Risk: 2 members</h4><p>Jamie and Alex have worked 11+ hours 3 days in a row. Consider lightening their load.</p></div></div>
+      <div class="ai-item"><div class="ai-icon tip">*</div><div class="ai-text"><h4>Meeting Optimization</h4><p>3 recurring meetings have &lt;50% attendance. Consider making them async.</p></div></div>
+      <div class="ai-item"><div class="ai-icon win">+</div><div class="ai-text"><h4>Team Record</h4><p>Engineering hit 7.1h avg focus time yesterday — best this quarter.</p></div></div>
+    </div>
+  </div>
+
+  <div class="bottom-grid">
+    <div class="card">
+      <div class="card-title">Team Activity</div>
+      <div id="teamList"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Department Scores</div>
+      <div id="deptList"></div>
+    </div>
+  </div>
+
+  <div class="cta-banner">
+    <h2>This Could Be Your Dashboard</h2>
+    <p>Real-time visibility into team productivity. Setup takes 5 minutes.</p>
+    <a href="#" class="cta-btn">Start Free Trial</a>
+  </div>
+</div>
+
+<script>
+// Clock
+function updateClock(){const d=new Date();document.getElementById('clock').textContent=d.toLocaleTimeString()}
+setInterval(updateClock,1000);updateClock();
+// Sparklines
+function drawSparkline(id,data,color){
+  const c=document.getElementById(id);const ctx=c.getContext('2d');
+  c.width=c.offsetWidth*2;c.height=60;ctx.scale(2,2);
+  const w=c.offsetWidth,h=30,mn=Math.min(...data),mx=Math.max(...data);
+  ctx.beginPath();
+  data.forEach((v,i)=>{const x=(i/(data.length-1))*w,y=h-((v-mn)/(mx-mn||1))*h;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)});
+  ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.stroke();
+  ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.closePath();
+  ctx.fillStyle=color+'15';ctx.fill();
+}
+drawSparkline('spark1',[72,74,78,76,80,82,84,86,85,83,86,88,86],'#6c63ff');
+drawSparkline('spark2',[4.2,4.5,4.1,4.8,5.0,4.9,5.2,5.4,5.1,5.3,5.5,5.4,5.6],'#10b981');
+drawSparkline('spark3',[3.2,3.0,2.8,3.1,2.9,2.7,2.5,2.3,2.4,2.2,2.1,2.3,2.1],'#3b82f6');
+drawSparkline('spark4',[20,22,21,23,24,22,25,23,24,26,25,24,23],'#f59e0b');
+// Heatmap
+const hm=document.getElementById('heatmap');
+const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const dl=document.getElementById('dayLabels');
+days.forEach(d=>{const l=document.createElement('div');l.textContent=d;l.style.height='18px';l.style.display='flex';l.style.alignItems='center';dl.appendChild(l)});
+for(let d=0;d<7;d++){
+  for(let h=0;h<24;h++){
+    const cell=document.createElement('div');cell.className='heatmap-cell';
+    let v=0;
+    if(d<5){if(h>=9&&h<=17)v=.4+Math.random()*.6;else if(h>=7&&h<9||h>17&&h<=19)v=.1+Math.random()*.3;else v=Math.random()*.05}
+    else{v=Math.random()*.08}
+    const r=Math.round(108*(1-v)+255*v*.3);const g=Math.round(99*(1-v)+107*v);const b=Math.round(255*(1-v));
+    if(v>.6)cell.style.background=`rgba(16,185,129,${v})`;
+    else if(v>.3)cell.style.background=`rgba(108,99,255,${v+.1})`;
+    else cell.style.background=`rgba(255,255,255,${v*.3})`;
+    cell.title=`${days[d]} ${h}:00 — Activity: ${Math.round(v*100)}%`;
+    hm.appendChild(cell);
+  }
+}
+// Gauge
+const gc=document.getElementById('gauge').getContext('2d');
+function drawGauge(pct){
+  gc.clearRect(0,0,200,120);
+  const cx=100,cy=110,r=80;
+  // bg
+  gc.beginPath();gc.arc(cx,cy,r,-Math.PI,0);gc.strokeStyle='rgba(255,255,255,.06)';gc.lineWidth=16;gc.lineCap='round';gc.stroke();
+  // fill
+  const angle=-Math.PI+Math.PI*pct;
+  gc.beginPath();gc.arc(cx,cy,r,-Math.PI,angle);
+  const grad=gc.createLinearGradient(20,0,180,0);
+  grad.addColorStop(0,'#10b981');grad.addColorStop(.5,'#f59e0b');grad.addColorStop(1,'#ef4444');
+  gc.strokeStyle=grad;gc.lineWidth=16;gc.lineCap='round';gc.stroke();
+}
+drawGauge(.24);
+// Focus chart
+const fc=document.getElementById('focusChart');const fctx=fc.getContext('2d');
+function drawFocusChart(){
+  const rect=fc.parentElement.getBoundingClientRect();
+  fc.width=rect.width*2;fc.height=400;fctx.scale(2,2);
+  const w=rect.width,h=200,pad=40;
+  const data=[5.1,4.8,6.2,5.9,4.5,1.2,0.8,5.8,6.1,5.5,7.1,6.3,2.1,0.5,5.4,0,0,0,0,0,0];
+  const labels=['M','T','W','T','F','S','S','M','T','W','T','F','S','S'];
+  const barW=(w-pad*2)/14-4;
+  // grid
+  fctx.strokeStyle='rgba(255,255,255,.04)';fctx.lineWidth=1;
+  for(let i=0;i<=8;i+=2){const y=h-pad-(i/8)*(h-pad*2);fctx.beginPath();fctx.moveTo(pad,y);fctx.lineTo(w-10,y);fctx.stroke();fctx.fillStyle='#555';fctx.font='10px Inter';fctx.textAlign='right';fctx.fillText(i+'h',pad-8,y+3)}
+  data.slice(0,14).forEach((v,i)=>{
+    const x=pad+i*(barW+4);const barH=(v/8)*(h-pad*2);const y=h-pad-barH;
+    const isWeekend=i%7>=5;
+    fctx.fillStyle=isWeekend?'rgba(255,255,255,.05)':v>=6?'#10b981':v>=4?'#6c63ff':'#f59e0b';
+    fctx.beginPath();
+    const br=3;
+    fctx.roundRect(x,y,barW,barH,br);
+    fctx.fill();
+    fctx.fillStyle='#555';fctx.font='10px Inter';fctx.textAlign='center';
+    fctx.fillText(labels[i],x+barW/2,h-pad+15);
+  });
+}
+drawFocusChart();
+// Team list
+const teams=[
+  {name:'Sarah K.',role:'Tech Lead',score:94,color:'#6c63ff',status:'In flow state'},
+  {name:'Alex T.',role:'Sr. Engineer',score:88,color:'#10b981',status:'Deep work'},
+  {name:'Emma D.',role:'Product Mgr',score:76,color:'#3b82f6',status:'In meeting'},
+  {name:'Mike R.',role:'Engineer',score:91,color:'#f59e0b',status:'Code review'},
+  {name:'Jordan M.',role:'Designer',score:82,color:'#8b5cf6',status:'Design work'},
+];
+const tl=document.getElementById('teamList');
+teams.forEach(t=>{
+  const d=document.createElement('div');d.className='team-row';
+  d.innerHTML=`<div class="avatar" style="background:${t.color}">${t.name.split(' ').map(w=>w[0]).join('')}</div><div class="team-info"><div class="name">${t.name}</div><div class="status">${t.status}</div></div><div class="team-score" style="color:${t.score>85?'#10b981':'#f59e0b'}">${t.score}</div><div class="progress-bar"><div class="progress-fill" style="width:${t.score}%;background:${t.score>85?'#10b981':'#f59e0b'}"></div></div>`;
+  tl.appendChild(d);
+});
+// Dept list
+const depts=[{name:'Engineering',score:89,members:12},{name:'Product',score:78,members:5},{name:'Design',score:84,members:4},{name:'Marketing',score:71,members:4},{name:'Sales',score:76,members:3}];
+const dpl=document.getElementById('deptList');
+depts.forEach(d=>{
+  const el=document.createElement('div');el.className='team-row';
+  const c=d.score>85?'#10b981':d.score>75?'#6c63ff':'#f59e0b';
+  el.innerHTML=`<div class="avatar" style="background:${c}">${d.name[0]}</div><div class="team-info"><div class="name">${d.name}</div><div class="status">${d.members} members</div></div><div class="team-score" style="color:${c}">${d.score}</div><div class="progress-bar"><div class="progress-fill" style="width:${d.score}%;background:${c}"></div></div>`;
+  dpl.appendChild(el);
+});
+// Animate KPIs
+function animateKPIs(){
+  const targets={kpi1:[84,88],kpi2:[5.2,5.6],kpi3:[2.0,2.3]};
+  Object.entries(targets).forEach(([id,[min,max]])=>{
+    const el=document.getElementById(id);
+    const v=min+Math.random()*(max-min);
+    el.textContent=id==='kpi1'?Math.round(v):v.toFixed(1);
+  });
+}
+setInterval(animateKPIs,4000);
+</script>
+</body>
+</html>

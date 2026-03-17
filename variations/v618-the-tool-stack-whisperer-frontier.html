@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go2 | The Tool Stack Whisperer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100..800&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Color Palette */
+            --bg-base: #050608;
+            --bg-panel: #0d1117;
+            --bg-panel-light: #161b22;
+            --text-main: #e6edf3;
+            --text-muted: #7d8590;
+            
+            /* Terminal Neon Accents */
+            --neon-cyan: #00f0ff;
+            --neon-green: #00ff41;
+            --neon-magenta: #ff00f0;
+            --neon-orange: #ff5e00;
+            --neon-red: #ff003c;
+
+            /* Typography */
+            --font-sans: 'Space Grotesk', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+
+            /* Grid overlay */
+            --grid-color: rgba(255, 255, 255, 0.03);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+            /* Blueprint Grid Background */
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: center center;
+            background-attachment: fixed;
+        }
+
+        ::selection {
+            background-color: var(--neon-cyan);
+            color: var(--bg-base);
+        }
+
+        h1, h2, h3, h4, .mono {
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: -0.05em;
+        }
+
+        a {
+            color: var(--text-main);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        a:hover {
+            color: var(--neon-cyan);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 24px;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            background: transparent;
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            z-index: 1;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 0; height: 100%;
+            background: var(--neon-cyan);
+            z-index: -1;
+            transition: width 0.3s ease;
+        }
+
+        .btn:hover::before {
+            width: 100%;
+        }
+
+        .btn:hover {
+            color: var(--bg-base);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+        }
+
+        .btn-magenta {
+            border-color: var(--neon-magenta);
+            color: var(--neon-magenta);
+        }
+        .btn-magenta::before { background: var(--neon-magenta); }
+        .btn-magenta:hover { color: var(--bg-base); box-shadow: 0 0 20px rgba(255, 0, 240, 0.4); }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0; left: 0; width: 100%;
+            background: rgba(5, 6, 8, 0.85);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            z-index: 1000;
+            padding: 16px 0;
+        }
+
+        .nav-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: var(--font-sans);
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-dot {
+            width: 12px; height: 12px;
+            background: var(--neon-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--neon-cyan);
+            animation: pulse 2s infinite;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+        }
+
+        /* Sections */
+        section {
+            padding: 120px 0;
+            position: relative;
+        }
+
+        .section-header {
+            margin-bottom: 64px;
+        }
+
+        .section-label {
+            color: var(--neon-magenta);
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-label::before {
+            content: '>>';
+        }
+
+        .section-title {
+            font-size: 3.5rem;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            color: #fff;
+        }
+
+        /* Hero Section */
+        #hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding-top: 80px;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 64px;
+            align-items: center;
+        }
+
+        .hero-content h1 {
+            font-size: 4.5rem;
+            line-height: 1;
+            margin-bottom: 24px;
+            background: linear-gradient(to right, #fff, var(--text-muted));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-content p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            max-width: 500px;
+        }
+
+        .highlight { color: var(--neon-orange); font-family: var(--font-mono); font-weight: bold; }
+
+        /* Terminal/Data Viz Hero */
+        .terminal-window {
+            background: var(--bg-panel);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px inset rgba(255,255,255,0.05);
+        }
+
+        .terminal-header {
+            background: var(--bg-panel-light);
+            padding: 12px 16px;
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .term-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .term-dot:nth-child(1) { background: #ff5f56; }
+        .term-dot:nth-child(2) { background: #ffbd2e; }
+        .term-dot:nth-child(3) { background: #27c93f; }
+
+        .terminal-body {
+            padding: 24px;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--neon-green);
+            min-height: 400px;
+            position: relative;
+        }
+
+        .log-line { margin-bottom: 8px; opacity: 0; animation: fadeIn 0.1s forwards; }
+
+        /* Utilization Gauge */
+        .gauge-container {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            background: rgba(13, 17, 23, 0.9);
+            padding: 40px;
+            border-radius: 50%;
+            border: 1px solid var(--neon-orange);
+            box-shadow: 0 0 40px rgba(255, 94, 0, 0.2);
+        }
+
+        .gauge-value {
+            font-size: 4rem;
+            font-weight: 700;
+            color: var(--neon-orange);
+            line-height: 1;
+            text-shadow: 0 0 10px var(--neon-orange);
+        }
+
+        .gauge-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+            text-transform: uppercase;
+        }
+
+        .radar-sweep {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, transparent 70%, rgba(255, 94, 0, 0.4) 100%);
+            animation: spin 4s linear infinite;
+            pointer-events: none;
+        }
+
+        /* Diagnosis Section */
+        .diag-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 48px;
+        }
+
+        .diag-card {
+            background: var(--bg-panel);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 32px;
+            border-radius: 8px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .diag-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px var(--neon-cyan);
+        }
+
+        .tool-bar-container { margin-bottom: 24px; }
+        .tool-header { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.85rem; margin-bottom: 8px; }
+        .tool-name { color: #fff; }
+        .tool-stat { color: var(--neon-red); }
+        
+        .bar-bg {
+            width: 100%; height: 12px;
+            background: rgba(255,0,60,0.2);
+            border-radius: 2px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: var(--neon-cyan);
+            width: 0%; /* Animated via JS */
+            transition: width 1.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        
+        .bar-unused {
+            height: 100%;
+            background: repeating-linear-gradient(
+                45deg,
+                var(--neon-red),
+                var(--neon-red) 5px,
+                transparent 5px,
+                transparent 10px
+            );
+            flex-grow: 1;
+            opacity: 0.5;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: var(--bg-panel-light);
+            border: 1px solid var(--neon-cyan);
+            padding: 12px;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--neon-cyan);
+            border-radius: 4px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        .tool-bar-container:hover .tooltip-trigger { opacity: 1; }
+
+        /* Treatment / How it Works */
+        .flow-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 64px;
+            position: relative;
+        }
+
+        @media (max-width: 900px) {
+            .flow-container { flex-direction: column; gap: 40px; }
+        }
+
+        .flow-box {
+            flex: 1;
+            background: var(--bg-panel);
+            border: 1px dashed rgba(255,255,255,0.2);
+            padding: 40px;
+            border-radius: 8px;
+            text-align: center;
+            position: relative;
+        }
+
+        .flow-box.worker { border-color: var(--neon-cyan); box-shadow: inset 0 0 20px rgba(0,240,255,0.05); }
+        .flow-box.manager { border-color: var(--neon-magenta); box-shadow: inset 0 0 20px rgba(255,0,240,0.05); }
+
+        .flow-box h3 { color: #fff; margin-bottom: 16px; font-size: 1.5rem; }
+        .flow-box p { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; }
+        
+        .data-list { list-style: none; text-align: left; font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted); }
+        .data-list li { margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .worker .data-list li::before { content: '[■]'; color: var(--neon-cyan); }
+        .manager .data-list li::before { content: '[∑]'; color: var(--neon-magenta); }
+
+        .flow-arrow {
+            flex: 0 0 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        .ai-core {
+            width: 80px; height: 80px;
+            background: var(--bg-base);
+            border: 2px solid var(--neon-green);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            color: var(--neon-green);
+            font-weight: bold;
+            box-shadow: 0 0 20px rgba(0,255,65,0.2);
+            position: relative;
+        }
+
+        .ai-core::after {
+            content: ''; position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px;
+            border: 1px dashed var(--neon-green); border-radius: 12px;
+            animation: spin 10s linear infinite;
+        }
+
+        .connection-line {
+            position: absolute;
+            top: 50%; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-green), var(--neon-magenta));
+            z-index: 0;
+            opacity: 0.3;
+        }
+        
+        @media (max-width: 900px) {
+            .connection-line { width: 2px; height: 100%; top: 0; left: 50%; background: linear-gradient(180deg, var(--neon-cyan), var(--neon-green), var(--neon-magenta)); }
+        }
+
+        /* Stats / Clinical Trials */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-panel);
+            border-left: 4px solid var(--neon-green);
+            padding: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: ''; position: absolute; top: 0; right: 0; width: 100px; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0,255,65,0.05));
+        }
+
+        .stat-value {
+            font-family: var(--font-mono);
+            font-size: 3.5rem;
+            color: #fff;
+            margin-bottom: 8px;
+            line-height: 1;
+        }
+
+        .stat-label {
+            color: var(--neon-green);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+        }
+
+        .stat-desc {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Pricing / Prescription */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 768px) {
+            .pricing-grid { grid-template-columns: 1fr; }
+        }
+
+        .price-card {
+            background: var(--bg-panel);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 48px 40px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .price-card.featured {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 30px rgba(0,240,255,0.1), inset 0 0 20px rgba(0,240,255,0.05);
+        }
+
+        .price-card.featured::before {
+            content: 'THE CURE';
+            position: absolute;
+            top: -12px; left: 50%; transform: translateX(-50%);
+            background: var(--bg-base);
+            color: var(--neon-cyan);
+            padding: 0 16px;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            border: 1px solid var(--neon-cyan);
+            border-radius: 20px;
+        }
+
+        .tier-name { font-family: var(--font-mono); font-size: 1.2rem; color: #fff; margin-bottom: 8px;}
+        .tier-desc { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 32px; min-height: 44px;}
+        .price { font-size: 3.5rem; font-family: var(--font-mono); color: #fff; line-height: 1; margin-bottom: 32px; }
+        .price span { font-size: 1rem; color: var(--text-muted); }
+
+        .feature-list { list-style: none; margin-bottom: 40px; flex-grow: 1; }
+        .feature-list li { margin-bottom: 16px; display: flex; align-items: flex-start; gap: 12px; color: var(--text-main); font-size: 0.95rem; }
+        .feature-list li::before { content: '→'; color: var(--neon-cyan); font-family: var(--font-mono); }
+        .price-card:not(.featured) .feature-list li::before { color: var(--text-muted); }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding: 40px 0;
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 240, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0); }
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        /* Responsive Hero */
+        @media (max-width: 1024px) {
+            .hero-grid { grid-template-columns: 1fr; text-align: center; }
+            .hero-content p { margin: 0 auto 40px auto; }
+            .section-label { justify-content: center; }
+            .diag-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="container nav-inner">
+            <a href="#" class="logo">
+                <div class="logo-dot"></div>
+                Go2
+            </a>
+            <div class="nav-links">
+                <a href="#diagnosis">Diagnosis</a>
+                <a href="#treatment">Treatment</a>
+                <a href="#results">Clinical Trials</a>
+                <a href="#pricing">Prescription</a>
+            </div>
+            <a href="#demo" class="btn">Book Demo</a>
+        </div>
+    </nav>
+
+    <section id="hero">
+        <div class="container hero-grid">
+            <div class="hero-content">
+                <div class="section-label">SYSTEM_ALERT: RESOURCE_LEAK</div>
+                <h1>YOUR SAAS STACK HAS A PARASITE.</h1>
+                <p>You're paying for 47 tools. You're using <span class="highlight">12%</span> of their features. The rest is pure bloat.</p>
+                <p>Go2 is the diagnostic tool that finds the rot, and the AI coach that cures it. Stop buying new software. Start using what you have.</p>
+                <div style="display: flex; gap: 16px; margin-top: 32px;" class="hero-btns">
+                    <a href="#demo" class="btn">Run Diagnostics</a>
+                    <a href="#diagnosis" class="btn btn-magenta" style="background: transparent; border-color: rgba(255,255,255,0.2); color: #fff;">View Symptoms</a>
+                </div>
+            </div>
+            
+            <div class="terminal-window">
+                <div class="terminal-header">
+                    <div class="term-dot"></div>
+                    <div class="term-dot"></div>
+                    <div class="term-dot"></div>
+                </div>
+                <div class="terminal-body" id="term-body">
+                    <div class="gauge-container">
+                        <div class="radar-sweep"></div>
+                        <div class="gauge-value" id="hero-gauge">100%</div>
+                        <div class="gauge-label">Tool Utilization</div>
+                    </div>
+                    <!-- JS will inject logs here -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="diagnosis">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">SYMPTOM_ANALYSIS</div>
+                <h2 class="section-title">The "SaaS Bloat" Disease.</h2>
+                <p style="color: var(--text-muted); max-width: 600px; font-size: 1.1rem;">Legacy monitoring tools like Time Doctor just watch your team drown. Go2 analyzes every click, keystroke, and app to build a precise utilization taxonomy.</p>
+            </div>
+
+            <div class="diag-grid">
+                <div class="diag-card">
+                    <h3 class="mono" style="margin-bottom: 24px; color: var(--neon-cyan);">Live Telemetry</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;">Analyzing feature adoption across enterprise stack...</p>
+                    
+                    <div class="tool-bar-container" onmousemove="showTooltip(event, 'Missed AI routing features. Agent spending 4h/wk manually tagging.')" onmouseleave="hideTooltip()">
+                        <div class="tool-header">
+                            <span class="tool-name">Intercom</span>
+                            <span class="tool-stat">14% Used</span>
+                        </div>
+                        <div class="bar-bg">
+                            <div class="bar-fill" data-width="14"></div>
+                            <div class="bar-unused"></div>
+                        </div>
+                    </div>
+
+                    <div class="tool-bar-container" onmousemove="showTooltip(event, 'Sales ops not utilizing automated sequences. 12h/wk lost to manual data entry.')" onmouseleave="hideTooltip()">
+                        <div class="tool-header">
+                            <span class="tool-name">Salesforce</span>
+                            <span class="tool-stat">22% Used</span>
+                        </div>
+                        <div class="bar-bg">
+                            <div class="bar-fill" data-width="22"></div>
+                            <div class="bar-unused"></div>
+                        </div>
+                    </div>
+
+                    <div class="tool-bar-container" onmousemove="showTooltip(event, 'Macros ignored. Agents typing redundant responses.')" onmouseleave="hideTooltip()">
+                        <div class="tool-header">
+                            <span class="tool-name">Zendesk</span>
+                            <span class="tool-stat">9% Used</span>
+                        </div>
+                        <div class="bar-bg">
+                            <div class="bar-fill" data-width="9"></div>
+                            <div class="bar-unused"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="diag-card" style="display: flex; flex-direction: column; justify-content: center;">
+                    <h3 style="font-size: 2rem; margin-bottom: 16px; color: #fff;">We don't automate. <br><span style="color: var(--neon-red);">We tell you HOW to automate.</span></h3>
+                    <p style="color: var(--text-muted); margin-bottom: 24px;">Your tools already have AI. Your team just doesn't know how to use it. Go2 identifies the exact workflow gaps and provides contextual coaching directly to the worker.</p>
+                    <ul class="feature-list" style="margin-bottom: 0;">
+                        <li>Replaces outdated time tracking</li>
+                        <li>Identifies redundant software licenses</li>
+                        <li>Builds automated data science taxonomy</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="treatment" style="background: var(--bg-panel-light); border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05);">
+        <div class="container">
+            <div class="section-header" style="text-align: center;">
+                <div class="section-label" style="justify-content: center;">THE_TREATMENT_PROTOCOL</div>
+                <h2 class="section-title">The Honest Capture.</h2>
+                <p style="color: var(--text-muted); max-width: 800px; margin: 0 auto; font-size: 1.1rem;">We capture everything: keystrokes, screen, audio. We are upfront about it. Why? Because the data boundary isn't per-app, it's <strong>Cloud vs. Local</strong>. The raw data serves the worker first.</p>
+            </div>
+
+            <div class="flow-container">
+                <div class="connection-line"></div>
+                
+                <div class="flow-box worker">
+                    <h3>Raw Telemetry</h3>
+                    <p>Worker-Only Visibility</p>
+                    <ul class="data-list">
+                        <li>Screen Activity & Window Tracking</li>
+                        <li>Audio Transcription</li>
+                        <li>Keystroke Dynamics</li>
+                        <li>Idle Detection</li>
+                    </ul>
+                    <div style="margin-top: 24px; padding: 12px; background: rgba(0,240,255,0.1); border-radius: 4px; border: 1px solid rgba(0,240,255,0.3); color: var(--neon-cyan); font-family: var(--font-mono); font-size: 0.8rem;">
+                        > Output: Personalized AI Coaching
+                    </div>
+                </div>
+
+                <div class="flow-arrow">
+                    <div class="ai-core">AI</div>
+                    <div style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted); margin-top: 16px; text-align: center;">FRONTIER<br>MODELS</div>
+                </div>
+
+                <div class="flow-box manager">
+                    <h3>Aggregated Insights</h3>
+                    <p>Management Visibility</p>
+                    <ul class="data-list">
+                        <li>Tool Utilization Scores</li>
+                        <li>Workflow Bottlenecks</li>
+                        <li>Automation Opportunities</li>
+                        <li>ROI on Software Spend</li>
+                    </ul>
+                    <div style="margin-top: 24px; padding: 12px; background: rgba(255,0,240,0.1); border-radius: 4px; border: 1px solid rgba(255,0,240,0.3); color: var(--neon-magenta); font-family: var(--font-mono); font-size: 0.8rem;">
+                        > Output: Strategic Ops Decisions
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="results">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">CLINICAL_TRIAL_RESULTS</div>
+                <h2 class="section-title">Efficacy Demonstrated.</h2>
+                <p style="color: var(--text-muted); max-width: 600px;">When you coach instead of surveil, the numbers speak for themselves. SOC 2 certified. Trusted by 200+ partners.</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">CONCENTRIX PILOT (30 DAYS)</div>
+                    <div class="stat-value">$<span class="counter" data-target="2.26">0</span>M</div>
+                    <div class="stat-desc">Annualized savings identified through tool consolidation and workflow coaching.</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">POPMENU EFFICIENCY</div>
+                    <div class="stat-value"><span class="counter" data-target="65">0</span>%</div>
+                    <div class="stat-desc">Improvement in agent productivity without adding headcount.</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">VIGAMORE ROI</div>
+                    <div class="stat-value"><span class="counter" data-target="300">0</span>%</div>
+                    <div class="stat-desc">Increase in software utilization across the existing stack.</div>
+                </div>
+                <div class="stat-card" style="border-color: var(--neon-magenta);">
+                    <div class="stat-label" style="color: var(--neon-magenta);">WORKER RETENTION</div>
+                    <div class="stat-value" style="color: #fff;">&lt;<span class="counter" data-target="6">0</span>%</div>
+                    <div class="stat-desc">Voluntary attrition (Industry avg is 60%). 91% Worker CSAT.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="pricing">
+        <div class="container">
+            <div class="section-header" style="text-align: center;">
+                <div class="section-label" style="justify-content: center;">THE_PRESCRIPTION</div>
+                <h2 class="section-title">Choose your dosage.</h2>
+            </div>
+
+            <div class="pricing-grid">
+                <div class="price-card">
+                    <div class="tier-name">MEASURE TIER</div>
+                    <div class="tier-desc">The Thermometer. Replaces legacy time tracking like Hubstaff.</div>
+                    <div class="price">$15<span>/user/mo</span></div>
+                    <ul class="feature-list">
+                        <li>Omnipresent Data Capture</li>
+                        <li>Basic Time Tracking Replacement</li>
+                        <li>Manager Aggregated Dashboard</li>
+                        <li>App & Website Usage Logs</li>
+                    </ul>
+                    <a href="#" class="btn" style="border-color: var(--text-muted); color: var(--text-main);">Start Measuring</a>
+                </div>
+
+                <div class="price-card featured">
+                    <div class="tier-name" style="color: var(--neon-cyan);">COACH TIER</div>
+                    <div class="tier-desc">The Cure. Full AI productivity coaching and tool stack analysis.</div>
+                    <div class="price">$59<span>/user/mo</span></div>
+                    <ul class="feature-list">
+                        <li><strong>Everything in Measure, plus:</strong></li>
+                        <li>Real-time AI Worker Coaching</li>
+                        <li>Tool Utilization Taxonomy</li>
+                        <li>Workflow Automation Prescriptions</li>
+                        <li>Audio/Screen Contextual Analysis</li>
+                    </ul>
+                    <a href="#" class="btn">Book a Demo</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="logo" style="justify-content: center; margin-bottom: 24px;">
+                <div class="logo-dot" style="animation: none; opacity: 0.5;"></div>
+                Go2
+            </div>
+            <p>© 2023 Go2.io. All rights reserved. SOC 2 Type II Certified.</p>
+        </div>
+    </footer>
+
+    <div id="custom-tooltip" class="tooltip"></div>
+
+    <script>
+        // Terminal Logic & Hero Gauge Animation
+        const termBody = document.getElementById('term-body');
+        const gauge = document.getElementById('hero-gauge');
+        
+        const logs = [
+            "> Establishing telemetry hook...",
+            "> Scanning local environment...",
+            "> 47 active SaaS licenses detected.",
+            "> Analyzing feature utilization mapping...",
+            "> WARNING: Salesforce usage at 22% capacity.",
+            "> WARNING: Intercom AI routing inactive.",
+            "> WARNING: Zendesk macros untouched.",
+            "> Calculating aggregate efficiency...",
+            "> CRITICAL: Tool stack utilization bleeding."
+        ];
+
+        let logIndex = 0;
+        
+        function addLog() {
+            if (logIndex < logs.length) {
+                const p = document.createElement('div');
+                p.className = 'log-line';
+                p.textContent = logs[logIndex];
+                termBody.appendChild(p);
+                logIndex++;
+                setTimeout(addLog, 400 + Math.random() * 600);
+            } else {
+                // Start Gauge Animation after logs
+                setTimeout(animateGauge, 500);
+            }
+        }
+
+        function animateGauge() {
+            let current = 100;
+            const target = 12;
+            const interval = setInterval(() => {
+                current -= 2;
+                if (current <= target) {
+                    current = target;
+                    clearInterval(interval);
+                    gauge.style.color = "var(--neon-red)";
+                    gauge.style.textShadow = "0 0 20px var(--neon-red)";
+                    document.querySelector('.gauge-container').style.borderColor = "var(--neon-red)";
+                    document.querySelector('.radar-sweep').style.background = "conic-gradient(from 0deg, transparent 70%, rgba(255, 0, 60, 0.4) 100%)";
+                    
+                    // Add final log
+                    const p = document.createElement('div');
+                    p.className = 'log-line';
+                    p.style.color = "var(--neon-red)";
+                    p.style.marginTop = "20px";
+                    p.textContent = "> FINAL DIAGNOSIS: 12% UTILIZATION. INTERVENTION REQUIRED.";
+                    termBody.appendChild(p);
+                }
+                gauge.textContent = current + "%";
+            }, 30);
+        }
+
+        // Start terminal sequence
+        setTimeout(addLog, 1000);
+
+        // Bar Chart Animation on Scroll
+        const observerOptions = { threshold: 0.5 };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    if (entry.target.classList.contains('diag-card')) {
+                        const fills = entry.target.querySelectorAll('.bar-fill');
+                        fills.forEach(fill => {
+                            fill.style.width = fill.getAttribute('data-width') + '%';
+                        });
+                    }
+                    if (entry.target.classList.contains('stats-grid')) {
+                        const counters = entry.target.querySelectorAll('.counter');
+                        counters.forEach(counter => {
+                            const target = parseFloat(counter.getAttribute('data-target'));
+                            animateCounter(counter, target);
+                        });
+                        observer.unobserve(entry.target);
+                    }
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.diag-card, .stats-grid').forEach(el => observer.observe(el));
+
+        // Number Counter Animation
+        function animateCounter(element, target) {
+            let current = 0;
+            const duration = 2000;
+            const step = target / (duration / 16); // 60fps
+            
+            function update() {
+                current += step;
+                if (current >= target) {
+                    element.textContent = Number.isInteger(target) ? target : target.toFixed(2);
+                } else {
+                    element.textContent = Number.isInteger(target) ? Math.floor(current) : current.toFixed(2);
+                    requestAnimationFrame(update);
+                }
+            }
+            requestAnimationFrame(update);
+        }
+
+        // Tooltip Logic
+        const tooltip = document.getElementById('custom-tooltip');
+        
+        window.showTooltip = function(e, text) {
+            tooltip.textContent = text;
+            tooltip.style.opacity = '1';
+            tooltip.style.left = (e.pageX + 15) + 'px';
+            tooltip.style.top = (e.pageY + 15) + 'px';
+        }
+
+        window.hideTooltip = function() {
+            tooltip.style.opacity = '0';
+        }
+    </script>
+</body>
+</html>

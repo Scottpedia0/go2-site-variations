@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team Health Scorecard | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f8f9fc;color:#1a1a2e;min-height:100vh}
+.header{background:linear-gradient(135deg,#1a1a2e,#2d2d5e);color:#fff;padding:4rem 2rem;text-align:center}
+.header-badge{display:inline-block;padding:.4rem 1.2rem;border-radius:50px;background:rgba(108,99,255,.2);color:#a78bfa;font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:1rem}
+.header h1{font-size:clamp(2rem,4vw,3rem);font-weight:900;margin-bottom:.75rem}
+.header p{color:#8888aa;font-size:1.05rem;max-width:550px;margin:0 auto}
+.scorecard{max-width:900px;margin:-3rem auto 3rem;padding:0 1.5rem}
+.overall-card{background:#fff;border-radius:20px;box-shadow:0 10px 40px rgba(0,0,0,.08);padding:2.5rem;text-align:center;margin-bottom:2rem}
+.overall-card h2{font-size:1rem;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:1rem}
+.overall-grade{font-size:6rem;font-weight:900;line-height:1;margin-bottom:.5rem}
+.grade-a{color:#10b981}.grade-b{color:#3b82f6}.grade-c{color:#f59e0b}.grade-d{color:#ef4444}
+.overall-label{font-size:1.1rem;color:#555;margin-bottom:1rem}
+.overall-bar{max-width:400px;margin:0 auto;height:8px;border-radius:4px;background:#f0f0f0;overflow:hidden}
+.overall-fill{height:100%;border-radius:4px}
+.grade-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem}
+.grade-card{background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.04);overflow:hidden;cursor:pointer;transition:all .3s}
+.grade-card:hover{box-shadow:0 8px 30px rgba(0,0,0,.08);transform:translateY(-3px)}
+.grade-header{padding:1.5rem;display:flex;align-items:center;gap:1rem}
+.grade-circle{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:900;color:#fff;flex-shrink:0}
+.gc-a{background:linear-gradient(135deg,#10b981,#059669)}
+.gc-b{background:linear-gradient(135deg,#3b82f6,#2563eb)}
+.gc-c{background:linear-gradient(135deg,#f59e0b,#d97706)}
+.gc-d{background:linear-gradient(135deg,#ef4444,#dc2626)}
+.grade-info h3{font-size:1.1rem;font-weight:700}
+.grade-info .sub{font-size:.8rem;color:#888;margin-top:.2rem}
+.grade-details{padding:0 1.5rem;max-height:0;overflow:hidden;transition:max-height .4s ease}
+.grade-card.open .grade-details{max-height:500px}
+.detail-content{padding-bottom:1.5rem}
+.metric-row{display:flex;justify-content:space-between;align-items:center;padding:.6rem 0;border-bottom:1px solid #f5f5f5}
+.metric-row:last-child{border-bottom:none}
+.metric-label{font-size:.85rem;color:#666}
+.metric-val{font-size:.9rem;font-weight:700}
+.metric-bar{display:flex;align-items:center;gap:.75rem;margin-top:.75rem}
+.metric-bar .track{flex:1;height:6px;border-radius:3px;background:#f0f0f0;overflow:hidden}
+.metric-bar .fill{height:100%;border-radius:3px}
+.metric-bar .pct{font-size:.8rem;font-weight:700;width:35px;text-align:right}
+.detail-rec{background:#f8f9ff;border:1px solid #e8e8ff;border-radius:10px;padding:1rem;margin-top:1rem}
+.detail-rec h4{font-size:.8rem;color:#6c63ff;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem}
+.detail-rec p{font-size:.85rem;color:#555;line-height:1.5}
+.expand-hint{text-align:center;padding:.75rem;font-size:.75rem;color:#aaa;border-top:1px solid #f5f5f5}
+.trend-section{max-width:900px;margin:0 auto 3rem;padding:0 1.5rem}
+.trend-section h2{font-size:1.5rem;font-weight:800;text-align:center;margin-bottom:1.5rem}
+.trend-card{background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.04);padding:2rem;overflow-x:auto}
+.trend-chart{display:flex;align-items:end;gap:4px;height:150px;min-width:600px}
+.trend-bar-group{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+.trend-bar{width:100%;border-radius:4px 4px 0 0;transition:height .5s}
+.trend-label{font-size:.6rem;color:#888;margin-top:.25rem;writing-mode:horizontal-tb}
+.trend-legend{display:flex;gap:1.5rem;justify-content:center;margin-top:1rem;flex-wrap:wrap}
+.trend-legend span{display:flex;align-items:center;gap:.4rem;font-size:.75rem;color:#888}
+.trend-legend span::before{content:'';width:10px;height:10px;border-radius:3px}
+.cta{text-align:center;padding:3rem 2rem;max-width:700px;margin:0 auto}
+.cta h2{font-size:2rem;font-weight:800;margin-bottom:1rem}
+.cta p{color:#888;margin-bottom:2rem;font-size:1.05rem}
+.cta-btn{display:inline-block;padding:1rem 2.5rem;background:linear-gradient(135deg,#6c63ff,#4834d4);color:#fff;text-decoration:none;border-radius:12px;font-weight:700;font-size:1.05rem;box-shadow:0 4px 20px rgba(108,99,255,.2)}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-badge">Team Health Report</div>
+  <h1>Your Team Health Scorecard</h1>
+  <p>A comprehensive report card across 6 dimensions. Click each grade for details and recommendations.</p>
+</div>
+<div class="scorecard">
+  <div class="overall-card">
+    <h2>Overall Team Health</h2>
+    <div class="overall-grade grade-b" id="overallGrade">B+</div>
+    <div class="overall-label">Good — with clear areas for improvement</div>
+    <div class="overall-bar"><div class="overall-fill" style="width:78%;background:linear-gradient(90deg,#3b82f6,#6c63ff)"></div></div>
+    <p style="font-size:.8rem;color:#aaa;margin-top:.5rem">78th percentile among similar teams</p>
+  </div>
+  <div class="grade-grid" id="gradeGrid"></div>
+</div>
+<div class="trend-section">
+  <h2>12-Week Trend</h2>
+  <div class="trend-card">
+    <div class="trend-chart" id="trendChart"></div>
+    <div class="trend-legend">
+      <span style="--c:#10b981"><style>.trend-legend span::before{background:var(--c,#888)}</style>Focus Time</span>
+      <span style="--c:#3b82f6">Collaboration</span>
+      <span style="--c:#f59e0b">Meeting Load</span>
+      <span style="--c:#8b5cf6">Engagement</span>
+    </div>
+  </div>
+</div>
+<div class="cta">
+  <h2>Get Your Real Scorecard</h2>
+  <p>This is a demo. Go2 generates your actual Team Health Scorecard with real data. Free for 14 days.</p>
+  <a href="#" class="cta-btn">Start Free Trial</a>
+</div>
+
+<script>
+const grades=[
+  {name:'Focus Time',grade:'A',score:92,color:'gc-a',sub:'6.8h avg daily focus — excellent',metrics:[{l:'Avg Focus Hours/Day',v:'6.8h'},{l:'Flow States/Week',v:'4.2'},{l:'Longest Focus Block',v:'3.1h'},{l:'Context Switches/Day',v:'6'}],pct:92,rec:'Your focus time is exceptional. Protect these habits by maintaining "No Meeting" blocks and keeping context switches below 8/day.'},
+  {name:'Meeting Load',grade:'C+',score:58,color:'gc-c',sub:'3.4h avg daily meetings — needs work',metrics:[{l:'Avg Meeting Hours/Day',v:'3.4h'},{l:'Meetings Without Agenda',v:'38%'},{l:'Avg Attendees',v:'6.2'},{l:'Actionable Meeting Rate',v:'44%'}],pct:58,rec:'Meeting load is your biggest improvement area. Cancel meetings without agendas (38% of them). Reduce avg attendees from 6.2 to 4. Estimated savings: 5.2 hours/week/person.'},
+  {name:'Collaboration',grade:'B',score:76,color:'gc-b',sub:'Good cross-team work with some silos',metrics:[{l:'Cross-Team Interactions/Week',v:'12.4'},{l:'Pair Work Sessions',v:'3.1/week'},{l:'Response Time (Slack)',v:'18 min'},{l:'Knowledge Sharing Index',v:'7.2/10'}],pct:76,rec:'Collaboration is solid but siloed between Marketing and Engineering. Introduce a weekly cross-team demo to bridge the gap. Consider buddy pairing across departments.'},
+  {name:'Energy Management',grade:'B-',score:68,color:'gc-b',sub:'Work-energy alignment could improve',metrics:[{l:'Hard Work in Peak Hours',v:'62%'},{l:'After-Hours Work',v:'12% of total'},{l:'Break Frequency',v:'Every 2.8h'},{l:'Energy Alignment Score',v:'68/100'}],pct:68,rec:'Only 62% of demanding work happens during peak energy hours (9-11am). Shift complex tasks earlier. Break frequency is low — encourage 5-minute breaks every 90 minutes for sustained performance.'},
+  {name:'Goal Alignment',grade:'A-',score:88,color:'gc-a',sub:'Team efforts well-aligned to priorities',metrics:[{l:'Time on Top Priorities',v:'74%'},{l:'Sprint Completion Rate',v:'89%'},{l:'Scope Creep Index',v:'Low'},{l:'Priority Clarity Score',v:'8.5/10'}],pct:88,rec:'Strong alignment. The 26% of time not on top priorities is mostly admin and unexpected requests. Consider time-boxing "interrupt handling" to 2 hours/day to protect priority work.'},
+  {name:'Burnout Risk',grade:'B+',score:82,color:'gc-b',sub:'Generally healthy with 2 at-risk members',metrics:[{l:'Avg Daily Hours',v:'8.4h'},{l:'Weekend Work',v:'8% of team'},{l:'Sustained Overtime (>3 days)',v:'2 people'},{l:'PTO Utilization',v:'76%'}],pct:82,rec:'Overall risk is low, but 2 team members have sustained overtime patterns. Check in directly. PTO utilization at 76% is decent but push for 90%+ to prevent accumulated fatigue.'}
+];
+
+const grid=document.getElementById('gradeGrid');
+grades.forEach((g,i)=>{
+  const card=document.createElement('div');card.className='grade-card';
+  card.innerHTML=`<div class="grade-header"><div class="grade-circle ${g.color}">${g.grade}</div><div class="grade-info"><h3>${g.name}</h3><div class="sub">${g.sub}</div></div></div><div class="grade-details"><div class="detail-content">${g.metrics.map(m=>`<div class="metric-row"><span class="metric-label">${m.l}</span><span class="metric-val">${m.v}</span></div>`).join('')}<div class="metric-bar"><div class="track"><div class="fill" style="width:${g.pct}%;background:${g.pct>80?'#10b981':g.pct>60?'#3b82f6':'#f59e0b'}"></div></div><div class="pct" style="color:${g.pct>80?'#10b981':g.pct>60?'#3b82f6':'#f59e0b'}">${g.pct}%</div></div><div class="detail-rec"><h4>Recommendation</h4><p>${g.rec}</p></div></div></div><div class="expand-hint">Click to ${i===0?'see details':'expand'}</div>`;
+  card.addEventListener('click',()=>card.classList.toggle('open'));
+  grid.appendChild(card);
+});
+
+// Trend chart
+const trendData={
+  focus:[62,65,68,70,72,74,78,80,82,85,88,92],
+  collab:[70,68,72,74,73,76,75,78,76,77,76,76],
+  meetings:[72,70,68,65,63,60,62,58,56,55,57,58],
+  engagement:[65,68,70,72,75,74,78,80,82,84,83,82]
+};
+const weeks=['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12'];
+const tc=document.getElementById('trendChart');
+const colors=['#10b981','#3b82f6','#f59e0b','#8b5cf6'];
+const keys=Object.keys(trendData);
+weeks.forEach((w,wi)=>{
+  const group=document.createElement('div');group.className='trend-bar-group';
+  keys.forEach((k,ki)=>{
+    const bar=document.createElement('div');bar.className='trend-bar';
+    const h=trendData[k][wi];
+    bar.style.height=(h/100*140)+'px';
+    bar.style.background=colors[ki];
+    bar.style.opacity='.7';
+    bar.style.width=Math.floor(100/keys.length-5)+'%';
+    bar.style.display='inline-block';
+    group.appendChild(bar);
+  });
+  const lbl=document.createElement('div');lbl.className='trend-label';lbl.textContent=w;
+  group.appendChild(lbl);
+  tc.appendChild(group);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Work Theater Detector | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0D0D0D;--card:#161616;--accent:#EC4899;--yellow:#FBBF24;--cyan:#06B6D4;--text:#E5E7EB;--muted:#6B7280;--border:#222}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+h1,h2,h3{font-family:'Sora',sans-serif}
+
+nav{position:fixed;top:0;width:100%;z-index:100;padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;background:rgba(13,13,13,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.logo{font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:700;color:#fff}
+.logo span{color:var(--accent)}
+nav button{background:var(--accent);color:#fff;border:none;padding:.65rem 1.5rem;border-radius:8px;font-weight:600;cursor:pointer;font-size:.85rem}
+
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6rem 2rem 4rem}
+.hero-emoji{font-size:4rem;margin-bottom:1.5rem}
+.hero h1{font-size:clamp(2.5rem,6vw,5rem);font-weight:700;line-height:1.05;margin-bottom:1.5rem;color:#fff}
+.hero h1 .pink{color:var(--accent)}
+.hero h1 .yellow{color:var(--yellow)}
+.hero p{font-size:1.15rem;max-width:600px;color:var(--muted);line-height:1.7;margin-bottom:3rem}
+
+/* Theater Cards */
+.theater-section{padding:4rem 2rem}
+.theater-inner{max-width:1100px;margin:0 auto}
+.section-tag{font-size:.75rem;color:var(--accent);letter-spacing:3px;text-transform:uppercase;font-weight:600;margin-bottom:1rem}
+.section-title{font-size:clamp(1.8rem,3.5vw,2.5rem);font-weight:700;color:#fff;margin-bottom:.5rem}
+.section-desc{color:var(--muted);margin-bottom:3rem;max-width:550px;line-height:1.7}
+
+.theater-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.5rem}
+.theater-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;opacity:0;transform:translateY(20px);transition:all .5s;position:relative;overflow:hidden}
+.theater-card.visible{opacity:1;transform:translateY(0)}
+.theater-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--yellow))}
+.theater-card .emoji{font-size:2rem;margin-bottom:1rem}
+.theater-card h3{font-size:1.15rem;margin-bottom:.5rem;color:#fff}
+.theater-card .act{color:var(--accent);font-size:.8rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:.75rem}
+.theater-card p{color:var(--muted);line-height:1.7;font-size:.9rem;margin-bottom:1rem}
+.theater-card .reality{background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.2);border-radius:8px;padding:.75rem 1rem;font-size:.85rem;color:var(--cyan)}
+.reality-label{font-weight:600;display:block;margin-bottom:.25rem;font-size:.75rem;letter-spacing:1px;text-transform:uppercase}
+
+/* Detector */
+.detector{padding:6rem 2rem;background:var(--card);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.detector-inner{max-width:800px;margin:0 auto;text-align:center}
+.detector h2{font-size:2rem;color:#fff;margin-bottom:1rem}
+.detector>p{color:var(--muted);margin-bottom:3rem;line-height:1.7}
+
+.quiz{text-align:left}
+.quiz-q{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1rem;cursor:pointer;transition:all .3s;display:flex;justify-content:space-between;align-items:center}
+.quiz-q:hover{border-color:var(--accent)}
+.quiz-q.selected{border-color:var(--accent);background:rgba(236,72,153,.05)}
+.quiz-q .text{font-size:.95rem;color:var(--text)}
+.quiz-q .indicator{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;min-width:24px;transition:all .3s}
+.quiz-q.selected .indicator{border-color:var(--accent);background:var(--accent);color:#fff;font-size:.7rem}
+.quiz-result{margin-top:2rem;padding:2rem;border-radius:12px;display:none;text-align:center}
+.quiz-result.show{display:block}
+.quiz-result h3{font-size:1.5rem;margin-bottom:.75rem}
+.quiz-result p{color:var(--muted);line-height:1.7}
+.score-bar{height:8px;background:var(--border);border-radius:4px;margin:1.5rem 0;overflow:hidden}
+.score-fill{height:100%;border-radius:4px;transition:width 1s ease;width:0}
+
+/* Data Section */
+.data-section{padding:6rem 2rem}
+.data-inner{max-width:1000px;margin:0 auto}
+.data-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.5rem;margin-top:3rem}
+.data-card{text-align:center;padding:2rem;background:var(--card);border:1px solid var(--border);border-radius:16px}
+.data-card .num{font-family:'Sora',sans-serif;font-size:2.5rem;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--yellow));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.data-card .label{color:var(--muted);font-size:.85rem;margin-top:.5rem;line-height:1.4}
+
+/* Solution */
+.solution{padding:6rem 2rem;text-align:center}
+.sol-grid{max-width:900px;margin:3rem auto 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem;text-align:left}
+.sol-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem}
+.sol-card h3{font-size:1.1rem;color:#fff;margin-bottom:.75rem}
+.sol-card p{color:var(--muted);line-height:1.7;font-size:.9rem}
+
+.cta{padding:8rem 2rem;text-align:center}
+.cta h2{font-size:clamp(2rem,4vw,3rem);color:#fff;margin-bottom:1rem}
+.cta p{color:var(--muted);max-width:500px;margin:0 auto 2.5rem;line-height:1.7;font-size:1.05rem}
+.cta button{background:var(--accent);color:#fff;border:none;padding:1rem 2.5rem;border-radius:10px;font-size:1.05rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Sora',sans-serif}
+.cta button:hover{background:#F472B6;transform:translateY(-2px)}
+.cta .sub{color:var(--muted);font-size:.85rem;margin-top:1rem}
+
+footer{padding:3rem 2rem;text-align:center;color:var(--muted);font-size:.8rem;border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+
+<nav>
+<div class="logo">Go<span>2</span></div>
+<button>Detect Theater</button>
+</nav>
+
+<section class="hero">
+<div class="hero-emoji">&#127917;</div>
+<h1>Your Office is a <span class="pink">Theater</span><br>and Everyone <span class="yellow">Knows It</span></h1>
+<p>Performative productivity is the silent tax on your business. Looking busy. Staying late for optics. Scheduling meetings to seem important. Go2 sees through the performance and shows you what's real.</p>
+</section>
+
+<section class="theater-section">
+<div class="theater-inner">
+<div class="section-tag">The Cast</div>
+<h2 class="section-title">Performances Playing Daily</h2>
+<p class="section-desc">Recognize anyone? These performances happen in every company. They cost you millions in wasted productivity.</p>
+<div class="theater-grid">
+<div class="theater-card">
+<div class="emoji">&#128187;</div>
+<div class="act">Act I</div>
+<h3>The Busy Emailer</h3>
+<p>Sends 80+ emails a day. CC's everyone. Replies instantly to everything. Looks incredibly productive. Actually produces almost nothing of value.</p>
+<div class="reality"><span class="reality-label">Go2 Reveals</span>High email volume correlates with LOW productive output. The busiest emailers are often the least effective contributors.</div>
+</div>
+<div class="theater-card">
+<div class="emoji">&#128197;</div>
+<div class="act">Act II</div>
+<h3>The Meeting Collector</h3>
+<p>Calendar is wall-to-wall. Always "in a meeting." Seems essential to every decision. In reality, contributes to few outcomes and blocks everyone else's focus time.</p>
+<div class="reality"><span class="reality-label">Go2 Reveals</span>Employees with 60%+ meeting time deliver 47% less independent output. Being in the room isn't the same as driving results.</div>
+</div>
+<div class="theater-card">
+<div class="emoji">&#127769;</div>
+<div class="act">Act III</div>
+<h3>The Late Stayer</h3>
+<p>Always the last one online. Sends Slack messages at 11pm. Appears incredibly dedicated. Actually, they're just bad at time management and creating urgency theater.</p>
+<div class="reality"><span class="reality-label">Go2 Reveals</span>After-hours work correlates with lower quality output. Consistent late workers produce 23% more errors than focused 8-hour workers.</div>
+</div>
+<div class="theater-card">
+<div class="emoji">&#128240;</div>
+<div class="act">Act IV</div>
+<h3>The Status Updater</h3>
+<p>Writes the longest Slack updates. Documents everything. Creates elaborate project trackers. Spends more time describing work than doing it.</p>
+<div class="reality"><span class="reality-label">Go2 Reveals</span>Go2 measures actual output alongside communication patterns. Some people spend 40% of their day narrating the other 60%.</div>
+</div>
+<div class="theater-card">
+<div class="emoji">&#128170;</div>
+<div class="act">Act V</div>
+<h3>The Tool Switcher</h3>
+<p>Constantly adopting new tools and workflows. Seems innovative and forward-thinking. In reality, the switching costs destroy team productivity for weeks each time.</p>
+<div class="reality"><span class="reality-label">Go2 Reveals</span>Teams that adopt new tools quarterly are 31% less productive than those with stable toolchains. Innovation theater is expensive.</div>
+</div>
+<div class="theater-card">
+<div class="emoji">&#129300;</div>
+<div class="act">Act VI</div>
+<h3>The Deep Thinker</h3>
+<p>Always "thinking about the big picture." Schedules strategy sessions. Writes vision docs. Meanwhile, actual deliverables slip and the team compensates.</p>
+<div class="reality"><span class="reality-label">Go2 Reveals</span>Go2 connects strategic time to output. Real strategic thinking produces results. Theater produces documents nobody reads.</div>
+</div>
+</div>
+</div>
+</section>
+
+<section class="detector">
+<div class="detector-inner">
+<h2>How Much Theater is in Your Office?</h2>
+<p>Select the behaviors you recognize. Be honest. Nobody's watching. (Ironic, right?)</p>
+<div class="quiz">
+<div class="quiz-q" onclick="toggleQ(this)"><span class="text">Employees stay late regularly but output doesn't reflect it</span><span class="indicator"></span></div>
+<div class="quiz-q" onclick="toggleQ(this)"><span class="text">More than 30% of calendar time is meetings</span><span class="indicator"></span></div>
+<div class="quiz-q" onclick="toggleQ(this)"><span class="text">People CC everyone on emails "just in case"</span><span class="indicator"></span></div>
+<div class="quiz-q" onclick="toggleQ(this)"><span class="text">Status updates take longer than the work itself</span><span class="indicator"></span></div>
+<div class="quiz-q" onclick="toggleQ(this)"><span class="text">Presence in office (or online) matters more than output</span><span class="indicator"></span></div>
+<div class="quiz-q" onclick="toggleQ(this)"><span class="text">New tools get adopted faster than old ones get mastered</span><span class="indicator"></span></div>
+<div class="quiz-q" onclick="toggleQ(this)"><span class="text">People schedule meetings they could handle with a message</span><span class="indicator"></span></div>
+<div class="quiz-q" onclick="toggleQ(this)"><span class="text">Performance reviews focus on effort, not outcomes</span><span class="indicator"></span></div>
+</div>
+<div class="quiz-result" id="quizResult">
+<h3 id="resultTitle"></h3>
+<div class="score-bar"><div class="score-fill" id="scoreFill"></div></div>
+<p id="resultText"></p>
+</div>
+</div>
+</section>
+
+<section class="data-section">
+<div class="data-inner" style="text-align:center">
+<div class="section-tag">The Cost of Theater</div>
+<h2 class="section-title">What Performative Productivity Costs You</h2>
+<div class="data-grid">
+<div class="data-card"><div class="num">32%</div><div class="label">Of work hours are performative (look busy, not be productive)</div></div>
+<div class="data-card"><div class="num">$4.7K</div><div class="label">Lost per employee per month to productivity theater</div></div>
+<div class="data-card"><div class="num">15.2h</div><div class="label">Hours/week Go2 recovers by eliminating theater</div></div>
+<div class="data-card"><div class="num">892%</div><div class="label">ROI when you replace theater with real productivity</div></div>
+</div>
+</div>
+</section>
+
+<section class="solution">
+<div class="section-tag">The Antidote</div>
+<h2 class="section-title" style="color:#fff">Go2 Kills the Performance</h2>
+<div class="sol-grid">
+<div class="sol-card"><h3>Measure Outcomes, Not Activity</h3><p>Go2 tracks what matters: deep work time, collaboration quality, project velocity. Not keystrokes, not hours online, not email volume.</p></div>
+<div class="sol-card"><h3>Make Real Work Visible</h3><p>When actual productivity is measured and celebrated, the incentive to perform busy-ness disappears. Do great work, get recognized for it.</p></div>
+<div class="sol-card"><h3>AI Coaching Over Surveillance</h3><p>Employees get personalized AI coaching to optimize their real work patterns. Not pressure to look busy. Support to actually be effective.</p></div>
+</div>
+</section>
+
+<section class="cta">
+<h2>Drop the Curtain</h2>
+<p>Stop rewarding performances. Start measuring what matters. Go2 shows you the real productivity of your team, no acting required.</p>
+<button>Start Free Trial</button>
+<p class="sub">$6/user/month. See through the theater in 24 hours.</p>
+</section>
+
+<footer><p>&copy; 2026 Go2. Real productivity, no performance.</p></footer>
+
+<script>
+const obs = new IntersectionObserver((entries) => {
+entries.forEach(e => { if(e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }});
+}, {threshold: 0.15});
+document.querySelectorAll('.theater-card').forEach(el => obs.observe(el));
+
+function toggleQ(el) {
+el.classList.toggle('selected');
+el.querySelector('.indicator').textContent = el.classList.contains('selected') ? '✓' : '';
+updateQuiz();
+}
+
+function updateQuiz() {
+const selected = document.querySelectorAll('.quiz-q.selected').length;
+const total = document.querySelectorAll('.quiz-q').length;
+const result = document.getElementById('quizResult');
+const title = document.getElementById('resultTitle');
+const text = document.getElementById('resultText');
+const fill = document.getElementById('scoreFill');
+if(selected === 0) { result.classList.remove('show'); return; }
+result.classList.add('show');
+const pct = Math.round((selected/total)*100);
+fill.style.width = pct+'%';
+if(pct <= 25) { fill.style.background = 'var(--cyan)'; title.textContent = 'Minimal Theater'; text.textContent = 'Your office has some performance, but it\'s manageable. Go2 can help you eliminate even these small inefficiencies.'; result.style.background = 'rgba(6,182,212,.05)'; result.style.border = '1px solid rgba(6,182,212,.2)'; }
+else if(pct <= 50) { fill.style.background = 'var(--yellow)'; title.textContent = 'Moderate Theater'; text.textContent = 'Significant performative behavior is costing you real productivity. Go2 can recover an estimated 10+ hours per employee per week.'; result.style.background = 'rgba(251,191,36,.05)'; result.style.border = '1px solid rgba(251,191,36,.2)'; }
+else if(pct <= 75) { fill.style.background = 'var(--accent)'; title.textContent = 'Heavy Theater'; text.textContent = 'Your office is more performance than productivity. This is costing you thousands per employee per month. Go2 needs to be deployed yesterday.'; result.style.background = 'rgba(236,72,153,.05)'; result.style.border = '1px solid rgba(236,72,153,.2)'; }
+else { fill.style.background = '#EF4444'; title.textContent = 'Full Broadway Production'; text.textContent = 'Your entire culture is built on performative productivity. The good news: Go2 customers in this state see the biggest transformations. Average 42% productivity increase.'; result.style.background = 'rgba(239,68,68,.05)'; result.style.border = '1px solid rgba(239,68,68,.2)'; }
+}
+</script>
+</body>
+</html>

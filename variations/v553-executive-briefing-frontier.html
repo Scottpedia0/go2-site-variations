@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go2 | Executive Briefing</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Color Palette - Executive Dark Mode */
+            --bg-dark: #0B1120;
+            --bg-panel: #111827;
+            --bg-card: #1F2937;
+            --text-main: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --accent-blue: #3B82F6;
+            --accent-blue-hover: #2563EB;
+            --accent-teal: #10B981;
+            --accent-red: #EF4444;
+            --border-color: #374151;
+            
+            /* Typography */
+            --font-main: 'Inter', sans-serif;
+            
+            /* Spacing & Layout */
+            --slide-radius: 16px;
+            --transition-speed: 0.5s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-image: radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 40%),
+                              radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.05), transparent 40%);
+        }
+
+        /* Presentation Container */
+        .deck-wrapper {
+            width: 100%;
+            max-width: 1200px;
+            height: 85vh;
+            min-height: 600px;
+            position: relative;
+            background: var(--bg-panel);
+            border-radius: var(--slide-radius);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border-color);
+            display: flex;
+            flex-direction: column;
+            margin: 20px;
+            overflow: hidden;
+        }
+
+        /* Header / Nav */
+        .deck-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            border-bottom: 1px solid var(--border-color);
+            z-index: 10;
+            background: rgba(17, 24, 39, 0.9);
+            backdrop-filter: blur(10px);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-dot {
+            width: 12px;
+            height: 12px;
+            background: var(--accent-blue);
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .confidential-tag {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--accent-teal);
+            font-weight: 600;
+            border: 1px solid var(--accent-teal);
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        /* Slide Container */
+        .slides-container {
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 60px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(50px);
+            transition: opacity var(--transition-speed) ease, 
+                        transform var(--transition-speed) ease,
+                        visibility var(--transition-speed);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+            z-index: 5;
+        }
+
+        .slide.prev {
+            transform: translateX(-50px);
+        }
+
+        /* Controls */
+        .deck-footer {
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-color);
+            z-index: 10;
+            background: var(--bg-panel);
+        }
+
+        .progress-container {
+            flex-grow: 1;
+            margin: 0 40px;
+            height: 4px;
+            background: var(--bg-card);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--accent-blue);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .nav-btn {
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-family: var(--font-main);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: var(--bg-card);
+            border-color: var(--text-muted);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .nav-btn.primary {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+        }
+
+        .nav-btn.primary:hover:not(:disabled) {
+            background: var(--accent-blue-hover);
+        }
+
+        /* --- Slide Specific Styles --- */
+
+        /* Typography */
+        h1 { font-size: 3.5rem; font-weight: 800; line-height: 1.1; margin-bottom: 20px; letter-spacing: -1px; }
+        h2 { font-size: 2.5rem; font-weight: 700; margin-bottom: 30px; letter-spacing: -0.5px; }
+        h3 { font-size: 1.5rem; font-weight: 600; margin-bottom: 15px; }
+        p { font-size: 1.1rem; line-height: 1.6; color: var(--text-muted); margin-bottom: 20px; }
+        
+        .highlight { color: var(--accent-blue); }
+        .success { color: var(--accent-teal); }
+
+        /* Grids & Layouts */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+        
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            transition: transform 0.3s;
+        }
+        
+        .card:hover { transform: translateY(-5px); }
+
+        /* Stats Component */
+        .stat-block { text-align: center; padding: 40px 20px; background: var(--bg-card); border-radius: 16px; border: 1px solid rgba(59, 130, 246, 0.2); position: relative; overflow: hidden; }
+        .stat-block::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--accent-blue); }
+        .stat-block.success::before { background: var(--accent-teal); }
+        .stat-num { font-size: 4rem; font-weight: 800; color: var(--text-main); margin-bottom: 10px; line-height: 1; }
+        .stat-label { font-size: 1.1rem; color: var(--text-muted); font-weight: 500; }
+
+        /* Comparison Table */
+        .comparison { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .comparison th, .comparison td { padding: 20px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .comparison th { font-weight: 600; font-size: 1.2rem; color: var(--text-main); }
+        .comparison th.legacy { color: var(--text-muted); }
+        .comparison th.modern { color: var(--accent-blue); background: rgba(59, 130, 246, 0.05); border-radius: 8px 8px 0 0; }
+        .comparison td.modern-cell { background: rgba(59, 130, 246, 0.05); }
+        .icon-x { color: var(--accent-red); font-weight: bold; margin-right: 10px; }
+        .icon-check { color: var(--accent-teal); font-weight: bold; margin-right: 10px; }
+
+        /* Timeline */
+        .timeline { position: relative; padding-left: 30px; margin-top: 20px; }
+        .timeline::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 2px; background: var(--border-color); }
+        .timeline-item { position: relative; margin-bottom: 40px; }
+        .timeline-item:last-child { margin-bottom: 0; }
+        .timeline-dot { position: absolute; left: -35px; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent-blue); border: 2px solid var(--bg-panel); }
+        .timeline-content h4 { font-size: 1.2rem; margin-bottom: 5px; color: var(--text-main); }
+        .timeline-content p { font-size: 0.95rem; margin: 0; }
+
+        /* Pricing */
+        .price { font-size: 3rem; font-weight: 800; color: var(--text-main); }
+        .price span { font-size: 1rem; color: var(--text-muted); font-weight: 400; }
+        
+        /* Form */
+        .cta-form { display: flex; gap: 10px; margin-top: 30px; }
+        .cta-form input { flex-grow: 1; padding: 15px 20px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-dark); color: white; font-family: var(--font-main); font-size: 1rem; }
+        .cta-form input:focus { outline: none; border-color: var(--accent-blue); }
+        .cta-btn { padding: 15px 30px; border-radius: 8px; border: none; background: var(--accent-blue); color: white; font-weight: 600; font-size: 1rem; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+        .cta-btn:hover { background: var(--accent-blue-hover); }
+
+        /* Animations for slide content */
+        .slide.active h1, .slide.active h2, .slide.active .animate-up {
+            animation: fadeUp 0.6s ease forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        .slide.active .delay-1 { animation-delay: 0.1s; }
+        .slide.active .delay-2 { animation-delay: 0.2s; }
+        .slide.active .delay-3 { animation-delay: 0.3s; }
+
+        @keyframes fadeUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .grid-2, .grid-3 { grid-template-columns: 1fr; gap: 20px; }
+            h1 { font-size: 2.5rem; }
+            h2 { font-size: 2rem; }
+            .slide { padding: 40px 20px; }
+            .deck-header { padding: 15px 20px; }
+            .deck-footer { padding: 15px 20px; }
+            .progress-container { margin: 0 15px; }
+        }
+        
+        @media (max-width: 600px) {
+            .cta-form { flex-direction: column; }
+            .stat-num { font-size: 3rem; }
+            .confidential-tag { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="deck-wrapper">
+        
+        <!-- Header -->
+        <header class="deck-header">
+            <div class="logo">
+                <span class="logo-dot"></span> Go2
+            </div>
+            <div class="confidential-tag">Executive Briefing</div>
+        </header>
+
+        <!-- Slides -->
+        <div class="slides-container">
+            
+            <!-- Slide 1: Title -->
+            <div class="slide active">
+                <div style="max-width: 800px; margin: 0 auto; text-align: center;">
+                    <div class="animate-up" style="margin-bottom: 30px;">
+                        <span style="color: var(--accent-blue); font-weight: 600; letter-spacing: 2px; text-transform: uppercase; font-size: 0.9rem;">Strategic Overview</span>
+                    </div>
+                    <h1>The AI-Powered Productivity <br><span class="highlight">Co-Pilot for SMBs</span></h1>
+                    <p class="animate-up delay-1" style="font-size: 1.3rem; max-width: 600px; margin: 0 auto;">
+                        Transforming how work gets done through actionable insights and personalized AI coaching—not surveillance.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Slide 2: Problem -->
+            <div class="slide">
+                <h2>The "Black Box" of Modern Work</h2>
+                <p style="max-width: 800px; margin-bottom: 40px;">For SMBs (5-500 employees), the shift to hybrid/remote work has created an visibility crisis. Leaders cannot manage what they cannot measure.</p>
+                
+                <div class="grid-3">
+                    <div class="card animate-up delay-1">
+                        <div style="font-size: 2rem; margin-bottom: 15px;">Blind Spots</div>
+                        <h3>Lack of Visibility</h3>
+                        <p>Ops managers and HR lack objective data on how time is actually spent across applications, meetings, and deep work.</p>
+                    </div>
+                    <div class="card animate-up delay-2">
+                        <div style="font-size: 2rem; margin-bottom: 15px;">🔥</div>
+                        <h3>Employee Burnout</h3>
+                        <p>Without understanding work patterns, high performers are routinely overloaded, leading to invisible burnout and turnover.</p>
+                    </div>
+                    <div class="card animate-up delay-3" style="border-color: rgba(239, 68, 68, 0.3);">
+                        <div style="font-size: 2rem; margin-bottom: 15px;">👁️</div>
+                        <h3>The Surveillance Backlash</h3>
+                        <p>Legacy tools act like "Big Brother," taking screenshots and logging keystrokes, destroying trust and company culture.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 3: Market Shift -->
+            <div class="slide">
+                <h2>The Paradigm Shift: Monitoring vs. Coaching</h2>
+                <p style="max-width: 800px;">The market is rejecting punitive tracking. Go2 pioneers a new category focused on empowerment and optimization.</p>
+                
+                <div class="animate-up delay-1" style="overflow-x: auto;">
+                    <table class="comparison">
+                        <thead>
+                            <tr>
+                                <th>Feature Focus</th>
+                                <th class="legacy">Legacy (Time Doctor, Hubstaff)</th>
+                                <th class="modern">Modern Approach (Go2)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Primary Goal</strong></td>
+                                <td>Punitive surveillance & time-theft</td>
+                                <td class="modern-cell"><strong>Performance coaching & workflow optimization</strong></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Data Visibility</strong></td>
+                                <td>Management only (Top-down)</td>
+                                <td class="modern-cell"><strong>Shared with employee (Bottom-up empowerment)</strong></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Intrusiveness</strong></td>
+                                <td><span class="icon-x">✕</span> Screen recording, webcam access</td>
+                                <td class="modern-cell"><strong><span class="icon-check">✓</span> Passive metadata analysis (Privacy-first)</strong></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Output</strong></td>
+                                <td>Raw logs and timesheets</td>
+                                <td class="modern-cell"><strong><span class="icon-check">✓</span> Actionable AI coaching summaries</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Slide 4: Solution -->
+            <div class="slide">
+                <h2>How Go2 Works</h2>
+                <p>A seamless, secure background process that turns behavioral metadata into productivity gains.</p>
+                
+                <div class="grid-3" style="margin-top: 40px;">
+                    <div class="card animate-up delay-1" style="text-align: center; padding: 40px 20px;">
+                        <div style="width: 60px; height: 60px; background: rgba(59, 130, 246, 0.1); color: var(--accent-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; margin: 0 auto 20px;">1</div>
+                        <h3>Capture</h3>
+                        <p style="font-size: 0.95rem;">Passively tracks work patterns: app usage, meeting cadence, context switching, and keystroke volume (not content).</p>
+                    </div>
+                    <div class="card animate-up delay-2" style="text-align: center; padding: 40px 20px;">
+                        <div style="width: 60px; height: 60px; background: rgba(59, 130, 246, 0.1); color: var(--accent-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; margin: 0 auto 20px;">2</div>
+                        <h3>AI Analysis</h3>
+                        <p style="font-size: 0.95rem;">Proprietary LLMs identify bottlenecks, time-wasting software, and optimal focus windows for individual roles.</p>
+                    </div>
+                    <div class="card animate-up delay-3" style="text-align: center; padding: 40px 20px;">
+                        <div style="width: 60px; height: 60px; background: rgba(16, 185, 129, 0.1); color: var(--accent-teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; margin: 0 auto 20px;">3</div>
+                        <h3>Deliver Coaching</h3>
+                        <p style="font-size: 0.95rem;">Provides weekly AI coaching reports to employees to improve habits, and anonymized aggregate data to leadership.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 5: Impact -->
+            <div class="slide">
+                <h2>Proven Business Impact</h2>
+                <p>Based on aggregated data from our current SMB customer base across the first 12 months of deployment.</p>
+                
+                <div class="grid-3" style="margin-top: 50px;">
+                    <div class="stat-block animate-up delay-1">
+                        <div class="stat-num">42<span style="font-size: 2rem;">%</span></div>
+                        <div class="stat-label">Avg. Productivity Increase</div>
+                        <p style="font-size: 0.85rem; margin-top: 15px; margin-bottom: 0;">Measured by output metrics specific to role.</p>
+                    </div>
+                    <div class="stat-block animate-up delay-2">
+                        <div class="stat-num">15.2</div>
+                        <div class="stat-label">Hours Saved / Wk / Emp</div>
+                        <p style="font-size: 0.85rem; margin-top: 15px; margin-bottom: 0;">Recovered from context switching & bad meetings.</p>
+                    </div>
+                    <div class="stat-block success animate-up delay-3">
+                        <div class="stat-num" style="color: var(--accent-teal);">892<span style="font-size: 2rem;">%</span></div>
+                        <div class="stat-label">First Year ROI</div>
+                        <p style="font-size: 0.85rem; margin-top: 15px; margin-bottom: 0;">Factoring software cost vs. payroll efficiency.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 6: ROI & Pricing -->
+            <div class="slide">
+                <div class="grid-2">
+                    <div>
+                        <h2>Transparent, Scalable Pricing</h2>
+                        <p>Designed for SMB budgets, delivering enterprise-grade insights.</p>
+                        
+                        <div style="margin-top: 30px;">
+                            <div class="card animate-up delay-1" style="margin-bottom: 20px; border-left: 4px solid var(--text-muted);">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <h3>Core Insights</h3>
+                                        <p style="margin: 0; font-size: 0.9rem;">Basic tracking & team dashboards.</p>
+                                    </div>
+                                    <div class="price">$6<span>/mo/user</span></div>
+                                </div>
+                            </div>
+                            
+                            <div class="card animate-up delay-2" style="border-left: 4px solid var(--accent-blue); background: rgba(59, 130, 246, 0.05);">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <h3>AI Co-Pilot <span style="font-size: 0.7rem; background: var(--accent-blue); padding: 2px 6px; border-radius: 4px; margin-left: 5px;">POPULAR</span></h3>
+                                        <p style="margin: 0; font-size: 0.9rem;">Full AI coaching & executive reporting.</p>
+                                    </div>
+                                    <div class="price" style="color: var(--accent-blue);">$12<span>/mo/user</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card animate-up delay-3" style="background: var(--bg-dark);">
+                        <h3 style="color: var(--accent-teal);">Example ROI Calculation</h3>
+                        <p style="font-size: 0.9rem;">For a 50-person company</p>
+                        
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding: 10px 0;">
+                            <span>Annual Investment (AI Tier):</span>
+                            <strong>$7,200</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding: 10px 0;">
+                            <span>Avg. Salary Burden:</span>
+                            <strong>$75,000/yr</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding: 10px 0;">
+                            <span>Conservative Gain (5%):</span>
+                            <strong>$187,500/yr</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 15px 0 0 0; font-size: 1.2rem; color: var(--accent-teal);">
+                            <strong>Net Annual Value:</strong>
+                            <strong>+$180,300</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 7: Implementation -->
+            <div class="slide">
+                <h2>30-Day Rollout Plan</h2>
+                <p>Zero-friction deployment designed not to disrupt current IT operations.</p>
+                
+                <div class="timeline animate-up delay-1">
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <span style="color: var(--accent-blue); font-weight: 600; font-size: 0.85rem;">Week 1</span>
+                            <h4>Silent Deployment & Baseline</h4>
+                            <p>Mass deployment via MDM (Intune/Jamf). System runs silently to establish baseline metrics without altering behavior.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <span style="color: var(--accent-blue); font-weight: 600; font-size: 0.85rem;">Week 2</span>
+                            <h4>Leadership Data Review</h4>
+                            <p>Initial executive briefing on organizational bottlenecks, software utilization, and department-level focus metrics.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <span style="color: var(--accent-blue); font-weight: 600; font-size: 0.85rem;">Week 3</span>
+                            <h4>Employee Onboarding & Transparency</h4>
+                            <p>Communication rollout focusing on the "Coaching, not Monitoring" philosophy. Employees gain access to personal dashboards.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot" style="background: var(--accent-teal);"></div>
+                        <div class="timeline-content">
+                            <span style="color: var(--accent-teal); font-weight: 600; font-size: 0.85rem;">Week 4+</span>
+                            <h4>AI Coaching Activation</h4>
+                            <p>Automated weekly insights begin. Optimization phase starts with measurable improvements tracked in the executive dashboard.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 8: CTA -->
+            <div class="slide">
+                <div style="text-align: center; max-width: 600px; margin: 0 auto;">
+                    <div class="animate-up" style="font-size: 4rem; margin-bottom: 20px;">🚀</div>
+                    <h2 class="animate-up delay-1">Ready to illuminate your operations?</h2>
+                    <p class="animate-up delay-2" style="font-size: 1.2rem;">
+                        Stop guessing how work gets done. Start empowering your team with data-driven AI coaching.
+                    </p>
+                    
+                    <div class="card animate-up delay-3" style="margin-top: 40px; background: rgba(59, 130, 246, 0.05); border-color: rgba(59, 130, 246, 0.2);">
+                        <h3>Schedule a Custom Proof of Concept</h3>
+                        <p style="font-size: 0.95rem; margin-bottom: 10px;">We'll run Go2 on a sample subset of your team for 14 days, free of charge, and present a custom insights report.</p>
+                        
+                        <form class="cta-form" onsubmit="event.preventDefault(); alert('Request received. Our executive team will contact you shortly.');">
+                            <input type="email" placeholder="Enter your work email" required>
+                            <button type="submit" class="cta-btn">Request Briefing</button>
+                        </form>
+                        <p style="font-size: 0.8rem; margin-top: 15px; margin-bottom: 0; opacity: 0.6;">No credit card required. Strict NDA applied.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer / Controls -->
+        <footer class="deck-footer">
+            <button id="prevBtn" class="nav-btn" disabled>
+                ← Prev
+            </button>
+            
+            <div class="progress-container">
+                <div id="progressBar" class="progress-bar"></div>
+            </div>
+            
+            <div style="font-size: 0.9rem; color: var(--text-muted); margin-right: 20px; font-variant-numeric: tabular-nums;">
+                <span id="currentSlideNum">1</span> / <span id="totalSlidesNum">8</span>
+            </div>
+
+            <button id="nextBtn" class="nav-btn primary">
+                Next →
+            </button>
+        </footer>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const slides = document.querySelectorAll('.slide');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const progressBar = document.getElementById('progressBar');
+            const currentSlideNum = document.getElementById('currentSlideNum');
+            const totalSlidesNum = document.getElementById('totalSlidesNum');
+            
+            let currentSlide = 0;
+            const totalSlides = slides.length;
+            
+            totalSlidesNum.textContent = totalSlides;
+            updateUI();
+
+            function updateUI() {
+                // Update Slides
+                slides.forEach((slide, index) => {
+                    slide.classList.remove('active', 'prev');
+                    if (index === currentSlide) {
+                        slide.classList.add('active');
+                    } else if (index < currentSlide) {
+                        slide.classList.add('prev');
+                    }
+                });
+
+                // Update Progress Bar
+                const progress = ((currentSlide) / (totalSlides - 1)) * 100;
+                progressBar.style.width = `${progress}%`;
+
+                // Update Numbers
+                currentSlideNum.textContent = currentSlide + 1;
+
+                // Update Buttons
+                prevBtn.disabled = currentSlide === 0;
+                
+                if (currentSlide === totalSlides - 1) {
+                    nextBtn.innerHTML = 'Finish ✓';
+                    nextBtn.classList.remove('primary');
+                    nextBtn.style.background = 'var(--accent-teal)';
+                    nextBtn.style.borderColor = 'var(--accent-teal)';
+                    nextBtn.style.color = 'white';
+                } else {
+                    nextBtn.innerHTML = 'Next →';
+                    nextBtn.classList.add('primary');
+                    nextBtn.style.background = '';
+                    nextBtn.style.borderColor = '';
+                }
+            }
+
+            function nextSlide() {
+                if (currentSlide < totalSlides - 1) {
+                    currentSlide++;
+                    updateUI();
+                } else if (currentSlide === totalSlides - 1) {
+                    // Optional: Action on finish
+                    alert('End of Briefing. Please fill out the form to proceed.');
+                }
+            }
+
+            function prevSlide() {
+                if (currentSlide > 0) {
+                    currentSlide--;
+                    updateUI();
+                }
+            }
+
+            // Event Listeners
+            nextBtn.addEventListener('click', nextSlide);
+            prevBtn.addEventListener('click', prevSlide);
+
+            // Keyboard Navigation
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowRight' || e.key === 'Space') {
+                    nextSlide();
+                } else if (e.key === 'ArrowLeft') {
+                    prevSlide();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

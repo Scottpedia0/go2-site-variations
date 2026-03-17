@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Go2 Meeting Cost Calculator</title>
+  <meta name="description" content="Calculate the real-time cost of meetings and see how Go2 helps SMB teams reduce unnecessary meetings with AI productivity coaching." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#07111f;
+      --bg-2:#0b1629;
+      --panel:rgba(13, 25, 46, 0.72);
+      --panel-strong:#0f1d35;
+      --card:#101f39;
+      --text:#e8f0ff;
+      --muted:#9fb2d4;
+      --muted-2:#7f93b6;
+      --line:rgba(255,255,255,.09);
+      --line-2:rgba(255,255,255,.14);
+      --brand:#59e3a7;
+      --brand-2:#5fc6ff;
+      --brand-3:#8b7cff;
+      --warning:#ffb84d;
+      --danger:#ff6b6b;
+      --shadow:0 20px 80px rgba(0,0,0,.35);
+      --radius:24px;
+      --radius-sm:16px;
+      --max:1200px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0}
+    body{
+      font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(95,198,255,.12), transparent 30%),
+        radial-gradient(circle at 85% 15%, rgba(139,124,255,.12), transparent 32%),
+        radial-gradient(circle at 50% 80%, rgba(89,227,167,.08), transparent 35%),
+        linear-gradient(180deg, #06101d 0%, #091325 45%, #07111f 100%);
+      color:var(--text);
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background-image:
+        linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+      background-size:36px 36px;
+      mask-image:linear-gradient(to bottom, rgba(0,0,0,.35), transparent 85%);
+      opacity:.28;
+    }
+
+    .container{
+      width:min(calc(100% - 32px), var(--max));
+      margin:0 auto;
+    }
+
+    .hero{
+      padding:32px 0 24px;
+    }
+
+    .nav{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom:28px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-weight:800;
+      letter-spacing:.02em;
+    }
+
+    .brand-mark{
+      width:42px;height:42px;border-radius:14px;
+      background:
+        linear-gradient(135deg, rgba(89,227,167,.95), rgba(95,198,255,.95));
+      display:grid;place-items:center;
+      color:#03131f;
+      font-weight:900;
+      box-shadow:0 10px 30px rgba(89,227,167,.28);
+    }
+
+    .brand-sub{
+      color:var(--muted);
+      font-size:.9rem;
+      font-weight:600;
+    }
+
+    .nav-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 14px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      background:rgba(255,255,255,.04);
+      color:var(--muted);
+      font-size:.88rem;
+      backdrop-filter:blur(12px);
+    }
+
+    .dot{
+      width:8px;height:8px;border-radius:50%;
+      background:var(--brand);
+      box-shadow:0 0 0 6px rgba(89,227,167,.14);
+    }
+
+    .hero-grid{
+      display:grid;
+      grid-template-columns:1.06fr .94fr;
+      gap:24px;
+      align-items:stretch;
+    }
+
+    .panel{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(18px);
+    }
+
+    .hero-copy{
+      padding:34px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .hero-copy::after{
+      content:"";
+      position:absolute;
+      width:360px;height:360px;
+      right:-120px;top:-120px;
+      border-radius:50%;
+      background:radial-gradient(circle, rgba(95,198,255,.16), transparent 65%);
+      pointer-events:none;
+    }
+
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid rgba(95,198,255,.22);
+      background:rgba(95,198,255,.08);
+      color:#b9dcff;
+      font-size:.83rem;
+      font-weight:700;
+      letter-spacing:.02em;
+      margin-bottom:18px;
+    }
+
+    h1{
+      margin:0 0 16px;
+      font-size:clamp(2.3rem, 4vw, 4.5rem);
+      line-height:.97;
+      letter-spacing:-.04em;
+    }
+
+    .gradient-text{
+      background:linear-gradient(135deg, #ffffff 0%, #a9d2ff 42%, #79ffd0 100%);
+      -webkit-background-clip:text;
+      background-clip:text;
+      color:transparent;
+    }
+
+    .hero-copy p{
+      margin:0;
+      color:var(--muted);
+      font-size:1.06rem;
+      line-height:1.7;
+      max-width:62ch;
+    }
+
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(3, 1fr);
+      gap:14px;
+      margin-top:26px;
+    }
+
+    .stat{
+      padding:16px;
+      border-radius:18px;
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--line);
+    }
+
+    .stat strong{
+      display:block;
+      font-size:1.45rem;
+      margin-bottom:6px;
+      letter-spacing:-.03em;
+    }
+
+    .stat span{
+      color:var(--muted);
+      font-size:.92rem;
+      line-height:1.4;
+    }
+
+    .calculator{
+      padding:22px;
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+    }
+
+    .calc-top{
+      display:flex;
+      justify-content:space-between;
+      gap:18px;
+      align-items:flex-start;
+    }
+
+    .calc-top h2{
+      margin:0;
+      font-size:1.35rem;
+      letter-spacing:-.03em;
+    }
+
+    .calc-top p{
+      margin:8px 0 0;
+      color:var(--muted);
+      line-height:1.55;
+      font-size:.95rem;
+      max-width:44ch;
+    }
+
+    .trust-note{
+      padding:10px 12px;
+      border-radius:14px;
+      background:rgba(89,227,167,.08);
+      border:1px solid rgba(89,227,167,.18);
+      color:#bff3dd;
+      font-size:.84rem;
+      font-weight:600;
+      white-space:nowrap;
+    }
+
+    .inputs{
+      display:grid;
+      grid-template-columns:repeat(3, 1fr);
+      gap:14px;
+    }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .field label{
+      color:#c6d6f3;
+      font-size:.88rem;
+      font-weight:600;
+    }
+
+    .input-wrap{
+      position:relative;
+    }
+
+    .input-prefix{
+      position:absolute;
+      left:14px;
+      top:50%;
+      transform:translateY(-50%);
+      color:var(--muted-2);
+      font-weight:700;
+      pointer-events:none;
+    }
+
+    input[type="number"], input[type="range"]{
+      width:100%;
+    }
+
+    input[type="number"]{
+      appearance:textfield;
+      background:rgba(255,255,255,.045);
+      border:1px solid var(--line);
+      color:var(--text);
+      padding:16px 16px;
+      border-radius:16px;
+      outline:none;
+      font-size:1rem;
+      font-weight:600;
+      transition:.2s ease;
+    }
+
+    .has-prefix input[type="number"]{
+      padding-left:32px;
+    }
+
+    input[type="number"]:focus{
+      border-color:rgba(95,198,255,.45);
+      box-shadow:0 0 0 4px rgba(95,198,255,.12);
+    }
+
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+
+    .duration-card{
+      margin-top:2px;
+      padding:18px;
+      border-radius:20px;
+      background:linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+    }
+
+    .duration-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .duration-head label{
+      color:#c6d6f3;
+      font-size:.92rem;
+      font-weight:700;
+    }
+
+    .duration-value{
+      font-weight:800;
+      letter-spacing:-.03em;
+      font-size:1.1rem;
+      color:#fff;
+    }
+
+    input[type="range"]{
+      -webkit-appearance:none;
+      appearance:none;
+      height:8px;
+      border-radius:999px;
+      background:linear-gradient(90deg, var(--brand) 0%, var(--brand-2) 100%);
+      outline:none;
+      opacity:.95;
+    }
+
+    input[type="range"]::-webkit-slider-thumb{
+      -webkit-appearance:none;
+      appearance:none;
+      width:24px;height:24px;border-radius:50%;
+      background:#fff;
+      border:3px solid #84ffd5;
+      box-shadow:0 8px 24px rgba(89,227,167,.35);
+      cursor:pointer;
+    }
+
+    input[type="range"]::-moz-range-thumb{
+      width:24px;height:24px;border-radius:50%;
+      background:#fff;
+      border:3px solid #84ffd5;
+      box-shadow:0 8px 24px rgba(89,227,167,.35);
+      cursor:pointer;
+    }
+
+    .quick-times{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:14px;
+    }
+
+    .quick-btn{
+      border:none;
+      cursor:pointer;
+      padding:10px 14px;
+      border-radius:999px;
+      background:rgba(255,255,255,.05);
+      color:var(--text);
+      border:1px solid var(--line);
+      font-weight:700;
+      transition:.2s ease;
+    }
+
+    .quick-btn:hover,
+    .quick-btn.active{
+      transform:translateY(-1px);
+      background:rgba(89,227,167,.12);
+      border-color:rgba(89,227,167,.25);
+      color:#dffff2;
+    }
+
+    .pump{
+      margin-top:4px;
+      padding:24px;
+      border-radius:24px;
+      border:1px solid rgba(255,255,255,.08);
+      background:
+        radial-gradient(circle at 10% 20%, rgba(89,227,167,.11), transparent 28%),
+        linear-gradient(180deg, rgba(4,11,22,.95), rgba(8,17,30,.88));
+      position:relative;
+      overflow:hidden;
+    }
+
+    .pump::before{
+      content:"LIVE COST";
+      position:absolute;
+      right:20px;
+      top:18px;
+      font-size:.72rem;
+      font-weight:800;
+      letter-spacing:.14em;
+      color:rgba(255,255,255,.36);
+    }
+
+    .pump-label{
+      color:var(--muted);
+      font-size:.95rem;
+      margin-bottom:8px;
+    }
+
+    .pump-value{
+      font-size:clamp(2.5rem, 6vw, 4.8rem);
+      line-height:1;
+      font-weight:900;
+      letter-spacing:-.06em;
+      font-variant-numeric:tabular-nums lining-nums;
+      color:#f8fcff;
+      text-shadow:0 0 20px rgba(95,198,255,.12);
+    }
+
+    .pump-sub{
+      margin-top:12px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+    }
+
+    .mini-pill{
+      padding:9px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.05);
+      border:1px solid var(--line);
+      color:#d6e4ff;
+      font-size:.85rem;
+      font-weight:600;
+    }
+
+    .mini-pill strong{
+      color:#fff;
+    }
+
+    .timeline{
+      height:8px;
+      border-radius:999px;
+      background:rgba(255,255,255,.06);
+      overflow:hidden;
+      margin-top:18px;
+      position:relative;
+    }
+
+    .timeline-fill{
+      height:100%;
+      width:0%;
+      border-radius:999px;
+      background:linear-gradient(90deg, var(--brand) 0%, var(--brand-2) 60%, var(--brand-3) 100%);
+      box-shadow:0 0 20px rgba(95,198,255,.25);
+      transition:width .12s linear;
+    }
+
+    .insights{
+      margin-top:22px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+    }
+
+    .insight-card{
+      padding:20px;
+      border-radius:20px;
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--line);
+    }
+
+    .insight-card h3{
+      margin:0 0 8px;
+      font-size:1.02rem;
+      letter-spacing:-.02em;
+    }
+
+    .insight-card p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.6;
+      font-size:.94rem;
+    }
+
+    .savings{
+      border:1px solid rgba(89,227,167,.2);
+      background:linear-gradient(180deg, rgba(89,227,167,.09), rgba(89,227,167,.04));
+    }
+
+    .savings-grid{
+      margin-top:16px;
+      display:grid;
+      grid-template-columns:repeat(3, 1fr);
+      gap:12px;
+    }
+
+    .save-box{
+      padding:14px;
+      border-radius:16px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .save-box strong{
+      display:block;
+      font-size:1.2rem;
+      letter-spacing:-.03em;
+      margin-bottom:6px;
+    }
+
+    .save-box span{
+      color:var(--muted);
+      font-size:.85rem;
+      line-height:1.35;
+    }
+
+    .how{
+      padding:20px;
+    }
+
+    .how h3{
+      margin:0 0 14px;
+      font-size:1.05rem;
+      letter-spacing:-.02em;
+    }
+
+    .steps{
+      display:grid;
+      gap:12px;
+    }
+
+    .step{
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      padding:12px;
+      border-radius:16px;
+      background:rgba(255,255,255,.035);
+      border:1px solid var(--line);
+    }
+
+    .step-num{
+      width:30px;height:30px;border-radius:10px;
+      flex:0 0 30px;
+      display:grid;place-items:center;
+      background:linear-gradient(135deg, rgba(95,198,255,.18), rgba(89,227,167,.18));
+      border:1px solid rgba(95,198,255,.24);
+      color:#dff3ff;
+      font-weight:800;
+      font-size:.86rem;
+    }
+
+    .step p{
+      margin:2px 0 0;
+      color:var(--muted);
+      font-size:.93rem;
+      line-height:1.55;
+    }
+
+    .cta{
+      margin:26px 0 42px;
+      padding:24px;
+      border-radius:24px;
+      background:
+        radial-gradient(circle at 80% 20%, rgba(139,124,255,.18), transparent 35%),
+        linear-gradient(135deg, rgba(12,23,44,.98), rgba(11,30,41,.96));
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:18px;
+      flex-wrap:wrap;
+    }
+
+    .cta h2{
+      margin:0 0 8px;
+      font-size:1.4rem;
+      letter-spacing:-.03em;
+    }
+
+    .cta p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.6;
+      max-width:60ch;
+    }
+
+    .cta-actions{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .btn{
+      border:none;
+      cursor:pointer;
+      padding:14px 18px;
+      border-radius:16px;
+      font-weight:800;
+      font-size:.95rem;
+      transition:.2s ease;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+    }
+
+    .btn-primary{
+      color:#04131b;
+      background:linear-gradient(135deg, var(--brand), #93ffd7);
+      box-shadow:0 14px 30px rgba(89,227,167,.22);
+    }
+
+    .btn-secondary{
+      color:var(--text);
+      background:rgba(255,255,255,.05);
+      border:1px solid var(--line);
+    }
+
+    .btn:hover{
+      transform:translateY(-2px);
+    }
+
+    .footer-note{
+      text-align:center;
+      color:var(--muted-2);
+      font-size:.83rem;
+      padding-bottom:36px;
+    }
+
+    @media (max-width: 1040px){
+      .hero-grid{
+        grid-template-columns:1fr;
+      }
+      .stats, .inputs, .insights, .savings-grid{
+        grid-template-columns:1fr;
+      }
+      .calc-top{
+        flex-direction:column;
+      }
+      .trust-note{white-space:normal}
+    }
+
+    @media (max-width: 640px){
+      .hero{padding-top:20px}
+      .hero-copy, .calculator, .cta{padding:20px}
+      .pump{padding:20px}
+      h1{font-size:2.2rem}
+      .nav{
+        flex-direction:column;
+        align-items:flex-start;
+      }
+      .cta{
+        align-items:flex-start;
+      }
+      .cta-actions{
+        width:100%;
+      }
+      .cta-actions .btn{
+        flex:1 1 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="hero">
+    <div class="container">
+      <div class="nav">
+        <div class="brand">
+          <div class="brand-mark">G2</div>
+          <div>
+            <div>Go2</div>
+            <div class="brand-sub">AI productivity coaching for SMB teams</div>
+          </div>
+        </div>
+        <div class="nav-badge">
+          <span class="dot"></span>
+          Coaching, not surveillance
+        </div>
+      </div>
+
+      <section class="hero-grid">
+        <div class="panel hero-copy">
+          <div class="eyebrow">Meeting Cost Calculator</div>
+          <h1>See what your <span class="gradient-text">meetings really cost</span> — second by second.</h1>
+          <p>
+            For SMBs, unnecessary meetings quietly drain payroll, focus, and momentum. Use the calculator to estimate the live cost of a meeting, then see how Go2 helps teams reduce wasted time with AI-powered productivity coaching and work-pattern insights.
+          </p>
+
+          <div class="stats">
+            <div class="stat">
+              <strong>42%</strong>
+              <span>Average productivity increase across teams using Go2</span>
+            </div>
+            <div class="stat">
+              <strong>15.2 hrs</strong>
+              <span>Saved per employee per week by working smarter</span>
+            </div>
+            <div class="stat">
+              <strong>892% ROI</strong>
+              <span>Typical first-year return for growing SMBs</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel calculator">
+          <div class="calc-top">
+            <div>
+              <h2>Calculate live meeting spend</h2>
+              <p>Enter your team size, average salary, and meeting duration. The cost counter updates in real time like a gas pump.</p>
+            </div>
+            <div class="trust-note">Go2 reveals work patterns to coach better habits — not to monitor employees.</div>
+          </div>
+
+          <div class="inputs">
+            <div class="field">
+              <label for="people">Number of attendees</label>
+              <div class="input-wrap">
+                <input id="people" type="number" min="1" max="1000" step="1" value="8" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="salary">Average annual salary</label>
+              <div class="input-wrap has-prefix">
+                <span class="input-prefix">$</span>
+                <input id="salary" type="number" min="10000" max="500000" step="1000" value="75000" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="days">Working days/year</label>
+              <div class="input-wrap">
+                <input id="days" type="number" min="200" max="260" step="1" value="260" />
+              </div>
+            </div>
+          </div>
+
+          <div class="duration-card">
+            <div class="duration-head">
+              <label for="duration">Meeting duration</label>
+              <div class="duration-value"><span id="durationOutput">60</span> minutes</div>
+            </div>
+            <input id="duration" type="range" min="15" max="240" step="5" value="60" />
+            <div class="quick-times">
+              <button class="quick-btn" data-minutes="30">30 min</button>
+              <button class="quick-btn active" data-minutes="60">60 min</button>
+              <button class="quick-btn" data-minutes="90">90 min</button>
+              <button class="quick-btn" data-minutes="120">2 hours</button>
+            </div>
+          </div>
+
+          <div class="pump">
+            <div class="pump-label">Estimated cost of this meeting</div>
+            <div class="pump-value" id="pumpValue">$0.00</div>
+            <div class="pump-sub">
+              <div class="mini-pill">Hourly team cost: <strong id="hourlyCost">$0/hr</strong></div>
+              <div class="mini-pill">Cost per minute: <strong id="perMinute">$0/min</strong></div>
+              <div class="mini-pill">Per attendee: <strong id="perPerson">$0</strong></div>
+            </div>
+            <div class="timeline">
+              <div class="timeline-fill" id="timelineFill"></div>
+            </div>
+          </div>
+
+          <div class="insights">
+            <div class="insight-card savings">
+              <h3>What if Go2 cuts unnecessary meeting time?</h3>
+              <p>Go2 identifies overload, fragmented focus, and recurring low-value meeting patterns — then gives managers and teams AI coaching to reduce waste without micromanagement.</p>
+              <div class="savings-grid">
+                <div class="save-box">
+                  <strong id="save25">$0</strong>
+                  <span>Saved if you cut 25% of this meeting time</span>
+                </div>
+                <div class="save-box">
+                  <strong id="saveWeekly">$0</strong>
+                  <span>Saved per week if this meeting happens weekly</span>
+                </div>
+                <div class="save-box">
+                  <strong id="saveAnnual">$0</strong>
+                  <span>Saved per year from one weekly meeting</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="insight-card how">
+              <h3>How Go2 helps</h3>
+              <div class="steps">
+                <div class="step">
+                  <div class="step-num">1</div>
+                  <div>
+                    <strong>Surface real work patterns</strong>
+                    <p>See where time goes across apps, meetings, and focused work so leaders understand how work actually gets done.</p>
+                  </div>
+                </div>
+                <div class="step">
+                  <div class="step-num">2</div>
+                  <div>
+                    <strong>Coach smarter habits</strong>
+                    <p>Use AI recommendations to reduce meeting overload, protect deep work, and improve team operating rhythms.</p>
+                  </div>
+                </div>
+                <div class="step">
+                  <div class="step-num">3</div>
+                  <div>
+                    <strong>Improve output, not control</strong>
+                    <p>Go2 is built for productivity coaching for teams of 5–500 employees — not employee surveillance.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta">
+        <div>
+          <h2>Turn meeting waste into measurable ROI</h2>
+          <p>
+            Go2 helps SMB owners, ops leaders, and HR teams uncover hidden inefficiencies and coach better work habits — typically for around <strong>$6–12 per user/month</strong>.
+          </p>
+        </div>
+        <div class="cta-actions">
+          <a href="#" class="btn btn-primary">Book a Go2 demo</a>
+          <a href="#" class="btn btn-secondary">See how it works</a>
+        </div>
+      </section>
+
+      <div class="footer-note">
+        Estimates assume salary-based hourly cost and are for planning purposes. Real meeting cost can be higher when context switching and lost focus are included.
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const peopleInput = document.getElementById('people');
+    const salaryInput = document.getElementById('salary');
+    const daysInput = document.getElementById('days');
+    const durationInput = document.getElementById('duration');
+    const durationOutput = document.getElementById('durationOutput');
+
+    const pumpValue = document.getElementById('pumpValue');
+    const hourlyCostEl = document.getElementById('hourlyCost');
+    const perMinuteEl = document.getElementById('perMinute');
+    const perPersonEl = document.getElementById('perPerson');
+    const timelineFill = document.getElementById('timelineFill');
+
+    const save25El = document.getElementById('save25');
+    const saveWeeklyEl = document.getElementById('saveWeekly');
+    const saveAnnualEl = document.getElementById('saveAnnual');
+
+    const quickButtons = document.querySelectorAll('.quick-btn');
+
+    let animationStart = performance.now();
+
+    function currency(value, maximumFractionDigits = 2) {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        maximumFractionDigits
+      }).format(value);
+    }
+
+    function getInputs() {
+      const people = Math.max(1, parseFloat(peopleInput.value) || 1);
+      const salary = Math.max(10000, parseFloat(salaryInput.value) || 75000);
+      const days = Math.max(200, parseFloat(daysInput.value) || 260);
+      const duration = Math.max(15, parseFloat(durationInput.value) || 60);
+
+      return { people, salary, days, duration };
+    }
+
+    function calculate() {
+      const { people, salary, days, duration } = getInputs();
+
+      durationOutput.textContent = duration;
+
+      const hoursPerYear = days * 8;
+      const hourlyPerEmployee = salary / hoursPerYear;
+      const hourlyTeam = hourlyPerEmployee * people;
+      const totalMeetingCost = hourlyTeam * (duration / 60);
+      const costPerMinute = hourlyTeam / 60;
+      const costPerEmployeeMeeting = totalMeetingCost / people;
+
+      hourlyCostEl.textContent = currency(hourlyTeam, 0) + '/hr';
+      perMinuteEl.textContent = currency(costPerMinute, 2) + '/min';
+      perPersonEl.textContent = currency(costPerEmployeeMeeting, 2);
+
+      save25El.textContent = currency(totalMeetingCost * 0.25);
+      saveWeeklyEl.textContent = currency(totalMeetingCost * 0.25);
+      saveAnnualEl.textContent = currency(totalMeetingCost * 0.25 * 52);
+
+      return { totalMeetingCost, duration };
+    }
+
+    function syncQuickButtons() {
+      const current = String(durationInput.value);
+      quickButtons.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.minutes === current);
+      });
+    }
+
+    function animatePump(now) {
+      const { totalMeetingCost, duration } = calculate();
+      const elapsed = (now - animationStart) / 1000;
+      const simulatedMeetingSeconds = Math.max(1, duration * 60);
+      const progress = (elapsed % simulatedMeetingSeconds) / simulatedMeetingSeconds;
+      const liveCost = totalMeetingCost * progress;
+
+      pumpValue.textContent = currency(liveCost);
+      timelineFill.style.width = (progress * 100) + '%';
+
+      requestAnimationFrame(animatePump);
+    }
+
+    function resetAnimation() {
+      animationStart = performance.now();
+    }
+
+    [peopleInput, salaryInput, daysInput].forEach(input => {
+      input.addEventListener('input', () => {
+        calculate();
+        resetAnimation();
+      });
+    });
+
+    durationInput.addEventListener('input', () => {
+      calculate();
+      syncQuickButtons();
+      resetAnimation();
+    });
+
+    quickButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        durationInput.value = btn.dataset.minutes;
+        calculate();
+        syncQuickButtons();
+        resetAnimation();
+      });
+    });
+
+    calculate();
+    syncQuickButtons();
+    requestAnimationFrame(animatePump);
+  </script>
+</body>
+</html>

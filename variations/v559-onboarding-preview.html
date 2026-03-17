@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Onboarding Preview | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: #0a0a0f; color: #e0e0e0; min-height: 100vh; }
+.container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+.top { text-align: center; margin-bottom: 40px; }
+.top h1 { font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 800; margin-bottom: 10px; }
+.top h1 span { background: linear-gradient(135deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.top p { color: #888; }
+.progress-bar { display: flex; gap: 4px; margin-bottom: 8px; }
+.progress-segment { flex: 1; height: 6px; border-radius: 3px; background: #1a1a2e; transition: background 0.4s; }
+.progress-segment.done { background: #6366f1; }
+.progress-segment.current { background: linear-gradient(90deg, #6366f1, #a855f7); }
+.progress-info { display: flex; justify-content: space-between; font-size: 0.75rem; color: #555; margin-bottom: 32px; }
+.phase-tabs { display: flex; gap: 4px; margin-bottom: 24px; }
+.phase-tab { padding: 10px 20px; background: rgba(255,255,255,0.02); border: 1px solid #1a1a2e; border-radius: 10px; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem; color: #888; transition: all 0.2s; flex: 1; text-align: center; }
+.phase-tab:hover { border-color: #333; }
+.phase-tab.active { background: #6366f1; border-color: #6366f1; color: #fff; font-weight: 600; }
+.phase-tab .phase-label { display: block; font-size: 0.65rem; color: rgba(255,255,255,0.5); margin-top: 2px; }
+.phase-tab.active .phase-label { color: rgba(255,255,255,0.7); }
+.phase { display: none; }
+.phase.active { display: block; }
+.step-list { display: flex; flex-direction: column; gap: 12px; }
+.step { background: rgba(255,255,255,0.02); border: 1px solid #1a1a2e; border-radius: 14px; overflow: hidden; transition: all 0.3s; }
+.step:hover { border-color: #333; }
+.step.completed { border-color: rgba(34,197,94,0.3); }
+.step-header { display: flex; align-items: center; gap: 14px; padding: 18px 20px; cursor: pointer; }
+.step-check { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #333; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.8rem; transition: all 0.3s; }
+.step.completed .step-check { background: #22c55e; border-color: #22c55e; color: #000; }
+.step-info { flex: 1; }
+.step-info h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 2px; }
+.step-info p { font-size: 0.8rem; color: #666; }
+.step-time { font-size: 0.7rem; color: #555; background: #1a1a2e; padding: 4px 10px; border-radius: 6px; }
+.step-details { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+.step-details.open { max-height: 300px; }
+.step-details-inner { padding: 0 20px 20px 62px; }
+.step-details-inner p { font-size: 0.85rem; color: #999; line-height: 1.6; margin-bottom: 12px; }
+.step-details-inner .preview-box { background: #0f0f1a; border: 1px solid #1a1a2e; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+.step-details-inner .preview-box h5 { font-size: 0.75rem; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.complete-btn { padding: 8px 20px; background: #6366f1; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 600; transition: all 0.2s; }
+.complete-btn:hover { background: #4f46e5; }
+.milestone { text-align: center; padding: 32px; background: linear-gradient(135deg, rgba(99,102,241,0.05), rgba(168,85,247,0.05)); border: 1px solid rgba(99,102,241,0.2); border-radius: 16px; margin-top: 24px; }
+.milestone h3 { font-size: 1.2rem; margin-bottom: 8px; }
+.milestone p { color: #888; font-size: 0.9rem; }
+.milestone .milestone-icon { font-size: 2rem; margin-bottom: 12px; }
+.cta-section { text-align: center; padding: 50px 20px; }
+.cta-section h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 10px; }
+.cta-section p { color: #888; margin-bottom: 20px; font-size: 0.9rem; }
+.cta-btn { display: inline-block; padding: 14px 36px; background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; text-decoration: none; border-radius: 12px; font-weight: 700; border: none; cursor: pointer; font-size: 1rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="top">
+    <h1>Your <span>Go2 Onboarding</span> Journey</h1>
+    <p>Here's exactly what happens after you sign up. No surprises, no disruption.</p>
+  </div>
+
+  <div class="progress-bar" id="progressBar"></div>
+  <div class="progress-info"><span id="progressLabel">0 of 12 steps completed</span><span id="progressPct">0%</span></div>
+
+  <div class="phase-tabs">
+    <div class="phase-tab active" onclick="showPhase(0)">Day 1<span class="phase-label">Setup</span></div>
+    <div class="phase-tab" onclick="showPhase(1)">Week 1<span class="phase-label">Baseline</span></div>
+    <div class="phase-tab" onclick="showPhase(2)">Month 1<span class="phase-label">Optimize</span></div>
+  </div>
+
+  <div id="phases"></div>
+
+  <div class="cta-section">
+    <h2>Ready to start your onboarding?</h2>
+    <p>The whole process takes less than 15 minutes of your time. Go2 does the rest.</p>
+    <button class="cta-btn">Start Free Trial</button>
+  </div>
+</div>
+
+<script>
+const phases = [
+  {
+    name: 'Day 1',
+    milestone: { icon: '&#127937;', title: 'Setup Complete!', text: 'Go2 is collecting data. You won\'t need to do anything — insights arrive automatically.' },
+    steps: [
+      { title: 'Create your Go2 account', desc: 'Sign up with your work email. Takes 30 seconds.', time: '30 sec', detail: 'Single sign-on supported with Google Workspace, Microsoft 365, and Okta. No credit card required for the 14-day trial.' },
+      { title: 'Connect your calendar', desc: 'One-click Google Calendar or Outlook integration.', time: '1 min', detail: 'Go2 analyzes meeting patterns to identify focus time opportunities. We only read event metadata — never email content.' },
+      { title: 'Install the Go2 agent', desc: 'Lightweight desktop agent. Less than 5MB, zero CPU impact.', time: '2 min', detail: 'The agent runs passively in the background. It tracks app usage patterns at a category level — never screenshots, never keystrokes. Employees can pause it anytime.' },
+      { title: 'Invite your team', desc: 'Bulk invite via CSV or connect your directory.', time: '2 min', detail: 'Supports Active Directory, Google Workspace directory, and CSV upload. Each team member gets a personalized onboarding email.' },
+    ]
+  },
+  {
+    name: 'Week 1',
+    milestone: { icon: '&#128202;', title: 'Baseline Established!', text: 'Go2 has mapped your team\'s work patterns. First insights are ready.' },
+    steps: [
+      { title: 'AI establishes your baseline', desc: 'Go2 learns your team\'s natural work patterns.', time: 'Automatic', detail: 'No action required. Go2\'s AI analyzes 5 days of work patterns to establish a personalized baseline for each team member and the team as a whole.' },
+      { title: 'First productivity report arrives', desc: 'Get your team\'s initial productivity score and breakdown.', time: 'Auto email', detail: 'You\'ll receive an email with your team\'s productivity score, focus time analysis, meeting load, and the top 3 opportunities for improvement.' },
+      { title: 'Quick wins identified', desc: 'Go2 finds 3-5 immediate improvements.', time: 'Automatic', detail: 'Common quick wins include: unnecessary recurring meetings, focus time fragmentation, and communication overload patterns. Most teams save 2+ hours/week immediately.' },
+      { title: 'Team dashboard goes live', desc: 'Access real-time productivity insights.', time: '5 min review', detail: 'Your dashboard shows team productivity scores, focus time trends, meeting load analysis, and AI-generated recommendations. Updated in real-time.' },
+    ]
+  },
+  {
+    name: 'Month 1',
+    milestone: { icon: '&#128640;', title: 'You\'re Optimized!', text: 'Average teams see 20-30% improvement by the end of Month 1. The compound effect continues.' },
+    steps: [
+      { title: 'AI coaching activates', desc: 'Personalized productivity nudges for each team member.', time: 'Automatic', detail: 'Each person gets tailored suggestions: optimal focus blocks, meeting consolidation opportunities, break reminders, and workflow tips based on their specific patterns.' },
+      { title: 'Meeting audit complete', desc: 'Go2 identifies which meetings add value and which don\'t.', time: '10 min review', detail: 'The meeting audit report shows: cost per meeting, attendance vs. necessity, meetings that could be emails, and recommended schedule optimizations.' },
+      { title: 'Focus time protection enabled', desc: 'Automatically block calendar for deep work.', time: '5 min setup', detail: 'Go2 identifies each person\'s peak productivity hours and can automatically block those times on their calendar. Managers see team-wide focus time coverage.' },
+      { title: 'Monthly ROI report', desc: 'See exactly how much Go2 has saved your team.', time: 'Auto report', detail: 'Detailed breakdown: hours recovered, estimated dollar savings, productivity score improvement, and projected 12-month ROI based on current trajectory.' },
+    ]
+  }
+];
+
+const totalSteps = phases.reduce((a, p) => a + p.steps.length, 0);
+let completedSteps = new Set();
+
+function renderAll() {
+  // Progress bar
+  let segIdx = 0;
+  document.getElementById('progressBar').innerHTML = phases.flatMap(p => p.steps.map((s, i) => {
+    const idx = segIdx++;
+    const cls = completedSteps.has(idx) ? 'done' : '';
+    return `<div class="progress-segment ${cls}"></div>`;
+  })).join('');
+  document.getElementById('progressLabel').textContent = `${completedSteps.size} of ${totalSteps} steps completed`;
+  document.getElementById('progressPct').textContent = Math.round(completedSteps.size / totalSteps * 100) + '%';
+
+  // Phases
+  let globalIdx = 0;
+  document.getElementById('phases').innerHTML = phases.map((phase, pi) => {
+    const stepsHTML = phase.steps.map((step, si) => {
+      const idx = globalIdx++;
+      const done = completedSteps.has(idx);
+      return `
+        <div class="step ${done ? 'completed' : ''}" id="step${idx}">
+          <div class="step-header" onclick="toggleStep(${idx})">
+            <div class="step-check">${done ? '&#10003;' : ''}</div>
+            <div class="step-info"><h4>${step.title}</h4><p>${step.desc}</p></div>
+            <span class="step-time">${step.time}</span>
+          </div>
+          <div class="step-details" id="details${idx}">
+            <div class="step-details-inner">
+              <p>${step.detail}</p>
+              ${!done ? `<button class="complete-btn" onclick="event.stopPropagation();completeStep(${idx})">Mark Complete</button>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const allDone = phase.steps.every((_, si) => completedSteps.has(globalIdx - phase.steps.length + si));
+
+    return `
+      <div class="phase ${pi === 0 ? 'active' : ''}" id="phase${pi}">
+        ${stepsHTML}
+        ${allDone ? `<div class="milestone"><div class="milestone-icon">${phase.milestone.icon}</div><h3>${phase.milestone.title}</h3><p>${phase.milestone.text}</p></div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function showPhase(idx) {
+  document.querySelectorAll('.phase-tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+  document.querySelectorAll('.phase').forEach((p, i) => p.classList.toggle('active', i === idx));
+}
+
+function toggleStep(idx) {
+  const det = document.getElementById('details' + idx);
+  det.classList.toggle('open');
+}
+
+function completeStep(idx) {
+  completedSteps.add(idx);
+  renderAll();
+  // Keep current phase visible
+  document.querySelectorAll('.phase-tab').forEach(t => {
+    if (t.classList.contains('active')) t.click();
+  });
+}
+
+renderAll();
+</script>
+</body>
+</html>

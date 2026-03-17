@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Productivity Debt Calculator | Go2</title>
+  <meta name="description" content="See how small workflow inefficiencies compound into massive productivity debt. Go2 helps SMBs coach better work habits with AI-powered insights." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#07111f;
+      --bg-2:#0b1830;
+      --panel:rgba(11,24,48,0.7);
+      --panel-2:rgba(255,255,255,0.06);
+      --text:#eef4ff;
+      --muted:#a7b7d6;
+      --line:rgba(255,255,255,0.10);
+      --brand:#63e6be;
+      --brand-2:#34d399;
+      --accent:#60a5fa;
+      --warn:#fbbf24;
+      --danger:#fb7185;
+      --shadow:0 20px 60px rgba(0,0,0,0.35);
+      --radius:24px;
+      --radius-sm:16px;
+      --max:1200px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:'Inter',system-ui,sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(96,165,250,0.14), transparent 30%),
+        radial-gradient(circle at 90% 20%, rgba(99,230,190,0.12), transparent 30%),
+        linear-gradient(180deg, #07111f 0%, #091426 40%, #06101d 100%);
+      color:var(--text);
+      line-height:1.5;
+      overflow-x:hidden;
+    }
+
+    .bg-grid{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size:36px 36px;
+      mask-image:linear-gradient(to bottom, rgba(0,0,0,0.6), rgba(0,0,0,0.2));
+      z-index:-1;
+    }
+
+    .container{
+      width:min(var(--max), calc(100% - 32px));
+      margin:0 auto;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 14px;
+      border:1px solid rgba(99,230,190,0.22);
+      border-radius:999px;
+      background:rgba(99,230,190,0.08);
+      color:#cbffe9;
+      font-size:13px;
+      font-weight:700;
+      letter-spacing:.02em;
+      text-transform:uppercase;
+    }
+
+    .dot{
+      width:8px;height:8px;border-radius:999px;background:var(--brand);
+      box-shadow:0 0 0 6px rgba(99,230,190,0.12);
+    }
+
+    header{
+      padding:22px 0;
+      position:sticky;
+      top:0;
+      z-index:30;
+      backdrop-filter:blur(12px);
+      background:linear-gradient(180deg, rgba(7,17,31,.88), rgba(7,17,31,.45));
+      border-bottom:1px solid rgba(255,255,255,0.05);
+    }
+
+    .nav{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:20px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-weight:900;
+      font-size:20px;
+      letter-spacing:-0.03em;
+    }
+
+    .logo{
+      width:40px;height:40px;border-radius:12px;
+      display:grid;place-items:center;
+      background:
+        linear-gradient(135deg, rgba(99,230,190,0.2), rgba(96,165,250,0.2)),
+        rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.08);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .logo:before,.logo:after{
+      content:"";
+      position:absolute;
+      border-radius:10px;
+      transform:rotate(20deg);
+    }
+    .logo:before{
+      width:18px;height:18px;background:linear-gradient(135deg,var(--brand),var(--brand-2));
+      left:7px;top:12px;
+    }
+    .logo:after{
+      width:14px;height:14px;background:linear-gradient(135deg,var(--accent),#7dd3fc);
+      right:7px;top:8px;
+    }
+
+    .nav-actions{
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding:14px 18px;
+      border-radius:14px;
+      border:1px solid transparent;
+      color:var(--text);
+      font-weight:700;
+      text-decoration:none;
+      transition:.25s ease;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+
+    .btn-primary{
+      background:linear-gradient(135deg, var(--brand), var(--accent));
+      color:#04111f;
+      box-shadow:0 12px 30px rgba(96,165,250,0.25);
+    }
+    .btn-primary:hover{transform:translateY(-2px); box-shadow:0 16px 36px rgba(96,165,250,0.32)}
+    .btn-secondary{
+      background:rgba(255,255,255,0.05);
+      border-color:rgba(255,255,255,0.08);
+    }
+    .btn-secondary:hover{background:rgba(255,255,255,0.08)}
+
+    .hero{
+      padding:72px 0 40px;
+    }
+
+    .hero-grid{
+      display:grid;
+      grid-template-columns:1.05fr .95fr;
+      gap:28px;
+      align-items:stretch;
+    }
+
+    .hero-copy h1{
+      font-size:clamp(40px, 8vw, 78px);
+      line-height:.95;
+      letter-spacing:-0.06em;
+      margin:16px 0 18px;
+      max-width:10ch;
+    }
+
+    .gradient-text{
+      background:linear-gradient(135deg, #ffffff 10%, #b0f0da 45%, #93c5fd 100%);
+      -webkit-background-clip:text;
+      background-clip:text;
+      color:transparent;
+    }
+
+    .hero-copy p{
+      color:var(--muted);
+      font-size:clamp(17px, 2vw, 20px);
+      max-width:62ch;
+      margin:0 0 28px;
+    }
+
+    .stat-row{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:14px;
+      margin-top:26px;
+    }
+
+    .stat{
+      background:linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      border:1px solid var(--line);
+      border-radius:20px;
+      padding:18px;
+      box-shadow:var(--shadow);
+    }
+    .stat strong{
+      display:block;
+      font-size:28px;
+      line-height:1;
+      letter-spacing:-0.04em;
+      margin-bottom:8px;
+    }
+    .stat span{
+      color:var(--muted);
+      font-size:14px;
+    }
+
+    .panel{
+      background:linear-gradient(180deg, rgba(11,24,48,0.86), rgba(7,17,31,0.92));
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+
+    .calculator{
+      padding:24px;
+      min-height:100%;
+    }
+
+    .calc-header{
+      display:flex;
+      justify-content:space-between;
+      gap:16px;
+      align-items:flex-start;
+      margin-bottom:22px;
+    }
+
+    .calc-header h2{
+      margin:0 0 6px;
+      font-size:26px;
+      letter-spacing:-0.03em;
+    }
+
+    .calc-header p{
+      margin:0;
+      color:var(--muted);
+      font-size:14px;
+      max-width:38ch;
+    }
+
+    .alert-badge{
+      padding:10px 12px;
+      border-radius:14px;
+      background:rgba(251,113,133,0.1);
+      border:1px solid rgba(251,113,133,0.2);
+      color:#ffd1db;
+      font-size:12px;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+    }
+
+    .inputs{
+      display:grid;
+      gap:16px;
+    }
+
+    .input-card{
+      background:var(--panel-2);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
+    }
+
+    .label-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      margin-bottom:12px;
+      font-size:14px;
+    }
+
+    .label-row label{
+      color:#dce8ff;
+      font-weight:600;
+    }
+
+    .value-badge{
+      color:#07111f;
+      background:linear-gradient(135deg, #d1fae5, #bfdbfe);
+      font-weight:800;
+      padding:8px 10px;
+      border-radius:12px;
+      min-width:76px;
+      text-align:center;
+      font-size:13px;
+    }
+
+    input[type="range"]{
+      width:100%;
+      appearance:none;
+      height:8px;
+      border-radius:999px;
+      background:linear-gradient(90deg, rgba(99,230,190,0.8), rgba(96,165,250,0.85));
+      outline:none;
+    }
+    input[type="range"]::-webkit-slider-thumb{
+      appearance:none;
+      width:22px;height:22px;border-radius:50%;
+      background:#fff;
+      border:3px solid var(--accent);
+      box-shadow:0 6px 18px rgba(96,165,250,.35);
+      cursor:pointer;
+    }
+    input[type="range"]::-moz-range-thumb{
+      width:22px;height:22px;border-radius:50%;
+      background:#fff;
+      border:3px solid var(--accent);
+      cursor:pointer;
+    }
+
+    .results{
+      margin-top:18px;
+      display:grid;
+      grid-template-columns:1.2fr .8fr;
+      gap:16px;
+    }
+
+    .debt-card{
+      padding:20px;
+      border-radius:20px;
+      background:
+        radial-gradient(circle at top right, rgba(251,113,133,0.14), transparent 28%),
+        linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.03));
+      border:1px solid var(--line);
+    }
+
+    .eyebrow{
+      color:#ffced8;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      font-size:12px;
+      font-weight:800;
+    }
+
+    .mega{
+      font-size:clamp(36px, 5vw, 62px);
+      line-height:.95;
+      font-weight:900;
+      letter-spacing:-0.06em;
+      margin:8px 0 12px;
+    }
+
+    .sub{
+      color:var(--muted);
+      font-size:15px;
+    }
+
+    .mini-metrics{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+
+    .mini{
+      padding:16px;
+      border-radius:18px;
+      background:var(--panel-2);
+      border:1px solid var(--line);
+    }
+    .mini strong{
+      display:block;
+      font-size:24px;
+      letter-spacing:-0.04em;
+      margin-bottom:4px;
+    }
+    .mini span{
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .viz{
+      margin-top:18px;
+      padding:18px;
+      border-radius:20px;
+      background:var(--panel-2);
+      border:1px solid var(--line);
+    }
+
+    .viz-top{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:center;
+      margin-bottom:14px;
+    }
+
+    .viz-title{
+      font-weight:700;
+      letter-spacing:-0.02em;
+    }
+
+    .legend{
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .bars{
+      display:flex;
+      align-items:flex-end;
+      gap:10px;
+      height:180px;
+    }
+
+    .bar-wrap{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+    }
+
+    .bar{
+      width:100%;
+      border-radius:16px 16px 8px 8px;
+      background:linear-gradient(180deg, rgba(251,113,133,.95), rgba(96,165,250,.6));
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.18);
+      min-height:12px;
+      transition:height .5s ease;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .bar:after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(180deg, rgba(255,255,255,.22), transparent 35%);
+      pointer-events:none;
+    }
+
+    .bar-label{
+      color:var(--muted);
+      font-size:12px;
+      text-align:center;
+    }
+
+    .bar-value{
+      font-weight:800;
+      font-size:12px;
+      color:#fff;
+    }
+
+    section{
+      padding:44px 0;
+    }
+
+    .section-title{
+      max-width:760px;
+      margin-bottom:24px;
+    }
+
+    .section-title h2{
+      margin:0 0 10px;
+      font-size:clamp(28px, 4vw, 48px);
+      letter-spacing:-0.05em;
+      line-height:1.02;
+    }
+
+    .section-title p{
+      margin:0;
+      color:var(--muted);
+      font-size:17px;
+    }
+
+    .cards{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:18px;
+    }
+
+    .card{
+      padding:22px;
+      border-radius:22px;
+      background:linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+      transition:.25s ease;
+    }
+    .card:hover{
+      transform:translateY(-4px);
+      border-color:rgba(99,230,190,0.22);
+    }
+
+    .icon{
+      width:48px;height:48px;border-radius:14px;
+      display:grid;place-items:center;
+      margin-bottom:16px;
+      background:linear-gradient(135deg, rgba(99,230,190,.18), rgba(96,165,250,.18));
+      border:1px solid rgba(255,255,255,.08);
+      font-size:22px;
+    }
+
+    .card h3{
+      margin:0 0 8px;
+      font-size:20px;
+      letter-spacing:-0.03em;
+    }
+
+    .card p{
+      margin:0;
+      color:var(--muted);
+      font-size:15px;
+    }
+
+    .compare{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:18px;
+      margin-top:10px;
+    }
+
+    .compare-card{
+      padding:24px;
+      border-radius:22px;
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+    }
+    .compare-card h3{
+      margin:0 0 12px;
+      font-size:24px;
+      letter-spacing:-0.03em;
+    }
+
+    .list{
+      display:grid;
+      gap:12px;
+      margin-top:14px;
+    }
+
+    .list-item{
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      color:var(--muted);
+      font-size:15px;
+    }
+
+    .check, .cross{
+      flex:0 0 auto;
+      width:24px;height:24px;border-radius:999px;
+      display:grid;place-items:center;
+      font-size:14px;
+      font-weight:900;
+      margin-top:1px;
+    }
+    .check{background:rgba(99,230,190,.14); color:#b9ffe7;}
+    .cross{background:rgba(251,113,133,.14); color:#ffd4dc;}
+
+    .pricing-note{
+      margin-top:22px;
+      padding:20px;
+      border-radius:20px;
+      background:linear-gradient(135deg, rgba(99,230,190,.08), rgba(96,165,250,.08));
+      border:1px solid rgba(99,230,190,.16);
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+    }
+
+    .pricing-note strong{
+      font-size:18px;
+      letter-spacing:-0.03em;
+    }
+
+    .footer-cta{
+      padding:32px;
+      border-radius:28px;
+      background:
+        radial-gradient(circle at top left, rgba(99,230,190,.16), transparent 26%),
+        radial-gradient(circle at bottom right, rgba(96,165,250,.18), transparent 30%),
+        linear-gradient(180deg, rgba(11,24,48,.96), rgba(7,17,31,.96));
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+      display:grid;
+      grid-template-columns:1.1fr .9fr;
+      gap:22px;
+      align-items:center;
+    }
+
+    .footer-cta h2{
+      margin:0 0 10px;
+      font-size:clamp(30px, 4vw, 52px);
+      line-height:1;
+      letter-spacing:-0.05em;
+    }
+
+    .footer-cta p{
+      margin:0;
+      color:var(--muted);
+      font-size:17px;
+      max-width:58ch;
+    }
+
+    .cta-panel{
+      padding:22px;
+      border-radius:22px;
+      background:rgba(255,255,255,0.05);
+      border:1px solid var(--line);
+    }
+
+    .cta-panel .big{
+      font-size:36px;
+      font-weight:900;
+      letter-spacing:-0.05em;
+      margin-bottom:8px;
+    }
+
+    .fine{
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    footer{
+      padding:28px 0 50px;
+      color:var(--muted);
+      font-size:14px;
+    }
+
+    @media (max-width: 980px){
+      .hero-grid, .footer-cta, .results, .compare{grid-template-columns:1fr}
+      .cards{grid-template-columns:1fr}
+      .stat-row{grid-template-columns:1fr}
+    }
+
+    @media (max-width: 640px){
+      header{position:static}
+      .container{width:min(var(--max), calc(100% - 20px))}
+      .hero{padding-top:34px}
+      .nav{align-items:flex-start; flex-direction:column}
+      .nav-actions{width:100%; flex-wrap:wrap}
+      .btn{width:100%}
+      .calculator{padding:18px}
+      .calc-header{flex-direction:column}
+      .pricing-note{align-items:flex-start}
+      .mini-metrics{grid-template-columns:1fr}
+      .bars{gap:6px}
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+
+  <header>
+    <div class="container nav">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <span>Go2</span>
+      </div>
+      <div class="nav-actions">
+        <a class="btn btn-secondary" href="#how-it-works">Why Go2</a>
+        <a class="btn btn-primary" href="#cta">See your productivity debt</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <div class="pill"><span class="dot"></span> Productivity coaching, not surveillance</div>
+          <h1><span class="gradient-text">Small inefficiencies</span> become massive productivity debt.</h1>
+          <p>
+            Every extra meeting, app switch, context break, and workflow hiccup compounds over time. Go2 shows SMB teams how work actually happens — then uses AI coaching to reduce drag, reclaim time, and improve performance without micromanagement.
+          </p>
+
+          <div class="nav-actions">
+            <a href="#calculator" class="btn btn-primary">Calculate your debt</a>
+            <a href="#how-it-works" class="btn btn-secondary">How Go2 helps</a>
+          </div>
+
+          <div class="stat-row">
+            <div class="stat">
+              <strong>42%</strong>
+              <span>Average productivity increase</span>
+            </div>
+            <div class="stat">
+              <strong>15.2 hrs</strong>
+              <span>Saved per employee, per week</span>
+            </div>
+            <div class="stat">
+              <strong>892%</strong>
+              <span>ROI in the first year</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" id="calculator">
+          <div class="calculator">
+            <div class="calc-header">
+              <div>
+                <h2>Productivity Debt Calculator</h2>
+                <p>Like tech debt, but for hidden workflow inefficiencies. Adjust the sliders to see how “just a little wasted time” snowballs across your team.</p>
+              </div>
+              <div class="alert-badge">Compounding loss</div>
+            </div>
+
+            <div class="inputs">
+              <div class="input-card">
+                <div class="label-row">
+                  <label for="employees">Team size</label>
+                  <div class="value-badge" id="employeesValue">50 people</div>
+                </div>
+                <input id="employees" type="range" min="5" max="500" value="50" step="1" />
+              </div>
+
+              <div class="input-card">
+                <div class="label-row">
+                  <label for="wastedHours">Wasted hours per employee / week</label>
+                  <div class="value-badge" id="wastedHoursValue">3.0 hrs</div>
+                </div>
+                <input id="wastedHours" type="range" min="0.5" max="20" value="3" step="0.5" />
+              </div>
+
+              <div class="input-card">
+                <div class="label-row">
+                  <label for="hourlyCost">Fully loaded hourly cost</label>
+                  <div class="value-badge" id="hourlyCostValue">$35/hr</div>
+                </div>
+                <input id="hourlyCost" type="range" min="20" max="150" value="35" step="1" />
+              </div>
+
+              <div class="input-card">
+                <div class="label-row">
+                  <label for="months">Time horizon</label>
+                  <div class="value-badge" id="monthsValue">12 months</div>
+                </div>
+                <input id="months" type="range" min="1" max="36" value="12" step="1" />
+              </div>
+
+              <div class="input-card">
+                <div class="label-row">
+                  <label for="compoundRate">Compounding drag factor</label>
+                  <div class="value-badge" id="compoundRateValue">6%</div>
+                </div>
+                <input id="compoundRate" type="range" min="0" max="15" value="6" step="1" />
+              </div>
+            </div>
+
+            <div class="results">
+              <div class="debt-card">
+                <div class="eyebrow">Estimated productivity debt</div>
+                <div class="mega" id="totalDebt">$281,190</div>
+                <div class="sub" id="debtSummary">Over 12 months, your team loses the equivalent of 7,920 hours to recurring inefficiencies.</div>
+
+                <div class="viz">
+                  <div class="viz-top">
+                    <div class="viz-title">How the debt compounds</div>
+                    <div class="legend">Monthly accumulated loss</div>
+                  </div>
+                  <div class="bars" id="bars"></div>
+                </div>
+              </div>
+
+              <div class="mini-metrics">
+                <div class="mini">
+                  <strong id="hoursLost">7,920</strong>
+                  <span>Hours lost</span>
+                </div>
+                <div class="mini">
+                  <strong id="weeksLost">198.0</strong>
+                  <span>40-hour weeks lost</span>
+                </div>
+                <div class="mini">
+                  <strong id="fteLost">3.8</strong>
+                  <span>Full-time roles worth of time</span>
+                </div>
+                <div class="mini">
+                  <strong id="go2Potential">$118,652</strong>
+                  <span>Potential value recovered with Go2 coaching</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="hidden-costs">
+      <div class="container">
+        <div class="section-title">
+          <h2 id="hidden-costs">What creates productivity debt?</h2>
+          <p>It rarely looks dramatic in the moment. It looks like normal work. That’s why it’s expensive.</p>
+        </div>
+
+        <div class="cards">
+          <div class="card">
+            <div class="icon">↔</div>
+            <h3>Constant app switching</h3>
+            <p>Teams bounce between tools, tabs, and notifications. Every shift adds context recovery time and cognitive fatigue.</p>
+          </div>
+          <div class="card">
+            <div class="icon">📅</div>
+            <h3>Meetings that fragment focus</h3>
+            <p>It’s not just the meeting — it’s the prep, interruption, post-meeting drift, and lost deep-work blocks around it.</p>
+          </div>
+          <div class="card">
+            <div class="icon">⏱</div>
+            <h3>Invisible process friction</h3>
+            <p>Repeated delays, duplicate work, slow handoffs, and low-value habits quietly scale across every employee, every week.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="how-it-works" aria-labelledby="go2-difference">
+      <div class="container">
+        <div class="section-title">
+          <h2 id="go2-difference">Go2 helps teams reduce debt without becoming a surveillance culture.</h2>
+          <p>Go2 tracks work patterns like keystrokes, app usage, and meetings to understand how work gets done — then translates those signals into AI coaching and operational insight.</p>
+        </div>
+
+        <div class="compare">
+          <div class="compare-card">
+            <h3>Old monitoring mindset</h3>
+            <div class="list">
+              <div class="list-item"><span class="cross">×</span><span>Measures activity to judge people</span></div>
+              <div class="list-item"><span class="cross">×</span><span>Focuses on control, screenshots, and punishment</span></div>
+              <div class="list-item"><span class="cross">×</span><span>Creates distrust and performative busyness</span></div>
+              <div class="list-item"><span class="cross">×</span><span>Finds “who is slacking,” not what is broken</span></div>
+            </div>
+          </div>
+
+          <div class="compare-card">
+            <h3>Go2 coaching mindset</h3>
+            <div class="list">
+              <div class="list-item"><span class="check">✓</span><span>Measures patterns to improve workflows</span></div>
+              <div class="list-item"><span class="check">✓</span><span>Uses AI to coach smarter habits and better team design</span></div>
+              <div class="list-item"><span class="check">✓</span><span>Surfaces bottlenecks, overload, and focus fragmentation</span></div>
+              <div class="list-item"><span class="check">✓</span><span>Helps SMB owners, ops, and HR act on reality — not guesses</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pricing-note">
+          <div>
+            <strong>Priced for SMB teams: roughly $6–12 per user/month</strong>
+            <div class="fine">For companies with 5–500 employees, the cost of Go2 is tiny compared to the cost of unmanaged productivity debt.</div>
+          </div>
+          <a href="#cta" class="btn btn-primary">Estimate ROI with Go2</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="cta">
+      <div class="container">
+        <div class="footer-cta">
+          <div>
+            <div class="pill"><span class="dot"></span> Built for SMB owners, ops managers, and HR leaders</div>
+            <h2>See how work actually gets done — and coach your team to do it better.</h2>
+            <p>
+              If your team has hidden drag, it’s already costing more than you think. Go2 helps you identify productivity debt, reduce it with AI coaching, and turn wasted time into measurable output.
+            </p>
+          </div>
+          <div class="cta-panel">
+            <div class="big" id="ctaValue">$281,190</div>
+            <div style="margin-bottom:14px; color:var(--muted);">Estimated annual productivity debt in your current scenario.</div>
+            <div class="nav-actions" style="flex-direction:column; align-items:stretch;">
+              <a href="#" class="btn btn-primary">Book a Go2 demo</a>
+              <a href="#calculator" class="btn btn-secondary">Recalculate your numbers</a>
+            </div>
+            <div class="fine" style="margin-top:12px;">Based on your current calculator inputs and Go2’s coaching-first approach.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      Go2 — AI-powered productivity coaching for teams of 5–500 employees.
+    </div>
+  </footer>
+
+  <script>
+    const inputs = {
+      employees: document.getElementById('employees'),
+      wastedHours: document.getElementById('wastedHours'),
+      hourlyCost: document.getElementById('hourlyCost'),
+      months: document.getElementById('months'),
+      compoundRate: document.getElementById('compoundRate')
+    };
+
+    const outputs = {
+      employeesValue: document.getElementById('employeesValue'),
+      wastedHoursValue: document.getElementById('wastedHoursValue'),
+      hourlyCostValue: document.getElementById('hourlyCostValue'),
+      monthsValue: document.getElementById('monthsValue'),
+      compoundRateValue: document.getElementById('compoundRateValue'),
+      totalDebt: document.getElementById('totalDebt'),
+      debtSummary: document.getElementById('debtSummary'),
+      hoursLost: document.getElementById('hoursLost'),
+      weeksLost: document.getElementById('weeksLost'),
+      fteLost: document.getElementById('fteLost'),
+      go2Potential: document.getElementById('go2Potential'),
+      bars: document.getElementById('bars'),
+      ctaValue: document.getElementById('ctaValue')
+    };
+
+    function formatCurrency(n){
+      return new Intl.NumberFormat('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0}).format(n);
+    }
+
+    function formatNumber(n, digits = 0){
+      return new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits
+      }).format(n);
+    }
+
+    function calculateDebt(){
+      const employees = parseFloat(inputs.employees.value);
+      const wastedHours = parseFloat(inputs.wastedHours.value);
+      const hourlyCost = parseFloat(inputs.hourlyCost.value);
+      const months = parseFloat(inputs.months.value);
+      const annualRate = parseFloat(inputs.compoundRate.value) / 100;
+
+      outputs.employeesValue.textContent = `${formatNumber(employees)} people`;
+      outputs.wastedHoursValue.textContent = `${wastedHours.toFixed(1)} hrs`;
+      outputs.hourlyCostValue.textContent = `$${formatNumber(hourlyCost)}/hr`;
+      outputs.monthsValue.textContent = `${months} months`;
+      outputs.compoundRateValue.textContent = `${formatNumber(annualRate * 100)}%`;
+
+      const weeklyLossHours = employees * wastedHours;
+      const monthlyBaseHours = weeklyLossHours * 4.33;
+      const monthlyBaseCost = monthlyBaseHours * hourlyCost;
+      const monthlyRate = annualRate / 12;
+
+      let totalCost = 0;
+      let totalHours = 0;
+      const monthlyValues = [];
+
+      for(let i = 0; i < months; i++){
+        const factor = Math.pow(1 + monthlyRate, i);
+        const monthCost = monthlyBaseCost * factor;
+        const monthHours = monthlyBaseHours * factor;
+        totalCost += monthCost;
+        totalHours += monthHours;
+        monthlyValues.push(monthCost);
+      }
+
+      const weeksLost = totalHours / 40;
+      const fteLost = totalHours / (40 * 52);
+      const potentialRecovered = totalCost * 0.422;
+
+      outputs.totalDebt.textContent = formatCurrency(totalCost);
+      outputs.hoursLost.textContent = formatNumber(totalHours);
+      outputs.weeksLost.textContent = formatNumber(weeksLost, 1);
+      outputs.fteLost.textContent = formatNumber(fteLost, 1);
+      outputs.go2Potential.textContent = formatCurrency(potentialRecovered);
+      outputs.ctaValue.textContent = formatCurrency(totalCost);
+
+      outputs.debtSummary.textContent =
+        `Over ${months} month${months > 1 ? 's' : ''}, your team loses the equivalent of ${formatNumber(totalHours)} hours to recurring inefficiencies.`;
+
+      renderBars(monthlyValues, months);
+    }
+
+    function renderBars(values, months){
+      outputs.bars.innerHTML = '';
+      const shown = Math.min(values.length, 12);
+      const sampled = [];
+
+      if(values.length <= 12){
+        values.forEach((v, i) => sampled.push({label: `M${i+1}`, value: v}));
+      } else {
+        for(let i = 0; i < 12; i++){
+          const idx = Math.floor(i * values.length / 12);
+          sampled.push({label: `M${idx+1}`, value: values[idx]});
+        }
+      }
+
+      const max = Math.max(...sampled.map(v => v.value), 1);
+
+      sampled.forEach(item => {
+        const wrap = document.createElement('div');
+        wrap.className = 'bar-wrap';
+
+        const value = document.createElement('div');
+        value.className = 'bar-value';
+        value.textContent = formatCurrency(item.value);
+
+        const bar = document.createElement('div');
+        bar.className = 'bar';
+        bar.style.height = `${Math.max(12, (item.value / max) * 140)}px`;
+
+        const label = document.createElement('div');
+        label.className = 'bar-label';
+        label.textContent = item.label;
+
+        wrap.appendChild(value);
+        wrap.appendChild(bar);
+        wrap.appendChild(label);
+        outputs.bars.appendChild(wrap);
+      });
+    }
+
+    Object.values(inputs).forEach(input => input.addEventListener('input', calculateDebt));
+    calculateDebt();
+  </script>
+</body>
+</html>

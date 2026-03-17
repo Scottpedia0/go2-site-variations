@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Monday Problem | Go2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: #0a0a0f; color: #e0e0e0; }
+.hero { min-height: 70vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 40px 20px; }
+.hero-inner { max-width: 700px; }
+.hero h1 { font-size: clamp(2.5rem, 7vw, 5rem); font-weight: 900; line-height: 1.05; margin-bottom: 16px; }
+.hero h1 .monday { background: linear-gradient(135deg, #ef4444, #f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.hero p { color: #888; font-size: 1.1rem; max-width: 500px; margin: 0 auto; }
+.section { max-width: 900px; margin: 0 auto; padding: 60px 20px; }
+.section h2 { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 800; margin-bottom: 16px; text-align: center; }
+.section .subtitle { text-align: center; color: #888; margin-bottom: 32px; }
+/* Weekly chart */
+.weekly-chart { margin: 40px 0; }
+.chart-canvas { position: relative; height: 300px; background: rgba(255,255,255,0.02); border: 1px solid #1a1a2e; border-radius: 16px; overflow: hidden; }
+.chart-canvas canvas { width: 100%; height: 100%; }
+.chart-legend { display: flex; justify-content: center; gap: 24px; margin-top: 12px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: #888; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+.day-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 32px 0; }
+.day-card { background: rgba(255,255,255,0.02); border: 1px solid #1a1a2e; border-radius: 12px; padding: 16px; text-align: center; transition: all 0.3s; cursor: default; }
+.day-card:hover { border-color: #333; transform: translateY(-2px); }
+.day-card .day-name { font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.day-card .day-score { font-size: 2rem; font-weight: 900; margin-bottom: 4px; }
+.day-card .day-desc { font-size: 0.7rem; color: #666; }
+.day-card.monday { border-color: rgba(239,68,68,0.3); }
+.day-card.monday .day-score { color: #ef4444; }
+.day-card.tuesday .day-score { color: #f59e0b; }
+.day-card.wednesday .day-score { color: #22c55e; }
+.day-card.thursday .day-score { color: #22c55e; }
+.day-card.friday .day-score { color: #f59e0b; }
+.day-card.friday { border-color: rgba(245,158,11,0.3); }
+.insight-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin: 32px 0; }
+.insight-card { background: rgba(255,255,255,0.02); border: 1px solid #1a1a2e; border-radius: 14px; padding: 20px; }
+.insight-card h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.insight-card p { font-size: 0.85rem; color: #888; line-height: 1.6; }
+.insight-card .stat { font-size: 1.4rem; font-weight: 800; margin: 8px 0; }
+.hourly-heatmap { margin: 32px 0; }
+.heatmap-grid { display: grid; grid-template-columns: 60px repeat(5, 1fr); gap: 2px; }
+.heatmap-label { font-size: 0.65rem; color: #555; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; }
+.heatmap-header { font-size: 0.7rem; color: #666; text-align: center; padding: 8px 0; font-weight: 600; }
+.heatmap-cell { height: 28px; border-radius: 4px; transition: all 0.3s; position: relative; }
+.heatmap-cell:hover { transform: scale(1.05); z-index: 1; }
+.heatmap-cell:hover::after { content: attr(data-val); position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 0.6rem; color: #fff; background: #333; padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
+.solution-section { padding: 40px; background: linear-gradient(135deg, rgba(34,197,94,0.03), rgba(99,102,241,0.03)); border: 1px solid rgba(34,197,94,0.15); border-radius: 20px; margin: 40px 0; }
+.solution-section h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 16px; text-align: center; }
+.solution-list { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.solution-item { display: flex; gap: 10px; }
+.solution-icon { width: 24px; height: 24px; border-radius: 6px; background: rgba(34,197,94,0.1); color: #4ade80; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; flex-shrink: 0; }
+.solution-item p { font-size: 0.85rem; color: #ccc; line-height: 1.4; }
+.before-after { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 32px 0; }
+.ba-card { padding: 24px; border-radius: 14px; text-align: center; }
+.ba-card.before { background: rgba(239,68,68,0.03); border: 1px solid rgba(239,68,68,0.15); }
+.ba-card.after { background: rgba(34,197,94,0.03); border: 1px solid rgba(34,197,94,0.15); }
+.ba-card .ba-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+.ba-card.before .ba-label { color: #f87171; }
+.ba-card.after .ba-label { color: #4ade80; }
+.ba-metric { margin-bottom: 12px; }
+.ba-metric .num { font-size: 1.5rem; font-weight: 800; }
+.ba-card.before .num { color: #f87171; }
+.ba-card.after .num { color: #4ade80; }
+.ba-metric .desc { font-size: 0.75rem; color: #888; }
+.cta-section { text-align: center; padding: 60px 20px; }
+.cta-section h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 12px; }
+.cta-section p { color: #888; margin-bottom: 24px; }
+.cta-btn { display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 1.1rem; border: none; cursor: pointer; }
+@media (max-width: 768px) {
+  .day-cards { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .day-card { padding: 10px; }
+  .day-card .day-score { font-size: 1.3rem; }
+  .solution-list, .before-after { grid-template-columns: 1fr; }
+  .heatmap-grid { font-size: 0.55rem; }
+}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="hero-inner">
+    <h1>The <span class="monday">Monday</span> Problem</h1>
+    <p>Why your team's productivity drops 34% every Monday, craters every Friday, and what Go2 data reveals about the weekly pattern nobody talks about.</p>
+  </div>
+</div>
+
+<div class="section">
+  <h2>The Weekly Productivity Curve</h2>
+  <p class="subtitle">Based on Go2 data across 50,000+ knowledge workers</p>
+
+  <div class="weekly-chart">
+    <div class="chart-canvas"><canvas id="weeklyChart"></canvas></div>
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#6366f1"></div> Focus Time</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> Meeting Load</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> Context Switches</div>
+    </div>
+  </div>
+
+  <div class="day-cards">
+    <div class="day-card monday"><div class="day-name">Monday</div><div class="day-score">54</div><div class="day-desc">Recovery mode</div></div>
+    <div class="day-card tuesday"><div class="day-name">Tuesday</div><div class="day-score">76</div><div class="day-desc">Ramping up</div></div>
+    <div class="day-card wednesday"><div class="day-name">Wednesday</div><div class="day-score">82</div><div class="day-desc">Peak day</div></div>
+    <div class="day-card thursday"><div class="day-name">Thursday</div><div class="day-score">79</div><div class="day-desc">Strong output</div></div>
+    <div class="day-card friday"><div class="day-name">Friday</div><div class="day-score">61</div><div class="day-desc">Wind down</div></div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Why Mondays Actually Suck (It's Not Laziness)</h2>
+
+  <div class="insight-grid">
+    <div class="insight-card">
+      <h4>&#128337; Ramp-Up Tax</h4>
+      <div class="stat" style="color:#ef4444">47 minutes</div>
+      <p>Average time to reach first productive state on Monday vs 18 minutes on Wednesday. The "context reload" after a weekend costs almost an hour.</p>
+    </div>
+    <div class="insight-card">
+      <h4>&#128197; Meeting Monday</h4>
+      <div class="stat" style="color:#f97316">68%</div>
+      <p>Of weekly planning meetings are scheduled on Mondays. The day meant for "starting the week strong" is actually the most meeting-heavy day.</p>
+    </div>
+    <div class="insight-card">
+      <h4>&#128172; Catch-Up Cascade</h4>
+      <div class="stat" style="color:#f59e0b">127</div>
+      <p>Average Slack messages read on Monday morning — 3x the daily average. Most are catch-up from Friday/weekend. Information overload before any work begins.</p>
+    </div>
+    <div class="insight-card">
+      <h4>&#128170; Energy Paradox</h4>
+      <div class="stat" style="color:#6366f1">-26%</div>
+      <p>Self-reported energy on Monday mornings. But here's the paradox: people who exercise Sunday evening report only -8%. The body is ready; the workflow isn't.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>The Friday Problem Is Just as Bad</h2>
+  <p class="subtitle">Productivity doesn't just drop — it transforms into something else entirely.</p>
+  <div class="insight-grid">
+    <div class="insight-card">
+      <h4>&#128683; Early Checkout</h4>
+      <p>Productive output drops 40% after 2 PM on Fridays. Not because people leave — but because they switch to low-impact tasks. Admin, email cleanup, "organizing."</p>
+    </div>
+    <div class="insight-card">
+      <h4>&#128200; The Friday Deploy</h4>
+      <p>15% of engineering bugs are introduced by Friday afternoon commits. Cognitively demanding work on Friday afternoon is a recipe for errors.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Hourly Productivity Heatmap</h2>
+  <p class="subtitle">Where the productive hours actually are (darker = more productive)</p>
+  <div class="hourly-heatmap">
+    <div class="heatmap-grid" id="heatmapGrid"></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="solution-section">
+    <h3>How Go2 Smooths the Curve</h3>
+    <div class="solution-list">
+      <div class="solution-item"><div class="solution-icon">1</div><p><strong>Monday Ramp Optimizer:</strong> AI pre-loads context summaries so your team starts 30 min faster on Mondays.</p></div>
+      <div class="solution-item"><div class="solution-icon">2</div><p><strong>Meeting Redistribution:</strong> AI suggests moving Monday meetings to Tuesday/Wednesday when cognitive capacity is higher.</p></div>
+      <div class="solution-item"><div class="solution-icon">3</div><p><strong>Friday Focus Blocks:</strong> Protect Friday mornings for deep work. Save admin for natural low-energy afternoon periods.</p></div>
+      <div class="solution-item"><div class="solution-icon">4</div><p><strong>Weekly Rhythm Coaching:</strong> Personalized daily coaching adapts to each person's energy patterns across the week.</p></div>
+    </div>
+  </div>
+
+  <div class="before-after">
+    <div class="ba-card before">
+      <div class="ba-label">Without Go2</div>
+      <div class="ba-metric"><div class="num">34%</div><div class="desc">Monday productivity drop</div></div>
+      <div class="ba-metric"><div class="num">28%</div><div class="desc">Friday productivity drop</div></div>
+      <div class="ba-metric"><div class="num">54</div><div class="desc">Lowest day score</div></div>
+    </div>
+    <div class="ba-card after">
+      <div class="ba-label">With Go2</div>
+      <div class="ba-metric"><div class="num">12%</div><div class="desc">Monday productivity drop</div></div>
+      <div class="ba-metric"><div class="num">10%</div><div class="desc">Friday productivity drop</div></div>
+      <div class="ba-metric"><div class="num">72</div><div class="desc">Lowest day score</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="cta-section">
+  <h2>Stop losing 2 days out of every 5.</h2>
+  <p>Go2 transforms your team's weekly rhythm. Better Mondays. Better Fridays. Better everything in between.</p>
+  <button class="cta-btn">Fix Your Week</button>
+</div>
+
+<script>
+// Weekly chart
+function drawWeeklyChart() {
+  const canvas = document.getElementById('weeklyChart');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = canvas.offsetWidth * dpr;
+  canvas.height = canvas.offsetHeight * dpr;
+  ctx.scale(dpr, dpr);
+  const W = canvas.offsetWidth, H = canvas.offsetHeight;
+  const pad = { top: 30, right: 30, bottom: 40, left: 50 };
+  const cW = W - pad.left - pad.right;
+  const cH = H - pad.top - pad.bottom;
+
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  const focus =    [38, 62, 72, 68, 48];
+  const meetings = [72, 52, 38, 45, 35];
+  const switches = [78, 45, 32, 38, 55];
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + (cH / 4) * i;
+    ctx.strokeStyle = '#1a1a2e'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+    ctx.fillStyle = '#555'; ctx.font = '11px Inter'; ctx.textAlign = 'right';
+    ctx.fillText((100 - 25 * i) + '', pad.left - 8, y + 4);
+  }
+
+  // X labels
+  days.forEach((d, i) => {
+    const x = pad.left + (cW / 4) * i;
+    ctx.fillStyle = '#888'; ctx.font = '12px Inter'; ctx.textAlign = 'center';
+    ctx.fillText(d, x, H - pad.bottom + 20);
+  });
+
+  function drawLine(data, color, width) {
+    ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = width;
+    data.forEach((v, i) => {
+      const x = pad.left + (cW / 4) * i;
+      const y = pad.top + cH - (v / 100) * cH;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    // Dots
+    data.forEach((v, i) => {
+      const x = pad.left + (cW / 4) * i;
+      const y = pad.top + cH - (v / 100) * cH;
+      ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = color; ctx.fill();
+    });
+  }
+
+  // Area under focus
+  ctx.beginPath();
+  focus.forEach((v, i) => {
+    const x = pad.left + (cW / 4) * i;
+    const y = pad.top + cH - (v / 100) * cH;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.lineTo(pad.left + cW, pad.top + cH);
+  ctx.lineTo(pad.left, pad.top + cH);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + cH);
+  grad.addColorStop(0, 'rgba(99,102,241,0.15)');
+  grad.addColorStop(1, 'rgba(99,102,241,0)');
+  ctx.fillStyle = grad; ctx.fill();
+
+  drawLine(switches, '#f59e0b', 2);
+  drawLine(meetings, '#ef4444', 2);
+  drawLine(focus, '#6366f1', 3);
+}
+
+// Heatmap
+function buildHeatmap() {
+  const grid = document.getElementById('heatmapGrid');
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  const hours = ['8AM','9AM','10AM','11AM','12PM','1PM','2PM','3PM','4PM','5PM'];
+  const data = [
+    [20,35,50,55,30,45,55,50,40,25], // Mon
+    [40,65,75,72,35,60,70,65,55,35], // Tue
+    [50,75,85,80,40,70,78,72,60,40], // Wed
+    [45,70,80,75,38,65,72,68,55,35], // Thu
+    [35,55,65,60,32,50,55,45,30,20], // Fri
+  ];
+
+  // Corner
+  grid.innerHTML = '<div></div>';
+  // Day headers
+  days.forEach(d => { grid.innerHTML += `<div class="heatmap-header">${d}</div>`; });
+  // Rows
+  hours.forEach((h, hi) => {
+    grid.innerHTML += `<div class="heatmap-label">${h}</div>`;
+    days.forEach((d, di) => {
+      const val = data[di][hi];
+      const intensity = val / 100;
+      const r = Math.round(99 + (34 - 99) * intensity);
+      const g = Math.round(102 + (197 - 102) * intensity);
+      const b = Math.round(241 + (94 - 241) * intensity);
+      grid.innerHTML += `<div class="heatmap-cell" style="background:rgba(${r},${g},${b},${0.15 + intensity * 0.6})" data-val="${val}% productive"></div>`;
+    });
+  });
+}
+
+window.addEventListener('resize', drawWeeklyChart);
+drawWeeklyChart();
+buildHeatmap();
+
+// Scroll animations
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.opacity = '1';
+      e.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.day-card, .insight-card, .solution-item, .ba-card').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(15px)';
+  el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+  observer.observe(el);
+});
+</script>
+</body>
+</html>
