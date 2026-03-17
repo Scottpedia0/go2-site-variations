@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 - Investor Grade Intelligence Infrastructure</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    background: #0a0a0a;
+    color: #e0e0e0;
+    overflow-x: hidden;
+    line-height: 1.5;
+  }
+
+  /* Scanline effect */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+  }
+
+  /* HEADER BAR */
+  .header-bar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+    background: #0d0d0d;
+    border-bottom: 1px solid #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 44px;
+    font-size: 12px;
+  }
+  .header-left {
+    display: flex; align-items: center; gap: 16px;
+  }
+  .header-logo {
+    font-weight: 800;
+    font-size: 16px;
+    color: #00ff88;
+    letter-spacing: 2px;
+  }
+  .header-tag {
+    color: #555;
+    font-weight: 400;
+  }
+  .header-right {
+    display: flex; align-items: center; gap: 20px;
+    color: #555;
+  }
+  .header-live {
+    display: flex; align-items: center; gap: 6px;
+    color: #00ff88;
+    font-weight: 600;
+  }
+  .header-live::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: #00ff88;
+    border-radius: 50%;
+    animation: blink 2s ease-in-out infinite;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  .header-btn {
+    padding: 6px 16px;
+    background: #00ff88;
+    color: #0a0a0a;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 11px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: background 0.2s;
+  }
+  .header-btn:hover { background: #00cc6e; }
+
+  /* TICKER BAR */
+  .ticker-bar {
+    position: fixed;
+    top: 44px; left: 0; right: 0;
+    z-index: 199;
+    background: #111;
+    border-bottom: 1px solid #1a1a1a;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    font-size: 11px;
+  }
+  .ticker-content {
+    display: flex;
+    gap: 32px;
+    animation: ticker 40s linear infinite;
+    white-space: nowrap;
+  }
+  @keyframes ticker {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  .ticker-item { display: flex; gap: 8px; }
+  .ticker-label { color: #555; }
+  .ticker-val { font-weight: 600; }
+  .ticker-val.green { color: #00ff88; }
+  .ticker-val.red { color: #ff4444; }
+  .ticker-val.blue { color: #4488ff; }
+  .ticker-val.yellow { color: #ffaa00; }
+
+  /* MAIN CONTENT */
+  .main { padding-top: 76px; }
+
+  /* HERO TERMINAL */
+  .hero-section {
+    padding: 80px 32px 60px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .terminal-window {
+    background: #111;
+    border: 1px solid #222;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .terminal-header {
+    background: #181818;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid #222;
+  }
+  .terminal-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+  }
+  .terminal-dot.red { background: #ff5f57; }
+  .terminal-dot.yellow { background: #ffbd2e; }
+  .terminal-dot.green { background: #28c840; }
+  .terminal-title {
+    margin-left: 12px;
+    font-size: 12px;
+    color: #555;
+  }
+  .terminal-body {
+    padding: 32px;
+    font-size: 14px;
+    line-height: 2;
+  }
+  .t-prompt { color: #00ff88; }
+  .t-cmd { color: #e0e0e0; }
+  .t-comment { color: #555; }
+  .t-output { color: #888; }
+  .t-highlight { color: #ffaa00; }
+  .t-value { color: #4488ff; }
+  .t-error { color: #ff4444; }
+
+  .hero-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 48px;
+    font-weight: 800;
+    letter-spacing: -2px;
+    margin: 48px 0 16px;
+    color: #fff;
+    line-height: 1.1;
+  }
+  .hero-title span { color: #00ff88; }
+  .hero-sub {
+    font-family: 'Inter', sans-serif;
+    font-size: 17px;
+    font-weight: 400;
+    color: #666;
+    max-width: 600px;
+    line-height: 1.7;
+  }
+
+  /* DATA GRID */
+  .data-section {
+    padding: 60px 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: #555;
+    margin-bottom: 24px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #1a1a1a;
+  }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+  }
+  .metric-cell {
+    background: #111;
+    border: 1px solid #1a1a1a;
+    padding: 28px 24px;
+    position: relative;
+  }
+  .metric-cell:first-child { border-radius: 8px 0 0 8px; }
+  .metric-cell:last-child { border-radius: 0 8px 8px 0; }
+  .metric-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #555;
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+  .metric-value {
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .metric-value.green { color: #00ff88; }
+  .metric-value.red { color: #ff4444; }
+  .metric-value.blue { color: #4488ff; }
+  .metric-value.yellow { color: #ffaa00; }
+  .metric-delta {
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .metric-delta.up { color: #00ff88; }
+  .metric-delta.down { color: #ff4444; }
+
+  /* UNIT ECONOMICS */
+  .economics-section {
+    padding: 60px 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .econ-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+  }
+  .econ-panel {
+    background: #111;
+    border: 1px solid #1a1a1a;
+    padding: 36px 32px;
+  }
+  .econ-panel:first-child { border-radius: 8px 0 0 8px; }
+  .econ-panel:last-child { border-radius: 0 8px 8px 0; }
+  .econ-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #555;
+    margin-bottom: 24px;
+    font-weight: 600;
+  }
+  .econ-rows { display: flex; flex-direction: column; gap: 2px; }
+  .econ-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  .econ-row .label { color: #888; }
+  .econ-row .val { font-weight: 700; }
+  .econ-row .val.green { color: #00ff88; }
+  .econ-row .val.blue { color: #4488ff; }
+  .econ-row .val.yellow { color: #ffaa00; }
+  .econ-row .val.red { color: #ff4444; }
+  .econ-row .val.white { color: #e0e0e0; }
+  .econ-divider {
+    height: 1px;
+    background: #222;
+    margin: 8px 0;
+  }
+  .econ-row.total {
+    background: rgba(0,255,136,0.05);
+    border: 1px solid rgba(0,255,136,0.1);
+  }
+
+  /* THESIS SECTION */
+  .thesis-section {
+    padding: 60px 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .thesis-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+  }
+  .thesis-card {
+    background: #111;
+    border: 1px solid #1a1a1a;
+    padding: 36px 28px;
+  }
+  .thesis-card:first-child { border-radius: 8px 0 0 8px; }
+  .thesis-card:last-child { border-radius: 0 8px 8px 0; }
+  .thesis-num {
+    font-size: 10px;
+    color: #00ff88;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+    font-weight: 600;
+  }
+  .thesis-card h3 {
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #fff;
+  }
+  .thesis-card p {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.7;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* COMPETITIVE SECTION */
+  .competitive-section {
+    padding: 60px 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .comp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    background: #111;
+    border: 1px solid #1a1a1a;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .comp-table thead {
+    background: #181818;
+  }
+  .comp-table th {
+    padding: 14px 20px;
+    text-align: left;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #555;
+    font-weight: 600;
+    border-bottom: 1px solid #222;
+  }
+  .comp-table td {
+    padding: 14px 20px;
+    border-bottom: 1px solid #1a1a1a;
+    color: #888;
+  }
+  .comp-table tr:last-child td { border-bottom: none; }
+  .comp-table .highlight-row {
+    background: rgba(0,255,136,0.03);
+  }
+  .comp-table .highlight-row td {
+    color: #00ff88;
+    font-weight: 600;
+  }
+  .comp-check { color: #00ff88; }
+  .comp-x { color: #ff4444; }
+  .comp-partial { color: #ffaa00; }
+
+  /* ARCHITECTURE */
+  .arch-section {
+    padding: 60px 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .arch-diagram {
+    background: #111;
+    border: 1px solid #1a1a1a;
+    border-radius: 8px;
+    padding: 40px;
+  }
+  .arch-layers {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .arch-layer {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 16px;
+    align-items: center;
+    padding: 20px 24px;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+  .arch-layer-name {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 700;
+  }
+  .arch-layer-desc {
+    color: #888;
+    font-family: 'Inter', sans-serif;
+  }
+  .arch-layer.l3 { background: rgba(139,92,246,0.06); border: 1px solid rgba(139,92,246,0.15); }
+  .arch-layer.l3 .arch-layer-name { color: #a78bfa; }
+  .arch-layer.l2 { background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.15); }
+  .arch-layer.l2 .arch-layer-name { color: #60a5fa; }
+  .arch-layer.l1 { background: rgba(0,255,136,0.04); border: 1px solid rgba(0,255,136,0.12); }
+  .arch-layer.l1 .arch-layer-name { color: #00ff88; }
+  .arch-connector {
+    text-align: center;
+    color: #333;
+    font-size: 16px;
+    padding: 4px 0;
+  }
+
+  /* CTA */
+  .cta-section {
+    padding: 80px 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .cta-terminal {
+    background: #111;
+    border: 1px solid #222;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .cta-terminal .terminal-body {
+    text-align: center;
+    padding: 56px 32px;
+  }
+  .cta-terminal h2 {
+    font-family: 'Inter', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -1.5px;
+    margin-bottom: 12px;
+  }
+  .cta-terminal p {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 32px;
+    font-family: 'Inter', sans-serif;
+  }
+  .cta-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+  .cta-btn-primary {
+    padding: 14px 36px;
+    background: #00ff88;
+    color: #0a0a0a;
+    text-decoration: none;
+    font-weight: 800;
+    font-size: 13px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: background 0.2s;
+  }
+  .cta-btn-primary:hover { background: #00cc6e; }
+  .cta-btn-secondary {
+    padding: 14px 36px;
+    background: transparent;
+    border: 1px solid #333;
+    color: #888;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 13px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .cta-btn-secondary:hover { border-color: #555; color: #ccc; }
+
+  /* FOOTER */
+  footer {
+    padding: 24px 32px;
+    border-top: 1px solid #1a1a1a;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: #333;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  footer .logo-sm {
+    color: #00ff88;
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 2px;
+  }
+
+  /* COUNTER ANIMATION */
+  .counter { font-variant-numeric: tabular-nums; }
+
+  @media (max-width: 768px) {
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+    .metric-cell:first-child, .metric-cell:last-child { border-radius: 0; }
+    .econ-grid { grid-template-columns: 1fr; }
+    .econ-panel:first-child, .econ-panel:last-child { border-radius: 8px; }
+    .thesis-grid { grid-template-columns: 1fr; }
+    .thesis-card:first-child, .thesis-card:last-child { border-radius: 8px; }
+    .comp-table { font-size: 11px; }
+    .comp-table th, .comp-table td { padding: 10px 12px; }
+    .hero-title { font-size: 32px; }
+    .header-bar { padding: 0 12px; }
+    .cta-buttons { flex-direction: column; align-items: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header-bar">
+  <div class="header-left">
+    <span class="header-logo">GO2</span>
+    <span class="header-tag">// AI Infrastructure Intelligence</span>
+  </div>
+  <div class="header-right">
+    <span class="header-live">LIVE</span>
+    <span id="clock">--:--:--</span>
+    <a href="#" class="header-btn">Request Access</a>
+  </div>
+</div>
+
+<div class="ticker-bar">
+  <div class="ticker-content">
+    <div class="ticker-item"><span class="ticker-label">AI PILOT FAILURE RATE</span><span class="ticker-val red">95.0%</span></div>
+    <div class="ticker-item"><span class="ticker-label">GO2 WORKER SAT</span><span class="ticker-val green">89.0%</span></div>
+    <div class="ticker-item"><span class="ticker-label">PROFILES</span><span class="ticker-val blue">2,147,892</span></div>
+    <div class="ticker-item"><span class="ticker-label">REV DRIVEN</span><span class="ticker-val green">$60.4M</span></div>
+    <div class="ticker-item"><span class="ticker-label">AUTOMATABLE HRS/WK</span><span class="ticker-val yellow">40.6</span></div>
+    <div class="ticker-item"><span class="ticker-label">COS CREATING VALUE</span><span class="ticker-val red">5.0%</span></div>
+    <div class="ticker-item"><span class="ticker-label">AI PILOT FAILURE RATE</span><span class="ticker-val red">95.0%</span></div>
+    <div class="ticker-item"><span class="ticker-label">GO2 WORKER SAT</span><span class="ticker-val green">89.0%</span></div>
+    <div class="ticker-item"><span class="ticker-label">PROFILES</span><span class="ticker-val blue">2,147,892</span></div>
+    <div class="ticker-item"><span class="ticker-label">REV DRIVEN</span><span class="ticker-val green">$60.4M</span></div>
+    <div class="ticker-item"><span class="ticker-label">AUTOMATABLE HRS/WK</span><span class="ticker-val yellow">40.6</span></div>
+    <div class="ticker-item"><span class="ticker-label">COS CREATING VALUE</span><span class="ticker-val red">5.0%</span></div>
+  </div>
+</div>
+
+<div class="main">
+
+<section class="hero-section">
+  <div class="terminal-window">
+    <div class="terminal-header">
+      <div class="terminal-dot red"></div>
+      <div class="terminal-dot yellow"></div>
+      <div class="terminal-dot green"></div>
+      <span class="terminal-title">go2 -- intelligence-report --latest</span>
+    </div>
+    <div class="terminal-body">
+      <div><span class="t-prompt">$</span> <span class="t-cmd">go2 diagnose --industry=enterprise-ai</span></div>
+      <div><span class="t-comment"># Analyzing 2,147,892 worker profiles...</span></div>
+      <div>&nbsp;</div>
+      <div><span class="t-output">FINDING:</span> <span class="t-error">95% of AI pilots fail to reach production</span> <span class="t-comment">(MIT, 2025)</span></div>
+      <div><span class="t-output">FINDING:</span> <span class="t-error">Only 5% of companies create real value from AI</span> <span class="t-comment">(BCG, 2025)</span></div>
+      <div><span class="t-output">ROOT CAUSE:</span> <span class="t-highlight">No data about how work actually happens</span></div>
+      <div>&nbsp;</div>
+      <div><span class="t-prompt">$</span> <span class="t-cmd">go2 solution --describe</span></div>
+      <div><span class="t-output">STATUS:</span> <span class="t-value">Capture work data via Cowork.ai desktop agent</span></div>
+      <div><span class="t-output">STATUS:</span> <span class="t-value">Sidecar existing AI tools (Claude, ChatGPT) with context</span></div>
+      <div><span class="t-output">STATUS:</span> <span class="t-value">Open source agent training tools included</span></div>
+      <div><span class="t-output">RESULT:</span> <span style="color:#00ff88;">AI that understands your actual workflows</span></div>
+    </div>
+  </div>
+
+  <h1 class="hero-title">The Missing <span>Infrastructure</span><br>for Enterprise AI</h1>
+  <p class="hero-sub">AI tools are commoditized. Work-context data is not. Go2 captures how work actually happens, then makes every AI tool in your stack smarter. No fluff. Just data.</p>
+</section>
+
+<section class="data-section">
+  <div class="section-label">Core Metrics</div>
+  <div class="metrics-grid">
+    <div class="metric-cell">
+      <div class="metric-label">AI Failure Rate</div>
+      <div class="metric-value red counter">95%</div>
+      <div class="metric-delta down">MIT Research 2025</div>
+    </div>
+    <div class="metric-cell">
+      <div class="metric-label">Worker Satisfaction</div>
+      <div class="metric-value green counter">89%</div>
+      <div class="metric-delta up">&#9650; Go2 coaching model</div>
+    </div>
+    <div class="metric-cell">
+      <div class="metric-label">Worker Profiles</div>
+      <div class="metric-value blue counter">2M+</div>
+      <div class="metric-delta up">&#9650; Growing continuously</div>
+    </div>
+    <div class="metric-cell">
+      <div class="metric-label">Revenue Driven</div>
+      <div class="metric-value yellow counter">$60M+</div>
+      <div class="metric-delta up">&#9650; Cumulative sales</div>
+    </div>
+  </div>
+</section>
+
+<section class="economics-section">
+  <div class="section-label">Unit Economics & ROI Model</div>
+  <div class="econ-grid">
+    <div class="econ-panel">
+      <div class="econ-title">Without Go2 (Industry Baseline)</div>
+      <div class="econ-rows">
+        <div class="econ-row">
+          <span class="label">Avg AI pilot cost</span>
+          <span class="val red">$250K - $2M</span>
+        </div>
+        <div class="econ-row">
+          <span class="label">Pilot success rate</span>
+          <span class="val red">5%</span>
+        </div>
+        <div class="econ-row">
+          <span class="label">Time to production</span>
+          <span class="val red">12-18 months</span>
+        </div>
+        <div class="econ-row">
+          <span class="label">Knowledge retention</span>
+          <span class="val red">Tribal / undocumented</span>
+        </div>
+        <div class="econ-row">
+          <span class="label">Automation discovered</span>
+          <span class="val red">Ad hoc / consultant-driven</span>
+        </div>
+        <div class="econ-divider"></div>
+        <div class="econ-row total">
+          <span class="label">Expected ROI</span>
+          <span class="val red">Negative for 95%</span>
+        </div>
+      </div>
+    </div>
+    <div class="econ-panel">
+      <div class="econ-title">With Go2</div>
+      <div class="econ-rows">
+        <div class="econ-row">
+          <span class="label">Deployment time</span>
+          <span class="val green">Days, not months</span>
+        </div>
+        <div class="econ-row">
+          <span class="label">Worker satisfaction</span>
+          <span class="val green">89%</span>
+        </div>
+        <div class="econ-row">
+          <span class="label">Process documentation</span>
+          <span class="val green">Automated / continuous</span>
+        </div>
+        <div class="econ-row">
+          <span class="label">Automatable work found</span>
+          <span class="val green">40+ hrs/wk per team</span>
+        </div>
+        <div class="econ-row">
+          <span class="label">AI context quality</span>
+          <span class="val green">Real workflow data</span>
+        </div>
+        <div class="econ-divider"></div>
+        <div class="econ-row total">
+          <span class="label">Expected ROI</span>
+          <span class="val green">Positive within quarter</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="arch-section">
+  <div class="section-label">Architecture</div>
+  <div class="arch-diagram">
+    <div class="arch-layers">
+      <div class="arch-layer l3">
+        <div class="arch-layer-name">Agent Layer</div>
+        <div class="arch-layer-desc">Sidecars Claude, ChatGPT, custom agents with real workflow context. Open source training tools. Doesn't replace AI -- makes it smarter.</div>
+      </div>
+      <div class="arch-connector">|</div>
+      <div class="arch-layer l2">
+        <div class="arch-layer-name">Intelligence</div>
+        <div class="arch-layer-desc">Real-time coaching (89% satisfaction). Auto-documentation of processes. Pattern recognition. Automation opportunity surface.</div>
+      </div>
+      <div class="arch-connector">|</div>
+      <div class="arch-layer l1">
+        <div class="arch-layer-name">Data Layer</div>
+        <div class="arch-layer-desc">Cowork.ai desktop agent. Continuous capture of how work actually happens. 2M+ worker profiles. The Waze model for knowledge work.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="thesis-section">
+  <div class="section-label">Investment Thesis</div>
+  <div class="thesis-grid">
+    <div class="thesis-card">
+      <div class="thesis-num">Thesis 01</div>
+      <h3>Data Moat</h3>
+      <p>2M+ worker profiles create a compounding data advantage. Like Waze, every worker contributes data, making the intelligence layer smarter for everyone. This moat widens with every deployment.</p>
+    </div>
+    <div class="thesis-card">
+      <div class="thesis-num">Thesis 02</div>
+      <h3>Platform Play</h3>
+      <p>Go2 is infrastructure, not an application. It makes every AI tool in the stack smarter. As companies adopt more AI, Go2 becomes more valuable. Grows with AI spend, not against it.</p>
+    </div>
+    <div class="thesis-card">
+      <div class="thesis-num">Thesis 03</div>
+      <h3>Timing Advantage</h3>
+      <p>$60M+ in sales proves market demand. 95% AI failure rate proves the problem is urgent. Go2 is positioned at the exact inflection point where enterprises realize AI needs work-context data.</p>
+    </div>
+  </div>
+</section>
+
+<section class="competitive-section">
+  <div class="section-label">Competitive Landscape</div>
+  <table class="comp-table">
+    <thead>
+      <tr>
+        <th>Capability</th>
+        <th>Go2</th>
+        <th>Time Doctor</th>
+        <th>Hubstaff</th>
+        <th>Teramind</th>
+        <th>Generic AI</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="highlight-row">
+        <td>Work data capture for AI training</td>
+        <td class="comp-check">YES</td>
+        <td class="comp-x">NO</td>
+        <td class="comp-x">NO</td>
+        <td class="comp-partial">PARTIAL</td>
+        <td class="comp-x">NO</td>
+      </tr>
+      <tr class="highlight-row">
+        <td>AI agent context/sidecar</td>
+        <td class="comp-check">YES</td>
+        <td class="comp-x">NO</td>
+        <td class="comp-x">NO</td>
+        <td class="comp-x">NO</td>
+        <td class="comp-x">NO</td>
+      </tr>
+      <tr class="highlight-row">
+        <td>Real-time coaching (not monitoring)</td>
+        <td class="comp-check">YES</td>
+        <td class="comp-x">NO</td>
+        <td class="comp-x">NO</td>
+        <td class="comp-x">NO</td>
+        <td class="comp-x">NO</td>
+      </tr>
+      <tr>
+        <td>Worker satisfaction</td>
+        <td style="color:#00ff88;font-weight:600;">89%</td>
+        <td style="color:#888;">Low</td>
+        <td style="color:#888;">Low</td>
+        <td style="color:#888;">Low</td>
+        <td style="color:#888;">N/A</td>
+      </tr>
+      <tr>
+        <td>Auto process documentation</td>
+        <td class="comp-check" style="font-weight:600;">YES</td>
+        <td class="comp-x">NO</td>
+        <td class="comp-x">NO</td>
+        <td class="comp-partial">PARTIAL</td>
+        <td class="comp-x">NO</td>
+      </tr>
+      <tr>
+        <td>Open source agent tools</td>
+        <td class="comp-check" style="font-weight:600;">YES</td>
+        <td class="comp-x">NO</td>
+        <td class="comp-x">NO</td>
+        <td class="comp-x">NO</td>
+        <td class="comp-partial">PARTIAL</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="cta-section">
+  <div class="cta-terminal">
+    <div class="terminal-header">
+      <div class="terminal-dot red"></div>
+      <div class="terminal-dot yellow"></div>
+      <div class="terminal-dot green"></div>
+      <span class="terminal-title">next-steps</span>
+    </div>
+    <div class="terminal-body">
+      <h2>The data speaks for itself.</h2>
+      <p>95% fail without work-context data. Go2 has 2M+ profiles and $60M+ in sales. Request access.</p>
+      <div class="cta-buttons">
+        <a href="#" class="cta-btn-primary">Request Access</a>
+        <a href="#" class="cta-btn-secondary">Download Deck</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<footer>
+  <span class="logo-sm">GO2</span>
+  <span>Intelligence infrastructure for AI-ready companies // &copy; 2026</span>
+</footer>
+
+<script>
+  // Live clock
+  function updateClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    document.getElementById('clock').textContent = h + ':' + m + ':' + s;
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+</script>
+
+</body>
+</html>
