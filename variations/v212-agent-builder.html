@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — AI Agent Builder</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0e17;--surface:#111827;--surface2:#1a2236;--border:#1e293b;--accent:#6366f1;--accent2:#818cf8;--green:#22c55e;--red:#ef4444;--orange:#f59e0b;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.header{border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;justify-content:space-between}
+.header-left{display:flex;align-items:center;gap:12px}
+.logo{font-size:20px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header-left .divider{width:1px;height:24px;background:var(--border)}
+.header-left h1{font-size:16px;font-weight:600}
+.container{max-width:1200px;margin:0 auto;padding:32px}
+.step-indicator{display:flex;align-items:center;gap:0;margin-bottom:40px;justify-content:center}
+.step-dot{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;background:var(--surface2);color:var(--text3);border:2px solid var(--border);transition:all .3s;cursor:pointer}
+.step-dot.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.step-dot.done{background:var(--green);color:#fff;border-color:var(--green)}
+.step-line{width:80px;height:2px;background:var(--border);transition:background .3s}
+.step-line.done{background:var(--green)}
+.step-label{font-size:11px;color:var(--text3);text-align:center;margin-top:6px}
+.step-wrap{display:flex;flex-direction:column;align-items:center}
+.page{display:none}
+.page.active{display:block}
+/* Step 1: Workflow Selection */
+.workflow-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.wf-card{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:24px;cursor:pointer;transition:all .2s}
+.wf-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.wf-card.selected{border-color:var(--accent);background:rgba(99,102,241,.08)}
+.wf-card .icon{font-size:32px;margin-bottom:12px}
+.wf-card h3{font-size:15px;font-weight:600;margin-bottom:6px}
+.wf-card p{font-size:13px;color:var(--text3);line-height:1.5}
+.wf-card .meta{display:flex;gap:8px;margin-top:12px}
+.wf-card .meta span{font-size:11px;background:var(--surface2);padding:3px 8px;border-radius:6px;color:var(--text2)}
+/* Step 2: Process Steps */
+.process-panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px}
+.process-title{font-size:18px;font-weight:600;margin-bottom:4px}
+.process-subtitle{font-size:13px;color:var(--text3);margin-bottom:24px}
+.step-row{display:flex;align-items:center;gap:16px;padding:16px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;transition:all .3s;background:var(--surface)}
+.step-row.automated{border-color:var(--green);background:rgba(34,197,94,.05)}
+.step-number{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;background:var(--surface2);color:var(--text2);flex-shrink:0}
+.step-row.automated .step-number{background:rgba(34,197,94,.15);color:var(--green)}
+.step-content{flex:1}
+.step-content h4{font-size:14px;font-weight:500;margin-bottom:3px}
+.step-content p{font-size:12px;color:var(--text3)}
+.step-time{font-size:12px;color:var(--text3);min-width:60px;text-align:right}
+.step-row.automated .step-time{color:var(--green);text-decoration:line-through}
+.toggle-auto{width:44px;height:24px;border-radius:12px;background:var(--surface2);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+.toggle-auto.on{background:var(--green)}
+.toggle-auto::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform .2s}
+.toggle-auto.on::after{transform:translateX(20px)}
+.savings-bar{margin-top:24px;background:var(--surface2);border-radius:10px;padding:20px;display:flex;align-items:center;justify-content:space-between}
+.savings-bar .left h4{font-size:14px;margin-bottom:4px}
+.savings-bar .left p{font-size:12px;color:var(--text3)}
+.savings-amount{font-size:28px;font-weight:700;color:var(--green)}
+/* Step 3: Agent Config */
+.config-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.agent-preview{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;position:relative;overflow:hidden}
+.agent-preview::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--green))}
+.agent-preview .badge{display:inline-block;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;background:rgba(34,197,94,.12);color:#4ade80;margin-bottom:16px}
+.agent-preview h2{font-size:20px;font-weight:700;margin-bottom:8px}
+.agent-preview .desc{font-size:13px;color:var(--text3);line-height:1.6;margin-bottom:20px}
+.agent-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.agent-stat{background:var(--surface2);border-radius:8px;padding:12px;text-align:center}
+.agent-stat .val{font-size:20px;font-weight:700}
+.agent-stat .lbl{font-size:10px;color:var(--text3);text-transform:uppercase;margin-top:2px}
+.capabilities{margin-bottom:20px}
+.capabilities h4{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:8px}
+.cap-list{display:flex;flex-wrap:wrap;gap:6px}
+.cap-tag{padding:4px 10px;border-radius:6px;font-size:12px;background:rgba(99,102,241,.12);color:var(--accent2)}
+.perf-chart{margin-top:16px}
+.perf-chart h4{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:12px}
+.perf-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.perf-label{font-size:12px;width:80px;color:var(--text2)}
+.perf-track{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.perf-fill{height:100%;border-radius:4px;transition:width 1s ease}
+.perf-val{font-size:12px;width:40px;text-align:right;font-weight:600}
+.config-form{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px}
+.config-form h3{font-size:16px;font-weight:600;margin-bottom:20px}
+.form-group{margin-bottom:16px}
+.form-group label{font-size:12px;color:var(--text3);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-size:13px;outline:none;font-family:inherit}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent)}
+.form-group textarea{resize:vertical;min-height:80px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn{padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .15s;display:inline-flex;align-items:center;gap:8px}
+.btn-accent{background:var(--accent);color:#fff}
+.btn-accent:hover{background:var(--accent2)}
+.btn-outline{background:transparent;color:var(--text2);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--accent);color:var(--text)}
+.btn-green{background:var(--green);color:#fff}
+.btn-green:hover{background:#16a34a}
+.btn-row{display:flex;justify-content:space-between;margin-top:32px}
+.btn-row-right{display:flex;gap:12px}
+/* Confetti */
+.confetti-container{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;overflow:hidden}
+.confetti{position:absolute;width:10px;height:10px;top:-10px}
+/* Deploy Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px;text-align:center;max-width:480px;width:90%}
+.modal .check{width:64px;height:64px;border-radius:50%;background:rgba(34,197,94,.15);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:28px}
+.modal h2{font-size:22px;font-weight:700;margin-bottom:8px}
+.modal p{font-size:14px;color:var(--text3);line-height:1.6;margin-bottom:24px}
+.modal .btn{width:100%}
+.deploy-progress{height:4px;background:var(--surface2);border-radius:2px;margin:20px 0;overflow:hidden}
+.deploy-progress .fill{height:100%;background:var(--green);width:0;border-radius:2px;transition:width 2s ease}
+.deploy-status{font-size:13px;color:var(--text3);margin-bottom:16px}
+</style>
+</head>
+<body>
+<div class="header">
+<div class="header-left">
+<span class="logo">Go2</span>
+<span class="divider"></span>
+<h1>Agent Builder</h1>
+</div>
+</div>
+
+<div class="container">
+<div class="step-indicator">
+<div class="step-wrap"><div class="step-dot active" data-step="1">1</div><div class="step-label">Workflow</div></div>
+<div class="step-line"></div>
+<div class="step-wrap"><div class="step-dot" data-step="2">2</div><div class="step-label">Configure</div></div>
+<div class="step-line"></div>
+<div class="step-wrap"><div class="step-dot" data-step="3">3</div><div class="step-label">Deploy</div></div>
+</div>
+
+<!-- STEP 1 -->
+<div class="page active" id="page-1">
+<h2 style="font-size:22px;margin-bottom:8px">Choose a workflow to automate</h2>
+<p style="color:var(--text3);margin-bottom:24px">Select one of these common workflows detected in your organization, or create a custom one.</p>
+<div class="workflow-grid" id="wf-grid"></div>
+<div class="btn-row"><div></div><div class="btn-row-right"><button class="btn btn-accent" id="btn-next-1" disabled>Next: Configure Steps &rarr;</button></div></div>
+</div>
+
+<!-- STEP 2 -->
+<div class="page" id="page-2">
+<div class="process-panel">
+<div class="process-title" id="p2-title"></div>
+<div class="process-subtitle">Toggle which steps should be automated by the AI agent</div>
+<div id="steps-list"></div>
+<div class="savings-bar">
+<div class="left"><h4>Estimated Time Savings</h4><p>Per execution of this workflow</p></div>
+<div class="savings-amount" id="savings-display">0 min</div>
+</div>
+</div>
+<div class="btn-row"><button class="btn btn-outline" onclick="goStep(1)">&larr; Back</button><div class="btn-row-right"><button class="btn btn-accent" id="btn-next-2">Next: Review Agent &rarr;</button></div></div>
+</div>
+
+<!-- STEP 3 -->
+<div class="page" id="page-3">
+<div class="config-grid">
+<div class="agent-preview">
+<div class="badge" id="agent-badge">Ready to Deploy</div>
+<h2 id="agent-name"></h2>
+<div class="desc" id="agent-desc"></div>
+<div class="agent-stats">
+<div class="agent-stat"><div class="val" id="a-tasks">~240</div><div class="lbl">Tasks/Month</div></div>
+<div class="agent-stat"><div class="val" id="a-hours">0h</div><div class="lbl">Hours Saved/Mo</div></div>
+<div class="agent-stat"><div class="val" id="a-accuracy">99.2%</div><div class="lbl">Est. Accuracy</div></div>
+<div class="agent-stat"><div class="val" id="a-roi">$0</div><div class="lbl">Monthly ROI</div></div>
+</div>
+<div class="capabilities"><h4>Capabilities</h4><div class="cap-list" id="cap-list"></div></div>
+<div class="perf-chart"><h4>Projected Performance</h4>
+<div class="perf-bar-row"><div class="perf-label">Speed</div><div class="perf-track"><div class="perf-fill" id="perf-speed" style="background:var(--accent)"></div></div><div class="perf-val" id="perf-speed-v">0%</div></div>
+<div class="perf-bar-row"><div class="perf-label">Accuracy</div><div class="perf-track"><div class="perf-fill" id="perf-acc" style="background:var(--green)"></div></div><div class="perf-val" id="perf-acc-v">0%</div></div>
+<div class="perf-bar-row"><div class="perf-label">Reliability</div><div class="perf-track"><div class="perf-fill" id="perf-rel" style="background:var(--orange)"></div></div><div class="perf-val" id="perf-rel-v">0%</div></div>
+</div>
+</div>
+<div class="config-form">
+<h3>Agent Configuration</h3>
+<div class="form-group"><label>Agent Name</label><input type="text" id="cfg-name"></div>
+<div class="form-group"><label>Description</label><textarea id="cfg-desc"></textarea></div>
+<div class="form-row">
+<div class="form-group"><label>Schedule</label><select id="cfg-schedule"><option>24/7 Always On</option><option>Business Hours Only</option><option>On Trigger</option><option>Scheduled (Daily)</option></select></div>
+<div class="form-group"><label>Error Handling</label><select><option>Pause &amp; Notify</option><option>Retry 3x then Notify</option><option>Auto-skip &amp; Log</option></select></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Approval Required</label><select><option>No — Fully Autonomous</option><option>Yes — Amounts > $1000</option><option>Yes — All Actions</option></select></div>
+<div class="form-group"><label>Notification Channel</label><select><option>#ops-alerts (Slack)</option><option>Email — ops@shopfast.com</option><option>Both</option></select></div>
+</div>
+</div>
+</div>
+<div class="btn-row"><button class="btn btn-outline" onclick="goStep(2)">&larr; Back</button><div class="btn-row-right"><button class="btn btn-green" id="btn-deploy">&#9889; Deploy Agent</button></div></div>
+</div>
+</div>
+
+<div class="modal-overlay" id="deploy-modal">
+<div class="modal">
+<div class="check" id="modal-icon">&#9889;</div>
+<h2 id="modal-title">Deploying Agent...</h2>
+<div class="deploy-progress"><div class="fill" id="deploy-fill"></div></div>
+<p class="deploy-status" id="deploy-status">Initializing environment...</p>
+<p id="modal-desc" style="display:none">Your AI agent is now live and processing workflows. You can monitor its performance in the dashboard.</p>
+<button class="btn btn-accent" id="modal-btn" style="display:none" onclick="location.reload()">Back to Agent Builder</button>
+</div>
+</div>
+
+<div class="confetti-container" id="confetti"></div>
+
+<script>
+const workflows=[
+{id:'invoice',icon:'&#128196;',name:'Invoice Processing',desc:'Extract data from invoices, match to POs, route for approval, and record in accounting system.',tags:['Finance','High Volume'],steps:[
+{name:'Receive Invoice Email',desc:'Invoice arrives via email or upload portal',time:2,autoable:false},
+{name:'Extract Invoice Data',desc:'Read vendor, amounts, line items, dates from PDF',time:15,autoable:true},
+{name:'Match to Purchase Order',desc:'Find corresponding PO and verify amounts',time:10,autoable:true},
+{name:'Flag Discrepancies',desc:'Identify mismatches between invoice and PO',time:8,autoable:true},
+{name:'Route for Approval',desc:'Send to appropriate manager based on amount',time:5,autoable:true},
+{name:'Manager Reviews & Approves',desc:'Human decision on whether to approve payment',time:20,autoable:false},
+{name:'Record in Accounting',desc:'Enter approved invoice into accounting system',time:10,autoable:true},
+{name:'Schedule Payment',desc:'Add to payment batch per vendor terms',time:5,autoable:true}
+],caps:['OCR Extraction','PO Matching','Anomaly Detection','Approval Routing','ERP Integration']},
+{id:'support',icon:'&#127919;',name:'Customer Ticket Routing',desc:'Auto-categorize incoming support tickets, assess priority, route to correct team, and send initial response.',tags:['Support','Quick Win'],steps:[
+{name:'Ticket Submitted',desc:'Customer submits via form, email, or chat',time:1,autoable:false},
+{name:'Categorize Issue',desc:'Determine issue type: billing, technical, shipping, etc.',time:5,autoable:true},
+{name:'Assess Priority',desc:'Rate urgency based on customer tier and issue severity',time:3,autoable:true},
+{name:'Check Knowledge Base',desc:'Search for existing solutions or known issues',time:8,autoable:true},
+{name:'Route to Team',desc:'Assign to correct team/agent based on category',time:3,autoable:true},
+{name:'Send Auto-Response',desc:'Acknowledge receipt with estimated resolution time',time:5,autoable:true},
+{name:'Agent Investigates',desc:'Human agent digs into the specific issue',time:30,autoable:false},
+{name:'Resolve & Close',desc:'Implement fix and close ticket with notes',time:10,autoable:false}
+],caps:['NLP Classification','Priority Scoring','Knowledge Search','Smart Routing','Auto-Response']},
+{id:'onboarding',icon:'&#128101;',name:'Employee Onboarding',desc:'Automate new hire setup: accounts, equipment, training schedule, and check-in sequence.',tags:['HR','Medium Complexity'],steps:[
+{name:'Offer Accepted',desc:'HR marks candidate as hired in system',time:5,autoable:false},
+{name:'Create Accounts',desc:'Set up email, Slack, tools, and system access',time:30,autoable:true},
+{name:'Order Equipment',desc:'Request laptop, monitor, peripherals from IT',time:15,autoable:true},
+{name:'Generate Welcome Pack',desc:'Create personalized onboarding docs and schedule',time:20,autoable:true},
+{name:'Schedule Orientation',desc:'Book meetings with team, manager, HR, IT',time:15,autoable:true},
+{name:'Send Day-1 Email',desc:'Welcome message with login info and first-day plan',time:10,autoable:true},
+{name:'Manager Meet & Greet',desc:'In-person introduction and team overview',time:60,autoable:false},
+{name:'30-Day Check-in',desc:'Scheduled follow-up survey and meeting',time:10,autoable:true}
+],caps:['Account Provisioning','Calendar Scheduling','Doc Generation','Email Automation','Survey Distribution']},
+{id:'order',icon:'&#128230;',name:'Order Fulfillment',desc:'Process new orders: verify payment, allocate inventory, generate pick list, update shipping.',tags:['Operations','High Volume'],steps:[
+{name:'Order Placed',desc:'Customer completes checkout on website',time:1,autoable:false},
+{name:'Verify Payment',desc:'Confirm payment processed and fraud check passed',time:5,autoable:true},
+{name:'Check Inventory',desc:'Verify items in stock at nearest warehouse',time:3,autoable:true},
+{name:'Generate Pick List',desc:'Create optimized picking instructions',time:8,autoable:true},
+{name:'Pick & Pack',desc:'Warehouse staff retrieves and packages items',time:15,autoable:false},
+{name:'Generate Shipping Label',desc:'Create label with carrier API',time:3,autoable:true},
+{name:'Update Customer',desc:'Send tracking number and delivery estimate',time:5,autoable:true},
+{name:'Delivery Confirmation',desc:'Track delivery and send confirmation',time:2,autoable:true}
+],caps:['Payment Verification','Inventory Check','Pick Optimization','Carrier API','Customer Notifications']},
+{id:'reporting',icon:'&#128202;',name:'Weekly Report Generation',desc:'Aggregate data from multiple sources, generate formatted reports, distribute to stakeholders.',tags:['Analytics','Time Saver'],steps:[
+{name:'Schedule Trigger',desc:'Report generation kicks off on schedule',time:1,autoable:true},
+{name:'Pull Sales Data',desc:'Extract from CRM and e-commerce platform',time:10,autoable:true},
+{name:'Pull Marketing Data',desc:'Gather campaign metrics and ad spend',time:10,autoable:true},
+{name:'Pull Support Data',desc:'Ticket volume, resolution times, satisfaction',time:8,autoable:true},
+{name:'Aggregate & Calculate',desc:'Combine data, compute KPIs, compare to targets',time:20,autoable:true},
+{name:'Generate Charts',desc:'Create visualizations for key metrics',time:15,autoable:true},
+{name:'Format Report',desc:'Compile into branded document with commentary',time:20,autoable:true},
+{name:'Distribute',desc:'Email to stakeholders and post to Slack',time:5,autoable:true}
+],caps:['Data Aggregation','KPI Calculation','Chart Generation','Report Formatting','Distribution']},
+{id:'social',icon:'&#128226;',name:'Social Media Management',desc:'Schedule posts, monitor engagement, respond to mentions, and generate performance reports.',tags:['Marketing','Low Risk'],steps:[
+{name:'Content Calendar Review',desc:'Check upcoming scheduled posts',time:10,autoable:false},
+{name:'Generate Post Variants',desc:'Create A/B test versions of upcoming content',time:15,autoable:true},
+{name:'Optimal Time Analysis',desc:'Determine best posting times from engagement data',time:10,autoable:true},
+{name:'Schedule Posts',desc:'Queue content across platforms at optimal times',time:8,autoable:true},
+{name:'Monitor Mentions',desc:'Track brand mentions and relevant conversations',time:20,autoable:true},
+{name:'Draft Responses',desc:'Create suggested replies to comments/mentions',time:15,autoable:true},
+{name:'Human Review',desc:'Team reviews and approves responses',time:10,autoable:false},
+{name:'Performance Report',desc:'Generate daily/weekly engagement summary',time:10,autoable:true}
+],caps:['Content Generation','Engagement Analysis','Multi-Platform Scheduling','Mention Monitoring','Performance Reports']}
+];
+
+let selectedWf=null,currentStep=1,automatedSteps=new Set();
+
+function renderWorkflows(){
+const grid=document.getElementById('wf-grid');
+workflows.forEach(wf=>{
+const card=document.createElement('div');card.className='wf-card';card.dataset.id=wf.id;
+card.innerHTML=`<div class="icon">${wf.icon}</div><h3>${wf.name}</h3><p>${wf.desc}</p><div class="meta">${wf.tags.map(t=>`<span>${t}</span>`).join('')}<span>${wf.steps.length} steps</span></div>`;
+card.onclick=()=>{
+document.querySelectorAll('.wf-card').forEach(c=>c.classList.remove('selected'));
+card.classList.add('selected');selectedWf=wf;
+document.getElementById('btn-next-1').disabled=false;
+};
+grid.appendChild(card);
+});
+}
+
+function goStep(n){
+currentStep=n;
+document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+document.getElementById('page-'+n).classList.add('active');
+document.querySelectorAll('.step-dot').forEach((d,i)=>{
+d.classList.remove('active','done');
+if(i+1<n)d.classList.add('done');
+if(i+1===n)d.classList.add('active');
+});
+document.querySelectorAll('.step-line').forEach((l,i)=>{
+l.classList.toggle('done',i<n-1);
+});
+if(n===2)renderSteps();
+if(n===3)renderAgentPreview();
+}
+
+function renderSteps(){
+if(!selectedWf)return;
+document.getElementById('p2-title').textContent=selectedWf.name;
+const list=document.getElementById('steps-list');list.innerHTML='';
+automatedSteps.clear();
+selectedWf.steps.forEach((s,i)=>{
+if(s.autoable)automatedSteps.add(i);
+});
+selectedWf.steps.forEach((s,i)=>{
+const row=document.createElement('div');
+row.className='step-row'+(automatedSteps.has(i)?' automated':'');
+row.innerHTML=`<div class="step-number">${i+1}</div><div class="step-content"><h4>${s.name}</h4><p>${s.desc}</p></div><div class="step-time">${s.time} min</div>${s.autoable?`<div class="toggle-auto ${automatedSteps.has(i)?'on':''}" data-idx="${i}"></div>`:'<div style="width:44px;text-align:center;font-size:11px;color:var(--text3)">Manual</div>'}`;
+list.appendChild(row);
+});
+list.querySelectorAll('.toggle-auto').forEach(t=>{
+t.onclick=()=>{
+const idx=parseInt(t.dataset.idx);
+if(automatedSteps.has(idx)){automatedSteps.delete(idx);t.classList.remove('on');t.closest('.step-row').classList.remove('automated')}
+else{automatedSteps.add(idx);t.classList.add('on');t.closest('.step-row').classList.add('automated')}
+updateSavings();
+};
+});
+updateSavings();
+}
+
+function updateSavings(){
+let saved=0;
+selectedWf.steps.forEach((s,i)=>{if(automatedSteps.has(i))saved+=s.time});
+const display=document.getElementById('savings-display');
+if(saved>=60)display.textContent=Math.floor(saved/60)+'h '+saved%60+'min';
+else display.textContent=saved+' min';
+}
+
+function renderAgentPreview(){
+const wf=selectedWf;
+const autoCount=automatedSteps.size;
+const totalSteps=wf.steps.length;
+let savedMin=0;wf.steps.forEach((s,i)=>{if(automatedSteps.has(i))savedMin+=s.time});
+const savedHrs=Math.round(savedMin*4*4.3/60);// per execution * 4/day * 4.3 weeks
+const roi=Math.round(savedHrs*45);// $45/hr
+const name=wf.name+' Agent';
+document.getElementById('agent-name').textContent=name;
+document.getElementById('cfg-name').value=name;
+document.getElementById('agent-desc').textContent=`Automates ${autoCount} of ${totalSteps} steps in the ${wf.name} workflow. ${wf.desc}`;
+document.getElementById('cfg-desc').value=`Automates ${autoCount} of ${totalSteps} steps in the ${wf.name} workflow.`;
+document.getElementById('a-hours').textContent=savedHrs+'h';
+document.getElementById('a-roi').textContent='$'+roi.toLocaleString();
+const caps=document.getElementById('cap-list');caps.innerHTML='';
+wf.caps.forEach(c=>{caps.innerHTML+=`<span class="cap-tag">${c}</span>`});
+setTimeout(()=>{
+const speed=70+Math.random()*25;const acc=94+Math.random()*5;const rel=85+Math.random()*12;
+document.getElementById('perf-speed').style.width=speed+'%';document.getElementById('perf-speed-v').textContent=Math.round(speed)+'%';
+document.getElementById('perf-acc').style.width=acc+'%';document.getElementById('perf-acc-v').textContent=Math.round(acc)+'%';
+document.getElementById('perf-rel').style.width=rel+'%';document.getElementById('perf-rel-v').textContent=Math.round(rel)+'%';
+},200);
+}
+
+function deployAgent(){
+const modal=document.getElementById('deploy-modal');modal.classList.add('show');
+const fill=document.getElementById('deploy-fill');
+const status=document.getElementById('deploy-status');
+const stages=['Initializing environment...','Configuring agent model...','Loading workflow data...','Running validation tests...','Deploying to production...','Agent is live!'];
+let i=0;
+const interval=setInterval(()=>{
+i++;fill.style.width=(i*20)+'%';
+if(i<stages.length)status.textContent=stages[i];
+if(i>=5){
+clearInterval(interval);
+setTimeout(()=>{
+document.getElementById('modal-icon').innerHTML='&#9989;';
+document.getElementById('modal-title').textContent='Agent Deployed!';
+document.querySelector('.deploy-progress').style.display='none';
+status.style.display='none';
+document.getElementById('modal-desc').style.display='block';
+document.getElementById('modal-btn').style.display='block';
+launchConfetti();
+},500);
+}
+},700);
+}
+
+function launchConfetti(){
+const container=document.getElementById('confetti');
+const colors=['#6366f1','#22c55e','#f59e0b','#ef4444','#ec4899','#06b6d4','#a855f7'];
+for(let i=0;i<120;i++){
+const c=document.createElement('div');c.className='confetti';
+c.style.left=Math.random()*100+'%';
+c.style.width=(4+Math.random()*8)+'px';
+c.style.height=(4+Math.random()*8)+'px';
+c.style.background=colors[Math.floor(Math.random()*colors.length)];
+c.style.borderRadius=Math.random()>.5?'50%':'2px';
+c.style.transform='rotate('+Math.random()*360+'deg)';
+container.appendChild(c);
+const duration=2+Math.random()*3;
+const delay=Math.random()*0.5;
+c.animate([
+{top:'-10px',opacity:1,transform:'rotate(0deg) translateX(0)'},
+{top:'110vh',opacity:0,transform:'rotate('+Math.random()*720+'deg) translateX('+(Math.random()*200-100)+'px)'}
+],{duration:duration*1000,delay:delay*1000,easing:'cubic-bezier(.25,.46,.45,.94)',fill:'forwards'});
+}
+setTimeout(()=>container.innerHTML='',6000);
+}
+
+document.getElementById('btn-next-1').onclick=()=>goStep(2);
+document.getElementById('btn-next-2').onclick=()=>goStep(3);
+document.getElementById('btn-deploy').onclick=deployAgent;
+document.querySelectorAll('.step-dot').forEach(d=>{
+d.onclick=()=>{const s=parseInt(d.dataset.step);if(s<=currentStep||s===currentStep+1)goStep(s)};
+});
+
+renderWorkflows();
+</script>
+</body>
+</html>

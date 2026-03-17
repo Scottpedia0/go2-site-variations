@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 AI Readiness Diagnostic</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0f;color:#e0e0e0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.container{width:100%;max-width:680px;padding:24px;margin:0 auto}
+.header{text-align:center;margin-bottom:32px}
+.header h1{font-size:24px;font-weight:700;margin-bottom:6px}
+.header h1 span{color:#6c5ce7}
+.header p{color:#888;font-size:14px}
+.progress-bar{width:100%;height:4px;background:#1a1a2e;border-radius:2px;margin-bottom:32px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#6c5ce7,#a29bfe);border-radius:2px;transition:width .5s ease;width:0}
+.progress-label{text-align:right;font-size:11px;color:#666;margin-bottom:6px}
+.question-card{background:#12121e;border:1px solid #252540;border-radius:16px;padding:32px;animation:fadeIn .4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.q-number{font-size:11px;color:#6c5ce7;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;font-weight:600}
+.q-text{font-size:18px;font-weight:600;line-height:1.4;margin-bottom:24px}
+.options{display:flex;flex-direction:column;gap:10px}
+.option{background:#1a1a2e;border:2px solid #252540;border-radius:12px;padding:14px 18px;cursor:pointer;transition:all .2s;font-size:14px;display:flex;align-items:center;gap:12px}
+.option:hover{border-color:#6c5ce7;background:#1a1a35}
+.option.selected{border-color:#6c5ce7;background:#6c5ce711}
+.option .letter{width:28px;height:28px;border-radius:8px;background:#252540;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#888;flex-shrink:0;transition:all .2s}
+.option.selected .letter{background:#6c5ce7;color:#fff}
+.option .text{flex:1}
+.nav-row{display:flex;justify-content:space-between;margin-top:20px}
+.nav-btn{background:#1a1a2e;border:1px solid #252540;color:#e0e0e0;padding:10px 24px;border-radius:10px;font-size:13px;cursor:pointer;transition:all .2s;font-weight:500}
+.nav-btn:hover{border-color:#6c5ce7}
+.nav-btn.primary{background:#6c5ce7;border-color:#6c5ce7;color:#fff}
+.nav-btn.primary:hover{background:#5b4bd6}
+.nav-btn:disabled{opacity:.3;cursor:default}
+
+/* Results */
+.results{animation:fadeIn .5s ease}
+.score-ring{width:180px;height:180px;margin:0 auto 24px}
+.score-ring svg{width:100%;height:100%}
+.score-center{font-size:42px;font-weight:700}
+.score-label{font-size:12px;color:#888}
+.grade{text-align:center;margin-bottom:24px}
+.grade .title{font-size:22px;font-weight:700;margin-bottom:4px}
+.grade .subtitle{font-size:14px;color:#888}
+.radar-container{background:#12121e;border:1px solid #252540;border-radius:16px;padding:24px;margin:20px 0}
+.radar-container h3{font-size:13px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;text-align:center}
+.radar-svg{width:100%;max-width:400px;margin:0 auto;display:block}
+.recs{margin-top:20px}
+.recs h3{font-size:13px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.rec{background:#12121e;border:1px solid #252540;border-radius:12px;padding:16px;margin-bottom:10px;display:flex;gap:14px;align-items:flex-start}
+.rec .priority{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:6px}
+.rec .priority.high{background:#e74c3c}
+.rec .priority.med{background:#e67e22}
+.rec .priority.low{background:#2ecc71}
+.rec .content .title{font-size:14px;font-weight:600;margin-bottom:2px}
+.rec .content .desc{font-size:12px;color:#888;line-height:1.5}
+.cta-section{text-align:center;margin-top:28px;padding:24px;background:#12121e;border:1px solid #252540;border-radius:16px}
+.cta-section p{font-size:14px;color:#888;margin-bottom:14px}
+.cta-btn{background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff;border:none;padding:12px 32px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer}
+.cta-btn:hover{opacity:.9}
+.retake{background:none;border:1px solid #252540;color:#888;padding:8px 20px;border-radius:8px;font-size:12px;cursor:pointer;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="container" id="app"></div>
+<script>
+const questions=[
+  {q:"How documented are your team's core business processes?",dim:"documentation",opts:[
+    {text:"Not documented at all — tribal knowledge only",score:1},
+    {text:"Some processes are in wikis or docs, but rarely updated",score:2},
+    {text:"Most processes documented, updated quarterly",score:3},
+    {text:"Comprehensive, living documentation with ownership",score:4}
+  ]},
+  {q:"How many different software tools does your team use daily?",dim:"complexity",opts:[
+    {text:"2-4 tools",score:4},
+    {text:"5-8 tools",score:3},
+    {text:"9-15 tools",score:2},
+    {text:"16+ tools — it's a mess",score:1}
+  ]},
+  {q:"When a new employee starts, how long until they're fully productive?",dim:"onboarding",opts:[
+    {text:"1-2 weeks",score:4},
+    {text:"1 month",score:3},
+    {text:"2-3 months",score:2},
+    {text:"3+ months — we lose people before they ramp",score:1}
+  ]},
+  {q:"How do you currently identify workflow bottlenecks?",dim:"visibility",opts:[
+    {text:"We don't — problems surface as complaints or missed deadlines",score:1},
+    {text:"Occasional surveys or manager observations",score:2},
+    {text:"Regular retrospectives and some data from tools",score:3},
+    {text:"Real-time dashboards and proactive monitoring",score:4}
+  ]},
+  {q:"What's your team's experience with AI/automation tools?",dim:"ai_readiness",opts:[
+    {text:"We haven't tried any AI tools yet",score:1},
+    {text:"A few people use ChatGPT for ad-hoc tasks",score:2},
+    {text:"We've piloted 1-2 AI tools with mixed results",score:3},
+    {text:"We actively use AI tools and have seen ROI",score:4}
+  ]},
+  {q:"How much time does your team spend on repetitive, copy-paste type work?",dim:"automation",opts:[
+    {text:"5+ hours per person per week",score:1},
+    {text:"2-4 hours per person per week",score:2},
+    {text:"About 1 hour per person per week",score:3},
+    {text:"Almost none — we've automated the basics",score:4}
+  ]},
+  {q:"If a key employee left tomorrow, how much knowledge would you lose?",dim:"documentation",opts:[
+    {text:"Catastrophic — entire processes would break",score:1},
+    {text:"Significant pain — months to recover",score:2},
+    {text:"Some disruption — a few weeks to adjust",score:3},
+    {text:"Minimal — everything is documented and cross-trained",score:4}
+  ]},
+  {q:"How do you measure individual and team productivity?",dim:"visibility",opts:[
+    {text:"We don't really — just gut feel and output",score:1},
+    {text:"Basic metrics like tasks completed or hours logged",score:2},
+    {text:"Multi-dimensional KPIs reviewed monthly",score:3},
+    {text:"Real-time visibility into how work actually happens",score:4}
+  ]},
+  {q:"What happened with your last major technology or process change?",dim:"change",opts:[
+    {text:"It failed — low adoption, back to old ways within months",score:1},
+    {text:"Partial success — some teams adopted, others didn't",score:2},
+    {text:"Mostly successful after a rough adjustment period",score:3},
+    {text:"Smooth rollout with high adoption and measurable ROI",score:4}
+  ]},
+  {q:"What's your biggest frustration with your current workflow?",dim:"pain",opts:[
+    {text:"People are busy but not productive — lots of wasted motion",score:1},
+    {text:"We can't scale without hiring more people",score:2},
+    {text:"AI tools we've tried don't understand our actual processes",score:3},
+    {text:"We're doing well but want to find the next level of efficiency",score:4}
+  ]}
+];
+
+const dims={documentation:'Process Documentation',complexity:'Tool Complexity',onboarding:'Onboarding Speed',visibility:'Work Visibility',ai_readiness:'AI Readiness',automation:'Automation Level',change:'Change Management',pain:'Pain Severity'};
+let currentQ=0,answers=new Array(10).fill(null);
+
+function render(){
+  const app=document.getElementById('app');
+  if(currentQ>=questions.length){renderResults();return}
+  const q=questions[currentQ];
+  app.innerHTML=`
+    <div class="header"><h1>What's Wrong With Your <span>AI Strategy?</span></h1><p>AI Readiness Diagnostic by Go2</p></div>
+    <div class="progress-label">Question ${currentQ+1} of ${questions.length}</div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${(currentQ/questions.length)*100}%"></div></div>
+    <div class="question-card">
+      <div class="q-number">Question ${currentQ+1}</div>
+      <div class="q-text">${q.q}</div>
+      <div class="options">${q.opts.map((o,i)=>`
+        <div class="option ${answers[currentQ]===i?'selected':''}" onclick="selectOpt(${i})">
+          <div class="letter">${String.fromCharCode(65+i)}</div>
+          <div class="text">${o.text}</div>
+        </div>
+      `).join('')}</div>
+      <div class="nav-row">
+        <button class="nav-btn" onclick="prevQ()" ${currentQ===0?'disabled':''}>Back</button>
+        <button class="nav-btn primary" onclick="nextQ()" ${answers[currentQ]===null?'disabled':''}>
+          ${currentQ===questions.length-1?'See Results':'Next'}
+        </button>
+      </div>
+    </div>`;
+}
+
+function selectOpt(i){answers[currentQ]=i;render()}
+function nextQ(){if(answers[currentQ]!==null){currentQ++;render()}}
+function prevQ(){if(currentQ>0){currentQ--;render()}}
+
+function calcScores(){
+  const dimScores={};
+  questions.forEach((q,i)=>{
+    if(answers[i]===null)return;
+    const s=q.opts[answers[i]].score;
+    if(!dimScores[q.dim])dimScores[q.dim]={total:0,count:0};
+    dimScores[q.dim].total+=s;
+    dimScores[q.dim].count++;
+  });
+  const normalized={};
+  let totalScore=0,totalMax=0;
+  for(const[k,v]of Object.entries(dimScores)){
+    normalized[k]=Math.round((v.total/(v.count*4))*100);
+    totalScore+=v.total;totalMax+=v.count*4;
+  }
+  const overall=Math.round((totalScore/totalMax)*100);
+  return{overall,dims:normalized};
+}
+
+function renderResults(){
+  const{overall,dims:dimScores}=calcScores();
+  const app=document.getElementById('app');
+  const gradeInfo=overall>=80?{title:'AI-Ready Organization',sub:'You have strong foundations. Go2 will accelerate your advantage.',color:'#4ade80'}:
+    overall>=60?{title:'Promising but Gaps Exist',sub:'You have good instincts but critical blind spots. Go2 fills them.',color:'#e67e22'}:
+    overall>=40?{title:'Significant AI Readiness Gaps',sub:'You\'re at risk of joining the 95% of failed AI implementations.',color:'#e74c3c'}:
+    {title:'Critical: Not AI-Ready',sub:'Without work context data, any AI investment will fail. Start with Go2.',color:'#e74c3c'};
+
+  // Build radar chart
+  const radarDims=Object.entries(dimScores);
+  const n=radarDims.length;
+  const cx=200,cy=180,r=140;
+  let radarBg='',radarPts='',radarLabels='';
+  // Grid rings
+  for(let ring=1;ring<=4;ring++){
+    const rr=r*(ring/4);
+    let pts=[];
+    for(let i=0;i<n;i++){
+      const angle=(Math.PI*2*i/n)-Math.PI/2;
+      pts.push(`${cx+rr*Math.cos(angle)},${cy+rr*Math.sin(angle)}`);
+    }
+    radarBg+=`<polygon points="${pts.join(' ')}" fill="none" stroke="#252540" stroke-width="1"/>`;
+  }
+  // Axes
+  for(let i=0;i<n;i++){
+    const angle=(Math.PI*2*i/n)-Math.PI/2;
+    radarBg+=`<line x1="${cx}" y1="${cy}" x2="${cx+r*Math.cos(angle)}" y2="${cy+r*Math.sin(angle)}" stroke="#1a1a2e" stroke-width="1"/>`;
+    const lx=cx+(r+28)*Math.cos(angle),ly=cy+(r+28)*Math.sin(angle);
+    radarLabels+=`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" fill="#888" font-size="10" font-family="sans-serif">${radarDims[i][0].replace('_',' ')}</text>`;
+  }
+  // Data polygon
+  let dataPts=[];
+  for(let i=0;i<n;i++){
+    const angle=(Math.PI*2*i/n)-Math.PI/2;
+    const val=radarDims[i][1]/100;
+    dataPts.push(`${cx+r*val*Math.cos(angle)},${cy+r*val*Math.sin(angle)}`);
+  }
+  radarPts=`<polygon points="${dataPts.join(' ')}" fill="#6c5ce722" stroke="#6c5ce7" stroke-width="2"/>`;
+  // Data dots
+  let radarDots='';
+  for(let i=0;i<n;i++){
+    const angle=(Math.PI*2*i/n)-Math.PI/2;
+    const val=radarDims[i][1]/100;
+    radarDots+=`<circle cx="${cx+r*val*Math.cos(angle)}" cy="${cy+r*val*Math.sin(angle)}" r="4" fill="#6c5ce7"/>`;
+  }
+
+  // Recommendations
+  const weakest=Object.entries(dimScores).sort((a,b)=>a[1]-b[1]);
+  const recsData=[
+    {dim:'documentation',text:'Deploy Go2\'s automatic process documentation. Your team\'s actual workflows get captured and documented without any manual effort.',priority:'high'},
+    {dim:'visibility',text:'Activate Go2\'s real-time work analytics to see exactly how time is spent — not guesses, actual data.',priority:'high'},
+    {dim:'automation',text:'Go2 identifies your most repetitive tasks and builds AI agents trained on your team\'s actual work patterns.',priority:'med'},
+    {dim:'ai_readiness',text:'Start with Go2\'s coaching layer. It helps your team build AI fluency through contextual, real-time suggestions.',priority:'med'},
+    {dim:'change',text:'Go2\'s gradual coaching approach means no big-bang change. AI adoption happens naturally as coaching tips prove their value.',priority:'low'},
+    {dim:'onboarding',text:'Auto-generated SOPs from Go2 cut onboarding time by 60%. New hires see exactly how top performers actually work.',priority:'med'},
+    {dim:'complexity',text:'Go2 maps your tool usage and identifies redundancies. Most teams eliminate 2-3 tools within the first month.',priority:'low'},
+    {dim:'pain',text:'Go2 captures the "busy but not productive" pattern and shows your team exactly where motion doesn\'t equal progress.',priority:'high'}
+  ];
+  const recs=weakest.slice(0,4).map(([dim])=>recsData.find(r=>r.dim===dim)).filter(Boolean);
+
+  // Score ring animation
+  const circumference=2*Math.PI*72;
+  const offset=circumference-(overall/100)*circumference;
+
+  app.innerHTML=`
+    <div class="header"><h1>Your <span>AI Readiness</span> Score</h1></div>
+    <div class="results">
+      <div class="score-ring">
+        <svg viewBox="0 0 180 180">
+          <circle cx="90" cy="90" r="72" fill="none" stroke="#1a1a2e" stroke-width="8"/>
+          <circle cx="90" cy="90" r="72" fill="none" stroke="${gradeInfo.color}" stroke-width="8" stroke-linecap="round"
+            stroke-dasharray="${circumference}" stroke-dashoffset="${circumference}"
+            transform="rotate(-90 90 90)">
+            <animate attributeName="stroke-dashoffset" from="${circumference}" to="${offset}" dur="1.5s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"/>
+          </circle>
+          <text x="90" y="82" text-anchor="middle" class="score-center" fill="#fff" font-size="42" font-weight="700" font-family="sans-serif">
+            <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.8s" fill="freeze"/>
+            ${overall}
+          </text>
+          <text x="90" y="108" text-anchor="middle" fill="#888" font-size="12" font-family="sans-serif">out of 100</text>
+        </svg>
+      </div>
+      <div class="grade">
+        <div class="title" style="color:${gradeInfo.color}">${gradeInfo.title}</div>
+        <div class="subtitle">${gradeInfo.sub}</div>
+      </div>
+      <div class="radar-container">
+        <h3>Dimension Breakdown</h3>
+        <svg class="radar-svg" viewBox="0 0 400 380">${radarBg}${radarPts}${radarDots}${radarLabels}</svg>
+      </div>
+      <div class="recs">
+        <h3>Personalized Recommendations</h3>
+        ${recs.map(r=>`<div class="rec">
+          <div class="priority ${r.priority}"></div>
+          <div class="content">
+            <div class="title">${r.priority==='high'?'Critical':'Important'}: ${dims[r.dim]||r.dim}</div>
+            <div class="desc">${r.text}</div>
+          </div>
+        </div>`).join('')}
+      </div>
+      <div class="cta-section">
+        <p>Your score: <strong>${overall}/100</strong>. ${overall<60?'You\'re at serious risk of wasted AI investment.':'You have a solid foundation to build on.'} Go2 captures the work context data that makes AI actually work.</p>
+        <button class="cta-btn" onclick="window.open('https://go2.io','_blank')">Start Your Free Pilot &rarr;</button><br>
+        <button class="retake" onclick="currentQ=0;answers=new Array(10).fill(null);render()">Retake Assessment</button>
+      </div>
+    </div>`;
+}
+
+render();
+</script>
+</body>
+</html>

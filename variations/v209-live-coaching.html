@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 Live Coaching Demo</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0f;color:#e0e0e0;height:100vh;overflow:hidden}
+.desktop{display:flex;height:100vh;width:100vw}
+.sidebar-dock{width:56px;background:#08080d;border-right:1px solid #1a1a2e;display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:6px;flex-shrink:0}
+.dock-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;transition:all .2s;position:relative}
+.dock-icon:hover{background:#1a1a2e}
+.dock-icon.active{background:#6c5ce722}
+.dock-icon.active::before{content:'';position:absolute;left:-4px;width:3px;height:20px;background:#6c5ce7;border-radius:0 2px 2px 0}
+.dock-sep{width:30px;height:1px;background:#1a1a2e;margin:4px 0}
+.app-area{flex:1;display:flex;flex-direction:column;position:relative}
+
+/* Fake email app */
+.email-app{flex:1;display:flex;background:#0d0d15}
+.email-sidebar{width:200px;border-right:1px solid #1a1a2e;padding:12px}
+.email-sidebar h3{font-size:12px;color:#888;padding:8px 10px;text-transform:uppercase;letter-spacing:1px}
+.email-folder{padding:8px 12px;border-radius:8px;font-size:13px;color:#bbb;cursor:pointer;display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.email-folder:hover{background:#1a1a2e}
+.email-folder.active{background:#6c5ce722;color:#a29bfe}
+.email-folder .count{margin-left:auto;font-size:11px;background:#e74c3c;color:#fff;padding:1px 6px;border-radius:8px;font-weight:600}
+.email-list{width:320px;border-right:1px solid #1a1a2e;overflow-y:auto}
+.email-item{padding:12px 16px;border-bottom:1px solid #0a0a0f;cursor:pointer;transition:background .2s}
+.email-item:hover{background:#1a1a2e}
+.email-item.active{background:#1a1a35;border-left:2px solid #6c5ce7}
+.email-item .from{font-size:13px;font-weight:600;margin-bottom:2px}
+.email-item .subject{font-size:12px;color:#aaa;margin-bottom:2px}
+.email-item .preview{font-size:11px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.email-item .time{float:right;font-size:10px;color:#555}
+.email-content{flex:1;padding:24px}
+.email-content h2{font-size:16px;font-weight:600;margin-bottom:8px}
+.email-content .meta{font-size:12px;color:#888;margin-bottom:16px}
+.email-content .body-text{font-size:13px;color:#bbb;line-height:1.7}
+
+/* Status bar */
+.status-bar{height:28px;background:#08080d;border-top:1px solid #1a1a2e;display:flex;align-items:center;padding:0 16px;font-size:11px;color:#555;gap:16px}
+.status-bar .active-app{color:#a29bfe}
+.status-bar .time-in-app{margin-left:auto;color:#888}
+
+/* Go2 coaching overlay */
+.coaching-panel{position:absolute;top:12px;right:12px;width:360px;display:flex;flex-direction:column;gap:8px;z-index:100;max-height:calc(100vh - 80px);overflow-y:auto;pointer-events:none}
+.coaching-panel::-webkit-scrollbar{display:none}
+.coach-msg{background:#12121eee;backdrop-filter:blur(12px);border:1px solid #252540;border-radius:14px;padding:14px 16px;pointer-events:all;animation:slideIn .4s ease;position:relative;transition:all .3s}
+.coach-msg.dismissed{opacity:0;transform:translateX(100px);height:0;padding:0;margin:0;border:none;overflow:hidden}
+@keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+.coach-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.coach-avatar{width:22px;height:22px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+.coach-name{font-size:11px;color:#a29bfe;font-weight:600}
+.coach-time{font-size:10px;color:#555;margin-left:auto}
+.coach-text{font-size:13px;line-height:1.5;color:#ddd}
+.coach-text strong{color:#a29bfe}
+.coach-text .metric{color:#4ade80;font-weight:600}
+.coach-text .warn{color:#e67e22;font-weight:600}
+.coach-text .alert{color:#e74c3c;font-weight:600}
+.coach-actions{display:flex;gap:6px;margin-top:10px}
+.coach-action{padding:5px 12px;border-radius:8px;font-size:11px;cursor:pointer;border:none;font-weight:500;transition:all .2s}
+.coach-action.helpful{background:#1a5c1a;color:#4ade80}
+.coach-action.helpful:hover{background:#2a7c2a}
+.coach-action.dismiss{background:#1a1a2e;color:#888;border:1px solid #252540}
+.coach-action.dismiss:hover{background:#252540}
+.coach-action.automate{background:#6c5ce722;color:#a29bfe;border:1px solid #6c5ce744}
+.coach-action.automate:hover{background:#6c5ce744}
+.typing-indicator{display:flex;gap:3px;align-items:center;height:16px}
+.typing-indicator span{width:6px;height:6px;background:#6c5ce7;border-radius:50%;animation:tbounce .5s infinite alternate}
+.typing-indicator span:nth-child(2){animation-delay:.15s}
+.typing-indicator span:nth-child(3){animation-delay:.3s}
+@keyframes tbounce{to{opacity:.3;transform:translateY(-3px)}}
+
+/* Stats bar */
+.go2-stats{position:absolute;bottom:36px;right:12px;background:#12121eee;backdrop-filter:blur(12px);border:1px solid #252540;border-radius:10px;padding:10px 14px;display:flex;gap:20px;font-size:11px;z-index:99}
+.go2-stat .val{font-size:16px;font-weight:700;color:#6c5ce7}
+.go2-stat .lbl{color:#666;margin-top:1px}
+.go2-stat .val.green{color:#4ade80}
+
+/* Helpful counter */
+.helpful-counter{position:absolute;top:12px;left:270px;background:#1a5c1a99;border:1px solid #1a5c1a;border-radius:8px;padding:6px 12px;font-size:11px;color:#4ade80;z-index:100;display:none}
+</style>
+</head>
+<body>
+<div class="desktop">
+  <div class="sidebar-dock">
+    <div class="dock-icon active" title="Email">&#9993;</div>
+    <div class="dock-icon" title="Browser">&#127760;</div>
+    <div class="dock-icon" title="Slack">&#128172;</div>
+    <div class="dock-icon" title="Sheets">&#128202;</div>
+    <div class="dock-sep"></div>
+    <div class="dock-icon" title="Calendar">&#128197;</div>
+    <div class="dock-icon" title="Files">&#128193;</div>
+    <div class="dock-sep"></div>
+    <div class="dock-icon" style="margin-top:auto" title="Go2">
+      <div style="width:28px;height:28px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff">G2</div>
+    </div>
+  </div>
+  <div class="app-area">
+    <div class="email-app">
+      <div class="email-sidebar">
+        <h3>Mail</h3>
+        <div class="email-folder active">&#128229; Inbox <span class="count">24</span></div>
+        <div class="email-folder">&#11088; Starred</div>
+        <div class="email-folder">&#128228; Sent</div>
+        <div class="email-folder">&#128196; Drafts <span class="count" style="background:#555">3</span></div>
+        <div class="email-folder">&#128465; Trash</div>
+      </div>
+      <div class="email-list">
+        <div class="email-item active">
+          <span class="time">10:23 AM</span>
+          <div class="from">Sarah Chen</div>
+          <div class="subject">Q1 Revenue Report - Review Needed</div>
+          <div class="preview">Hey, attached is the Q1 revenue report. Can you review the variance on...</div>
+        </div>
+        <div class="email-item">
+          <span class="time">10:18 AM</span>
+          <div class="from">Mike Rodriguez</div>
+          <div class="subject">Re: Client Demo Thursday</div>
+          <div class="preview">Updated the deck with the new pricing. Let me know if the ROI slide...</div>
+        </div>
+        <div class="email-item">
+          <span class="time">10:02 AM</span>
+          <div class="from">Jira Notifications</div>
+          <div class="subject">[PROJ-847] Bug: Dashboard timeout</div>
+          <div class="preview">Status changed: In Progress → Code Review. Assigned to you by...</div>
+        </div>
+        <div class="email-item">
+          <span class="time">9:45 AM</span>
+          <div class="from">AWS Billing</div>
+          <div class="subject">Your March Invoice is Available</div>
+          <div class="preview">Your AWS billing statement for March 2026 is now available. Total...</div>
+        </div>
+        <div class="email-item">
+          <span class="time">9:31 AM</span>
+          <div class="from">Lisa Park</div>
+          <div class="subject">Team Lunch Tomorrow?</div>
+          <div class="preview">Anyone up for trying that new Thai place on 5th? I can book for...</div>
+        </div>
+        <div class="email-item">
+          <span class="time">9:12 AM</span>
+          <div class="from">Stripe</div>
+          <div class="subject">Payment Failed: Customer #4829</div>
+          <div class="preview">A recurring payment for $299/mo failed for customer Acme Corp...</div>
+        </div>
+        <div class="email-item">
+          <span class="time">8:55 AM</span>
+          <div class="from">David Kim</div>
+          <div class="subject">Quarterly OKR Check-in</div>
+          <div class="preview">Reminder: OKR check-in is this Friday at 2pm. Please update your...</div>
+        </div>
+      </div>
+      <div class="email-content">
+        <h2>Q1 Revenue Report - Review Needed</h2>
+        <div class="meta">From: Sarah Chen &lt;sarah@company.com&gt; &middot; 10:23 AM &middot; To: You</div>
+        <div class="body-text">
+          Hey,<br><br>
+          Attached is the Q1 revenue report. Can you review the variance on the enterprise segment? We're showing 12% under forecast but I think it's a timing issue with the Acme and Globex renewals that slipped to April.<br><br>
+          Also, the churn numbers look off in the SMB segment. I cross-referenced with Stripe and our internal dashboard shows 4.2% but Stripe says 3.8%. Can you help me figure out the discrepancy?<br><br>
+          Need this finalized by EOD Thursday for the board deck.<br><br>
+          Thanks,<br>Sarah
+        </div>
+      </div>
+    </div>
+    <div class="status-bar">
+      <span class="active-app">&#9993; Mail</span>
+      <span>|</span>
+      <span>24 unread</span>
+      <span>|</span>
+      <span>Deep Work block: 11:00 AM - 1:00 PM</span>
+      <span class="time-in-app" id="timeInApp">Time in email: <strong>0:00</strong></span>
+    </div>
+    <div class="coaching-panel" id="coachPanel"></div>
+    <div class="go2-stats">
+      <div class="go2-stat"><div class="val" id="tipCount">0</div><div class="lbl">Tips Today</div></div>
+      <div class="go2-stat"><div class="val green" id="savedCount">0</div><div class="lbl">Min Saved</div></div>
+      <div class="go2-stat"><div class="val" id="autoCount">0</div><div class="lbl">Automatable</div></div>
+    </div>
+    <div class="helpful-counter" id="helpfulCounter">&#10003; Marked helpful</div>
+  </div>
+</div>
+<script>
+const panel=document.getElementById('coachPanel');
+let tipNum=0,savedMin=0,autoNum=0,helpfulCount=0,emailSeconds=0;
+let msgQueue=[],queueIndex=0;
+
+const coachMessages=[
+  {text:`You've been in email for <span class="warn">47 minutes</span>. Your deep work block starts in 13 minutes.`,actions:['helpful','dismiss'],category:'time'},
+  {text:`I noticed you copy-pasted data from Shopify to your spreadsheet <span class="alert">3 times today</span>. Want me to automate that?`,actions:['automate','dismiss'],category:'automation',saves:15},
+  {text:`Sarah's report mentions a Stripe vs dashboard discrepancy. I found it: <span class="metric">the dashboard excludes trial conversions</span>. Want me to draft a reply?`,actions:['helpful','dismiss'],category:'insight',saves:8},
+  {text:`You have <span class="metric">6 unread emails</span> from automated notifications. Want me to auto-archive Jira/AWS/Stripe alerts and surface only action items?`,actions:['automate','dismiss'],category:'automation',saves:5},
+  {text:`Pattern detected: You check email <span class="warn">every 8 minutes</span> during focus time. Top performers in your role batch emails 2x/day. Want me to hold non-urgent notifications?`,actions:['helpful','dismiss'],category:'coaching'},
+  {text:`The Q1 revenue report Sarah sent has a formula error in cell <span class="metric">E47</span> — enterprise segment subtotal doesn't include the Globex renewal. Catches like this save ~20 min of back-and-forth.`,actions:['helpful','dismiss'],category:'insight',saves:20},
+  {text:`You've context-switched between <span class="warn">4 apps in 12 minutes</span>. Research shows each switch costs 23 minutes of refocus time. Try batching: finish email, then move to Jira.`,actions:['helpful','dismiss'],category:'coaching'},
+  {text:`I mapped your morning workflow: <strong>Email &rarr; Slack &rarr; Jira &rarr; Sheets &rarr; Email &rarr; Slack</strong>. This loop repeats 3x before lunch. <span class="metric">Consolidating saves ~45 min/day</span>.`,actions:['helpful','automate'],category:'insight',saves:45},
+  {text:`Mike's demo deck has outdated pricing on slide 7. The new pricing was updated in Notion yesterday. Want me to flag it to Mike?`,actions:['helpful','dismiss'],category:'insight',saves:10},
+  {text:`David's OKR check-in is Friday at 2pm. Based on your calendar, you have no prep time blocked. Want me to add a 30-min prep block Thursday afternoon?`,actions:['helpful','dismiss'],category:'coaching',saves:5},
+  {text:`<span class="metric">Daily summary:</span> You've saved 1.5 hours today from Go2 coaching tips. Your team's average is 1.2 hours. Top areas: email management, context switching, data reconciliation.`,actions:['helpful'],category:'summary'},
+  {text:`I've identified <span class="metric">3 workflows</span> on your team that are ready for AI agent automation. Combined savings: <span class="metric">23 hours/week</span>. Want to review?`,actions:['automate','dismiss'],category:'automation',saves:0},
+];
+
+function createCoachMsg(msg){
+  const id='cm-'+Date.now();
+  const div=document.createElement('div');
+  div.className='coach-msg';div.id=id;
+  const now=new Date();
+  const timeStr=now.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+
+  let actionsHtml=msg.actions.map(a=>{
+    if(a==='helpful')return `<button class="coach-action helpful" onclick="markHelpful('${id}',${msg.saves||0})">&#10003; Helpful</button>`;
+    if(a==='dismiss')return `<button class="coach-action dismiss" onclick="dismissMsg('${id}')">Dismiss</button>`;
+    if(a==='automate')return `<button class="coach-action automate" onclick="markAutomate('${id}',${msg.saves||0})">&#9889; Automate This</button>`;
+  }).join('');
+
+  div.innerHTML=`
+    <div class="coach-header">
+      <div class="coach-avatar">G2</div>
+      <div class="coach-name">Go2 Coach</div>
+      <div class="coach-time">${timeStr}</div>
+    </div>
+    <div class="coach-text">${msg.text}</div>
+    <div class="coach-actions">${actionsHtml}</div>
+  `;
+  return div;
+}
+
+function showTypingThenMsg(msg){
+  const typing=document.createElement('div');
+  typing.className='coach-msg';typing.id='typing-ind';
+  typing.innerHTML=`
+    <div class="coach-header">
+      <div class="coach-avatar">G2</div>
+      <div class="coach-name">Go2 Coach</div>
+    </div>
+    <div class="typing-indicator"><span></span><span></span><span></span></div>
+  `;
+  panel.appendChild(typing);
+  panel.scrollTop=panel.scrollHeight;
+
+  setTimeout(()=>{
+    typing.remove();
+    const el=createCoachMsg(msg);
+    panel.appendChild(el);
+    panel.scrollTop=panel.scrollHeight;
+    tipNum++;
+    document.getElementById('tipCount').textContent=tipNum;
+    if(msg.category==='automation')autoNum++,document.getElementById('autoCount').textContent=autoNum;
+  },1500+Math.random()*1000);
+}
+
+function dismissMsg(id){
+  const el=document.getElementById(id);
+  if(el)el.classList.add('dismissed');
+  setTimeout(()=>{if(el)el.remove()},400);
+}
+
+function markHelpful(id,saves){
+  helpfulCount++;
+  if(saves)savedMin+=saves,document.getElementById('savedCount').textContent=savedMin;
+  const counter=document.getElementById('helpfulCounter');
+  counter.style.display='block';
+  counter.textContent=`&#10003; ${helpfulCount} marked helpful`;
+  setTimeout(()=>counter.style.display='none',2000);
+  dismissMsg(id);
+}
+
+function markAutomate(id,saves){
+  if(saves)savedMin+=saves,document.getElementById('savedCount').textContent=savedMin;
+  autoNum++;document.getElementById('autoCount').textContent=autoNum;
+  const el=document.getElementById(id);
+  if(el){
+    const text=el.querySelector('.coach-text');
+    const actions=el.querySelector('.coach-actions');
+    actions.innerHTML='<span style="color:#4ade80;font-size:11px">&#10003; Added to automation queue</span>';
+    setTimeout(()=>dismissMsg(id),2000);
+  }
+}
+
+// Email timer
+setInterval(()=>{
+  emailSeconds++;
+  const m=Math.floor(emailSeconds/60),s=emailSeconds%60;
+  document.getElementById('timeInApp').innerHTML=`Time in email: <strong>${m}:${s.toString().padStart(2,'0')}</strong>`;
+},1000);
+
+// Queue messages with varying delays
+function scheduleNext(){
+  if(queueIndex>=coachMessages.length)return;
+  const delay=queueIndex===0?2000:(3000+Math.random()*4000);
+  setTimeout(()=>{
+    showTypingThenMsg(coachMessages[queueIndex]);
+    queueIndex++;
+    scheduleNext();
+  },delay);
+}
+
+scheduleNext();
+</script>
+</body>
+</html>

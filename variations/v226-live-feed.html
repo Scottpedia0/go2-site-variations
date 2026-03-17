@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Live Platform Feed</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+body{background:#0a0e17;color:#c8d6e5;font-family:'JetBrains Mono',monospace;overflow:hidden;height:100vh}
+.grid{display:grid;grid-template-columns:1fr 1.4fr 1fr;grid-template-rows:auto 1fr auto;height:100vh;gap:1px;background:#1a1f2e}
+.panel{background:#0d1117;padding:16px;overflow:hidden;position:relative}
+.panel-header{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#4a6fa5;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.panel-header .live{color:#00ff87;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.top-bar{grid-column:1/-1;background:#0d1117;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1a2332}
+.logo{font-family:'Inter',sans-serif;font-weight:700;font-size:18px;color:#fff}
+.logo span{color:#00ff87}
+.top-stats{display:flex;gap:32px}
+.top-stat{text-align:right}
+.top-stat .val{font-size:20px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
+.top-stat .label{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:#4a6fa5;margin-top:2px}
+.bottom-bar{grid-column:1/-1;background:#0d1117;padding:8px 24px;display:flex;gap:24px;align-items:center;border-top:1px solid #1a2332;font-size:11px}
+.ticker{overflow:hidden;flex:1;white-space:nowrap}
+.ticker-inner{display:inline-block;animation:scroll 60s linear infinite}
+@keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.ticker-item{display:inline-block;margin-right:48px;color:#8892b0}
+.ticker-item .up{color:#00ff87}
+.ticker-item .company{color:#64ffda}
+
+/* Feed Panel */
+.feed{display:flex;flex-direction:column;gap:6px;overflow:hidden}
+.feed-item{padding:8px 10px;border-left:2px solid transparent;font-size:11px;line-height:1.5;opacity:0;animation:fadeSlide .4s forwards;background:#0d1117}
+.feed-item.automation{border-left-color:#00ff87}
+.feed-item.coaching{border-left-color:#64b5f6}
+.feed-item.insight{border-left-color:#ffd54f}
+.feed-item.milestone{border-left-color:#e040fb}
+.feed-item .time{color:#4a6fa5;font-size:9px}
+.feed-item .company{color:#64ffda;font-weight:500}
+.feed-item .metric{color:#fff;font-weight:700}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+
+/* Map */
+.map-container{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+#map-canvas{width:100%;height:100%}
+
+/* Counters */
+.counters{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.counter-card{background:#111827;border:1px solid #1e293b;border-radius:6px;padding:14px;position:relative;overflow:hidden}
+.counter-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.counter-card.green::before{background:linear-gradient(90deg,#00ff87,#00cc6a)}
+.counter-card.blue::before{background:linear-gradient(90deg,#64b5f6,#42a5f5)}
+.counter-card.yellow::before{background:linear-gradient(90deg,#ffd54f,#ffb300)}
+.counter-card.purple::before{background:linear-gradient(90deg,#e040fb,#ab47bc)}
+.counter-val{font-size:24px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
+.counter-label{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:#4a6fa5;margin-top:4px}
+.counter-delta{font-size:10px;color:#00ff87;margin-top:4px}
+
+/* Sparklines */
+.sparkline-row{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.spark-item{display:flex;align-items:center;gap:10px}
+.spark-label{font-size:9px;color:#4a6fa5;width:80px;text-transform:uppercase;letter-spacing:1px}
+.spark-svg{flex:1;height:28px}
+
+/* Activity chart */
+.activity-bars{display:flex;align-items:flex-end;gap:2px;height:120px;padding-top:20px}
+.activity-bar{flex:1;background:linear-gradient(to top,#00ff8733,#00ff87);border-radius:2px 2px 0 0;transition:height .6s ease;position:relative}
+.activity-bar:hover{background:linear-gradient(to top,#00ff8766,#00ff87)}
+.activity-bar .tooltip{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#1a2332;padding:4px 8px;border-radius:4px;font-size:9px;color:#fff;white-space:nowrap}
+.activity-bar:hover .tooltip{display:block}
+
+/* Top Companies */
+.top-companies{display:flex;flex-direction:column;gap:6px}
+.top-co{display:flex;align-items:center;gap:8px;font-size:11px}
+.top-co .rank{color:#4a6fa5;width:16px;text-align:right}
+.top-co .name{color:#64ffda;flex:1}
+.top-co .bar-bg{width:100px;height:4px;background:#1a2332;border-radius:2px;overflow:hidden}
+.top-co .bar-fill{height:100%;background:#00ff87;border-radius:2px;transition:width 1s ease}
+.top-co .val{color:#fff;font-weight:500;width:40px;text-align:right}
+</style>
+</head>
+<body>
+<div class="grid">
+  <div class="top-bar">
+    <div class="logo">Go2<span>.io</span> <span style="font-size:10px;color:#4a6fa5;font-weight:400;letter-spacing:2px;margin-left:12px">LIVE PLATFORM FEED</span></div>
+    <div class="top-stats">
+      <div class="top-stat"><div class="val" id="ts-workers">2,147,832</div><div class="label">Active Workers</div></div>
+      <div class="top-stat"><div class="val" id="ts-companies">12,847</div><div class="label">Companies</div></div>
+      <div class="top-stat"><div class="val" id="ts-auto">847,291</div><div class="label">Automations Today</div></div>
+      <div class="top-stat"><div class="val" id="ts-saved">$4.2M</div><div class="label">Saved Today</div></div>
+    </div>
+  </div>
+
+  <!-- Left: Feed -->
+  <div class="panel">
+    <div class="panel-header"><span>Activity Feed</span><span class="live">&#9679; LIVE</span></div>
+    <div class="feed" id="feed"></div>
+  </div>
+
+  <!-- Center: Map + Activity -->
+  <div class="panel">
+    <div class="panel-header"><span>Platform Activity — United States</span><span style="color:#8892b0" id="event-count">2,847 events/min</span></div>
+    <canvas id="map-canvas"></canvas>
+  </div>
+
+  <!-- Right: Counters + Sparklines -->
+  <div class="panel" style="overflow-y:auto">
+    <div class="panel-header"><span>Key Metrics</span><span style="color:#8892b0">Last 60 min</span></div>
+    <div class="counters">
+      <div class="counter-card green"><div class="counter-val" id="c-auto">1,247</div><div class="counter-label">Workflows Automated</div><div class="counter-delta">+12.4% vs last hour</div></div>
+      <div class="counter-card blue"><div class="counter-val" id="c-coach">3,891</div><div class="counter-label">Coaching Sessions</div><div class="counter-delta">+8.2% vs last hour</div></div>
+      <div class="counter-card yellow"><div class="counter-val" id="c-hours">48.2K</div><div class="counter-label">Hours Recovered</div><div class="counter-delta">+15.7% vs last hour</div></div>
+      <div class="counter-card purple"><div class="counter-val" id="c-patterns">892</div><div class="counter-label">Patterns Detected</div><div class="counter-delta">+6.1% vs last hour</div></div>
+    </div>
+    <div style="margin-top:20px">
+      <div class="panel-header"><span>Top Companies (Automations/hr)</span></div>
+      <div class="top-companies" id="top-companies"></div>
+    </div>
+    <div style="margin-top:20px">
+      <div class="panel-header"><span>Hourly Activity (24h)</span></div>
+      <div class="activity-bars" id="activity-bars"></div>
+    </div>
+    <div class="sparkline-row" id="sparklines" style="margin-top:20px">
+      <div class="panel-header"><span>Trend Lines</span></div>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <span style="color:#00ff87">&#9679;</span>
+    <span style="color:#4a6fa5">PLATFORM STATUS: ALL SYSTEMS OPERATIONAL</span>
+    <div class="ticker"><div class="ticker-inner" id="ticker"></div></div>
+  </div>
+</div>
+
+<script>
+const companies=['Acme Corp','TechStart','MedGroup','Retail Plus','FinServ Global','BuildRight','DataFlow Inc','CloudNine','StackOps','Meridian Health','Atlas Logistics','Pinnacle HR','Vortex Media','Quantum Dynamics','SilverLine Financial','NexGen Solutions','Trident Systems','Apex Consulting','Harbor Tech','Summit Partners'];
+const cities=[{n:'New York',x:.82,y:.33},{n:'Los Angeles',x:.15,y:.52},{n:'Chicago',x:.65,y:.32},{n:'Houston',x:.52,y:.65},{n:'Phoenix',x:.22,y:.55},{n:'Philadelphia',x:.8,y:.35},{n:'San Antonio',x:.46,y:.66},{n:'San Diego',x:.14,y:.57},{n:'Dallas',x:.5,y:.58},{n:'San Jose',x:.1,y:.45},{n:'Austin',x:.47,y:.63},{n:'Jacksonville',x:.78,y:.58},{n:'San Francisco',x:.09,y:.42},{n:'Columbus',x:.72,y:.35},{n:'Charlotte',x:.76,y:.48},{n:'Indianapolis',x:.67,y:.37},{n:'Seattle',x:.12,y:.15},{n:'Denver',x:.34,y:.38},{n:'Boston',x:.85,y:.27},{n:'Nashville',x:.69,y:.48},{n:'Detroit',x:.71,y:.3},{n:'Portland',x:.11,y:.2},{n:'Memphis',x:.63,y:.52},{n:'Louisville',x:.68,y:.42},{n:'Baltimore',x:.79,y:.37},{n:'Milwaukee',x:.63,y:.28},{n:'Albuquerque',x:.28,y:.52},{n:'Tucson',x:.23,y:.58},{n:'Fresno',x:.12,y:.46},{n:'Sacramento',x:.11,y:.4},{n:'Miami',x:.8,y:.7},{n:'Atlanta',x:.73,y:.52},{n:'Minneapolis',x:.55,y:.22},{n:'Tampa',x:.77,y:.64},{n:'Orlando',x:.78,y:.62},{n:'St. Louis',x:.6,y:.42},{n:'Pittsburgh',x:.74,y:.34},{n:'Cincinnati',x:.7,y:.4},{n:'Kansas City',x:.53,y:.42},{n:'Las Vegas',x:.19,y:.48},{n:'Raleigh',x:.78,y:.46},{n:'Salt Lake City',x:.25,y:.35},{n:'Richmond',x:.78,y:.42}];
+const feedTypes=[
+  {type:'automation',msgs:['%c — %n workflows automated this hour','%c — New automation: %a reduced manual work by %p%','%c — Bot "%b" completed %n tasks autonomously']},
+  {type:'coaching',msgs:['%c — Coaching acceptance rate: %p%','%c — %n workers improved focus score after coaching','%c — Real-time coaching prevented %n context switches']},
+  {type:'insight',msgs:['%c — %h hrs/week recovered per worker this month','%c — %p% reduction in manual data entry detected','%c — Process documentation auto-generated for %n workflows']},
+  {type:'milestone',msgs:['%c — Crossed %n automations milestone','%c — 100th worker hit 90+ productivity score','%c — AI agent trained on %n real work patterns']}
+];
+const botNames=['InvoiceBot','DataSync','ReportGen','ScheduleAI','FormFiller','EmailRouter','TaskRouter','DocParser'];
+const autoNames=['invoice processing','report generation','data migration','email triage','form filling','schedule coordination','expense approval','ticket routing'];
+
+function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+function pick(arr){return arr[rnd(0,arr.length-1)]}
+function fmt(n){return n.toLocaleString()}
+
+// Feed
+const feedEl=document.getElementById('feed');
+let feedCount=0;
+function addFeedItem(){
+  const ft=pick(feedTypes);
+  let msg=pick(ft.msgs);
+  msg=msg.replace('%c',pick(companies)).replace('%n',rnd(3,250)).replace('%p',rnd(78,98)).replace('%h',`${(rnd(80,160)/10).toFixed(1)}`).replace('%a',pick(autoNames)).replace('%b',pick(botNames));
+  const div=document.createElement('div');
+  div.className=`feed-item ${ft.type}`;
+  const now=new Date();
+  const time=now.toTimeString().slice(0,8);
+  div.innerHTML=`<div class="time">${time}</div><div>${msg}</div>`;
+  feedEl.prepend(div);
+  feedCount++;
+  if(feedCount>30){const last=feedEl.lastChild;if(last)feedEl.removeChild(last)}
+}
+setInterval(addFeedItem,1800);
+for(let i=0;i<8;i++)setTimeout(addFeedItem,i*200);
+
+// Map
+const canvas=document.getElementById('map-canvas');
+const ctx=canvas.getContext('2d');
+let dots=[];
+function resizeCanvas(){canvas.width=canvas.parentElement.clientWidth;canvas.height=canvas.parentElement.clientHeight}
+resizeCanvas();
+window.addEventListener('resize',resizeCanvas);
+
+// US outline (simplified polygon)
+const usOutline=[[.05,.3],[.08,.18],[.1,.14],[.14,.12],[.2,.12],[.3,.1],[.4,.08],[.5,.1],[.55,.08],[.6,.1],[.65,.08],[.7,.1],[.75,.12],[.8,.15],[.85,.2],[.88,.22],[.9,.25],[.88,.3],[.9,.35],[.88,.4],[.86,.45],[.84,.5],[.82,.55],[.8,.6],[.82,.65],[.8,.7],[.78,.72],[.75,.65],[.73,.58],[.7,.55],[.65,.58],[.6,.6],[.55,.62],[.5,.65],[.48,.68],[.45,.7],[.4,.68],[.35,.65],[.3,.62],[.25,.6],[.2,.58],[.15,.6],[.12,.55],[.1,.5],[.08,.45],[.06,.4],[.05,.35]];
+
+function drawMap(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const w=canvas.width,h=canvas.height;
+  // Draw US outline
+  ctx.beginPath();
+  ctx.moveTo(usOutline[0][0]*w,usOutline[0][1]*h);
+  for(let i=1;i<usOutline.length;i++)ctx.lineTo(usOutline[i][0]*w,usOutline[i][1]*h);
+  ctx.closePath();
+  ctx.strokeStyle='#1a2332';
+  ctx.lineWidth=1.5;
+  ctx.stroke();
+  ctx.fillStyle='#0d111788';
+  ctx.fill();
+
+  // Draw city dots (base)
+  cities.forEach(c=>{
+    ctx.beginPath();
+    ctx.arc(c.x*w,c.y*h,2,0,Math.PI*2);
+    ctx.fillStyle='#1a2332';
+    ctx.fill();
+  });
+
+  // Draw active dots
+  const now=Date.now();
+  dots=dots.filter(d=>{
+    const age=(now-d.born)/1000;
+    if(age>3)return false;
+    const alpha=age<.3?age/.3:age>2.5?1-(age-2.5)/.5:1;
+    const r=age<.3?8*(age/.3):8+age*4;
+    ctx.beginPath();
+    ctx.arc(d.x*w,d.y*h,2,0,Math.PI*2);
+    ctx.fillStyle=d.color;
+    ctx.fill();
+    // Ripple
+    ctx.beginPath();
+    ctx.arc(d.x*w,d.y*h,r,0,Math.PI*2);
+    ctx.strokeStyle=d.color.replace(')',`,${alpha*.4})`).replace('rgb','rgba');
+    ctx.lineWidth=1;
+    ctx.stroke();
+    return true;
+  });
+}
+
+function spawnDot(){
+  const city=pick(cities);
+  const colors=['rgb(0,255,135)','rgb(100,181,246)','rgb(255,213,79)','rgb(224,64,251)'];
+  dots.push({x:city.x+(Math.random()-.5)*.04,y:city.y+(Math.random()-.5)*.04,born:Date.now(),color:pick(colors)});
+}
+setInterval(spawnDot,300);
+function animate(){drawMap();requestAnimationFrame(animate)}
+animate();
+
+// Counters
+let counters={auto:1247,coach:3891,hours:48200,patterns:892};
+function updateCounters(){
+  counters.auto+=rnd(1,5);
+  counters.coach+=rnd(1,8);
+  counters.hours+=rnd(5,30);
+  counters.patterns+=rnd(0,2);
+  document.getElementById('c-auto').textContent=fmt(counters.auto);
+  document.getElementById('c-coach').textContent=fmt(counters.coach);
+  document.getElementById('c-hours').textContent=`${(counters.hours/1000).toFixed(1)}K`;
+  document.getElementById('c-patterns').textContent=fmt(counters.patterns);
+}
+setInterval(updateCounters,2000);
+
+// Top stats
+let tsWorkers=2147832,tsCompanies=12847,tsAuto=847291,tsSaved=4.2;
+function updateTopStats(){
+  tsWorkers+=rnd(1,12);tsCompanies+=Math.random()>.95?1:0;tsAuto+=rnd(3,15);tsSaved+=rnd(100,800)/100000;
+  document.getElementById('ts-workers').textContent=fmt(tsWorkers);
+  document.getElementById('ts-companies').textContent=fmt(tsCompanies);
+  document.getElementById('ts-auto').textContent=fmt(tsAuto);
+  document.getElementById('ts-saved').textContent=`$${tsSaved.toFixed(1)}M`;
+}
+setInterval(updateTopStats,3000);
+
+// Top companies
+const topCo=document.getElementById('top-companies');
+const topData=companies.slice(0,8).map(c=>({name:c,val:rnd(40,180)})).sort((a,b)=>b.val-a.val);
+function renderTopCo(){
+  topCo.innerHTML='';
+  topData.forEach((d,i)=>{
+    d.val+=rnd(-2,5);
+    const pct=(d.val/topData[0].val)*100;
+    topCo.innerHTML+=`<div class="top-co"><span class="rank">${i+1}</span><span class="name">${d.name}</span><div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div><span class="val">${d.val}</span></div>`;
+  });
+  topData.sort((a,b)=>b.val-a.val);
+}
+renderTopCo();
+setInterval(renderTopCo,4000);
+
+// Activity bars
+const barsEl=document.getElementById('activity-bars');
+const barData=Array.from({length:24},(_,i)=>{const base=i<6?20:i<9?60:i<12?90:i<14?85:i<17?95:i<20?70:40;return base+rnd(-10,10)});
+function renderBars(){
+  barsEl.innerHTML='';
+  const max=Math.max(...barData);
+  barData.forEach((v,i)=>{
+    const h=(v/max)*100;
+    const hour=i<12?(i||12)+'a':(i===12?12:i-12)+'p';
+    barsEl.innerHTML+=`<div class="activity-bar" style="height:${h}%"><div class="tooltip">${hour}: ${v} events/min</div></div>`;
+  });
+}
+renderBars();
+
+// Sparklines
+const sparkEl=document.getElementById('sparklines');
+const sparkData=[
+  {label:'Automation',color:'#00ff87'},
+  {label:'Coaching',color:'#64b5f6'},
+  {label:'Recovery',color:'#ffd54f'},
+  {label:'Satisfaction',color:'#e040fb'}
+];
+sparkData.forEach(s=>{
+  const pts=Array.from({length:30},()=>rnd(30,90));
+  const div=document.createElement('div');
+  div.className='spark-item';
+  let path='M';
+  pts.forEach((p,i)=>{path+=`${i*(100/29)},${100-p} `;});
+  div.innerHTML=`<span class="spark-label">${s.label}</span><svg class="spark-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="${path}" fill="none" stroke="${s.color}" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>`;
+  sparkEl.appendChild(div);
+});
+
+// Ticker
+const tickerEl=document.getElementById('ticker');
+const tickerItems=[];
+for(let i=0;i<20;i++){
+  const co=pick(companies);
+  const metrics=[`${rnd(5,25)} workflows automated`,`${rnd(80,99)}% coaching acceptance`,`${(rnd(50,180)/10).toFixed(1)} hrs/week recovered`,`${rnd(3,12)} AI agents trained`,`$${rnd(10,500)}K saved this month`];
+  tickerItems.push(`<span class="ticker-item"><span class="company">${co}</span> &mdash; <span class="up">${pick(metrics)}</span></span>`);
+}
+tickerEl.innerHTML=tickerItems.join('')+tickerItems.join('');
+
+// Event count updater
+setInterval(()=>{
+  document.getElementById('event-count').textContent=`${fmt(rnd(2400,3200))} events/min`;
+},5000);
+</script>
+</body>
+</html>

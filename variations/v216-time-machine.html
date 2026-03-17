@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 Time Machine - Watch Your Company Transform</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+body{font-family:'Inter',sans-serif;background:#0a0a0f;color:#fff;overflow-x:hidden;min-height:100vh}
+.time-machine-header{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,10,15,0.95);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.1);padding:20px 40px}
+.header-title{font-size:14px;text-transform:uppercase;letter-spacing:3px;color:#888;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.header-title span{color:#00ff88;font-weight:700}
+.slider-container{display:flex;align-items:center;gap:20px}
+.month-label{font-size:32px;font-weight:900;min-width:200px;transition:color 0.5s}
+.month-sublabel{font-size:13px;color:#666;margin-top:2px}
+#timeSlider{flex:1;-webkit-appearance:none;height:6px;border-radius:3px;outline:none;cursor:pointer;background:linear-gradient(90deg,#ff3333,#ff8833,#ffcc00,#88ff00,#00ff88)}
+#timeSlider::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:#fff;cursor:pointer;box-shadow:0 0 20px rgba(255,255,255,0.5)}
+.milestones{display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:#555}
+.content{padding:140px 40px 40px}
+.section-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-bottom:40px}
+.metric-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:28px;transition:all 0.6s cubic-bezier(0.4,0,0.2,1);position:relative;overflow:hidden}
+.metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;transition:background 0.6s}
+.metric-card .label{font-size:12px;text-transform:uppercase;letter-spacing:2px;color:#666;margin-bottom:8px}
+.metric-card .value{font-size:42px;font-weight:900;transition:color 0.5s;line-height:1}
+.metric-card .delta{font-size:14px;margin-top:8px;font-weight:600}
+.metric-card .bar{height:4px;border-radius:2px;margin-top:16px;transition:all 0.6s;background:#333}
+.metric-card .bar-fill{height:100%;border-radius:2px;transition:all 0.6s}
+.team-section{margin-bottom:40px}
+.team-section h2{font-size:20px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.team-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:16px}
+.worker-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px;text-align:center;transition:all 0.5s;position:relative}
+.worker-avatar{width:48px;height:48px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:20px;transition:all 0.5s}
+.worker-name{font-size:13px;font-weight:600;margin-bottom:4px}
+.worker-role{font-size:11px;color:#666;margin-bottom:8px}
+.worker-status{font-size:11px;padding:4px 10px;border-radius:20px;display:inline-block;transition:all 0.5s}
+.worker-mood{font-size:18px;margin-top:8px;transition:all 0.3s}
+.process-section{margin-bottom:40px}
+.process-timeline{display:flex;gap:4px;align-items:center}
+.process-step{flex:1;padding:16px;border-radius:8px;text-align:center;font-size:12px;transition:all 0.5s;position:relative}
+.process-step .step-icon{font-size:24px;margin-bottom:6px}
+.process-step .step-label{font-weight:600}
+.process-step .step-time{font-size:10px;margin-top:4px;color:#888}
+.process-arrow{font-size:16px;color:#444;transition:color 0.5s}
+.chart-section{margin-bottom:40px}
+.chart-container{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:28px;height:200px;position:relative}
+.chart-container canvas{width:100%;height:100%}
+.savings-ticker{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,15,0.95);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,0.1);padding:16px 40px;display:flex;align-items:center;justify-content:space-between;z-index:100}
+.savings-amount{font-size:28px;font-weight:900;transition:color 0.5s}
+.savings-label{font-size:12px;color:#666;text-transform:uppercase;letter-spacing:2px}
+.doc-coverage{display:grid;grid-template-columns:repeat(20,1fr);gap:3px}
+.doc-cell{aspect-ratio:1;border-radius:3px;transition:all 0.4s}
+.narrative-banner{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:32px;margin-bottom:40px;text-align:center;transition:all 0.6s}
+.narrative-banner h2{font-size:28px;font-weight:900;margin-bottom:8px;transition:color 0.5s}
+.narrative-banner p{font-size:16px;color:#888;transition:color 0.5s;max-width:600px;margin:0 auto}
+.automation-flow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:20px}
+.auto-node{padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;transition:all 0.5s;border:1px solid rgba(255,255,255,0.1)}
+.section-title{font-size:20px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.pulse{animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.glow-green{box-shadow:0 0 30px rgba(0,255,136,0.2)}
+.glow-red{box-shadow:0 0 30px rgba(255,51,51,0.2)}
+.confetti-container{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:200}
+</style>
+</head>
+<body>
+<div class="time-machine-header">
+  <div class="header-title">Go2 <span>Time Machine</span> — Drag to see your company transform</div>
+  <div class="slider-container">
+    <div>
+      <div class="month-label" id="monthLabel">Month 0</div>
+      <div class="month-sublabel" id="monthSublabel">Before Go2</div>
+    </div>
+    <input type="range" id="timeSlider" min="0" max="120" value="0">
+  </div>
+  <div class="milestones">
+    <span>Day 1: Chaos</span>
+    <span>Month 3: Discovery</span>
+    <span>Month 6: Coaching</span>
+    <span>Month 9: Automation</span>
+    <span>Month 12: Transformed</span>
+  </div>
+</div>
+
+<div class="content">
+  <div class="narrative-banner" id="narrative">
+    <h2 id="narrativeTitle">Welcome to the Chaos</h2>
+    <p id="narrativeText">Your company is spending $2.4M/year on manual processes. Nobody knows how anything works. Knowledge lives in people's heads. AI projects keep failing.</p>
+  </div>
+
+  <div class="section-grid" id="metricCards"></div>
+
+  <div class="team-section">
+    <h2 class="section-title"><span id="teamIcon">😫</span> Your Team</h2>
+    <div class="team-grid" id="teamGrid"></div>
+  </div>
+
+  <div class="process-section">
+    <h2 class="section-title">📋 Customer Onboarding Process</h2>
+    <div class="process-timeline" id="processTimeline"></div>
+  </div>
+
+  <div class="chart-section">
+    <h2 class="section-title">📊 Documentation Coverage</h2>
+    <div class="doc-coverage" id="docGrid"></div>
+  </div>
+
+  <div class="process-section">
+    <h2 class="section-title">🤖 Automation Status</h2>
+    <div class="automation-flow" id="automationFlow"></div>
+  </div>
+</div>
+
+<div class="savings-ticker">
+  <div>
+    <div class="savings-label">Cumulative Savings</div>
+    <div class="savings-amount" id="savingsAmount">$0</div>
+  </div>
+  <div style="text-align:right">
+    <div class="savings-label">AI Success Rate</div>
+    <div class="savings-amount" id="aiSuccess" style="font-size:24px">5%</div>
+  </div>
+  <div style="text-align:right">
+    <div class="savings-label">Processes Documented</div>
+    <div class="savings-amount" id="docsCount" style="font-size:24px">0 / 200</div>
+  </div>
+</div>
+
+<div class="confetti-container" id="confetti"></div>
+
+<script>
+const slider = document.getElementById('timeSlider');
+const monthLabel = document.getElementById('monthLabel');
+const monthSublabel = document.getElementById('monthSublabel');
+
+const metrics = [
+  {label:'Manual Process Hours/Week',start:340,end:45,prefix:'',suffix:'h',goodLow:true},
+  {label:'Documentation Coverage',start:8,end:97,prefix:'',suffix:'%',goodLow:false},
+  {label:'Avg. Onboarding Time',start:21,end:3,prefix:'',suffix:' days',goodLow:true},
+  {label:'AI-Automated Tasks',start:0,end:156,prefix:'',suffix:'',goodLow:false},
+  {label:'Knowledge Bus Factor',start:1.2,end:8.4,prefix:'',suffix:'x',goodLow:false},
+  {label:'Employee Satisfaction',start:34,end:89,prefix:'',suffix:'%',goodLow:false}
+];
+
+const workers = [
+  {name:'Sarah Chen',role:'Operations Lead',moods:['😫','😤','🤔','😊','😁','🤩']},
+  {name:'Mike Torres',role:'Sales Rep',moods:['😩','😕','🙂','😊','😄','🚀']},
+  {name:'Priya Patel',role:'Support Lead',moods:['😤','😟','🤔','🙂','😊','💪']},
+  {name:'James Kim',role:'Dev Manager',moods:['🫠','😮‍💨','🤨','😌','😊','🎯']},
+  {name:'Lisa Wang',role:'HR Director',moods:['😰','😓','🙂','😊','😁','✨']},
+  {name:'Alex Rivera',role:'Finance',moods:['😡','😤','🤔','😌','😊','💰']}
+];
+
+const statuses = [
+  ['Overwhelmed','Drowning','Frustrated','Stressed','Struggling','Burned Out'],
+  ['Coping','Adjusting','Learning Go2','Adapting','Onboarding','Getting help'],
+  ['Coached','Improving','Growing','Progressing','Coaching active','Developing'],
+  ['Thriving','Productive','Efficient','Automated','Optimized','Leading']
+];
+
+const statusColors = [
+  ['#ff3333','#ff3333','#ff5533','#ff5533','#ff3333','#ff3333'],
+  ['#ff8833','#ffaa33','#ffcc00','#ffaa33','#ff8833','#ffcc00'],
+  ['#88cc00','#88ff00','#00ff88','#66ff66','#88ff00','#00ff88'],
+  ['#00ff88','#00ffaa','#00ffcc','#00ff88','#00ffaa','#00ffcc']
+];
+
+const processSteps = [
+  {icon:'📧',label:'Receive Request',times:['2 days','1 day','4 hours','30 min','5 min (auto)']},
+  {icon:'📋',label:'Gather Info',times:['5 days','3 days','1 day','2 hours','Auto-filled']},
+  {icon:'🔍',label:'Review',times:['3 days','2 days','1 day','4 hours','AI-reviewed']},
+  {icon:'✅',label:'Approve',times:['4 days','2 days','1 day','30 min','Auto-approved']},
+  {icon:'🚀',label:'Setup',times:['5 days','3 days','1 day','2 hours','Auto-deployed']},
+  {icon:'📞',label:'Welcome Call',times:['2 days','1 day','Same day','1 hour','AI-scheduled']}
+];
+
+const automations = [
+  'Email Routing','Invoice Processing','Customer Onboarding','Report Generation',
+  'Data Entry','Meeting Scheduling','Lead Scoring','Support Triage',
+  'Expense Approval','Contract Review','Inventory Updates','Payroll Processing',
+  'Quality Checks','Compliance Audits','Training Assignment','Feedback Collection'
+];
+
+function init(){
+  const mc = document.getElementById('metricCards');
+  metrics.forEach((m,i) => {
+    mc.innerHTML += `<div class="metric-card" id="mc${i}"><div class="label">${m.label}</div><div class="value" id="mv${i}"></div><div class="delta" id="md${i}"></div><div class="bar"><div class="bar-fill" id="mb${i}"></div></div></div>`;
+  });
+  const tg = document.getElementById('teamGrid');
+  workers.forEach((w,i) => {
+    tg.innerHTML += `<div class="worker-card" id="wc${i}"><div class="worker-avatar" id="wa${i}"></div><div class="worker-name">${w.name}</div><div class="worker-role">${w.role}</div><div class="worker-status" id="ws${i}"></div><div class="worker-mood" id="wm${i}"></div></div>`;
+  });
+  const pt = document.getElementById('processTimeline');
+  processSteps.forEach((s,i) => {
+    if(i>0) pt.innerHTML += '<div class="process-arrow">→</div>';
+    pt.innerHTML += `<div class="process-step" id="ps${i}"><div class="step-icon">${s.icon}</div><div class="step-label">${s.label}</div><div class="step-time" id="pst${i}"></div></div>`;
+  });
+  const dg = document.getElementById('docGrid');
+  for(let i=0;i<200;i++) dg.innerHTML += `<div class="doc-cell" id="dc${i}"></div>`;
+  const af = document.getElementById('automationFlow');
+  automations.forEach((a,i) => {
+    af.innerHTML += `<div class="auto-node" id="an${i}">${a}</div>`;
+  });
+  update(0);
+}
+
+function lerp(a,b,t){return a+(b-a)*t}
+function easeInOut(t){return t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2}
+
+const narratives = [
+  {t:'Welcome to the Chaos',p:'Your company is spending $2.4M/year on manual processes. Nobody knows how anything works. Knowledge lives in people\'s heads. AI projects keep failing.',c:'#ff3333'},
+  {t:'Go2 Begins Observing',p:'Cowork.ai agents are silently learning how your team actually works. No disruption, no surveys, no consultants. Just quiet, persistent observation.',c:'#ff8833'},
+  {t:'Patterns Emerging',p:'Go2 has mapped 47 unique processes across 6 departments. 73% have never been documented. 12 critical workflows depend on a single person.',c:'#ffcc00'},
+  {t:'Coaching Kicks In',p:'Real-time AI coaching is now active. Workers get gentle nudges: better shortcuts, smarter sequences, knowledge sharing. Productivity up 18% already.',c:'#88cc00'},
+  {t:'Automation Wave',p:'Go2 has identified 34 tasks ready for full automation. First 8 are deployed. Your team is spending 40% less time on repetitive work.',c:'#44dd44'},
+  {t:'The Transformation is Complete',p:'Your company runs like a machine. AI agents handle routine work. Every process is documented. New hires are productive in 3 days, not 3 weeks. You saved $400K this year.',c:'#00ff88'}
+];
+
+let confettiTriggered = false;
+
+function update(val){
+  const t = val/120;
+  const month = Math.round(t*12);
+  const monthFloat = t*12;
+
+  monthLabel.textContent = month === 0 ? 'Day 1' : `Month ${month}`;
+  monthLabel.style.color = `hsl(${t*120},80%,60%)`;
+
+  const sublabels = ['Before Go2','Go2 Installed','Observation Phase','Pattern Discovery','Coaching Active','Building Momentum','Automation Begins','Scaling Up','AI Agents Deploy','Full Automation','Optimization','Fine-Tuning','Fully Transformed'];
+  monthSublabel.textContent = sublabels[month];
+
+  const ni = Math.min(Math.floor(t*5.99),5);
+  const n = narratives[ni];
+  document.getElementById('narrativeTitle').textContent = n.t;
+  document.getElementById('narrativeTitle').style.color = n.c;
+  document.getElementById('narrativeText').textContent = n.p;
+
+  metrics.forEach((m,i) => {
+    const et = easeInOut(t);
+    const current = m.start + (m.end - m.start) * et;
+    const display = m.suffix === 'x' ? current.toFixed(1) : Math.round(current);
+    document.getElementById(`mv${i}`).textContent = m.prefix + display + m.suffix;
+    const pct = (current - m.start)/(m.end - m.start)*100;
+    const hue = m.goodLow ? 120 - (pct/100)*120 : (pct/100)*120;
+    // Invert for "good when low" metrics so improvement is green
+    const displayHue = m.goodLow ? (1-t)*0 + t*120 : t*120;
+    document.getElementById(`mv${i}`).style.color = `hsl(${displayHue},80%,60%)`;
+    document.getElementById(`mc${i}`).style.borderColor = `hsla(${displayHue},80%,60%,0.3)`;
+    document.getElementById(`mc${i}`).style.setProperty('--glow',`hsla(${displayHue},80%,60%,0.1)`);
+    const delta = current - m.start;
+    const sign = delta > 0 ? '+' : '';
+    const deltaDisplay = m.suffix === 'x' ? delta.toFixed(1) : Math.round(delta);
+    document.getElementById(`md${i}`).textContent = `${sign}${deltaDisplay}${m.suffix} from baseline`;
+    document.getElementById(`md${i}`).style.color = `hsl(${displayHue},60%,50%)`;
+    document.getElementById(`mb${i}`).style.width = `${Math.abs(pct)}%`;
+    document.getElementById(`mb${i}`).style.background = `hsl(${displayHue},80%,50%)`;
+  });
+
+  const wi = Math.min(Math.floor(t*3.99),3);
+  workers.forEach((w,idx) => {
+    const mi = Math.min(Math.floor(t*5.99),5);
+    document.getElementById(`wm${idx}`).textContent = w.moods[mi];
+    document.getElementById(`ws${idx}`).textContent = statuses[wi][idx];
+    document.getElementById(`ws${idx}`).style.background = statusColors[wi][idx] + '22';
+    document.getElementById(`ws${idx}`).style.color = statusColors[wi][idx];
+    document.getElementById(`wa${idx}`).style.background = statusColors[wi][idx] + '33';
+    document.getElementById(`wa${idx}`).textContent = w.moods[mi];
+    document.getElementById(`wa${idx}`).style.fontSize = '24px';
+    if(t > 0.8) document.getElementById(`wc${idx}`).classList.add('glow-green');
+    else document.getElementById(`wc${idx}`).classList.remove('glow-green');
+  });
+
+  document.getElementById('teamIcon').textContent = t < 0.2 ? '😫' : t < 0.5 ? '🤔' : t < 0.8 ? '😊' : '🚀';
+
+  processSteps.forEach((s,i) => {
+    const si = Math.min(Math.floor(t*4.99),4);
+    document.getElementById(`pst${i}`).textContent = s.times[si];
+    const stepT = Math.min(t * 1.5, 1);
+    const hue = stepT * 120;
+    document.getElementById(`ps${i}`).style.background = `hsla(${hue},60%,50%,0.1)`;
+    document.getElementById(`ps${i}`).style.borderColor = `hsla(${hue},60%,50%,0.3)`;
+    document.getElementById(`ps${i}`).style.border = `1px solid hsla(${hue},60%,50%,0.3)`;
+  });
+
+  const docsLit = Math.floor(t * 200);
+  for(let i = 0; i < 200; i++){
+    const dc = document.getElementById(`dc${i}`);
+    if(i < docsLit){
+      const cellT = i / 200;
+      dc.style.background = `hsl(${120 + cellT * 20}, 70%, ${40 + cellT * 20}%)`;
+    } else {
+      dc.style.background = '#1a1a2e';
+    }
+  }
+
+  const autoActive = Math.floor(t * automations.length);
+  automations.forEach((a,i) => {
+    const an = document.getElementById(`an${i}`);
+    if(i < autoActive){
+      an.style.background = 'rgba(0,255,136,0.15)';
+      an.style.borderColor = 'rgba(0,255,136,0.4)';
+      an.style.color = '#00ff88';
+    } else {
+      an.style.background = 'rgba(255,255,255,0.03)';
+      an.style.borderColor = 'rgba(255,255,255,0.1)';
+      an.style.color = '#555';
+    }
+  });
+
+  const savings = Math.round(easeInOut(t) * 412000);
+  document.getElementById('savingsAmount').textContent = '$' + savings.toLocaleString();
+  document.getElementById('savingsAmount').style.color = `hsl(${t*120},80%,60%)`;
+
+  const aiRate = Math.round(5 + easeInOut(t) * 89);
+  document.getElementById('aiSuccess').textContent = aiRate + '%';
+  document.getElementById('aiSuccess').style.color = `hsl(${t*120},80%,60%)`;
+
+  document.getElementById('docsCount').textContent = `${docsLit} / 200`;
+  document.getElementById('docsCount').style.color = `hsl(${t*120},80%,60%)`;
+
+  if(t >= 1 && !confettiTriggered){
+    confettiTriggered = true;
+    launchConfetti();
+  }
+  if(t < 1) confettiTriggered = false;
+}
+
+function launchConfetti(){
+  const container = document.getElementById('confetti');
+  for(let i=0;i<80;i++){
+    const c = document.createElement('div');
+    const colors = ['#00ff88','#00ccff','#ff00ff','#ffcc00','#ff3366'];
+    c.style.cssText = `position:fixed;width:${Math.random()*8+4}px;height:${Math.random()*8+4}px;background:${colors[Math.floor(Math.random()*5)]};left:${Math.random()*100}vw;top:-10px;border-radius:${Math.random()>0.5?'50%':'2px'};z-index:200;pointer-events:none`;
+    container.appendChild(c);
+    const duration = Math.random()*2000+2000;
+    const drift = (Math.random()-0.5)*200;
+    c.animate([
+      {transform:'translateY(0) rotate(0deg)',opacity:1},
+      {transform:`translateY(100vh) translateX(${drift}px) rotate(${Math.random()*720}deg)`,opacity:0}
+    ],{duration,easing:'cubic-bezier(0.25,0.46,0.45,0.94)'}).onfinish = ()=>c.remove();
+  }
+}
+
+slider.addEventListener('input', e => update(parseInt(e.target.value)));
+
+// Auto-play on first visit
+let autoPlaying = false;
+document.addEventListener('click', () => {
+  if(!autoPlaying && slider.value == 0){
+    autoPlaying = true;
+    let v = 0;
+    const interval = setInterval(() => {
+      v += 0.5;
+      if(v > 120){clearInterval(interval);autoPlaying=false;return}
+      slider.value = v;
+      update(v);
+    }, 30);
+    slider.addEventListener('input', () => {clearInterval(interval);autoPlaying=false}, {once:true});
+  }
+});
+
+init();
+</script>
+</body>
+</html>

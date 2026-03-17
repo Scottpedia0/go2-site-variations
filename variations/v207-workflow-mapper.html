@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 Workflow Mapper</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0f;color:#e0e0e0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.topbar{padding:14px 24px;border-bottom:1px solid #1a1a2e;display:flex;align-items:center;justify-content:space-between;background:#0d0d15}
+.topbar .logo{font-size:18px;font-weight:700;color:#fff}.topbar .logo span{color:#6c5ce7}
+.topbar .mode-toggle{display:flex;gap:2px;background:#1a1a2e;border-radius:8px;padding:2px}
+.mode-toggle button{background:none;border:none;color:#888;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:500}
+.mode-toggle button.active{background:#6c5ce7;color:#fff}
+.main{display:flex;flex:1;overflow:hidden}
+.sidebar{width:280px;border-right:1px solid #1a1a2e;padding:20px;overflow-y:auto;background:#0d0d15;flex-shrink:0}
+.sidebar h3{font-size:12px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.process-btn{width:100%;text-align:left;background:#1a1a2e;border:1px solid #252540;border-radius:10px;padding:12px 14px;color:#e0e0e0;font-size:13px;cursor:pointer;margin-bottom:8px;transition:all .2s;display:flex;align-items:center;gap:10px}
+.process-btn:hover{border-color:#6c5ce7;background:#1a1a35}
+.process-btn.active{border-color:#6c5ce7;background:#1a1a35;box-shadow:0 0 12px #6c5ce722}
+.process-btn .icon{font-size:18px;width:28px;text-align:center}
+.process-btn .info{flex:1}
+.process-btn .name{font-weight:600;font-size:13px}
+.process-btn .steps{font-size:11px;color:#888;margin-top:2px}
+.canvas-area{flex:1;position:relative;overflow:hidden}
+.canvas-area svg{width:100%;height:100%}
+.legend{position:absolute;bottom:20px;right:20px;background:#0d0d15ee;border:1px solid #252540;border-radius:10px;padding:12px 16px;display:flex;gap:16px;font-size:11px}
+.legend-item{display:flex;align-items:center;gap:6px}
+.legend-dot{width:10px;height:10px;border-radius:3px}
+.stats-panel{position:absolute;top:20px;right:20px;background:#0d0d15ee;border:1px solid #252540;border-radius:12px;padding:16px;width:220px}
+.stats-panel h4{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.stat-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1a1a2e;font-size:12px}
+.stat-row:last-child{border:none}
+.stat-row .val{color:#6c5ce7;font-weight:600}
+.stat-row .val.red{color:#e74c3c}
+.stat-row .val.green{color:#4ade80}
+.empty-state{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:#555}
+.empty-state .big{font-size:48px;margin-bottom:12px}
+.empty-state p{font-size:14px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo">Go2<span>.io</span> Workflow Mapper</div>
+  <div class="mode-toggle">
+    <button class="active" id="btnBefore" onclick="setMode('before')">Current State</button>
+    <button id="btnAfter" onclick="setMode('after')">With Go2</button>
+  </div>
+</div>
+<div class="main">
+  <div class="sidebar">
+    <h3>Select a Process</h3>
+    <div id="processList"></div>
+  </div>
+  <div class="canvas-area">
+    <svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="stats-panel" id="statsPanel" style="display:none">
+      <h4 id="statsTitle">Process Stats</h4>
+      <div id="statsContent"></div>
+    </div>
+    <div class="legend" id="legend" style="display:none">
+      <div class="legend-item"><div class="legend-dot" style="background:#e74c3c"></div>Manual / Wasteful</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#e67e22"></div>Semi-Manual</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#2ecc71"></div>Efficient</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#6c5ce7"></div>AI Automated</div>
+    </div>
+    <div class="empty-state" id="emptyState">
+      <div class="big">&#8594;</div>
+      <p>Select a business process to visualize</p>
+    </div>
+  </div>
+</div>
+<script>
+const processes=[
+  {id:'onboarding',name:'Customer Onboarding',icon:'&#128100;',
+    steps:[
+      {label:'Lead Captured',time:0,type:'auto',x:80,y:60},
+      {label:'Manual Data Entry\ninto CRM',time:12,type:'waste',x:240,y:60},
+      {label:'Send Welcome\nEmail',time:5,type:'semi',x:400,y:60},
+      {label:'Schedule\nKickoff Call',time:8,type:'waste',x:560,y:60},
+      {label:'Create Project\nin PM Tool',time:10,type:'waste',x:720,y:60},
+      {label:'Assign Team\nMembers',time:6,type:'semi',x:400,y:180},
+      {label:'Send Intake\nQuestionnaire',time:4,type:'semi',x:240,y:180},
+      {label:'Follow Up\n(if no response)',time:15,type:'waste',x:80,y:180},
+      {label:'Review & Enter\nResponses',time:20,type:'waste',x:240,y:300},
+      {label:'Configure\nAccount',time:25,type:'semi',x:400,y:300},
+      {label:'QA Check',time:10,type:'ok',x:560,y:300},
+      {label:'Launch &\nHandoff',time:5,type:'ok',x:720,y:300}
+    ],
+    afterSteps:[
+      {label:'Lead Captured',time:0,type:'auto',x:80,y:120},
+      {label:'AI Auto-Populates\nCRM',time:0,type:'ai',x:260,y:120},
+      {label:'Personalized Welcome\n(AI Generated)',time:0,type:'ai',x:440,y:120},
+      {label:'AI Schedules\nKickoff',time:0,type:'ai',x:620,y:120},
+      {label:'Auto-Create\nProject & Assign',time:0,type:'ai',x:440,y:240},
+      {label:'Smart Intake\n(Pre-filled)',time:2,type:'ok',x:260,y:240},
+      {label:'AI Configures\nAccount',time:1,type:'ai',x:440,y:360},
+      {label:'Auto QA +\nLaunch',time:1,type:'ai',x:620,y:360}
+    ],
+    connections:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10],[10,11]],
+    afterConnections:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7]],
+    totalTime:120,afterTime:4,totalSteps:12,afterStepCount:8,wasteSteps:5
+  },
+  {id:'invoice',name:'Invoice Processing',icon:'&#128196;',
+    steps:[
+      {label:'Invoice\nReceived',time:0,type:'auto',x:80,y:60},
+      {label:'Sort & Route\nto Department',time:8,type:'waste',x:240,y:60},
+      {label:'Manual Data\nExtraction',time:15,type:'waste',x:400,y:60},
+      {label:'Enter into\nAccounting System',time:10,type:'waste',x:560,y:60},
+      {label:'3-Way Match\n(PO/Receipt/Invoice)',time:20,type:'waste',x:720,y:60},
+      {label:'Flag\nDiscrepancies',time:5,type:'semi',x:720,y:180},
+      {label:'Manager\nApproval',time:48,type:'waste',x:560,y:180},
+      {label:'Schedule\nPayment',time:5,type:'semi',x:400,y:180},
+      {label:'Process\nPayment',time:2,type:'ok',x:240,y:180},
+      {label:'Update Records\n& File',time:8,type:'waste',x:80,y:180}
+    ],
+    afterSteps:[
+      {label:'Invoice\nReceived',time:0,type:'auto',x:80,y:140},
+      {label:'AI Reads &\nExtracts Data',time:0,type:'ai',x:260,y:140},
+      {label:'Auto 3-Way\nMatch',time:0,type:'ai',x:440,y:140},
+      {label:'AI Flags\nExceptions Only',time:0,type:'ai',x:620,y:140},
+      {label:'Smart Approval\n(Auto if <$500)',time:1,type:'ai',x:440,y:260},
+      {label:'Auto Payment\n& Filing',time:0,type:'ai',x:260,y:260}
+    ],
+    connections:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9]],
+    afterConnections:[[0,1],[1,2],[2,3],[3,4],[4,5]],
+    totalTime:121,afterTime:1,totalSteps:10,afterStepCount:6,wasteSteps:6
+  },
+  {id:'support',name:'Support Ticket Handling',icon:'&#127911;',
+    steps:[
+      {label:'Ticket\nSubmitted',time:0,type:'auto',x:80,y:60},
+      {label:'Manual Triage\n& Categorize',time:5,type:'waste',x:240,y:60},
+      {label:'Search Knowledge\nBase',time:8,type:'waste',x:400,y:60},
+      {label:'Check Customer\nHistory',time:6,type:'waste',x:560,y:60},
+      {label:'Switch to\nBilling Tool',time:3,type:'waste',x:720,y:60},
+      {label:'Draft\nResponse',time:12,type:'semi',x:720,y:180},
+      {label:'Internal\nEscalation',time:30,type:'waste',x:560,y:180},
+      {label:'Follow Up\nwith Customer',time:10,type:'semi',x:400,y:180},
+      {label:'Resolve &\nClose',time:3,type:'ok',x:240,y:180},
+      {label:'Manual\nReporting',time:15,type:'waste',x:80,y:180}
+    ],
+    afterSteps:[
+      {label:'Ticket\nSubmitted',time:0,type:'auto',x:80,y:140},
+      {label:'AI Auto-Triage\n& Categorize',time:0,type:'ai',x:260,y:140},
+      {label:'AI Pulls Context\n(History+KB+Billing)',time:0,type:'ai',x:440,y:140},
+      {label:'AI Drafts\nResponse',time:0,type:'ai',x:620,y:140},
+      {label:'Agent Reviews\n& Sends',time:2,type:'ok',x:440,y:260},
+      {label:'Auto-Close\n& Report',time:0,type:'ai',x:260,y:260}
+    ],
+    connections:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9]],
+    afterConnections:[[0,1],[1,2],[2,3],[3,4],[4,5]],
+    totalTime:92,afterTime:2,totalSteps:10,afterStepCount:6,wasteSteps:6
+  },
+  {id:'hiring',name:'Employee Hiring',icon:'&#128188;',
+    steps:[
+      {label:'Job Req\nApproved',time:0,type:'auto',x:80,y:60},
+      {label:'Write Job\nDescription',time:45,type:'semi',x:240,y:60},
+      {label:'Post to\nJob Boards',time:20,type:'waste',x:400,y:60},
+      {label:'Screen\nResumes',time:120,type:'waste',x:560,y:60},
+      {label:'Schedule\nInterviews',time:30,type:'waste',x:720,y:60},
+      {label:'Conduct\nInterviews',time:60,type:'ok',x:720,y:180},
+      {label:'Collect\nFeedback',time:20,type:'waste',x:560,y:180},
+      {label:'Check\nReferences',time:40,type:'semi',x:400,y:180},
+      {label:'Generate\nOffer Letter',time:15,type:'waste',x:240,y:180},
+      {label:'Onboarding\nPaperwork',time:30,type:'waste',x:80,y:180}
+    ],
+    afterSteps:[
+      {label:'Job Req\nApproved',time:0,type:'auto',x:80,y:140},
+      {label:'AI Generates\nJob Description',time:2,type:'ai',x:260,y:140},
+      {label:'Auto-Post to\nAll Boards',time:0,type:'ai',x:440,y:140},
+      {label:'AI Screens &\nRanks Candidates',time:0,type:'ai',x:620,y:140},
+      {label:'AI Schedules\nTop Candidates',time:0,type:'ai',x:440,y:260},
+      {label:'Conduct\nInterviews',time:60,type:'ok',x:260,y:260},
+      {label:'AI Collects &\nSummarizes Feedback',time:0,type:'ai',x:440,y:380},
+      {label:'Auto Offer +\nOnboarding',time:1,type:'ai',x:620,y:380}
+    ],
+    connections:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9]],
+    afterConnections:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7]],
+    totalTime:380,afterTime:63,totalSteps:10,afterStepCount:8,wasteSteps:6
+  }
+];
+
+let currentProcess=null,mode='before';
+const svg=document.getElementById('svg');
+const typeColors={waste:'#e74c3c',semi:'#e67e22',ok:'#2ecc71',auto:'#888',ai:'#6c5ce7'};
+
+function init(){
+  const list=document.getElementById('processList');
+  processes.forEach(p=>{
+    const btn=document.createElement('button');
+    btn.className='process-btn';btn.id='pb-'+p.id;
+    btn.innerHTML=`<div class="icon">${p.icon}</div><div class="info"><div class="name">${p.name}</div><div class="steps">${p.totalSteps} steps &middot; ${p.totalTime} min avg</div></div>`;
+    btn.onclick=()=>selectProcess(p);
+    list.appendChild(btn);
+  });
+}
+
+function selectProcess(p){
+  currentProcess=p;
+  document.querySelectorAll('.process-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pb-'+p.id).classList.add('active');
+  document.getElementById('emptyState').style.display='none';
+  document.getElementById('legend').style.display='flex';
+  document.getElementById('statsPanel').style.display='block';
+  drawProcess();
+}
+
+function setMode(m){
+  mode=m;
+  document.getElementById('btnBefore').classList.toggle('active',m==='before');
+  document.getElementById('btnAfter').classList.toggle('active',m==='after');
+  if(currentProcess)drawProcess();
+}
+
+function drawProcess(){
+  const p=currentProcess;
+  const steps=mode==='before'?p.steps:p.afterSteps;
+  const conns=mode==='before'?p.connections:p.afterConnections;
+  const svgRect=svg.getBoundingClientRect();
+  const W=svgRect.width,H=svgRect.height;
+  const scaleX=W/860,scaleY=H/440;
+  const sc=Math.min(scaleX,scaleY,1.2);
+  const offX=(W-860*sc)/2,offY=(H-440*sc)/2+20;
+
+  let html=`<defs>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <marker id="arrow" viewBox="0 0 10 6" refX="10" refY="3" markerWidth="8" markerHeight="6" orient="auto"><path d="M0,0 L10,3 L0,6" fill="#444"/></marker>
+  </defs>`;
+
+  // Draw connections
+  conns.forEach(([a,b],i)=>{
+    const sa=steps[a],sb=steps[b];
+    const x1=(sa.x+60)*sc+offX,y1=(sa.y+25)*sc+offY;
+    const x2=(sb.x+60)*sc+offX,y2=(sb.y+25)*sc+offY;
+    const delay=i*0.15;
+    html+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#333" stroke-width="2" marker-end="url(#arrow)" opacity="0">
+      <animate attributeName="opacity" from="0" to="1" begin="${delay}s" dur="0.3s" fill="freeze"/>
+    </line>`;
+  });
+
+  // Draw nodes
+  steps.forEach((s,i)=>{
+    const x=s.x*sc+offX,y=s.y*sc+offY;
+    const w=120*sc,h=50*sc;
+    const col=typeColors[s.type];
+    const delay=i*0.15;
+    const lines=s.label.split('\n');
+    html+=`<g opacity="0"><animate attributeName="opacity" from="0" to="1" begin="${delay}s" dur="0.4s" fill="freeze"/>
+      <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${6*sc}" fill="#12121e" stroke="${col}" stroke-width="2" filter="url(#glow)"/>
+      ${lines.map((l,li)=>`<text x="${x+w/2}" y="${y+h/2+(li-(lines.length-1)/2)*14*sc}" text-anchor="middle" dominant-baseline="middle" fill="#e0e0e0" font-size="${11*sc}" font-family="sans-serif">${l}</text>`).join('')}
+      ${s.time>0?`<text x="${x+w-4*sc}" y="${y+h+12*sc}" text-anchor="end" fill="${col}" font-size="${9*sc}" font-family="sans-serif" font-weight="600">${s.time} min</text>`:''}
+      ${s.type==='ai'?`<text x="${x+4*sc}" y="${y-4*sc}" fill="#6c5ce7" font-size="${9*sc}" font-family="sans-serif" font-weight="700">AI</text>`:''}
+    </g>`;
+  });
+
+  svg.innerHTML=html;
+  updateStats();
+}
+
+function updateStats(){
+  const p=currentProcess;
+  const panel=document.getElementById('statsContent');
+  document.getElementById('statsTitle').textContent=p.name;
+  if(mode==='before'){
+    panel.innerHTML=`
+      <div class="stat-row"><span>Total Steps</span><span class="val">${p.totalSteps}</span></div>
+      <div class="stat-row"><span>Total Time</span><span class="val red">${p.totalTime} min</span></div>
+      <div class="stat-row"><span>Manual Steps</span><span class="val red">${p.wasteSteps}</span></div>
+      <div class="stat-row"><span>Waste Ratio</span><span class="val red">${Math.round(p.wasteSteps/p.totalSteps*100)}%</span></div>
+      <div class="stat-row" style="margin-top:8px;padding-top:8px;border-top:1px solid #252540"><span style="color:#6c5ce7;font-weight:600">Switch to "With Go2" &rarr;</span></div>
+    `;
+  } else {
+    const timeSaved=p.totalTime-p.afterTime;
+    const stepsSaved=p.totalSteps-p.afterStepCount;
+    panel.innerHTML=`
+      <div class="stat-row"><span>Steps</span><span class="val green">${p.afterStepCount} <span style="color:#888;font-size:10px">(was ${p.totalSteps})</span></span></div>
+      <div class="stat-row"><span>Time</span><span class="val green">${p.afterTime} min <span style="color:#888;font-size:10px">(was ${p.totalTime})</span></span></div>
+      <div class="stat-row"><span>Time Saved</span><span class="val green">${Math.round(timeSaved/p.totalTime*100)}%</span></div>
+      <div class="stat-row"><span>AI Automated</span><span class="val" style="color:#6c5ce7">${p.afterSteps.filter(s=>s.type==='ai').length} steps</span></div>
+      <div class="stat-row"><span>Human Needed</span><span class="val">${p.afterSteps.filter(s=>s.type==='ok').length} steps</span></div>
+    `;
+  }
+}
+
+window.addEventListener('resize',()=>{if(currentProcess)drawProcess()});
+init();
+</script>
+</body>
+</html>

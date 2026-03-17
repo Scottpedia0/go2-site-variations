@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI War Room - Go2 Operation: AI Rescue</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@font-face{font-family:'Mono';src:local('Courier New')}
+body{font-family:'Courier New',monospace;background:#0a120a;color:#33ff33;overflow:hidden;height:100vh}
+.scanline{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:1000;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,20,0,0.15) 2px,rgba(0,20,0,0.15) 4px)}
+.crt-flicker{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:999;animation:flicker 0.15s infinite alternate}
+@keyframes flicker{from{opacity:0.98}to{opacity:1}}
+.ticker{position:fixed;top:0;left:0;right:0;background:#1a0000;border-bottom:2px solid #ff3333;padding:8px 20px;z-index:100;display:flex;align-items:center;gap:20px;font-size:12px}
+.ticker-alert{color:#ff3333;font-weight:bold;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.ticker-scroll{flex:1;overflow:hidden;white-space:nowrap;color:#ff8833}
+.ticker-scroll span{display:inline-block;animation:scroll 30s linear infinite}
+@keyframes scroll{from{transform:translateX(100%)}to{transform:translateX(-100%)}}
+.ticker-time{color:#33ff33;font-weight:bold}
+.layout{display:grid;grid-template-columns:280px 1fr 280px;grid-template-rows:1fr;height:calc(100vh - 36px);margin-top:36px}
+.sidebar{padding:12px;border-right:1px solid #1a3a1a;overflow-y:auto;background:#0a0f0a}
+.sidebar-right{border-right:none;border-left:1px solid #1a3a1a}
+.sidebar h3{color:#ff8833;font-size:11px;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #1a3a1a}
+.main{display:flex;flex-direction:column;overflow:hidden}
+.org-map{flex:1;position:relative;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);gap:8px;padding:12px}
+.dept-node{border:1px solid #1a3a1a;border-radius:4px;padding:10px;position:relative;transition:all 1s;cursor:pointer}
+.dept-node.critical{border-color:#ff3333;background:rgba(255,0,0,0.05);box-shadow:0 0 20px rgba(255,0,0,0.15)}
+.dept-node.warning{border-color:#ff8833;background:rgba(255,136,0,0.05);box-shadow:0 0 15px rgba(255,136,0,0.1)}
+.dept-node.scanning{border-color:#ffcc00;background:rgba(255,204,0,0.05);animation:scan-pulse 2s infinite}
+@keyframes scan-pulse{0%,100%{box-shadow:0 0 5px rgba(255,204,0,0.1)}50%{box-shadow:0 0 25px rgba(255,204,0,0.3)}}
+.dept-node.coaching{border-color:#88cc00;background:rgba(136,204,0,0.05);box-shadow:0 0 15px rgba(136,204,0,0.1)}
+.dept-node.secured{border-color:#33ff33;background:rgba(0,255,0,0.05);box-shadow:0 0 20px rgba(0,255,0,0.15)}
+.dept-name{font-size:11px;font-weight:bold;margin-bottom:6px;text-transform:uppercase}
+.dept-status{font-size:9px;color:#888;margin-bottom:4px}
+.dept-bar{height:3px;background:#1a3a1a;border-radius:2px;margin-top:6px}
+.dept-bar-fill{height:100%;border-radius:2px;transition:all 1s}
+.dept-workers{font-size:9px;color:#666;margin-top:4px}
+.dept-indicator{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;transition:all 1s}
+.terminal{height:200px;background:#050a05;border-top:1px solid #1a3a1a;padding:8px 12px;overflow-y:auto;font-size:11px;line-height:1.6}
+.terminal-line{opacity:0;animation:termIn 0.3s forwards}
+@keyframes termIn{to{opacity:1}}
+.terminal-line.error{color:#ff3333}
+.terminal-line.warning{color:#ff8833}
+.terminal-line.success{color:#33ff33}
+.terminal-line.info{color:#33ccff}
+.terminal-line.system{color:#888}
+.briefing{margin-bottom:16px}
+.briefing-item{font-size:11px;padding:6px 0;border-bottom:1px solid #0a1a0a;display:flex;justify-content:space-between}
+.briefing-label{color:#888}
+.briefing-value{font-weight:bold}
+.briefing-value.red{color:#ff3333}
+.briefing-value.yellow{color:#ffcc00}
+.briefing-value.green{color:#33ff33}
+.progress-section{margin-bottom:16px}
+.progress-item{margin-bottom:8px}
+.progress-label{font-size:10px;color:#888;margin-bottom:3px;display:flex;justify-content:space-between}
+.progress-bar{height:4px;background:#1a3a1a;border-radius:2px}
+.progress-fill{height:100%;border-radius:2px;transition:width 1s,background 1s}
+.alert-feed{font-size:10px}
+.alert-item{padding:6px 0;border-bottom:1px solid #0a1a0a;display:flex;gap:6px;align-items:flex-start}
+.alert-time{color:#555;min-width:50px}
+.alert-text{flex:1}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px}
+.stat-box{background:#0a1a0a;border:1px solid #1a3a1a;border-radius:4px;padding:8px;text-align:center}
+.stat-value{font-size:18px;font-weight:bold;color:#33ff33}
+.stat-label{font-size:8px;color:#888;text-transform:uppercase;margin-top:2px}
+.controls-bar{position:fixed;bottom:0;left:0;right:0;background:#0a0f0a;border-top:2px solid #1a3a1a;padding:8px 20px;display:flex;gap:10px;z-index:100}
+.ctrl-btn{background:#1a3a1a;border:1px solid #33ff33;color:#33ff33;padding:6px 16px;font-family:'Courier New',monospace;font-size:11px;cursor:pointer;border-radius:2px;transition:all 0.2s;text-transform:uppercase}
+.ctrl-btn:hover{background:#33ff33;color:#0a120a}
+.ctrl-btn.active{background:#33ff33;color:#0a120a}
+.ctrl-btn.danger{border-color:#ff3333;color:#ff3333}
+.ctrl-btn.danger:hover{background:#ff3333;color:#0a120a}
+.ctrl-status{flex:1;text-align:right;font-size:11px;color:#888;display:flex;align-items:center;justify-content:flex-end;gap:16px}
+</style>
+</head>
+<body>
+<div class="scanline"></div>
+<div class="crt-flicker"></div>
+
+<div class="ticker">
+  <span class="ticker-alert">▓ ALERT</span>
+  <div class="ticker-scroll"><span>OPERATION: AI RESCUE — TARGET: ACME CORP — STATUS: IN PROGRESS — AI FAILURE RATE: 95% — MANUAL PROCESSES DETECTED: 247 — ESTIMATED WASTE: $2.4M/YR — GO2 AGENT DEPLOYED — SCANNING WORKFLOWS — MISSION CRITICAL —</span></div>
+  <span class="ticker-time" id="opTime">DAY 1 00:00:00</span>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <h3>📋 Mission Briefing</h3>
+    <div class="briefing">
+      <div class="briefing-item"><span class="briefing-label">Operation</span><span class="briefing-value">AI RESCUE</span></div>
+      <div class="briefing-item"><span class="briefing-label">Target</span><span class="briefing-value">ACME CORP</span></div>
+      <div class="briefing-item"><span class="briefing-label">Employees</span><span class="briefing-value">247</span></div>
+      <div class="briefing-item"><span class="briefing-label">Failed AI Projects</span><span class="briefing-value red" id="failedAI">4</span></div>
+      <div class="briefing-item"><span class="briefing-label">$ Wasted on AI</span><span class="briefing-value red" id="wastedAI">$820K</span></div>
+      <div class="briefing-item"><span class="briefing-label">Documented Processes</span><span class="briefing-value red" id="docProc">12 / 247</span></div>
+      <div class="briefing-item"><span class="briefing-label">Automation Level</span><span class="briefing-value red" id="autoLevel">3%</span></div>
+      <div class="briefing-item"><span class="briefing-label">Threat Level</span><span class="briefing-value red" id="threatLevel">CRITICAL</span></div>
+    </div>
+
+    <h3>📊 Department Status</h3>
+    <div class="progress-section" id="deptProgress"></div>
+
+    <h3>🔑 Key Metrics</h3>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-value" id="procScanned">0</div><div class="stat-label">Processes Scanned</div></div>
+      <div class="stat-box"><div class="stat-value" id="coachActive">0</div><div class="stat-label">Coaching Active</div></div>
+      <div class="stat-box"><div class="stat-value" id="autoDeployed">0</div><div class="stat-label">Automations</div></div>
+      <div class="stat-box"><div class="stat-value" id="savedAmount">$0</div><div class="stat-label">Saved</div></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="org-map" id="orgMap"></div>
+    <div class="terminal" id="terminal"></div>
+  </div>
+
+  <div class="sidebar sidebar-right">
+    <h3>🚨 Live Alert Feed</h3>
+    <div class="alert-feed" id="alertFeed"></div>
+  </div>
+</div>
+
+<div class="controls-bar">
+  <button class="ctrl-btn active" id="btnStart" onclick="startOperation()">▶ START OPERATION</button>
+  <button class="ctrl-btn" onclick="speedUp()">⏩ 10X SPEED</button>
+  <button class="ctrl-btn danger" onclick="deploySurge()">⚡ DEPLOY SURGE</button>
+  <div class="ctrl-status">
+    <span>AGENTS: <span id="agentCount" style="color:#33ff33">1</span></span>
+    <span>PHASE: <span id="currentPhase" style="color:#ff8833">STANDBY</span></span>
+    <span>UPTIME: <span id="uptime" style="color:#33ff33">00:00:00</span></span>
+  </div>
+</div>
+
+<script>
+const departments = [
+  {name:'Operations',workers:42,processes:38,status:'critical',progress:0},
+  {name:'Sales',workers:31,processes:27,status:'critical',progress:0},
+  {name:'Support',workers:28,processes:44,status:'critical',progress:0},
+  {name:'Engineering',workers:56,processes:31,status:'warning',progress:0},
+  {name:'Finance',workers:18,processes:22,status:'critical',progress:0},
+  {name:'HR',workers:14,processes:19,status:'warning',progress:0},
+  {name:'Marketing',workers:22,processes:25,status:'warning',progress:0},
+  {name:'Legal',workers:8,processes:16,status:'critical',progress:0},
+  {name:'IT',workers:15,processes:12,status:'warning',progress:0},
+  {name:'Product',workers:13,processes:13,status:'warning',progress:0},
+  {name:'Procurement',workers:0,processes:0,col:'3/5',row:'3',status:'critical',progress:0,workers:10,processes:11},
+  {name:'Executive',workers:0,processes:0,col:'1/3',row:'3',status:'critical',progress:0,workers:5,processes:9}
+];
+
+let speed = 1;
+let running = false;
+let tick = 0;
+let totalProcesses = 247;
+let scanned = 0, coaching = 0, automated = 0, saved = 0;
+let dayCount = 1;
+let alerts = [];
+
+function initMap() {
+  const map = document.getElementById('orgMap');
+  departments.forEach((d, i) => {
+    const node = document.createElement('div');
+    node.className = `dept-node ${d.status}`;
+    node.id = `dept${i}`;
+    node.innerHTML = `
+      <div class="dept-indicator" style="background:${d.status === 'critical' ? '#ff3333' : '#ff8833'}"></div>
+      <div class="dept-name">${d.name}</div>
+      <div class="dept-status" id="ds${i}">STATUS: ${d.status.toUpperCase()}</div>
+      <div class="dept-workers">${d.workers} workers / ${d.processes} processes</div>
+      <div class="dept-bar"><div class="dept-bar-fill" id="db${i}" style="width:0%;background:#ff3333"></div></div>
+    `;
+    node.onclick = () => drillDept(i);
+    map.appendChild(node);
+  });
+
+  const dp = document.getElementById('deptProgress');
+  departments.forEach((d, i) => {
+    dp.innerHTML += `<div class="progress-item"><div class="progress-label"><span>${d.name}</span><span id="pp${i}">0%</span></div><div class="progress-bar"><div class="progress-fill" id="pf${i}" style="width:0%;background:#ff3333"></div></div></div>`;
+  });
+}
+
+function termLog(text, cls = '') {
+  const t = document.getElementById('terminal');
+  const line = document.createElement('div');
+  line.className = `terminal-line ${cls}`;
+  const time = `[${String(dayCount).padStart(2,'0')}:${String(Math.floor(tick/60)%24).padStart(2,'0')}:${String(tick%60).padStart(2,'0')}]`;
+  line.textContent = `${time} ${text}`;
+  t.appendChild(line);
+  if (t.children.length > 200) t.children[0].remove();
+  t.scrollTop = t.scrollHeight;
+}
+
+function addAlert(text, type = '') {
+  const feed = document.getElementById('alertFeed');
+  const item = document.createElement('div');
+  item.className = 'alert-item';
+  item.style.animation = 'termIn 0.3s forwards';
+  item.innerHTML = `<span class="alert-time">D${dayCount}</span><span class="alert-text" style="color:${type === 'error' ? '#ff3333' : type === 'success' ? '#33ff33' : type === 'warning' ? '#ff8833' : '#33ccff'}">${text}</span>`;
+  feed.insertBefore(item, feed.firstChild);
+  if (feed.children.length > 50) feed.lastChild.remove();
+}
+
+function drillDept(i) {
+  const d = departments[i];
+  termLog(`DRILL INTO: ${d.name.toUpperCase()} — ${d.workers} workers, ${d.processes} processes, ${d.progress}% scanned`, 'info');
+}
+
+function updateDept(i, progress) {
+  const d = departments[i];
+  d.progress = Math.min(progress, 100);
+  const node = document.getElementById(`dept${i}`);
+  const fill = document.getElementById(`db${i}`);
+  const statusEl = document.getElementById(`ds${i}`);
+  const progLabel = document.getElementById(`pp${i}`);
+  const progFill = document.getElementById(`pf${i}`);
+
+  let status, color, cls;
+  if (d.progress < 20) { status = 'CRITICAL'; color = '#ff3333'; cls = 'critical'; }
+  else if (d.progress < 40) { status = 'SCANNING'; color = '#ffcc00'; cls = 'scanning'; }
+  else if (d.progress < 70) { status = 'COACHING'; color = '#88cc00'; cls = 'coaching'; }
+  else if (d.progress < 95) { status = 'COACHING'; color = '#88cc00'; cls = 'coaching'; }
+  else { status = 'SECURED'; color = '#33ff33'; cls = 'secured'; }
+
+  node.className = `dept-node ${cls}`;
+  node.querySelector('.dept-indicator').style.background = color;
+  statusEl.textContent = `STATUS: ${status}`;
+  statusEl.style.color = color;
+  fill.style.width = d.progress + '%';
+  fill.style.background = color;
+  progLabel.textContent = d.progress + '%';
+  progFill.style.width = d.progress + '%';
+  progFill.style.background = color;
+}
+
+const terminalMessages = {
+  scanning: [
+    'Scanning workflow patterns in {dept}...',
+    'Identified {n} manual data entry sequences in {dept}',
+    'Mapping decision trees for {dept} approval chain',
+    'Detected undocumented process: {dept} → manual CSV export → email',
+    'Found knowledge silo: only 1 person knows {dept} reconciliation',
+    'Capturing screen workflows for {dept} team ({n} workers)',
+    '{dept}: {n} redundant copy-paste operations detected per day',
+    'Process map generated: {dept} has {n} unique workflows',
+  ],
+  coaching: [
+    'COACHING: {dept} — suggesting keyboard shortcuts (est. 14 min/day saved)',
+    'COACHING: {dept} — real-time guidance on new CRM workflow',
+    'COACHING: {dept} worker completed optimized path — 3x faster',
+    '{dept} team adoption: {n}% of workers using coached workflows',
+    'COACHING: {dept} — identified faster data entry pattern',
+    'Knowledge capture: {dept} expert process documented automatically',
+  ],
+  automating: [
+    'AUTOMATION DEPLOYED: {dept} — invoice data extraction (was 45 min, now 0)',
+    'AUTOMATION DEPLOYED: {dept} — customer email routing (was manual triage)',
+    'AI AGENT TRAINED: {dept} report generation using captured workflows',
+    '{dept}: {n} hours/week reclaimed through automation',
+    'AUTOMATION: {dept} approval chain reduced from 5 days to 2 hours',
+    'AI AGENT: {dept} — handling tier-1 queries using documented processes',
+  ]
+};
+
+function randomMsg(phase, dept) {
+  const msgs = terminalMessages[phase];
+  let msg = msgs[Math.floor(Math.random() * msgs.length)];
+  msg = msg.replace('{dept}', dept).replace('{n}', Math.floor(Math.random() * 40 + 5));
+  return msg;
+}
+
+let interval;
+function startOperation() {
+  if (running) return;
+  running = true;
+  document.getElementById('btnStart').textContent = '▶ RUNNING';
+  document.getElementById('currentPhase').textContent = 'SCANNING';
+  document.getElementById('currentPhase').style.color = '#ffcc00';
+
+  termLog('═══════════════════════════════════════════════', 'system');
+  termLog('  OPERATION: AI RESCUE — INITIATED', 'success');
+  termLog('  Go2 Agent v4.2 deployed to ACME CORP network', 'info');
+  termLog('  Beginning full organizational scan...', 'info');
+  termLog('═══════════════════════════════════════════════', 'system');
+  addAlert('Operation AI Rescue initiated', 'success');
+
+  interval = setInterval(gameTick, 100);
+}
+
+function gameTick() {
+  tick += speed;
+  const totalTicks = 3600; // full operation
+  const progress = Math.min(tick / totalTicks, 1);
+
+  // Update operation time
+  dayCount = Math.floor(progress * 90) + 1;
+  document.getElementById('opTime').textContent = `DAY ${dayCount} ${String(Math.floor((tick*2)%24)).padStart(2,'0')}:${String(tick%60).padStart(2,'0')}:00`;
+
+  // Update departments progressively
+  departments.forEach((d, i) => {
+    const deptDelay = i * 0.05;
+    const deptProgress = Math.max(0, Math.min(100, ((progress - deptDelay) / (1 - deptDelay)) * 100));
+    updateDept(i, Math.floor(deptProgress));
+  });
+
+  // Terminal output
+  if (tick % Math.max(1, Math.floor(30/speed)) === 0) {
+    const deptIdx = Math.floor(Math.random() * departments.length);
+    const dept = departments[deptIdx];
+    let phase, cls;
+    if (dept.progress < 30) { phase = 'scanning'; cls = 'warning'; }
+    else if (dept.progress < 70) { phase = 'coaching'; cls = 'info'; }
+    else { phase = 'automating'; cls = 'success'; }
+    termLog(randomMsg(phase, dept.name), cls);
+  }
+
+  // Alerts
+  if (tick % Math.max(1, Math.floor(80/speed)) === 0) {
+    const alertTypes = [
+      ['New process documented automatically', 'success'],
+      ['Knowledge silo risk identified', 'warning'],
+      ['Automation opportunity: $12K/yr savings', 'success'],
+      ['Worker coaching acceptance: 94%', 'success'],
+      ['Critical dependency: single point of failure', 'error'],
+      ['AI agent trained on captured workflow', 'success'],
+      ['Manual process eliminated', 'success'],
+    ];
+    const a = alertTypes[Math.floor(Math.random() * alertTypes.length)];
+    addAlert(a[0], a[1]);
+  }
+
+  // Update metrics
+  scanned = Math.floor(progress * totalProcesses);
+  coaching = Math.floor(Math.max(0, progress - 0.15) * 180);
+  automated = Math.floor(Math.max(0, progress - 0.35) * 85);
+  saved = Math.floor(Math.max(0, progress - 0.2) * 412000);
+
+  document.getElementById('procScanned').textContent = scanned;
+  document.getElementById('coachActive').textContent = coaching;
+  document.getElementById('autoDeployed').textContent = automated;
+  document.getElementById('savedAmount').textContent = '$' + (saved > 1000 ? Math.floor(saved/1000) + 'K' : saved);
+  document.getElementById('agentCount').textContent = Math.floor(1 + progress * 11);
+
+  // Update briefing
+  const docPct = Math.floor(progress * 100);
+  document.getElementById('docProc').textContent = `${scanned} / 247`;
+  document.getElementById('docProc').style.color = docPct > 70 ? '#33ff33' : docPct > 30 ? '#ffcc00' : '#ff3333';
+  document.getElementById('autoLevel').textContent = Math.floor(progress * 67) + '%';
+  document.getElementById('autoLevel').style.color = progress > 0.5 ? '#33ff33' : '#ff8833';
+
+  if (progress > 0.3) { document.getElementById('currentPhase').textContent = 'COACHING'; document.getElementById('currentPhase').style.color = '#88cc00'; }
+  if (progress > 0.6) { document.getElementById('currentPhase').textContent = 'AUTOMATING'; document.getElementById('currentPhase').style.color = '#33ff33'; }
+  if (progress > 0.9) { document.getElementById('threatLevel').textContent = 'NEUTRALIZED'; document.getElementById('threatLevel').style.color = '#33ff33'; }
+
+  // Uptime
+  const ut = Math.floor(tick/10);
+  document.getElementById('uptime').textContent = `${String(Math.floor(ut/3600)).padStart(2,'0')}:${String(Math.floor(ut/60)%60).padStart(2,'0')}:${String(ut%60).padStart(2,'0')}`;
+
+  if (progress >= 1) {
+    clearInterval(interval);
+    termLog('═══════════════════════════════════════════════', 'system');
+    termLog('  OPERATION: AI RESCUE — COMPLETE', 'success');
+    termLog('  All departments secured. $412K annual savings identified.', 'success');
+    termLog('  247 processes documented. 85 automations deployed.', 'success');
+    termLog('  AI failure rate: 0% (was 95%)', 'success');
+    termLog('═══════════════════════════════════════════════', 'system');
+    addAlert('OPERATION COMPLETE — ALL DEPARTMENTS SECURED', 'success');
+    document.getElementById('currentPhase').textContent = 'COMPLETE';
+    document.getElementById('btnStart').textContent = '✓ COMPLETE';
+  }
+}
+
+function speedUp() {
+  speed = speed === 1 ? 10 : 1;
+  document.querySelectorAll('.ctrl-btn')[1].classList.toggle('active');
+}
+
+function deploySurge() {
+  if (!running) return;
+  termLog('⚡ SURGE DEPLOYMENT — All agents activated simultaneously', 'success');
+  addAlert('SURGE: All 12 agents deployed in parallel', 'success');
+  speed = 20;
+  setTimeout(() => speed = Math.max(speed/2, 1), 5000);
+}
+
+initMap();
+</script>
+</body>
+</html>

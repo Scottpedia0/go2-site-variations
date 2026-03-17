@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 | The AI ROI Adventure</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0a; color: #33ff33; font-family: 'VT323', monospace; font-size: 18px; line-height: 1.6; min-height: 100vh; overflow: hidden; }
+  #crt { position: fixed; inset: 0; display: flex; flex-direction: column; padding: 20px; }
+  #crt::before { content: ''; position: fixed; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 1px, transparent 1px, transparent 3px); pointer-events: none; z-index: 10; }
+  #crt::after { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.6) 100%); pointer-events: none; z-index: 10; }
+  #output { flex: 1; overflow-y: auto; padding-bottom: 10px; white-space: pre-wrap; word-wrap: break-word; }
+  #output::-webkit-scrollbar { width: 8px; }
+  #output::-webkit-scrollbar-track { background: #111; }
+  #output::-webkit-scrollbar-thumb { background: #33ff33; }
+  #input-line { display: flex; align-items: center; border-top: 1px solid #1a3a1a; padding-top: 10px; flex-shrink: 0; }
+  #prompt { color: #33ff33; margin-right: 8px; }
+  #input { background: none; border: none; color: #33ff33; font-family: 'VT323', monospace; font-size: 18px; flex: 1; outline: none; caret-color: #33ff33; }
+  .highlight { color: #ffff33; }
+  .error { color: #ff3333; }
+  .item { color: #33ffff; }
+  .npc { color: #ff9933; }
+  .success { color: #33ff99; }
+  .dim { color: #1a7a1a; }
+  .header { color: #33ff33; font-size: 20px; }
+  @keyframes blink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+  #cursor-blink { animation: blink 1s infinite; }
+  #boot-screen { position: fixed; inset: 0; background: #0a0a0a; z-index: 100; display: flex; align-items: center; justify-content: center; flex-direction: column; font-family: 'VT323', monospace; color: #33ff33; font-size: 18px; transition: opacity 0.5s; }
+  #boot-text { white-space: pre; text-align: left; }
+</style>
+</head>
+<body>
+<div id="boot-screen"><div id="boot-text"></div></div>
+<div id="crt">
+  <div id="output"></div>
+  <div id="input-line">
+    <span id="prompt">&gt;</span>
+    <input id="input" type="text" autofocus autocomplete="off" spellcheck="false">
+    <span id="cursor-blink">_</span>
+  </div>
+</div>
+
+<script>
+const output = document.getElementById('output');
+const input = document.getElementById('input');
+const bootScreen = document.getElementById('boot-screen');
+const bootText = document.getElementById('boot-text');
+
+// --- GAME STATE ---
+let state = {
+  room: 'ceo_office',
+  inventory: [],
+  flags: {},
+  moves: 0,
+  hp: 100, // political capital
+  day: 1,
+  phase: 'boot'
+};
+
+// --- ITEMS ---
+const ITEMS = {
+  budget_proposal: { name: 'Budget Proposal', desc: 'A carefully prepared $50K budget proposal for AI tooling.' },
+  workflow_data: { name: 'Workflow Data', desc: 'Spreadsheets showing how your team actually spends their time. Eye-opening.' },
+  team_survey: { name: 'Team Survey Results', desc: 'Anonymous survey. 73% of workers say they waste 2+ hours/day on repetitive tasks.' },
+  cfo_approval: { name: 'CFO Approval Memo', desc: 'Signed approval from the CFO. This is gold.' },
+  go2_demo: { name: 'Go2 Demo Access', desc: 'A live demo environment of Go2. Shows real coaching, real automations.' },
+  roi_report: { name: 'ROI Report', desc: '90-day ROI report showing 340% return. The board will love this.' },
+  team_buyin: { name: 'Team Buy-In Letter', desc: 'A letter signed by 8 team leads supporting the Go2 deployment.' },
+  automation_map: { name: 'Automation Opportunity Map', desc: 'Go2-generated map showing 14 automatable workflows.' },
+  competitor_fails: { name: 'Competitor Failure Report', desc: 'Research on why RoboTask and AIFlow failed at similar companies.' },
+  coffee: { name: 'Coffee', desc: 'Hot. Black. Essential for surviving corporate politics.' }
+};
+
+// --- ROOMS ---
+const ROOMS = {
+  ceo_office: {
+    name: "CEO's Corner Office",
+    desc: `You're standing in <span class="highlight">Marcus Chen's corner office</span>. Floor-to-ceiling windows show the city skyline. His desk is covered in reports, all highlighted in red. A framed "Move Fast" poster hangs on the wall.
+
+Marcus is pacing behind his desk, looking stressed.
+
+<span class="npc">Marcus:</span> "Look, I'm not anti-AI. We spent $200K on three different AI projects last year. RoboTask, that chatbot thing, the 'intelligent' document processor. Know what we got? Nothing. Zero ROI. The board is breathing down my neck."
+
+He drops a folder on the desk.
+
+<span class="npc">Marcus:</span> "You've got 90 days. Find an AI solution that actually works, prove ROI, or we're cutting the entire AI budget. No more experiments."
+
+Exits lead to the <span class="highlight">hallway</span> (north).
+On the desk you see a <span class="item">budget proposal</span> template.`,
+    exits: { north: 'hallway', n: 'hallway', hallway: 'hallway' },
+    items: ['budget_proposal'],
+    npcs: ['marcus']
+  },
+  hallway: {
+    name: "Executive Floor Hallway",
+    desc: `A long hallway with framed company values on the walls. "Innovation. Efficiency. Growth." The carpet is that specific shade of corporate gray.
+
+The <span class="highlight">CEO's office</span> is south. The <span class="highlight">CFO's office</span> is east. The <span class="highlight">elevator</span> leads to other floors. The <span class="highlight">break room</span> is west.`,
+    exits: { south: 'ceo_office', s: 'ceo_office', east: 'cfo_office', e: 'cfo_office', elevator: 'elevator', west: 'break_room', w: 'break_room', 'ceo': 'ceo_office', 'cfo': 'cfo_office', 'break room': 'break_room' },
+    items: [],
+    npcs: []
+  },
+  cfo_office: {
+    name: "CFO's Office",
+    desc: function() {
+      let base = `<span class="npc">Diana Park</span>, CFO, sits behind a pristine desk. Three monitors show financial dashboards. Everything is organized with surgical precision. A sign reads: "In God we trust. All others bring data."
+
+`;
+      if (!state.flags.cfo_talked) {
+        base += `<span class="npc">Diana:</span> "Another AI pitch? Let me save you time. I've seen the numbers from last year. $200K spent, $0 returned. You want more money for another experiment?"
+
+She adjusts her glasses.
+
+<span class="npc">Diana:</span> "Bring me data. Real data. Show me where we're bleeding money, show me a tool that addresses it specifically, and show me comparable companies that got ROI. Then we'll talk."`;
+      } else if (state.flags.cfo_convinced) {
+        base += `<span class="npc">Diana:</span> "I've signed the approval. Don't make me regret it."
+
+Her <span class="item">CFO approval memo</span> is on the desk.`;
+      } else {
+        base += `<span class="npc">Diana:</span> "Have you got that data yet? I don't do handwaves."`;
+      }
+      base += `\n\nExit is <span class="highlight">west</span> to the hallway.`;
+      return base;
+    },
+    exits: { west: 'hallway', w: 'hallway', hallway: 'hallway' },
+    items: [],
+    npcs: ['diana']
+  },
+  break_room: {
+    name: "Break Room",
+    desc: function() {
+      let base = `The break room smells like burnt coffee and broken dreams. A motivational poster of a cat says "Hang In There!" There's a Keurig that's seen better days.
+
+`;
+      if (!state.flags.met_jake) {
+        base += `<span class="npc">Jake Morrison</span>, a frustrated team lead from Operations, is microwaving leftover pizza.
+
+<span class="npc">Jake:</span> "Hey. Sorry, just... long day. My team spent 4 hours yesterday copying data between three different systems. Manually. In 2026. I keep asking for better tools and getting told 'the budget's tight.'"
+
+He sighs.
+
+<span class="npc">Jake:</span> "If you ever find something that actually helps us — not another dashboard nobody checks — let me know. I'll rally my whole team behind it."`;
+        state.flags.met_jake = true;
+      } else if (state.flags.jake_surveyed) {
+        base += `<span class="npc">Jake:</span> "Survey results are in. I put them on the table for you. 73% of my team says they waste 2+ hours a day on repetitive garbage."
+
+There's a <span class="item">team survey</span> on the table.`;
+      } else {
+        base += `<span class="npc">Jake:</span> "Any luck finding us a real tool?"`;
+      }
+      if (!state.inventory.includes('coffee')) {
+        base += `\n\nThere's a pot of <span class="item">coffee</span> that's still warm.`;
+      }
+      base += `\n\nExit is <span class="highlight">east</span> to the hallway.`;
+      return base;
+    },
+    exits: { east: 'hallway', e: 'hallway', hallway: 'hallway' },
+    items: ['coffee'],
+    npcs: ['jake']
+  },
+  elevator: {
+    name: "Elevator Lobby",
+    desc: `You're at the elevator bank. Buttons for multiple floors.
+
+<span class="highlight">Floor 3</span> - Executive (hallway) — press <span class="item">3</span>
+<span class="highlight">Floor 2</span> - Operations & Engineering — press <span class="item">2</span>
+<span class="highlight">Floor 1</span> - Lobby & Conference Rooms — press <span class="item">1</span>`,
+    exits: { '3': 'hallway', '2': 'ops_floor', '1': 'lobby', hallway: 'hallway', up: 'hallway', down: 'lobby', ops: 'ops_floor', lobby: 'lobby' },
+    items: [],
+    npcs: []
+  },
+  ops_floor: {
+    name: "Operations Floor",
+    desc: function() {
+      let base = `Rows of desks. The sound of keyboards, sighs, and occasionally someone muttering "why won't this spreadsheet work." Monitors everywhere showing various SaaS dashboards, spreadsheets, and email.
+
+You can see <span class="highlight">Priya's desk</span> (east) — she's the excited junior dev everyone keeps dismissing. The <span class="highlight">server room</span> is south. The <span class="highlight">elevator</span> is north.`;
+      if (state.flags.go2_deployed) {
+        base += `\n\n<span class="success">Go2 coaching notifications are popping up on several screens. Workers are nodding along.</span>`;
+      }
+      return base;
+    },
+    exits: { north: 'elevator', n: 'elevator', east: 'priya_desk', e: 'priya_desk', south: 'server_room', s: 'server_room', elevator: 'elevator', priya: 'priya_desk', 'server room': 'server_room', server: 'server_room' },
+    items: [],
+    npcs: []
+  },
+  priya_desk: {
+    name: "Priya's Desk",
+    desc: function() {
+      let base = `<span class="npc">Priya Sharma</span>, junior developer, has three monitors covered in terminal windows and a "Ship It" sticker on her laptop. She's the one person in the company who's genuinely excited about AI.
+
+`;
+      if (!state.flags.priya_talked) {
+        base += `<span class="npc">Priya:</span> "Oh! Are you looking at AI tools? I've been researching this space obsessively. The reason RoboTask failed is they tried to automate without understanding our workflows first. Same with the chatbot — it was trained on generic data, not how we actually work."
+
+She pulls up her browser.
+
+<span class="npc">Priya:</span> "I found this company called Go2. They have this desktop agent — Cowork.ai — that sits on your machine and actually learns how you work before trying to automate anything. It coaches people first, THEN identifies automation opportunities from real data. It's completely different from what we tried."`;
+        state.flags.priya_talked = true;
+      } else if (state.flags.has_demo) {
+        base += `<span class="npc">Priya:</span> "The demo is running. Go show Diana and Marcus!"`;
+      } else if (state.flags.priya_asked_demo) {
+        base += `<span class="npc">Priya:</span> "I set up the Go2 demo. Here — <span class="item">Go2 demo access</span> credentials."`;
+      } else {
+        base += `<span class="npc">Priya:</span> "Ask me about Go2 anytime. Or I can set up a demo if you want."`;
+      }
+      base += `\n\nThe <span class="highlight">ops floor</span> is west.`;
+      return base;
+    },
+    exits: { west: 'ops_floor', w: 'ops_floor', ops: 'ops_floor', 'ops floor': 'ops_floor' },
+    items: [],
+    npcs: ['priya']
+  },
+  server_room: {
+    name: "Server Room",
+    desc: function() {
+      let base = `Cold. Loud. Rows of humming servers with blinking lights. The IT closet of broken dreams. Old hardware stacked in corners.
+
+`;
+      if (!state.flags.found_data) {
+        base += `There's a <span class="item">workflow data</span> export on an old laptop here — someone ran time-tracking analytics last quarter but nobody ever looked at the results.`;
+      } else {
+        base += `The old laptop sits open, data already exported.`;
+      }
+      if (state.flags.go2_deployed && !state.flags.got_automation_map) {
+        base += `\n\nThe Go2 server dashboard is showing on one of the monitors. There's a new <span class="item">automation opportunity map</span> it generated.`;
+      }
+      base += `\n\nThe <span class="highlight">ops floor</span> is north.`;
+      return base;
+    },
+    exits: { north: 'ops_floor', n: 'ops_floor', ops: 'ops_floor' },
+    items: ['workflow_data'],
+    npcs: []
+  },
+  lobby: {
+    name: "Building Lobby",
+    desc: function() {
+      let base = `The main lobby. Marble floors, a receptionist who's always on the phone, and a row of conference rooms with glass walls.
+
+The <span class="highlight">conference room</span> is east. The <span class="highlight">elevator</span> is north. There's a <span class="highlight">research station</span> (the lobby computer kiosk) to the west.`;
+      return base;
+    },
+    exits: { north: 'elevator', n: 'elevator', east: 'conference_room', e: 'conference_room', west: 'research_station', w: 'research_station', elevator: 'elevator', conference: 'conference_room', research: 'research_station', kiosk: 'research_station' },
+    items: [],
+    npcs: []
+  },
+  conference_room: {
+    name: "Main Conference Room",
+    desc: function() {
+      if (state.flags.final_presentation) {
+        return `The conference room is packed. Marcus, Diana, Jake, Priya, and several board members sit around the table.
+
+<span class="success">You present the 90-day results:
+  - 35% reduction in wasted work hours
+  - 14 workflows automated
+  - 340% ROI on Go2 investment
+  - Team satisfaction up 42%
+  - 3 AI agents now running autonomously</span>
+
+<span class="npc">Marcus:</span> "This is... actually incredible. This is what I wanted AI to look like."
+
+<span class="npc">Diana:</span> "The numbers check out. I'm approving the company-wide rollout."
+
+<span class="npc">Jake:</span> "My team wants to send you a thank-you card."
+
+<span class="npc">Priya:</span> *fist pump*
+
+<span class="success">*** YOU WIN ***</span>
+
+<span class="highlight">Final Score: ${state.moves} moves | Political Capital: ${state.hp}%</span>
+
+95% of AI implementations fail.
+You found the 5% that works.
+
+<span class="item">Go2 — AI that learns how you actually work.</span>
+<span class="dim">go2.io</span>`;
+      }
+      let base = `A large conference room with a 85" screen and whiteboard walls. Dry-erase markers scattered everywhere.`;
+      if (state.flags.go2_deployed && state.inventory.includes('roi_report')) {
+        base += `\n\n<span class="success">Everything is ready for the final presentation. Type PRESENT to deliver it.</span>`;
+      } else if (state.flags.go2_deployed) {
+        base += `\n\nYou'll need a complete <span class="item">ROI report</span> before presenting to the board.`;
+      } else {
+        base += `\n\nEmpty for now. This is where you'll eventually present results to the board.`;
+      }
+      base += `\n\nThe <span class="highlight">lobby</span> is west.`;
+      return base;
+    },
+    exits: { west: 'lobby', w: 'lobby', lobby: 'lobby' },
+    items: [],
+    npcs: []
+  },
+  research_station: {
+    name: "Lobby Research Kiosk",
+    desc: function() {
+      let base = `A standing computer kiosk in the lobby. Browser open to Google.
+
+You can <span class="highlight">research</span> topics here:
+  - Type <span class="item">research ai failures</span> to study why AI projects fail
+  - Type <span class="item">research go2</span> to learn about Go2
+  - Type <span class="item">research competitors</span> to analyze competitor failures`;
+      if (state.flags.researched_failures && !state.inventory.includes('competitor_fails')) {
+        base += `\n\nYour <span class="item">competitor failure report</span> printout is sitting by the printer.`;
+      }
+      base += `\n\nThe <span class="highlight">lobby</span> is east.`;
+      return base;
+    },
+    exits: { east: 'lobby', e: 'lobby', lobby: 'lobby' },
+    items: [],
+    npcs: []
+  }
+};
+
+// --- BOOT SEQUENCE ---
+async function boot() {
+  const lines = [
+    'NovaCraft Systems BIOS v4.2.1',
+    'Copyright (c) 2026 NovaCraft Inc.',
+    '',
+    'Memory Test: 640K OK',
+    'Detecting AI budget... $0 remaining',
+    'Loading corporate politics engine... OK',
+    'Mounting bureaucracy filesystem... OK',
+    'Initializing office simulation...',
+    '',
+    'WARNING: Previous AI implementations detected',
+    '  - RoboTask v2.1 ............ FAILED (no workflow data)',
+    '  - SmartChat Enterprise ..... FAILED (hallucinated answers)',
+    '  - DocuMind AI .............. FAILED (no one used it)',
+    '  Total spent: $200,000 | Total ROI: $0',
+    '',
+    'Loading THE AI ROI ADVENTURE...',
+    '====================================',
+  ];
+  for (const line of lines) {
+    bootText.textContent += line + '\n';
+    await sleep(80);
+  }
+  await sleep(500);
+  bootScreen.style.opacity = '0';
+  await sleep(500);
+  bootScreen.style.display = 'none';
+  state.phase = 'play';
+  printIntro();
+  input.focus();
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function printIntro() {
+  print(`<span class="header">
+ _____ _  _ ___   _   ___   ___ ___  ___   _   ___  _   _ ___ _  _ _____ _   _ ___ ___
+|_   _| || | __| / \\ |_ _| | _ / _ \\|_ _| / \\ |   \\| | / | __| \\| |_   _| | | | _ | __|
+  | | | __ | _| / _ \\  | |  |   | (_) || | / _ \\| |) \\ V /| _|| .  | | | | |_| |   | _|
+  |_| |_||_|___/_/ \\_\\|___| |_|_\\___/|___|_/ \\_|___/ \\_/ |___|_|\\_| |_|  \\___/|_|_|___|
+</span>
+<span class="dim">A Text Adventure by Go2</span>
+<span class="dim">Type HELP for commands | Type LOOK to examine your surroundings</span>
+
+============================================================
+
+You are <span class="highlight">Alex Reeves</span>, VP of Operations at <span class="highlight">NovaCraft</span>, a 40-person e-commerce company. It's Monday morning. Your CEO just called you into his office.
+
+You have <span class="item">90 days</span> to prove AI ROI or the budget gets cut forever.
+
+<span class="dim">Political Capital: ${state.hp}% | Day: ${state.day} | Moves: ${state.moves}</span>
+`);
+  look();
+}
+
+// --- OUTPUT ---
+function print(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  div.style.marginBottom = '12px';
+  output.appendChild(div);
+  output.scrollTop = output.scrollHeight;
+}
+
+function printDim(text) { print(`<span class="dim">${text}</span>`); }
+function printError(text) { print(`<span class="error">${text}</span>`); }
+function printSuccess(text) { print(`<span class="success">${text}</span>`); }
+
+// --- COMMANDS ---
+function processCommand(cmd) {
+  cmd = cmd.trim().toLowerCase();
+  if (!cmd) return;
+  state.moves++;
+  print(`<span class="dim">&gt; ${cmd}</span>`);
+
+  // Parse command
+  const parts = cmd.split(/\s+/);
+  const verb = parts[0];
+  const rest = parts.slice(1).join(' ');
+
+  // Movement
+  if (['go','move','walk','head','travel'].includes(verb)) {
+    return move(rest);
+  }
+  if (['n','s','e','w','north','south','east','west','up','down'].includes(verb)) {
+    return move(verb);
+  }
+  if (['1','2','3'].includes(verb) && state.room === 'elevator') {
+    return move(verb);
+  }
+
+  // Look
+  if (['look','l','examine','x'].includes(verb)) {
+    if (rest) return examine(rest);
+    return look();
+  }
+
+  // Take
+  if (['take','get','grab','pick'].includes(verb)) {
+    return take(rest.replace(/^up\s+/, ''));
+  }
+
+  // Inventory
+  if (['inventory','i','inv','items'].includes(verb)) {
+    return showInventory();
+  }
+
+  // Talk
+  if (['talk','speak','ask','chat'].includes(verb)) {
+    return talk(rest.replace(/^to\s+/, '').replace(/^with\s+/, ''));
+  }
+
+  // Use / Show / Give
+  if (['use','show','give','present'].includes(verb)) {
+    return use(rest, verb);
+  }
+
+  // Research
+  if (verb === 'research') {
+    return research(rest);
+  }
+
+  // Deploy
+  if (['deploy','install','setup','set'].includes(verb)) {
+    return deploy(rest);
+  }
+
+  // Survey
+  if (verb === 'survey') {
+    return survey(rest);
+  }
+
+  // Help
+  if (['help','h','?','commands'].includes(verb)) {
+    return showHelp();
+  }
+
+  // Score
+  if (verb === 'score' || verb === 'status') {
+    return showScore();
+  }
+
+  // Wait / advance time
+  if (['wait','z'].includes(verb)) {
+    return wait();
+  }
+
+  // Room-name navigation
+  const room = state.room;
+  const exits = ROOMS[room].exits;
+  if (exits[cmd] || exits[verb]) {
+    return move(cmd);
+  }
+
+  printError(`I don't understand "${cmd}". Type HELP for commands.`);
+}
+
+function move(dir) {
+  dir = dir.replace(/^go\s+/, '').replace(/^to\s+/, '');
+  const room = ROOMS[state.room];
+  const dest = room.exits[dir];
+  if (!dest) {
+    printError("You can't go that way.");
+    return;
+  }
+  state.room = dest;
+  look();
+}
+
+function look() {
+  const room = ROOMS[state.room];
+  const desc = typeof room.desc === 'function' ? room.desc() : room.desc;
+  print(`<span class="highlight">--- ${room.name} ---</span>
+${desc}
+
+<span class="dim">Political Capital: ${state.hp}% | Day: ${state.day} | Moves: ${state.moves}</span>`);
+}
+
+function examine(thing) {
+  thing = thing.replace(/^at\s+/, '');
+  // Check inventory
+  for (const key of state.inventory) {
+    const item = ITEMS[key];
+    if (item.name.toLowerCase().includes(thing) || key.includes(thing.replace(/\s+/g,'_'))) {
+      print(`<span class="item">${item.name}</span>: ${item.desc}`);
+      return;
+    }
+  }
+  // Contextual examinations
+  if (thing.includes('poster') && state.room === 'ceo_office') {
+    print('"Move Fast" — ironic, given corporate approval takes 3 weeks.');
+    return;
+  }
+  if (thing.includes('sign') && state.room === 'cfo_office') {
+    print('"In God we trust. All others bring data." Diana lives by this.');
+    return;
+  }
+  print(`You don't see anything special about "${thing}".`);
+}
+
+function take(thing) {
+  if (!thing) { printError("Take what?"); return; }
+  const room = ROOMS[state.room];
+  const key = thing.replace(/\s+/g, '_').replace(/^the\s*/, '');
+
+  // Check room items
+  for (const itemKey of room.items) {
+    const item = ITEMS[itemKey];
+    if (item && (item.name.toLowerCase().includes(thing) || itemKey.includes(key))) {
+      if (state.inventory.includes(itemKey)) {
+        print("You already have that.");
+        return;
+      }
+      state.inventory.push(itemKey);
+      room.items = room.items.filter(i => i !== itemKey);
+      printSuccess(`Taken: ${item.name}`);
+      return;
+    }
+  }
+
+  // Special takes based on flags
+  if (thing.includes('survey') && state.room === 'break_room' && state.flags.jake_surveyed && !state.inventory.includes('team_survey')) {
+    state.inventory.push('team_survey');
+    printSuccess("Taken: Team Survey Results");
+    return;
+  }
+  if (thing.includes('approval') && state.room === 'cfo_office' && state.flags.cfo_convinced && !state.inventory.includes('cfo_approval')) {
+    state.inventory.push('cfo_approval');
+    printSuccess("Taken: CFO Approval Memo");
+    return;
+  }
+  if (thing.includes('demo') && state.room === 'priya_desk' && state.flags.priya_asked_demo && !state.inventory.includes('go2_demo')) {
+    state.inventory.push('go2_demo');
+    state.flags.has_demo = true;
+    printSuccess("Taken: Go2 Demo Access");
+    return;
+  }
+  if (thing.includes('competitor') && state.room === 'research_station' && state.flags.researched_failures && !state.inventory.includes('competitor_fails')) {
+    state.inventory.push('competitor_fails');
+    printSuccess("Taken: Competitor Failure Report");
+    return;
+  }
+  if (thing.includes('automation') && state.room === 'server_room' && state.flags.go2_deployed && !state.flags.got_automation_map) {
+    state.inventory.push('automation_map');
+    state.flags.got_automation_map = true;
+    printSuccess("Taken: Automation Opportunity Map");
+    return;
+  }
+
+  printError(`You don't see "${thing}" here to take.`);
+}
+
+function showInventory() {
+  if (state.inventory.length === 0) {
+    print("You're not carrying anything.");
+    return;
+  }
+  let html = '<span class="highlight">Inventory:</span>\n';
+  for (const key of state.inventory) {
+    html += `  <span class="item">${ITEMS[key].name}</span>\n`;
+  }
+  print(html);
+}
+
+function talk(who) {
+  if (!who) { printError("Talk to whom?"); return; }
+
+  if (who.includes('marcus') && state.room === 'ceo_office') {
+    if (state.flags.go2_deployed) {
+      print(`<span class="npc">Marcus:</span> "How's the Go2 thing going? The board meeting is coming up. You better have numbers."`);
+    } else if (state.inventory.includes('go2_demo')) {
+      print(`<span class="npc">Marcus:</span> "You've got a demo? Show it to me and Diana together. Set up a meeting in the conference room... actually, just convince Diana first. If she signs off on the budget, I'm in."`);
+    } else {
+      print(`<span class="npc">Marcus:</span> "Clock's ticking. 90 days. Find something that works."`);
+    }
+    return;
+  }
+
+  if (who.includes('diana') && state.room === 'cfo_office') {
+    state.flags.cfo_talked = true;
+    if (state.flags.cfo_convinced) {
+      print(`<span class="npc">Diana:</span> "The approval is on my desk. Take it."`);
+      return;
+    }
+    // Check if player has enough evidence
+    let evidence = 0;
+    if (state.inventory.includes('workflow_data')) evidence++;
+    if (state.inventory.includes('team_survey')) evidence++;
+    if (state.inventory.includes('go2_demo')) evidence++;
+    if (state.inventory.includes('competitor_fails')) evidence++;
+    if (state.inventory.includes('budget_proposal')) evidence++;
+
+    if (evidence >= 4) {
+      print(`You lay out your evidence:
+${state.inventory.includes('workflow_data') ? '  - Workflow data showing 35% wasted time\n' : ''}${state.inventory.includes('team_survey') ? '  - Survey: 73% of workers report 2+ hrs/day wasted\n' : ''}${state.inventory.includes('go2_demo') ? '  - Live Go2 demo showing real coaching & automation\n' : ''}${state.inventory.includes('competitor_fails') ? '  - Analysis of why previous AI tools failed\n' : ''}${state.inventory.includes('budget_proposal') ? '  - Detailed budget proposal\n' : ''}
+<span class="npc">Diana</span> studies each piece carefully. Minutes pass.
+
+<span class="npc">Diana:</span> "...This is different. The desktop agent approach — capturing real workflow data before automating — that's why the others failed. They tried to automate processes they didn't understand."
+
+She pauses.
+
+<span class="npc">Diana:</span> "I'll approve $50K for a 90-day pilot. But I want weekly reports."
+
+<span class="success">Diana signs the approval memo!</span>`);
+      state.flags.cfo_convinced = true;
+      ROOMS.cfo_office.items.push('cfo_approval');
+      state.hp = Math.min(100, state.hp + 20);
+    } else if (evidence >= 2) {
+      print(`<span class="npc">Diana:</span> "You're getting there, but I need more. I want to see:
+  ${!state.inventory.includes('workflow_data') ? '- Hard data on wasted work hours\n  ' : ''}${!state.inventory.includes('team_survey') ? '- Employee survey data\n  ' : ''}${!state.inventory.includes('go2_demo') ? '- A working demo of the tool\n  ' : ''}${!state.inventory.includes('competitor_fails') ? '- Analysis of why our previous AI failed\n  ' : ''}${!state.inventory.includes('budget_proposal') ? '- A proper budget proposal\n  ' : ''}
+Come back when you have at least 4 of those."`);
+    } else {
+      print(`<span class="npc">Diana:</span> "You're coming to me with feelings, not data. I need:
+  - Hard data on wasted work hours
+  - Employee survey data
+  - A working demo of the proposed tool
+  - Analysis of why our previous AI tools failed
+  - A proper budget proposal
+
+Bring me at least 4 of those and we'll talk."
+
+<span class="dim">Hint: Explore the building. Talk to people. Gather evidence.</span>`);
+    }
+    return;
+  }
+
+  if (who.includes('jake') && state.room === 'break_room') {
+    if (state.flags.jake_surveyed) {
+      print(`<span class="npc">Jake:</span> "Survey results are on the table. The numbers are worse than I thought, honestly."`);
+    } else {
+      print(`<span class="npc">Jake:</span> "Want me to survey my team about wasted time? I've been wanting to do that anyway. Give me 5 minutes."
+
+<span class="success">Jake sends out a quick survey to his team...</span>
+<span class="success">Results: 73% report wasting 2+ hours/day on repetitive tasks.</span>`);
+      state.flags.jake_surveyed = true;
+    }
+    return;
+  }
+
+  if (who.includes('priya') && state.room === 'priya_desk') {
+    if (state.flags.has_demo) {
+      print(`<span class="npc">Priya:</span> "Go show that demo to the executives! Diana and Marcus need to see this."`);
+    } else if (state.flags.priya_talked) {
+      print(`<span class="npc">Priya:</span> "Want me to set up a Go2 demo? I can get trial access in like 2 minutes. Just say the word."
+
+<span class="dim">Type: ask priya about demo</span>`);
+      state.flags.priya_asked_demo = true;
+    }
+    return;
+  }
+
+  printError(`There's nobody called "${who}" here to talk to.`);
+}
+
+function use(thing, verb) {
+  if (!thing) { printError(`${verb} what?`); return; }
+
+  if (verb === 'present' && state.room === 'conference_room' && state.flags.go2_deployed && state.inventory.includes('roi_report')) {
+    state.flags.final_presentation = true;
+    look();
+    return;
+  }
+
+  if (thing.includes('coffee') && state.inventory.includes('coffee')) {
+    state.inventory = state.inventory.filter(i => i !== 'coffee');
+    state.hp = Math.min(100, state.hp + 5);
+    printSuccess("You drink the coffee. It's terrible but effective. +5 Political Capital.");
+    return;
+  }
+
+  printError(`You can't figure out how to use "${thing}" right now.`);
+}
+
+function research(topic) {
+  if (state.room !== 'research_station') {
+    printError("You need to be at the research station in the lobby to research.");
+    return;
+  }
+
+  if (topic.includes('fail')) {
+    print(`<span class="highlight">Research: Why AI Projects Fail</span>
+
+You find a wealth of studies:
+  - MIT/Stanford 2025: <span class="error">95% of enterprise AI implementations fail to deliver ROI</span>
+  - Top 3 reasons:
+    1. <span class="item">No workflow data</span> — companies automate processes they don't understand
+    2. <span class="item">No adoption</span> — tools imposed top-down, workers resist
+    3. <span class="item">Wrong approach</span> — jumped to automation without coaching first
+
+  - NovaCraft's failures match this pattern exactly:
+    - RoboTask: tried to automate without workflow data
+    - SmartChat: generic AI, not trained on company processes
+    - DocuMind: no adoption because no one understood the value
+
+<span class="success">This explains everything. You now have ammunition for Diana.</span>`);
+    state.flags.researched_failures = true;
+    return;
+  }
+
+  if (topic.includes('go2')) {
+    print(`<span class="highlight">Research: Go2 (go2.io)</span>
+
+Go2 takes a fundamentally different approach to enterprise AI:
+
+  <span class="item">Phase 1: Capture</span>
+  Cowork.ai desktop agent sits on each worker's machine.
+  Silently observes workflows. No disruption. No behavior change required.
+
+  <span class="item">Phase 2: Coach</span>
+  AI coaching tips in real-time. "Hey, you've done this 3 times today.
+  Here's a faster way." Workers get better before any automation.
+
+  <span class="item">Phase 3: Document</span>
+  Auto-generates process documentation from real work data.
+  No more tribal knowledge trapped in people's heads.
+
+  <span class="item">Phase 4: Automate</span>
+  Identifies automation opportunities from REAL data.
+  Not guessing — the system has seen exactly how work flows.
+
+  <span class="item">Phase 5: AI Agents</span>
+  Trains AI agents on actual work patterns. Agents that work
+  like your best employees because they learned from them.
+
+  <span class="success">Average ROI: 340% in 90 days</span>
+  <span class="success">Average time saved: 35% per worker</span>`);
+    state.flags.researched_go2 = true;
+    return;
+  }
+
+  if (topic.includes('competitor')) {
+    print(`<span class="highlight">Research: Competitor Failures at Similar Companies</span>
+
+Found 3 case studies of companies NovaCraft's size:
+
+  <span class="error">TechForward (45 employees)</span> — Spent $180K on UiPath bots.
+  Failed because processes weren't documented. Bots automated wrong steps.
+
+  <span class="error">QuickShip Co (38 employees)</span> — Deployed ChatGPT Enterprise.
+  Adoption was 12% after 6 months. Nobody knew what to ask it.
+
+  <span class="error">DigitalFirst (52 employees)</span> — Hired consultants to build custom AI.
+  18 months, $300K, delivered tool nobody wanted.
+
+  <span class="success">All three failed for the same reason: no real workflow data.</span>
+
+<span class="dim">Your printout is ready by the printer.</span>`);
+    state.flags.researched_failures = true;
+    return;
+  }
+
+  print("Try: research ai failures, research go2, or research competitors");
+}
+
+function deploy(thing) {
+  if (!thing || (!thing.includes('go2') && !thing.includes('cowork'))) {
+    printError("Deploy what? (try: deploy go2)");
+    return;
+  }
+  if (!state.inventory.includes('cfo_approval')) {
+    printError("You need CFO approval before deploying anything. Diana won't let you spend a dime without her sign-off.");
+    state.hp = Math.max(0, state.hp - 5);
+    return;
+  }
+  if (state.flags.go2_deployed) {
+    print("Go2 is already deployed!");
+    return;
+  }
+  if (state.room !== 'server_room' && state.room !== 'ops_floor') {
+    printError("You should be on the ops floor or in the server room to deploy.");
+    return;
+  }
+
+  print(`<span class="success">DEPLOYING GO2...</span>
+
+Day 1-7: Cowork.ai desktop agents installed on all 40 machines.
+  <span class="dim">Silent observation mode. Learning workflows.</span>
+
+Day 8-14: First coaching tips appear.
+  <span class="npc">Jake:</span> "Wait, it just showed me a shortcut that saves 10 minutes. Daily."
+  <span class="npc">Worker:</span> "It noticed I was copying data manually and offered a better way."
+
+Day 15-30: Process documentation auto-generated.
+  <span class="success">Go2 has mapped 47 distinct workflows across the company.</span>
+  <span class="success">Identified 14 automation opportunities worth $180K/year.</span>
+
+Day 31-60: Automations deployed.
+  <span class="success">3 workflows fully automated. Workers coached through transitions.</span>
+  <span class="success">Time savings: 35% reduction in repetitive work.</span>
+
+Day 61-90: AI agents trained and running.
+  <span class="success">2 AI agents handling order processing and inventory updates.</span>
+  <span class="success">Trained on real NovaCraft data, not generic models.</span>
+
+<span class="highlight">Go2 generates a full ROI report.</span>`);
+
+  state.flags.go2_deployed = true;
+  state.day = 90;
+  state.inventory.push('roi_report');
+
+  print(`<span class="success">New item: ROI Report</span>
+<span class="success">New item available in server room: Automation Opportunity Map</span>
+
+<span class="highlight">Time to present to the board! Head to the conference room.</span>`);
+}
+
+function survey(who) {
+  if (state.room === 'break_room') {
+    talk('jake');
+  } else {
+    printError("There's nobody here to survey.");
+  }
+}
+
+function wait() {
+  state.day++;
+  print(`<span class="dim">Time passes... Day ${state.day}.</span>`);
+  if (state.day > 90 && !state.flags.go2_deployed) {
+    print(`<span class="error">90 days have passed. Marcus pulls the AI budget entirely.
+The company falls further behind. Competitors automate. NovaCraft stagnates.
+
+*** GAME OVER ***
+
+Type RESTART to try again.</span>`);
+    state.phase = 'gameover';
+  }
+}
+
+function showHelp() {
+  print(`<span class="highlight">COMMANDS:</span>
+  <span class="item">LOOK / L</span>          — Examine your surroundings
+  <span class="item">GO [direction]</span>   — Move (north/south/east/west or room name)
+  <span class="item">TAKE [item]</span>      — Pick up an item
+  <span class="item">INVENTORY / I</span>    — Check what you're carrying
+  <span class="item">TALK TO [person]</span> — Talk to someone
+  <span class="item">EXAMINE [thing]</span>  — Look at something closely
+  <span class="item">USE [item]</span>       — Use an item
+  <span class="item">SHOW [item]</span>      — Show an item to someone present
+  <span class="item">RESEARCH [topic]</span> — Research at the lobby kiosk
+  <span class="item">DEPLOY [tool]</span>    — Deploy a tool (need approval first!)
+  <span class="item">PRESENT</span>          — Present to the board (in conference room)
+  <span class="item">SURVEY</span>           — Ask someone to run a survey
+  <span class="item">SCORE</span>            — Check your status
+  <span class="item">WAIT</span>             — Advance time
+  <span class="item">HELP</span>             — Show this help
+
+<span class="dim">HINTS: Explore all floors. Talk to everyone. Gather evidence before approaching the CFO.
+You need at least 4 pieces of evidence to convince Diana. The winning path:
+gather data → convince CFO → deploy Go2 → present results.</span>`);
+}
+
+function showScore() {
+  print(`<span class="highlight">STATUS:</span>
+  Day: ${state.day}/90
+  Moves: ${state.moves}
+  Political Capital: ${state.hp}%
+  Room: ${ROOMS[state.room].name}
+  Items: ${state.inventory.length}
+
+<span class="highlight">KEY MILESTONES:</span>
+  ${state.flags.met_jake ? '[x]' : '[ ]'} Met frustrated team lead
+  ${state.flags.priya_talked ? '[x]' : '[ ]'} Discovered Go2 via Priya
+  ${state.flags.researched_failures ? '[x]' : '[ ]'} Researched AI failure patterns
+  ${state.inventory.includes('workflow_data') ? '[x]' : '[ ]'} Found workflow data
+  ${state.inventory.includes('team_survey') ? '[x]' : '[ ]'} Gathered team survey
+  ${state.inventory.includes('go2_demo') ? '[x]' : '[ ]'} Got Go2 demo access
+  ${state.flags.cfo_convinced ? '[x]' : '[ ]'} Convinced the CFO
+  ${state.flags.go2_deployed ? '[x]' : '[ ]'} Deployed Go2
+  ${state.flags.final_presentation ? '[x]' : '[ ]'} Presented to the board`);
+}
+
+// --- INPUT HANDLER ---
+input.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    const cmd = input.value;
+    input.value = '';
+    if (state.phase === 'gameover') {
+      if (cmd.trim().toLowerCase() === 'restart') {
+        location.reload();
+      }
+      return;
+    }
+    if (state.phase === 'play') {
+      processCommand(cmd);
+    }
+  }
+});
+
+document.addEventListener('click', () => input.focus());
+
+// Start
+boot();
+</script>
+</body>
+</html>

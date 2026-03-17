@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 CLI — Terminal Experience</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#33ff33;font-family:'Fira Code',monospace;font-size:14px;overflow:hidden;height:100vh}
+#terminal{height:100vh;display:flex;flex-direction:column}
+#titlebar{background:#1a1a1a;padding:8px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #333;flex-shrink:0}
+.dot{width:12px;height:12px;border-radius:50%}
+.dot.r{background:#ff5f56}.dot.y{background:#ffbd2e}.dot.g{background:#27c93f}
+#titlebar span{color:#888;font-size:12px;margin-left:12px}
+#output{flex:1;overflow-y:auto;padding:16px;line-height:1.6}
+#output::-webkit-scrollbar{width:8px}
+#output::-webkit-scrollbar-track{background:#111}
+#output::-webkit-scrollbar-thumb{background:#333;border-radius:4px}
+#input-line{display:flex;align-items:center;padding:8px 16px;border-top:1px solid #222;flex-shrink:0;background:#0d0d0d}
+#prompt{color:#27c93f;white-space:nowrap;margin-right:8px}
+#input{background:transparent;border:none;color:#33ff33;font-family:inherit;font-size:inherit;flex:1;outline:none;caret-color:#33ff33}
+.cmd-output{margin-bottom:16px;white-space:pre-wrap;word-wrap:break-word}
+.c-green{color:#27c93f}.c-yellow{color:#ffbd2e}.c-red{color:#ff5f56}.c-cyan{color:#00d4ff}.c-blue{color:#5f87ff}.c-magenta{color:#ff79c6}.c-dim{color:#666}.c-white{color:#e0e0e0}.c-bold{font-weight:600}.c-orange{color:#ff9f43}
+.progress-bar{display:inline-block}
+@keyframes blink{0%,50%{opacity:1}51%,100%{opacity:0}}
+#cursor-blink{animation:blink 1s infinite;color:#33ff33}
+.typing{overflow:hidden;border-right:none}
+@keyframes scanline{0%{top:-100%}100%{top:100%}}
+#scanline{position:fixed;top:0;left:0;width:100%;height:4px;background:linear-gradient(transparent,rgba(51,255,51,0.03),transparent);pointer-events:none;animation:scanline 8s linear infinite;z-index:100}
+#crt{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:99;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.15) 0px,rgba(0,0,0,0.15) 1px,transparent 1px,transparent 2px)}
+</style>
+</head>
+<body>
+<div id="scanline"></div>
+<div id="crt"></div>
+<div id="terminal">
+<div id="titlebar">
+<div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+<span>go2@workspace ~ — Go2 CLI v3.2.1</span>
+</div>
+<div id="output"></div>
+<div id="input-line">
+<div id="prompt">go2@workspace:~$</div>
+<input id="input" type="text" autofocus autocomplete="off" spellcheck="false">
+</div>
+</div>
+<script>
+const output=document.getElementById('output'),input=document.getElementById('input'),DELAY=15;
+let history=[],histIdx=-1,isProcessing=false;
+
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
+function addOutput(html){
+  const div=document.createElement('div');
+  div.className='cmd-output';
+  div.innerHTML=html;
+  output.appendChild(div);
+  output.scrollTop=output.scrollHeight;
+}
+
+async function typeOutput(lines,speed=DELAY){
+  const div=document.createElement('div');
+  div.className='cmd-output';
+  output.appendChild(div);
+  for(const line of lines){
+    div.innerHTML+=line+'\n';
+    output.scrollTop=output.scrollHeight;
+    await sleep(speed);
+  }
+  return div;
+}
+
+function progressBar(pct,width=30,filled='#27c93f',empty='#333'){
+  const f=Math.round(pct/100*width);
+  let bar='<span style="color:'+filled+'">';
+  for(let i=0;i<f;i++)bar+='█';
+  bar+='</span><span style="color:'+empty+'">';
+  for(let i=f;i<width;i++)bar+='░';
+  bar+='</span>';
+  return bar+' '+pct+'%';
+}
+
+async function animateProgress(div,label,duration=2000,width=30){
+  const steps=20;
+  const interval=duration/steps;
+  for(let i=0;i<=steps;i++){
+    const pct=Math.round(i/steps*100);
+    div.innerHTML=label+' '+progressBar(pct,width);
+    output.scrollTop=output.scrollHeight;
+    await sleep(interval);
+  }
+}
+
+function table(headers,rows,colors=[]){
+  const colW=headers.map((h,i)=>Math.max(h.length,...rows.map(r=>(r[i]||'').length))+2);
+  let sep='┼',top='┬',bot='┴';
+  const hLine=colW.map(w=>'─'.repeat(w));
+  const topLine='┌'+hLine.join('┬')+'┐';
+  const midLine='├'+hLine.join('┼')+'┤';
+  const botLine='└'+hLine.join('┴')+'┘';
+  let out=topLine+'\n│';
+  headers.forEach((h,i)=>{out+='<span class="c-bold c-cyan"> '+h.padEnd(colW[i]-1)+'</span>│'});
+  out+='\n'+midLine+'\n';
+  rows.forEach(row=>{
+    out+='│';
+    row.forEach((cell,i)=>{
+      const c=colors[i]||'c-white';
+      out+='<span class="'+c+'"> '+(cell||'').padEnd(colW[i]-1)+'</span>│';
+    });
+    out+='\n';
+  });
+  out+=botLine;
+  return out;
+}
+
+const commands={
+  help:async()=>{
+    addOutput(`<span class="c-cyan c-bold">Go2 CLI v3.2.1</span> — AI Workforce Intelligence Platform
+
+<span class="c-bold c-yellow">CORE COMMANDS:</span>
+  <span class="c-green">go2 scan</span>           Scan workspace for automation opportunities
+  <span class="c-green">go2 status</span>          Show real-time team dashboard
+  <span class="c-green">go2 coach --team</span>    View AI coaching insights for your team
+  <span class="c-green">go2 coach --me</span>      View your personal coaching insights
+  <span class="c-green">go2 processes</span>       List documented business processes
+  <span class="c-green">go2 agents</span>          List deployed AI agents
+  <span class="c-green">go2 deploy-agent</span>    Deploy a new AI agent from learned patterns
+
+<span class="c-bold c-yellow">ANALYSIS:</span>
+  <span class="c-green">go2 insights</span>        Deep analytics & trends
+  <span class="c-green">go2 timeline</span>        Show today's activity timeline
+  <span class="c-green">go2 compare</span>         Compare team performance over time
+  <span class="c-green">go2 audit</span>           Security & compliance audit
+
+<span class="c-bold c-yellow">SYSTEM:</span>
+  <span class="c-green">go2 version</span>         Show version info
+  <span class="c-green">go2 config</span>          Show configuration
+  <span class="c-green">go2 connect</span>         Connect integrations
+  <span class="c-green">help</span>                Show this message
+  <span class="c-green">clear</span>               Clear terminal
+
+<span class="c-dim">Type any command to explore. Try "go2 scan" to get started.</span>`);
+  },
+
+  'go2 version':async()=>{
+    addOutput(`<span class="c-cyan">Go2 CLI</span> v3.2.1
+<span class="c-dim">Platform:</span> Cowork.ai Desktop Agent v2.1.0
+<span class="c-dim">API:</span>      api.go2.io (connected)
+<span class="c-dim">Org:</span>      Acme Corp (acme-corp-2024)
+<span class="c-dim">User:</span>     admin@acmecorp.com
+<span class="c-dim">License:</span>  Enterprise (valid through 2027-03-01)
+<span class="c-dim">Agents:</span>   4 active / 12 available
+<span class="c-dim">Workers:</span>  47 monitored / 52 total`);
+  },
+
+  'go2 scan':async()=>{
+    addOutput('<span class="c-yellow">⚡ Initiating workspace scan...</span>\n');
+    const phases=[
+      {label:'<span class="c-cyan">[1/5]</span> Analyzing application usage patterns',dur:1200},
+      {label:'<span class="c-cyan">[2/5]</span> Mapping repetitive task sequences',dur:1500},
+      {label:'<span class="c-cyan">[3/5]</span> Identifying copy-paste workflows',dur:800},
+      {label:'<span class="c-cyan">[4/5]</span> Detecting manual data entry hotspots',dur:1000},
+      {label:'<span class="c-cyan">[5/5]</span> Scoring automation opportunities',dur:600}
+    ];
+    for(const phase of phases){
+      const div=document.createElement('div');div.className='cmd-output';output.appendChild(div);
+      await animateProgress(div,phase.label,phase.dur);
+      div.innerHTML=phase.label+' '+progressBar(100)+' <span class="c-green">✓</span>';
+    }
+    addOutput('\n<span class="c-green c-bold">SCAN COMPLETE</span> — 23 automation opportunities found\n');
+    addOutput(table(
+      ['Priority','Process','Time Saved/wk','Confidence','Status'],
+      [
+        ['🔴 HIGH','Invoice data entry → NetSuite','12.4 hrs','94%','Ready to automate'],
+        ['🔴 HIGH','Email → CRM contact creation','8.2 hrs','91%','Ready to automate'],
+        ['🟡 MED','Report compilation (weekly)','6.1 hrs','87%','Needs review'],
+        ['🟡 MED','Inventory reconciliation','5.8 hrs','82%','Needs review'],
+        ['🟡 MED','Customer onboarding emails','4.3 hrs','79%','Needs review'],
+        ['🟢 LOW','Meeting notes → action items','3.1 hrs','76%','Learning'],
+        ['🟢 LOW','Expense report formatting','2.4 hrs','71%','Learning'],
+        ['🟢 LOW','Timesheet corrections','1.8 hrs','68%','Learning'],
+      ],
+      ['c-white','c-yellow','c-green','c-cyan','c-dim']
+    ));
+    addOutput('\n<span class="c-dim">Total automatable time: <span class="c-green c-bold">44.1 hours/week</span> across 8 top processes</span>\n<span class="c-dim">Estimated annual savings: <span class="c-green c-bold">$127,400</span> at average loaded cost</span>\n\n<span class="c-dim">Run <span class="c-green">go2 deploy-agent invoice-processor</span> to automate the top opportunity.</span>');
+  },
+
+  'go2 status':async()=>{
+    addOutput(`<span class="c-cyan c-bold">═══════════════════════════════════════════════════════════════</span>
+<span class="c-cyan c-bold">                    Go2 TEAM DASHBOARD</span>
+<span class="c-cyan c-bold">═══════════════════════════════════════════════════════════════</span>
+<span class="c-dim">Last updated: ${new Date().toLocaleTimeString()} | Refresh: real-time</span>
+
+<span class="c-yellow c-bold">TEAM HEALTH</span>
+  Active Workers:   <span class="c-green">42/47</span>  (5 on PTO)
+  Focus Score:      ${progressBar(78,25)} <span class="c-green">↑3% from last week</span>
+  AI Coach Tips:    <span class="c-cyan">156 delivered today</span> (89% accepted)
+  Agents Running:   <span class="c-green">4/4 healthy</span>
+
+<span class="c-yellow c-bold">TOP PERFORMERS TODAY</span>`);
+    addOutput(table(
+      ['Name','Dept','Focus','Tasks Done','AI Tips Used'],
+      [
+        ['Sarah Chen','Engineering','96%','14','8/8'],
+        ['Marcus Johnson','Sales','94%','22','6/7'],
+        ['Priya Patel','Operations','91%','18','9/10'],
+        ['Tom Williams','Finance','89%','11','5/6'],
+        ['Lisa Park','Marketing','87%','16','7/8'],
+      ],
+      ['c-white','c-dim','c-green','c-cyan','c-yellow']
+    ));
+    addOutput(`
+<span class="c-yellow c-bold">AI AGENTS STATUS</span>
+  <span class="c-green">●</span> invoice-processor     <span class="c-dim">|</span> 847 invoices today  <span class="c-dim">|</span> <span class="c-green">99.7% accuracy</span>  <span class="c-dim">|</span> 0 errors
+  <span class="c-green">●</span> crm-updater           <span class="c-dim">|</span> 234 contacts synced <span class="c-dim">|</span> <span class="c-green">98.9% accuracy</span>  <span class="c-dim">|</span> 2 flagged
+  <span class="c-green">●</span> report-compiler       <span class="c-dim">|</span> 12 reports built    <span class="c-dim">|</span> <span class="c-green">100% accuracy</span>   <span class="c-dim">|</span> 0 errors
+  <span class="c-yellow">●</span> onboarding-assistant  <span class="c-dim">|</span> 8 onboards active   <span class="c-dim">|</span> <span class="c-yellow">learning mode</span>   <span class="c-dim">|</span> human review
+
+<span class="c-yellow c-bold">SAVINGS THIS MONTH</span>
+  Hours Saved:      <span class="c-green c-bold">342 hrs</span> ($98,700 equivalent)
+  Error Reduction:  <span class="c-green">67%</span> vs. pre-Go2 baseline
+  Process Velocity: <span class="c-green">↑ 41%</span> faster task completion`);
+  },
+
+  'go2 coach --team':async()=>{
+    addOutput(`<span class="c-magenta c-bold">🧠 AI COACHING DASHBOARD — Team View</span>
+<span class="c-dim">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+
+<span class="c-yellow c-bold">TODAY'S COACHING ACTIVITY</span>
+  Tips Delivered:     <span class="c-cyan">156</span>
+  Tips Accepted:      <span class="c-green">139</span> (89.1%)
+  Tips Dismissed:     <span class="c-red">17</span> (10.9%)
+  Avg Response Time:  <span class="c-cyan">4.2 seconds</span>
+
+<span class="c-yellow c-bold">TOP COACHING THEMES</span>`);
+    addOutput(table(
+      ['Theme','Occurrences','Acceptance','Impact'],
+      [
+        ['Context switching alert','34','94%','↑ 12% focus after tip'],
+        ['Process shortcut found','28','91%','↓ 3.2 min/task avg'],
+        ['Break reminder','24','85%','↑ 8% afternoon output'],
+        ['Tool suggestion','22','88%','↓ 2 app switches/hr'],
+        ['Meeting prep nudge','18','92%','↑ meeting effectiveness'],
+        ['Documentation prompt','16','78%','↑ 34% process coverage'],
+        ['Automation candidate','14','96%','flagged for review'],
+      ],
+      ['c-white','c-cyan','c-green','c-yellow']
+    ));
+    addOutput(`
+<span class="c-yellow c-bold">SAMPLE COACHING MOMENTS</span>
+
+  <span class="c-cyan">09:14</span> <span class="c-dim">→</span> Sarah C. <span class="c-dim">|</span> <span class="c-magenta">"You've switched between Slack and your IDE 8 times</span>
+                       <span class="c-magenta"> in 12 minutes. Try: close Slack for a 25-min focus block."</span>
+                       <span class="c-green">✓ Accepted</span> — Focus score jumped from 64% to 91%
+
+  <span class="c-cyan">10:32</span> <span class="c-dim">→</span> Marcus J. <span class="c-dim">|</span> <span class="c-magenta">"I noticed you manually copy contact info from emails</span>
+                       <span class="c-magenta"> to Salesforce. Want me to automate this? I've seen</span>
+                       <span class="c-magenta"> you do it 47 times this week."</span>
+                       <span class="c-green">✓ Accepted</span> — Agent deployed, saves 2.1 hrs/week
+
+  <span class="c-cyan">14:15</span> <span class="c-dim">→</span> Priya P.  <span class="c-dim">|</span> <span class="c-magenta">"Your energy typically dips at 2pm. Quick 5-min break</span>
+                       <span class="c-magenta"> now could boost your afternoon output by 15%."</span>
+                       <span class="c-green">✓ Accepted</span> — Output up 18% vs yesterday afternoon`);
+  },
+
+  'go2 coach --me':async()=>{
+    addOutput(`<span class="c-magenta c-bold">🧠 YOUR PERSONAL AI COACH</span>
+<span class="c-dim">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+
+<span class="c-yellow c-bold">TODAY'S SNAPSHOT</span>
+  Focus Score:     ${progressBar(82,25)} <span class="c-green">Good — above your avg (76%)</span>
+  Deep Work:       <span class="c-cyan">3.2 hrs</span> of 4 hr goal  ${progressBar(80,15)}
+  Tasks Completed: <span class="c-green">11</span> / 14 planned
+  Context Switches:<span class="c-yellow"> 23</span> (target: <20)
+  Energy Level:    <span class="c-green">High</span> (based on typing/activity patterns)
+
+<span class="c-yellow c-bold">PERSONALIZED TIPS</span>
+  <span class="c-cyan">1.</span> You're most productive between <span class="c-green">9:30-11:30am</span>. Schedule deep work then.
+  <span class="c-cyan">2.</span> Slack is your #1 distraction — consider <span class="c-green">30-min DND blocks</span>.
+  <span class="c-cyan">3.</span> You spend <span class="c-yellow">34 min/day</span> on email that could be templated.
+  <span class="c-cyan">4.</span> Your code review time improved <span class="c-green">22%</span> after adopting the checklist tip.
+
+<span class="c-yellow c-bold">YOUR WEEK TREND</span>
+  Mon: <span class="c-green">████████████████████░░░░░</span> 81%
+  Tue: <span class="c-green">██████████████████░░░░░░░</span> 73%
+  Wed: <span class="c-green">████████████████████████░</span> 95%  <span class="c-yellow">⭐ Best day</span>
+  Thu: <span class="c-green">███████████████████░░░░░░</span> 76%
+  Fri: <span class="c-green">████████████████████░░░░░</span> 82%  <span class="c-dim">(today)</span>
+
+<span class="c-yellow c-bold">AUTOMATION OPPORTUNITIES (personal)</span>
+  <span class="c-red">●</span> Weekly status report — you spend 45 min every Friday. Go2 can auto-generate it.
+  <span class="c-yellow">●</span> Jira ticket updates — 12 min/day of manual status changes detected.
+  <span class="c-green">●</span> PR description writing — template detected from your pattern. Suggested.`);
+  },
+
+  'go2 processes':async()=>{
+    addOutput(`<span class="c-cyan c-bold">DOCUMENTED PROCESSES</span> — Auto-captured by Go2
+<span class="c-dim">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>`);
+    addOutput(table(
+      ['ID','Process Name','Steps','Performers','Last Run','Status'],
+      [
+        ['P-001','Invoice Processing','14','3 people','2 hrs ago','✅ Automated'],
+        ['P-002','Customer Onboarding','23','5 people','30 min ago','🔄 Partial'],
+        ['P-003','Weekly Report Build','8','2 people','3 days ago','✅ Automated'],
+        ['P-004','Inventory Check','11','4 people','1 hr ago','📋 Documented'],
+        ['P-005','New Hire Setup','31','6 people','1 day ago','📋 Documented'],
+        ['P-006','Expense Approval','7','3 people','4 hrs ago','🔄 Partial'],
+        ['P-007','Vendor Payment','9','2 people','6 hrs ago','✅ Automated'],
+        ['P-008','Bug Triage','12','4 people','15 min ago','📋 Documented'],
+        ['P-009','Sales Quote Gen','16','3 people','45 min ago','🔄 Partial'],
+        ['P-010','Month-End Close','42','8 people','28 days ago','📋 Documented'],
+      ],
+      ['c-dim','c-yellow','c-cyan','c-white','c-dim','c-white']
+    ));
+    addOutput(`\n<span class="c-dim">Total: 10 processes | 3 fully automated | 3 partially automated | 4 documented
+Go2 auto-captures process steps by watching real work — no manual documentation needed.</span>`);
+  },
+
+  'go2 agents':async()=>{
+    addOutput(`<span class="c-cyan c-bold">DEPLOYED AI AGENTS</span>
+<span class="c-dim">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>`);
+    addOutput(table(
+      ['Agent','Based On','Status','Accuracy','Tasks Today','Uptime'],
+      [
+        ['invoice-processor','P-001 (14 steps)','🟢 Active','99.7%','847','99.99%'],
+        ['crm-updater','P-002 (partial)','🟢 Active','98.9%','234','99.95%'],
+        ['report-compiler','P-003 (8 steps)','🟢 Active','100%','12','99.99%'],
+        ['onboarding-bot','P-002 (partial)','🟡 Learning','94.2%','8','99.8%'],
+      ],
+      ['c-green','c-dim','c-white','c-cyan','c-yellow','c-dim']
+    ));
+    addOutput(`
+<span class="c-yellow c-bold">AGENT DETAILS — invoice-processor</span>
+  Learned from:     Sarah Chen, Tom Williams, Lisa Park (combined patterns)
+  Training data:    2,847 observed invoice processing sessions
+  Deployment date:  2025-11-15
+  Error rate:       0.3% (all caught by human review queue)
+  Human handoffs:   12 today (unusual formats, new vendors)
+
+<span class="c-dim">Agents are trained on REAL work patterns captured by Go2's desktop agent.
+They don't guess — they replicate exactly how your best people work.</span>`);
+  },
+
+  'go2 deploy-agent':async(args)=>{
+    const name=args||'invoice-processor';
+    addOutput(`<span class="c-yellow c-bold">⚡ DEPLOYING AGENT: ${esc(name)}</span>\n`);
+    const steps=[
+      {label:'<span class="c-cyan">[1/6]</span> Loading process model from captured workflows',dur:800},
+      {label:'<span class="c-cyan">[2/6]</span> Compiling decision trees from worker patterns',dur:1200},
+      {label:'<span class="c-cyan">[3/6]</span> Training edge-case handler on exception data',dur:1500},
+      {label:'<span class="c-cyan">[4/6]</span> Setting up human review queue for low-confidence',dur:600},
+      {label:'<span class="c-cyan">[5/6]</span> Configuring monitoring & alerting',dur:500},
+      {label:'<span class="c-cyan">[6/6]</span> Running validation against historical data',dur:2000},
+    ];
+    for(const step of steps){
+      const div=document.createElement('div');div.className='cmd-output';output.appendChild(div);
+      await animateProgress(div,step.label,step.dur);
+      div.innerHTML=step.label+' '+progressBar(100)+' <span class="c-green">✓</span>';
+    }
+    addOutput(`
+<span class="c-green c-bold">✓ AGENT DEPLOYED SUCCESSFULLY</span>
+
+  Agent Name:       <span class="c-cyan">${esc(name)}</span>
+  Process Steps:    <span class="c-white">14 automated, 2 human-review</span>
+  Validation Score: <span class="c-green">99.2%</span> against 500 historical samples
+  Mode:             <span class="c-yellow">Shadow (monitoring, not acting)</span>
+
+<span class="c-yellow">⚠ Agent deployed in SHADOW MODE for safety.</span>
+  It will process tasks in parallel with humans for 48 hours.
+  If accuracy stays >98%, auto-promote to active mode.
+
+  Run <span class="c-green">go2 agents</span> to monitor.
+  Run <span class="c-green">go2 promote ${esc(name)}</span> to skip shadow period.`);
+  },
+
+  'go2 insights':async()=>{
+    addOutput(`<span class="c-cyan c-bold">📊 DEEP INSIGHTS — Last 30 Days</span>
+<span class="c-dim">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+
+<span class="c-yellow c-bold">PRODUCTIVITY TREND</span>
+  Week 1: <span class="c-dim">████████████████</span><span class="c-green">████████░░░░░░░░</span>  62% → 78%  <span class="c-green">+16%</span>
+  Week 2: <span class="c-dim">████████████████████</span><span class="c-green">████████░░░░</span>  78% → 84%  <span class="c-green">+6%</span>
+  Week 3: <span class="c-dim">████████████████████████</span><span class="c-green">████░░</span>  84% → 88%  <span class="c-green">+4%</span>
+  Week 4: <span class="c-dim">████████████████████████████</span><span class="c-green">██</span>  88% → 91%  <span class="c-green">+3%</span>
+
+<span class="c-yellow c-bold">KEY FINDINGS</span>
+  <span class="c-green">1.</span> <span class="c-bold">Meeting overload detected:</span> Avg 4.2 hrs/day in meetings for managers.
+     <span class="c-dim">→ Coaching reduced to 3.1 hrs by identifying redundant syncs.</span>
+
+  <span class="c-green">2.</span> <span class="c-bold">Tool sprawl:</span> Team uses 14 apps but 68% of work happens in 4.
+     <span class="c-dim">→ Recommended consolidation could save $2,400/mo in licenses.</span>
+
+  <span class="c-green">3.</span> <span class="c-bold">Knowledge silos:</span> 3 people hold critical process knowledge.
+     <span class="c-dim">→ Go2 auto-documented their workflows. Bus factor improved 3x.</span>
+
+  <span class="c-green">4.</span> <span class="c-bold">Peak hours misaligned:</span> Most deep work attempted during meeting-heavy blocks.
+     <span class="c-dim">→ Coaching shifted deep work to mornings. Output up 23%.</span>
+
+<span class="c-yellow c-bold">ROI SUMMARY</span>
+  Hours saved by automation:     <span class="c-green c-bold">1,247 hrs</span> ($359,575)
+  Hours saved by coaching:       <span class="c-green c-bold">834 hrs</span> ($240,405)
+  Error reduction savings:       <span class="c-green c-bold">$45,200</span>
+  License optimization:          <span class="c-green c-bold">$7,200</span>
+  <span class="c-bold c-white">─────────────────────────────────────────</span>
+  <span class="c-bold c-green">TOTAL 30-DAY ROI:                $652,380</span>
+  <span class="c-dim">Go2 subscription cost:           $4,700/mo</span>
+  <span class="c-bold c-green">Return multiple:                 138.8x</span>`);
+  },
+
+  'go2 timeline':async()=>{
+    addOutput(`<span class="c-cyan c-bold">📅 TODAY'S ACTIVITY TIMELINE</span>
+<span class="c-dim">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+
+<span class="c-dim">08:00</span> <span class="c-green">│</span> ■■■■■■░░░░ Email triage (Outlook)
+<span class="c-dim">08:30</span> <span class="c-green">│</span> ■■■■■■■■■■ <span class="c-green">Deep work</span> — Code review (VS Code)
+<span class="c-dim">09:00</span> <span class="c-green">│</span> ■■■■■■■■■■ <span class="c-green">Deep work</span> — Feature development
+<span class="c-dim">09:30</span> <span class="c-green">│</span> ■■■■■■■■■■ <span class="c-green">Deep work</span> — Feature development
+<span class="c-dim">10:00</span> <span class="c-yellow">│</span> ■■■■■■■■░░ <span class="c-yellow">Meeting</span> — Sprint standup (Zoom)
+<span class="c-dim">10:30</span> <span class="c-green">│</span> ■■■■■■■■■■ <span class="c-green">Deep work</span> — Bug fix (VS Code + Chrome)
+<span class="c-dim">11:00</span> <span class="c-green">│</span> ■■■■■■■■■■ <span class="c-green">Deep work</span> — Testing
+<span class="c-dim">11:30</span> <span class="c-red">│</span> ■■■■░░░░░░ <span class="c-red">Context switching</span> — Slack/Email/Jira
+       <span class="c-magenta">│</span>   <span class="c-magenta">🧠 Coach: "Noticed high context switching. Close Slack?"</span>
+<span class="c-dim">12:00</span> <span class="c-dim">│</span> ░░░░░░░░░░ Lunch break
+<span class="c-dim">12:30</span> <span class="c-dim">│</span> ░░░░░░░░░░ Lunch break
+<span class="c-dim">13:00</span> <span class="c-yellow">│</span> ■■■■■■■■■■ <span class="c-yellow">Meeting</span> — Design review (Figma + Zoom)
+<span class="c-dim">13:30</span> <span class="c-yellow">│</span> ■■■■■■■■░░ <span class="c-yellow">Meeting</span> — continued
+<span class="c-dim">14:00</span> <span class="c-green">│</span> ■■■■■■░░░░ Documentation (Notion)
+       <span class="c-magenta">│</span>   <span class="c-magenta">🧠 Coach: "Energy typically dips now. 5-min break?"</span>
+<span class="c-dim">14:30</span> <span class="c-green">│</span> ■■■■■■■■■■ <span class="c-green">Deep work</span> — Feature development
+<span class="c-dim">15:00</span> <span class="c-green">│</span> ■■■■■■■■■■ <span class="c-green">Deep work</span> — Feature development
+<span class="c-dim">15:30</span> <span class="c-cyan">│</span> ■■■■■■■■░░ <span class="c-cyan">Now</span> — PR review
+
+<span class="c-yellow c-bold">TODAY'S STATS</span>
+  Deep Work:          4.5 hrs (goal: 4 hrs) <span class="c-green">✓</span>
+  Meetings:           1.8 hrs
+  Context Switches:   18 (target: <20) <span class="c-green">✓</span>
+  Coach Tips Taken:   4/5`);
+  },
+
+  'go2 compare':async()=>{
+    addOutput(`<span class="c-cyan c-bold">📈 TEAM COMPARISON — This Month vs Last Month</span>
+<span class="c-dim">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>`);
+    addOutput(table(
+      ['Metric','Last Month','This Month','Change'],
+      [
+        ['Avg Focus Score','71%','84%','↑ 13%'],
+        ['Deep Work hrs/day','2.8','3.9','↑ 39%'],
+        ['Context Switches/hr','8.4','5.1','↓ 39%'],
+        ['Tasks Completed/day','127','189','↑ 49%'],
+        ['Process Errors/week','23','8','↓ 65%'],
+        ['Coaching Acceptance','74%','89%','↑ 15pp'],
+        ['Agent Tasks/day','0','1,101','NEW'],
+        ['Human Hours Saved','0','47.3/day','NEW'],
+      ],
+      ['c-white','c-dim','c-green','c-cyan']
+    ));
+  },
+
+  'go2 audit':async()=>{
+    addOutput(`<span class="c-cyan c-bold">🔒 SECURITY & COMPLIANCE AUDIT</span>
+<span class="c-dim">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+
+<span class="c-green c-bold">PRIVACY</span>
+  <span class="c-green">✓</span> All data encrypted at rest (AES-256)
+  <span class="c-green">✓</span> All data encrypted in transit (TLS 1.3)
+  <span class="c-green">✓</span> No keylogging — Go2 captures workflow patterns, not content
+  <span class="c-green">✓</span> No screenshots stored — only application metadata
+  <span class="c-green">✓</span> Personal app categories excluded from tracking
+  <span class="c-green">✓</span> GDPR-compliant data retention (90 days default)
+  <span class="c-green">✓</span> Employee dashboard — full transparency on what's captured
+
+<span class="c-green c-bold">ACCESS CONTROL</span>
+  <span class="c-green">✓</span> SSO integration active (Okta)
+  <span class="c-green">✓</span> Role-based access enforced
+  <span class="c-green">✓</span> Audit logging enabled (all admin actions)
+  <span class="c-yellow">⚠</span> 2 admin accounts without MFA — <span class="c-yellow">action recommended</span>
+
+<span class="c-green c-bold">AGENT SAFETY</span>
+  <span class="c-green">✓</span> All agents operate in sandboxed environments
+  <span class="c-green">✓</span> Human review queue for low-confidence actions
+  <span class="c-green">✓</span> Kill switch tested and functional
+  <span class="c-green">✓</span> No agent has write access to financial systems without approval
+  <span class="c-green">✓</span> Shadow mode validated before any agent goes active
+
+<span class="c-green c-bold">COMPLIANCE</span>
+  <span class="c-green">✓</span> SOC 2 Type II certified
+  <span class="c-green">✓</span> GDPR compliant
+  <span class="c-green">✓</span> CCPA compliant
+  <span class="c-green">✓</span> ISO 27001 certified
+
+<span class="c-dim">Last full audit: 2025-03-01 | Next scheduled: 2025-06-01</span>`);
+  },
+
+  'go2 config':async()=>{
+    addOutput(`<span class="c-cyan c-bold">CONFIGURATION</span>
+<span class="c-dim">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+  <span class="c-yellow">org.name</span>          = Acme Corp
+  <span class="c-yellow">org.id</span>            = acme-corp-2024
+  <span class="c-yellow">api.endpoint</span>      = https://api.go2.io/v3
+  <span class="c-yellow">api.key</span>           = go2_sk_****************************7f3a
+  <span class="c-yellow">agent.desktop</span>     = Cowork.ai v2.1.0 (connected)
+  <span class="c-yellow">coaching.mode</span>     = proactive (real-time tips)
+  <span class="c-yellow">coaching.tone</span>     = supportive (not pushy)
+  <span class="c-yellow">privacy.level</span>     = high (no content capture)
+  <span class="c-yellow">tracking.exclude</span>  = [social_media, banking, health]
+  <span class="c-yellow">data.retention</span>    = 90 days
+  <span class="c-yellow">agents.max</span>        = 12
+  <span class="c-yellow">agents.auto_promote</span> = true (after 48hr shadow)
+  <span class="c-yellow">review.threshold</span>  = 0.95 (confidence below → human review)
+  <span class="c-yellow">notifications</span>     = slack (#go2-alerts)`);
+  },
+
+  'go2 connect':async()=>{
+    addOutput(`<span class="c-cyan c-bold">INTEGRATIONS</span>
+<span class="c-dim">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+  <span class="c-green">●</span> Slack          Connected (workspace: acme-corp)
+  <span class="c-green">●</span> Salesforce      Connected (org: acme.salesforce.com)
+  <span class="c-green">●</span> NetSuite        Connected (account: 1234567)
+  <span class="c-green">●</span> Jira            Connected (site: acme.atlassian.net)
+  <span class="c-green">●</span> Google Workspace Connected (domain: acmecorp.com)
+  <span class="c-green">●</span> Okta            Connected (SSO active)
+  <span class="c-yellow">○</span> HubSpot         Available — <span class="c-dim">run</span> <span class="c-green">go2 connect hubspot</span>
+  <span class="c-yellow">○</span> Zendesk         Available — <span class="c-dim">run</span> <span class="c-green">go2 connect zendesk</span>
+  <span class="c-yellow">○</span> QuickBooks      Available — <span class="c-dim">run</span> <span class="c-green">go2 connect quickbooks</span>
+  <span class="c-yellow">○</span> Notion          Available — <span class="c-dim">run</span> <span class="c-green">go2 connect notion</span>`);
+  },
+
+  clear:async()=>{output.innerHTML=''},
+};
+
+// Easter eggs
+const eggs={
+  'sudo rm -rf /':async()=>{addOutput('<span class="c-red">Nice try. Go2 protects against destructive actions — even from admins. 😏</span>')},
+  'sudo':async()=>{addOutput('<span class="c-yellow">Go2 doesn\'t need sudo. It already has permission to make your team awesome.</span>')},
+  'vim':async()=>{addOutput('<span class="c-dim">You\'re already in a terminal that\'s hard to exit. Let\'s not make it worse.</span>')},
+  'emacs':async()=>{addOutput('<span class="c-dim">M-x butterfly... just kidding. Try <span class="c-green">go2 scan</span> instead.</span>')},
+  'ping':async()=>{addOutput('<span class="c-green">PONG!</span> 🏓 Go2 is alive and making work better.')},
+  'ls':async()=>{addOutput(`<span class="c-blue">agents/</span>   <span class="c-blue">coaching/</span>   <span class="c-blue">data/</span>   <span class="c-blue">processes/</span>   <span class="c-white">config.yaml</span>   <span class="c-white">README.md</span>`)},
+  'pwd':async()=>{addOutput('/home/go2/workspace')},
+  'whoami':async()=>{addOutput('admin@acmecorp.com (but more importantly: someone who makes great software choices)')},
+  'date':async()=>{addOutput(new Date().toString())},
+  'cowsay':async()=>{addOutput(`<span class="c-white"> ________________________
+< Go2 says: Automate it! >
+ ------------------------
+        \\   ^__^
+         \\  (oo)\\_______
+            (__)\\       )\\/\\
+                ||----w |
+                ||     ||</span>`)},
+  'matrix':async()=>{
+    addOutput('<span class="c-green">Initiating Matrix mode...</span>');
+    document.body.style.transition='all 0.5s';
+    const chars='ゴツウABCDEF0123456789@#$%';
+    let matrixDiv=document.createElement('div');
+    matrixDiv.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;z-index:200;background:#000;overflow:hidden;font-size:14px;line-height:1;';
+    document.body.appendChild(matrixDiv);
+    for(let c=0;c<60;c++){
+      const col=document.createElement('div');
+      col.style.cssText=`position:absolute;left:${c*20}px;top:${Math.random()*-500}px;color:#0f0;writing-mode:vertical-rl;animation:matdrop ${2+Math.random()*3}s linear infinite;opacity:${0.3+Math.random()*0.7}`;
+      let t='';for(let i=0;i<30;i++)t+=chars[Math.floor(Math.random()*chars.length)];
+      col.textContent=t;
+      matrixDiv.appendChild(col);
+    }
+    const style=document.createElement('style');style.textContent='@keyframes matdrop{0%{transform:translateY(-100%)}100%{transform:translateY(100vh)}}';
+    document.head.appendChild(style);
+    setTimeout(()=>{matrixDiv.remove();style.remove();addOutput('<span class="c-green">Wake up, Neo... Go2 has you.</span>');},4000);
+  },
+  'exit':async()=>{addOutput('<span class="c-yellow">You can check out any time you like, but you can never leave. 🎸</span>\n<span class="c-dim">(Just kidding. Close the tab.)</span>')},
+  'make coffee':async()=>{addOutput(`<span class="c-yellow">Brewing...</span>\n\n  <span class="c-white">   ( (
+    ) )
+  ........
+  |      |]
+  \\      /
+   \`----'</span>\n\n<span class="c-green">☕ Coffee ready. Productivity +15%</span>`)},
+  'go2 party':async()=>{
+    addOutput('<span class="c-magenta c-bold">🎉 PARTY MODE ACTIVATED 🎉</span>');
+    document.body.style.transition='all 0.3s';
+    const colors=['#ff0','#f0f','#0ff','#f00','#0f0','#00f'];
+    let i=0;
+    const interval=setInterval(()=>{
+      document.body.style.background=colors[i%colors.length];
+      i++;
+    },200);
+    setTimeout(()=>{clearInterval(interval);document.body.style.background='#0a0a0a';addOutput('<span class="c-dim">Ok, party\'s over. Back to making AI actually work.</span>');},3000);
+  },
+  'hello':async()=>{addOutput('<span class="c-cyan">Hello! I\'m Go2. I turn your team\'s real work patterns into AI agents that actually help. Try <span class="c-green">go2 scan</span> to see what I can do.</span>')},
+  'hi':async()=>{await eggs.hello()},
+};
+
+async function processCommand(cmd){
+  const trimmed=cmd.trim().toLowerCase();
+  if(!trimmed)return;
+  addOutput('<span class="c-green">go2@workspace:~$</span> '+esc(cmd));
+
+  if(eggs[trimmed]){await eggs[trimmed]();return}
+
+  // Handle deploy-agent with args
+  if(trimmed.startsWith('go2 deploy-agent')){
+    const agentName=trimmed.replace('go2 deploy-agent','').trim()||'custom-agent';
+    await commands['go2 deploy-agent'](agentName);
+    return;
+  }
+
+  if(commands[trimmed]){await commands[trimmed]();return}
+
+  addOutput(`<span class="c-red">Command not found: ${esc(cmd)}</span>\n<span class="c-dim">Type <span class="c-green">help</span> to see available commands.</span>`);
+}
+
+input.addEventListener('keydown',async(e)=>{
+  if(e.key==='Enter'&&!isProcessing){
+    isProcessing=true;
+    const cmd=input.value;
+    if(cmd.trim())history.unshift(cmd);
+    histIdx=-1;
+    input.value='';
+    await processCommand(cmd);
+    isProcessing=false;
+    input.focus();
+  }
+  if(e.key==='ArrowUp'){e.preventDefault();if(histIdx<history.length-1){histIdx++;input.value=history[histIdx]}}
+  if(e.key==='ArrowDown'){e.preventDefault();if(histIdx>0){histIdx--;input.value=history[histIdx]}else{histIdx=-1;input.value=''}}
+});
+
+document.addEventListener('click',()=>input.focus());
+
+// Boot sequence
+(async()=>{
+  const bootLines=[
+    '<span class="c-dim">Go2 CLI v3.2.1 — AI Workforce Intelligence Platform</span>',
+    '<span class="c-dim">Connecting to api.go2.io...</span> <span class="c-green">connected</span>',
+    '<span class="c-dim">Authenticated as:</span> admin@acmecorp.com',
+    '<span class="c-dim">Organization:</span> Acme Corp <span class="c-dim">(47 workers, 4 agents)</span>',
+    '<span class="c-dim">Desktop agent:</span> Cowork.ai v2.1.0 <span class="c-green">online</span>',
+    '',
+    '<span class="c-cyan">Welcome back. Your team saved <span class="c-green c-bold">47.3 hours</span> yesterday through AI coaching and automation.</span>',
+    '<span class="c-dim">Type <span class="c-green">help</span> to see commands, or try <span class="c-green">go2 scan</span> to find new automation opportunities.</span>',
+    ''
+  ];
+  await typeOutput(bootLines,80);
+})();
+</script>
+</body>
+</html>

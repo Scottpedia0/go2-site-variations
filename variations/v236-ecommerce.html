@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 for E-Commerce Operations | go2.io</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a2e;--border:#2a2a3e;--primary:#f97316;--primary-glow:#f9731633;--accent:#06b6d4;--text:#e2e8f0;--text-dim:#94a3b8;--success:#22c55e;--warning:#eab308;--danger:#ef4444}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.6}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+
+/* Hero */
+.hero{min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 50%,var(--primary-glow),transparent 50%),radial-gradient(circle at 70% 50%,#06b6d422,transparent 50%);animation:heroGlow 8s ease-in-out infinite alternate}
+@keyframes heroGlow{0%{transform:translate(0,0)}100%{transform:translate(-5%,3%)}}
+.hero-content{position:relative;z-index:1;max-width:700px}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:100px;font-size:13px;color:var(--primary);margin-bottom:24px}
+.hero-badge::before{content:'';width:8px;height:8px;background:var(--primary);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hero h1{font-size:clamp(36px,5vw,64px);font-weight:800;line-height:1.1;margin-bottom:20px;background:linear-gradient(135deg,#fff,var(--primary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:18px;color:var(--text-dim);margin-bottom:32px;max-width:560px}
+.hero-stats{display:flex;gap:32px;margin-top:40px}
+.hero-stat{text-align:left}
+.hero-stat .num{font-size:32px;font-weight:800;color:var(--primary)}
+.hero-stat .label{font-size:13px;color:var(--text-dim)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:none;transition:all .2s}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:#ea6c0e;transform:translateY(-1px);box-shadow:0 8px 30px var(--primary-glow)}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--primary)}
+.btn-group{display:flex;gap:12px;flex-wrap:wrap}
+
+/* Sections */
+section{padding:100px 0}
+.section-label{font-size:13px;text-transform:uppercase;letter-spacing:2px;color:var(--primary);margin-bottom:12px}
+.section-title{font-size:clamp(28px,3.5vw,42px);font-weight:800;margin-bottom:16px}
+.section-desc{font-size:16px;color:var(--text-dim);max-width:600px;margin-bottom:48px}
+
+/* Order Flow Visualization */
+.flow-container{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px;overflow-x:auto}
+.flow-steps{display:flex;gap:0;align-items:flex-start;min-width:900px;position:relative}
+.flow-step{flex:1;text-align:center;position:relative;padding:0 12px}
+.flow-step .icon{width:64px;height:64px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 12px;transition:all .3s;cursor:pointer}
+.flow-step .icon.manual{background:#ef444422;border:2px solid #ef444466}
+.flow-step .icon.automated{background:#22c55e22;border:2px solid #22c55e66}
+.flow-step .icon.coaching{background:#f9731622;border:2px solid #f9731666}
+.flow-step .step-title{font-size:14px;font-weight:600;margin-bottom:4px}
+.flow-step .step-time{font-size:12px;color:var(--text-dim)}
+.flow-step .step-tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;text-transform:uppercase;margin-top:6px}
+.flow-step .step-tag.automatable{background:#22c55e22;color:var(--success)}
+.flow-step .step-tag.coachable{background:#f9731622;color:var(--primary)}
+.flow-step .step-tag.manual-tag{background:#ef444422;color:var(--danger)}
+.flow-arrow{width:40px;display:flex;align-items:center;justify-content:center;color:var(--border);font-size:20px;padding-top:20px;flex-shrink:0}
+.flow-detail{margin-top:24px;padding:20px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);display:none;text-align:left}
+.flow-detail.active{display:block}
+.flow-detail h4{font-size:15px;margin-bottom:8px}
+.flow-detail p{font-size:13px;color:var(--text-dim)}
+.flow-detail .savings{color:var(--success);font-weight:700;font-size:14px;margin-top:8px}
+
+/* Coaching Panel */
+.coaching-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:24px}
+.coaching-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;transition:all .3s}
+.coaching-card:hover{border-color:var(--primary);transform:translateY(-2px)}
+.coaching-card .scenario{font-size:13px;color:var(--accent);margin-bottom:8px;font-weight:600}
+.coaching-card .situation{font-size:14px;margin-bottom:16px;color:var(--text-dim)}
+.coaching-card .ai-response{background:var(--surface2);border-left:3px solid var(--primary);padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;line-height:1.6}
+.coaching-card .ai-response strong{color:var(--primary)}
+
+/* ROI Calculator */
+.roi-calc{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px;display:grid;grid-template-columns:1fr 1fr;gap:40px}
+@media(max-width:768px){.roi-calc{grid-template-columns:1fr}}
+.roi-inputs label{display:block;font-size:13px;color:var(--text-dim);margin-bottom:6px;margin-top:16px}
+.roi-inputs label:first-child{margin-top:0}
+.roi-inputs input[type=range]{width:100%;accent-color:var(--primary);margin-top:4px}
+.roi-inputs .val{font-size:20px;font-weight:700;color:var(--primary)}
+.roi-results{background:var(--surface2);border-radius:16px;padding:28px}
+.roi-results h3{font-size:18px;margin-bottom:24px}
+.roi-row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.roi-row:last-child{border:none}
+.roi-row .label{color:var(--text-dim);font-size:14px}
+.roi-row .value{font-weight:700;font-size:16px}
+.roi-row .value.green{color:var(--success)}
+.roi-total{margin-top:16px;padding:16px;background:var(--primary-glow);border-radius:12px;text-align:center}
+.roi-total .amount{font-size:36px;font-weight:800;color:var(--primary)}
+.roi-total .period{font-size:13px;color:var(--text-dim)}
+
+/* Shopify Scanner */
+.scanner{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px;text-align:center}
+.scanner-input{display:flex;gap:12px;max-width:500px;margin:24px auto}
+.scanner-input input{flex:1;padding:14px 20px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:15px;outline:none}
+.scanner-input input:focus{border-color:var(--primary)}
+.scanner-results{margin-top:32px;text-align:left;display:none}
+.scanner-results.active{display:block}
+.scan-item{display:flex;align-items:center;gap:16px;padding:16px;background:var(--surface2);border-radius:12px;margin-bottom:12px;border-left:4px solid var(--primary)}
+.scan-item .priority{font-size:11px;padding:3px 8px;border-radius:6px;font-weight:700;text-transform:uppercase}
+.scan-item .priority.high{background:#ef444422;color:var(--danger)}
+.scan-item .priority.medium{background:#eab30822;color:var(--warning)}
+.scan-item .priority.low{background:#22c55e22;color:var(--success)}
+.scan-item .scan-text{flex:1}
+.scan-item .scan-text h4{font-size:14px;margin-bottom:2px}
+.scan-item .scan-text p{font-size:12px;color:var(--text-dim)}
+.scan-progress{width:100%;height:6px;background:var(--surface2);border-radius:3px;margin:20px 0;overflow:hidden;display:none}
+.scan-progress.active{display:block}
+.scan-progress .bar{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:3px;width:0;transition:width .1s}
+
+/* Metrics */
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.metric-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center}
+.metric-card .metric-val{font-size:36px;font-weight:800;margin-bottom:4px}
+.metric-card .metric-label{font-size:13px;color:var(--text-dim)}
+.metric-card .metric-change{font-size:12px;margin-top:8px;color:var(--success)}
+
+/* Automation Opps */
+.auto-list{display:grid;gap:16px}
+.auto-item{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:center;cursor:pointer;transition:all .3s}
+.auto-item:hover{border-color:var(--primary);transform:translateX(4px)}
+.auto-item .auto-icon{width:48px;height:48px;border-radius:12px;background:var(--primary-glow);display:flex;align-items:center;justify-content:center;font-size:22px}
+.auto-item h4{font-size:15px;margin-bottom:4px}
+.auto-item p{font-size:13px;color:var(--text-dim)}
+.auto-item .auto-savings{text-align:right}
+.auto-item .auto-savings .hrs{font-size:20px;font-weight:800;color:var(--success)}
+.auto-item .auto-savings .per{font-size:11px;color:var(--text-dim)}
+
+/* Footer */
+footer{padding:60px 0;border-top:1px solid var(--border);text-align:center}
+footer p{color:var(--text-dim);font-size:14px}
+footer a{color:var(--primary);text-decoration:none}
+
+/* Nav */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 0;background:var(--bg)cc;backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+nav .container{display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:22px;font-weight:800;color:var(--text);text-decoration:none}
+.logo span{color:var(--primary)}
+nav .nav-cta{padding:10px 20px;font-size:13px}
+</style>
+</head>
+<body>
+
+<nav>
+<div class="container">
+<a href="#" class="logo">Go<span>2</span></a>
+<button class="btn btn-primary nav-cta" onclick="document.getElementById('scanner').scrollIntoView({behavior:'smooth'})">Scan Your Store Free</button>
+</div>
+</nav>
+
+<section class="hero">
+<div class="container">
+<div class="hero-content">
+<div class="hero-badge">Built for E-Commerce Teams</div>
+<h1>Your fulfillment team is 40% manual process. Fix that.</h1>
+<p>Go2 watches how your team actually handles orders, returns, and customer issues -- then coaches them in real-time and automates the repetitive parts.</p>
+<div class="btn-group">
+<button class="btn btn-primary" onclick="document.getElementById('scanner').scrollIntoView({behavior:'smooth'})">Scan Your Shopify Store</button>
+<button class="btn btn-secondary" onclick="document.getElementById('flow').scrollIntoView({behavior:'smooth'})">See Order Flow Analysis</button>
+</div>
+<div class="hero-stats">
+<div class="hero-stat"><div class="num">3.2x</div><div class="label">Faster order processing</div></div>
+<div class="hero-stat"><div class="num">67%</div><div class="label">Fewer shipping errors</div></div>
+<div class="hero-stat"><div class="num">$14K</div><div class="label">Saved monthly (avg)</div></div>
+</div>
+</div>
+</div>
+</section>
+
+<section id="flow">
+<div class="container">
+<div class="section-label">Order Flow Analysis</div>
+<div class="section-title">Every order touches 8 steps. 5 are automatable.</div>
+<div class="section-desc">Click each step to see how Go2 optimizes it.</div>
+<div class="flow-container">
+<div class="flow-steps">
+<div class="flow-step" onclick="showFlowDetail(0)">
+<div class="icon automated">&#128230;</div>
+<div class="step-title">Order Received</div>
+<div class="step-time">Avg: 0s</div>
+<span class="step-tag automatable">Auto-route</span>
+</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step" onclick="showFlowDetail(1)">
+<div class="icon automated">&#9989;</div>
+<div class="step-title">Fraud Check</div>
+<div class="step-time">Avg: 4.2 min</div>
+<span class="step-tag automatable">Automatable</span>
+</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step" onclick="showFlowDetail(2)">
+<div class="icon coaching">&#128179;</div>
+<div class="step-title">Payment Processing</div>
+<div class="step-time">Avg: 1.8 min</div>
+<span class="step-tag coachable">Coachable</span>
+</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step" onclick="showFlowDetail(3)">
+<div class="icon automated">&#128225;</div>
+<div class="step-title">Warehouse Routing</div>
+<div class="step-time">Avg: 6.1 min</div>
+<span class="step-tag automatable">Automatable</span>
+</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step" onclick="showFlowDetail(4)">
+<div class="icon manual">&#128230;</div>
+<div class="step-title">Pick & Pack</div>
+<div class="step-time">Avg: 8.3 min</div>
+<span class="step-tag coachable">Coachable</span>
+</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step" onclick="showFlowDetail(5)">
+<div class="icon automated">&#128666;</div>
+<div class="step-title">Carrier Selection</div>
+<div class="step-time">Avg: 3.4 min</div>
+<span class="step-tag automatable">Automatable</span>
+</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step" onclick="showFlowDetail(6)">
+<div class="icon automated">&#128233;</div>
+<div class="step-title">Customer Notify</div>
+<div class="step-time">Avg: 1.1 min</div>
+<span class="step-tag automatable">Automatable</span>
+</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step" onclick="showFlowDetail(7)">
+<div class="icon coaching">&#128260;</div>
+<div class="step-title">Returns Handling</div>
+<div class="step-time">Avg: 12.6 min</div>
+<span class="step-tag coachable">Coachable</span>
+</div>
+</div>
+<div id="flow-detail" class="flow-detail"></div>
+</div>
+</div>
+</section>
+
+<section>
+<div class="container">
+<div class="section-label">Key Metrics Go2 Improves</div>
+<div class="section-title">Numbers that move your bottom line</div>
+<div class="section-desc">Real improvements from e-commerce teams using Go2.</div>
+<div class="metrics-grid">
+<div class="metric-card"><div class="metric-val" style="color:var(--primary)">2.4min</div><div class="metric-label">Avg Order Processing Time</div><div class="metric-change">Down from 8.3 min</div></div>
+<div class="metric-card"><div class="metric-val" style="color:var(--success)">0.3%</div><div class="metric-label">Shipping Error Rate</div><div class="metric-change">Down from 2.1%</div></div>
+<div class="metric-card"><div class="metric-val" style="color:var(--accent)">4.2hr</div><div class="metric-label">Return Resolution Time</div><div class="metric-change">Down from 18 hrs</div></div>
+<div class="metric-card"><div class="metric-val" style="color:var(--warning)">94%</div><div class="metric-label">First-Contact Resolution</div><div class="metric-change">Up from 61%</div></div>
+</div>
+</div>
+</section>
+
+<section style="background:var(--surface)">
+<div class="container">
+<div class="section-label">Real-Time Coaching</div>
+<div class="section-title">AI coaching for every customer interaction</div>
+<div class="section-desc">Go2 watches your team work and offers guidance exactly when they need it.</div>
+<div class="coaching-grid">
+<div class="coaching-card">
+<div class="scenario">Angry Customer - Wrong Item Shipped</div>
+<div class="situation">Rep is typing a generic apology for a mis-shipped order. Customer has ordered 3x before.</div>
+<div class="ai-response"><strong>Go2 Coach:</strong> This is a repeat buyer (3 orders, $847 LTV). Skip the form letter. Offer immediate re-ship + 15% next-order discount. Their last order was the blue variant -- confirm they want the same. Flag warehouse: this SKU has had 4 mis-ships this week.</div>
+</div>
+<div class="coaching-card">
+<div class="scenario">Return Request - Outside Window</div>
+<div class="situation">Customer requesting return 45 days after purchase. Policy is 30 days. Rep about to deny.</div>
+<div class="ai-response"><strong>Go2 Coach:</strong> Customer has $2,100 annual spend and 0 previous returns. Exception cost: $34. Customer lifetime risk if denied: ~$2,100/yr. Recommend approving with a friendly note. Draft: "Happy to make an exception for you..."</div>
+</div>
+<div class="coaching-card">
+<div class="scenario">Upsell Opportunity - Cart Review</div>
+<div class="situation">Support chat about sizing. Customer has a $89 item in cart.</div>
+<div class="ai-response"><strong>Go2 Coach:</strong> This customer viewed the matching accessory 3 times but didn't add it. After resolving their sizing question, mention: "A lot of customers pair that with [accessory] -- fits perfectly with the size you're going with." Bundle saves them 12%.</div>
+</div>
+<div class="coaching-card">
+<div class="scenario">Inventory Alert - Trending Item</div>
+<div class="situation">Support volume spiking on SKU #4421. 12 "when back in stock?" messages today.</div>
+<div class="ai-response"><strong>Go2 Coach:</strong> SKU #4421 demand is 340% above forecast. Current stock: 23 units (est. 2 days). Auto-created waitlist has 89 signups. Recommend: notify purchasing NOW, add "Limited Stock" badge, prep backorder messaging template.</div>
+</div>
+</div>
+</div>
+</section>
+
+<section>
+<div class="container">
+<div class="section-label">Automation Opportunities</div>
+<div class="section-title">Tasks your team does manually that shouldn't exist</div>
+<div class="auto-list">
+<div class="auto-item" onclick="this.querySelector('.auto-detail')?.classList.toggle('show')">
+<div class="auto-icon">&#128230;</div>
+<div><h4>Order Status Inquiries</h4><p>42% of support tickets are "where's my order?" -- fully automatable with tracking integration</p></div>
+<div class="auto-savings"><div class="hrs">18hr</div><div class="per">saved/week</div></div>
+</div>
+<div class="auto-item">
+<div class="auto-icon">&#128260;</div>
+<div><h4>Return Label Generation</h4><p>Reps manually create return labels, copy tracking numbers, update spreadsheets. All automatable.</p></div>
+<div class="auto-savings"><div class="hrs">12hr</div><div class="per">saved/week</div></div>
+</div>
+<div class="auto-item">
+<div class="auto-icon">&#128202;</div>
+<div><h4>Inventory Reorder Alerts</h4><p>Weekly manual inventory checks replaced by real-time threshold monitoring and auto-PO generation.</p></div>
+<div class="auto-savings"><div class="hrs">8hr</div><div class="per">saved/week</div></div>
+</div>
+<div class="auto-item">
+<div class="auto-icon">&#128233;</div>
+<div><h4>Post-Purchase Email Sequences</h4><p>Manual follow-ups replaced by behavior-triggered sequences. Review requests, cross-sells, reorder reminders.</p></div>
+<div class="auto-savings"><div class="hrs">10hr</div><div class="per">saved/week</div></div>
+</div>
+<div class="auto-item">
+<div class="auto-icon">&#128176;</div>
+<div><h4>Refund Processing</h4><p>Standard refunds processed manually. Go2 agent handles approval, processing, and customer notification.</p></div>
+<div class="auto-savings"><div class="hrs">6hr</div><div class="per">saved/week</div></div>
+</div>
+</div>
+</div>
+</section>
+
+<section id="roi" style="background:var(--surface)">
+<div class="container">
+<div class="section-label">ROI Calculator</div>
+<div class="section-title">Calculate your savings</div>
+<div class="roi-calc">
+<div class="roi-inputs">
+<label>Monthly orders <span class="val" id="ordersVal">5,000</span></label>
+<input type="range" id="orders" min="500" max="50000" step="500" value="5000" oninput="calcROI()">
+<label>Support tickets/month <span class="val" id="ticketsVal">1,200</span></label>
+<input type="range" id="tickets" min="100" max="10000" step="100" value="1200" oninput="calcROI()">
+<label>Avg hourly cost per rep <span class="val" id="costVal">$22</span></label>
+<input type="range" id="cost" min="12" max="50" step="1" value="22" oninput="calcROI()">
+<label>Team size <span class="val" id="teamVal">8</span></label>
+<input type="range" id="team" min="2" max="50" step="1" value="8" oninput="calcROI()">
+<label>Returns rate <span class="val" id="returnsVal">8%</span></label>
+<input type="range" id="returns" min="1" max="30" step="1" value="8" oninput="calcROI()">
+</div>
+<div class="roi-results">
+<h3>Monthly Impact</h3>
+<div class="roi-row"><span class="label">Tickets automated (42%)</span><span class="value" id="r1">504</span></div>
+<div class="roi-row"><span class="label">Hours saved on tickets</span><span class="value" id="r2">84 hrs</span></div>
+<div class="roi-row"><span class="label">Faster order processing</span><span class="value" id="r3">62 hrs</span></div>
+<div class="roi-row"><span class="label">Return handling savings</span><span class="value" id="r4">28 hrs</span></div>
+<div class="roi-row"><span class="label">Shipping error reduction</span><span class="value green" id="r5">$3,200</span></div>
+<div class="roi-total">
+<div class="amount" id="roiTotal">$14,280</div>
+<div class="period">estimated monthly savings</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<section id="scanner">
+<div class="container">
+<div class="scanner">
+<div class="section-label">Store Scanner</div>
+<div class="section-title">Scan Your Shopify Store</div>
+<p style="color:var(--text-dim);margin:12px 0 0">Enter your store URL and we'll identify automation opportunities in 60 seconds.</p>
+<div class="scanner-input">
+<input type="text" id="storeUrl" placeholder="yourstore.myshopify.com" onkeydown="if(event.key==='Enter')runScan()">
+<button class="btn btn-primary" onclick="runScan()">Scan Store</button>
+</div>
+<div class="scan-progress" id="scanProgress"><div class="bar" id="scanBar"></div></div>
+<div class="scanner-results" id="scanResults"></div>
+</div>
+</div>
+</section>
+
+<footer>
+<div class="container">
+<p><a href="#">Go2</a> -- AI-powered workforce optimization for e-commerce. <a href="#">Start free trial</a></p>
+</div>
+</footer>
+
+<script>
+const flowDetails = [
+{title:"Order Received -- Auto-Routing",desc:"Go2 watches your incoming orders and automatically routes them based on inventory location, shipping method, and priority. No human touch needed.",savings:"Saves 100% of manual routing time (avg 2.1 min/order)"},
+{title:"Fraud Check -- AI Screening",desc:"Go2's agent cross-references order patterns, shipping/billing mismatch, velocity checks, and historical data. Only flags true edge cases for human review.",savings:"Reduces manual fraud review by 89%. False positive rate: 0.2%"},
+{title:"Payment Processing -- Coached Exceptions",desc:"Most payments auto-process. When issues arise (declined cards, address mismatches), Go2 coaches your rep with the exact steps and customer-specific context.",savings:"Reduces payment issue resolution from 8 min to 1.8 min avg"},
+{title:"Warehouse Routing -- Smart Allocation",desc:"Go2 analyzes inventory across warehouses, shipping costs, and delivery promises to pick the optimal fulfillment center. Updates in real-time as stock changes.",savings:"Saves $2.40 avg shipping cost per order through optimal routing"},
+{title:"Pick & Pack -- Coached Optimization",desc:"Go2 monitors pick accuracy and coaches packers on common error items. Tracks which SKUs get mis-picked most and creates visual guides.",savings:"Reduces pick errors by 67%. Coaches new hires to veteran speed in 2 weeks"},
+{title:"Carrier Selection -- Auto-Optimized",desc:"Go2 compares real-time carrier rates, transit times, and reliability scores. Automatically selects the best option for each order's requirements.",savings:"Saves avg $1.80/shipment. Eliminates 3.4 min of manual comparison"},
+{title:"Customer Notification -- Fully Automated",desc:"Tracking emails, SMS updates, delivery confirmations, and review requests all triggered automatically based on shipment status changes.",savings:"Eliminates 1.1 min per order of manual notification work"},
+{title:"Returns Handling -- AI-Assisted",desc:"Go2 pre-qualifies returns, generates labels, routes to correct warehouse, and coaches reps on exception handling with customer LTV context.",savings:"Cuts return processing from 12.6 min to 4.2 min. Recovers 23% more exchanges vs refunds"}
+];
+function showFlowDetail(i){
+const d=document.getElementById('flow-detail');
+d.innerHTML=`<h4>${flowDetails[i].title}</h4><p>${flowDetails[i].desc}</p><div class="savings">${flowDetails[i].savings}</div>`;
+d.classList.add('active');
+}
+function calcROI(){
+const orders=+document.getElementById('orders').value;
+const tickets=+document.getElementById('tickets').value;
+const cost=+document.getElementById('cost').value;
+const team=+document.getElementById('team').value;
+const returns=+document.getElementById('returns').value;
+document.getElementById('ordersVal').textContent=orders.toLocaleString();
+document.getElementById('ticketsVal').textContent=tickets.toLocaleString();
+document.getElementById('costVal').textContent='$'+cost;
+document.getElementById('teamVal').textContent=team;
+document.getElementById('returnsVal').textContent=returns+'%';
+const autoTickets=Math.round(tickets*0.42);
+const ticketHrs=Math.round(autoTickets*10/60);
+const orderHrs=Math.round(orders*5.9/60/60*0.7);
+const returnHrs=Math.round(orders*(returns/100)*8.4/60*0.6);
+const shippingErr=Math.round(orders*0.018*12);
+const totalSavings=Math.round((ticketHrs+orderHrs+returnHrs)*cost+shippingErr);
+document.getElementById('r1').textContent=autoTickets.toLocaleString();
+document.getElementById('r2').textContent=ticketHrs+' hrs';
+document.getElementById('r3').textContent=orderHrs+' hrs';
+document.getElementById('r4').textContent=returnHrs+' hrs';
+document.getElementById('r5').textContent='$'+shippingErr.toLocaleString();
+document.getElementById('roiTotal').textContent='$'+totalSavings.toLocaleString();
+}
+function runScan(){
+const url=document.getElementById('storeUrl').value.trim();
+if(!url){document.getElementById('storeUrl').style.borderColor='var(--danger)';return}
+document.getElementById('storeUrl').style.borderColor='var(--border)';
+const prog=document.getElementById('scanProgress');
+const bar=document.getElementById('scanBar');
+const results=document.getElementById('scanResults');
+prog.classList.add('active');
+results.classList.remove('active');
+results.innerHTML='';
+bar.style.width='0%';
+let w=0;
+const iv=setInterval(()=>{
+w+=Math.random()*8+2;
+if(w>=100){w=100;clearInterval(iv);showScanResults()}
+bar.style.width=w+'%';
+},120);
+}
+function showScanResults(){
+const r=document.getElementById('scanResults');
+const findings=[
+{priority:'high',title:'42% of support tickets are status inquiries',desc:'Automatable with order tracking integration. Est. savings: 18 hrs/week.'},
+{priority:'high',title:'Return processing takes 3x industry average',desc:'Manual label generation and spreadsheet tracking detected. Agent can handle end-to-end.'},
+{priority:'medium',title:'Carrier selection is manual for 78% of orders',desc:'Rate shopping automation would save est. $2.40/shipment on current volume.'},
+{priority:'medium',title:'Inventory alerts rely on weekly manual checks',desc:'Real-time threshold monitoring would prevent 4-6 stockouts per month.'},
+{priority:'medium',title:'Customer follow-up sequences are inconsistent',desc:'Only 34% of orders get post-purchase engagement. Automation would reach 100%.'},
+{priority:'low',title:'Fraud review queue has 23% false positive rate',desc:'AI screening could reduce manual reviews by 89% while improving accuracy.'}
+];
+r.innerHTML='<h3 style="margin-bottom:20px;font-size:18px">Scan Complete -- 6 Optimization Opportunities Found</h3>'+
+findings.map(f=>`<div class="scan-item"><span class="priority ${f.priority}">${f.priority}</span><div class="scan-text"><h4>${f.title}</h4><p>${f.desc}</p></div></div>`).join('');
+r.classList.add('active');
+}
+calcROI();
+showFlowDetail(0);
+</script>
+</body>
+</html>

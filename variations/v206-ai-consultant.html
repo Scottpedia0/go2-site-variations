@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 AI Workflow Consultant</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0f;color:#e0e0e0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.header{padding:16px 24px;border-bottom:1px solid #1a1a2e;display:flex;align-items:center;gap:12px;background:#0d0d15}
+.header .logo{font-size:20px;font-weight:700;color:#fff}
+.header .logo span{color:#6c5ce7}
+.header .badge{font-size:11px;background:#6c5ce722;color:#a29bfe;padding:3px 10px;border-radius:12px;border:1px solid #6c5ce733}
+.chat-container{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth}
+.msg{max-width:680px;animation:msgIn .3s ease}
+.msg.bot{align-self:flex-start}
+.msg.user{align-self:flex-end}
+.msg-bubble{padding:14px 18px;border-radius:16px;font-size:14px;line-height:1.6}
+.msg.bot .msg-bubble{background:#1a1a2e;border:1px solid #252540;border-bottom-left-radius:4px}
+.msg.user .msg-bubble{background:#6c5ce7;color:#fff;border-bottom-right-radius:4px}
+.msg .label{font-size:11px;color:#666;margin-bottom:4px;padding:0 4px}
+.msg.user .label{text-align:right}
+.typing{display:flex;gap:4px;padding:14px 18px;background:#1a1a2e;border:1px solid #252540;border-radius:16px;border-bottom-left-radius:4px;width:fit-content}
+.typing span{width:8px;height:8px;background:#6c5ce7;border-radius:50%;animation:bounce .6s infinite alternate}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{to{opacity:.3;transform:translateY(-4px)}}
+@keyframes msgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.input-area{padding:16px 24px;border-top:1px solid #1a1a2e;background:#0d0d15}
+.input-row{display:flex;gap:10px;max-width:720px;margin:0 auto}
+.input-row input{flex:1;background:#1a1a2e;border:1px solid #252540;border-radius:12px;padding:12px 16px;color:#fff;font-size:14px;outline:none;transition:border .2s}
+.input-row input:focus{border-color:#6c5ce7}
+.input-row button{background:#6c5ce7;color:#fff;border:none;border-radius:12px;padding:12px 20px;font-size:14px;cursor:pointer;font-weight:600;transition:background .2s}
+.input-row button:hover{background:#5b4bd6}
+.input-row button:disabled{opacity:.4;cursor:default}
+.quick-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;max-width:720px;margin-left:auto;margin-right:auto}
+.quick-btn{background:#1a1a2e;border:1px solid #252540;color:#a29bfe;border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer;transition:all .2s}
+.quick-btn:hover{background:#252540;border-color:#6c5ce7}
+.chart-container{margin:12px 0;background:#12121e;border-radius:12px;padding:16px;border:1px solid #252540}
+.chart-title{font-size:12px;color:#888;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px}
+.bar-chart{display:flex;flex-direction:column;gap:8px}
+.bar-row{display:flex;align-items:center;gap:10px}
+.bar-label{width:120px;font-size:12px;color:#aaa;text-align:right;flex-shrink:0}
+.bar-track{flex:1;height:24px;background:#1a1a2e;border-radius:4px;overflow:hidden;position:relative}
+.bar-fill{height:100%;border-radius:4px;transition:width 1.5s ease;width:0}
+.bar-value{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:600;color:#fff}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+.stat-card{background:#12121e;border:1px solid #252540;border-radius:10px;padding:12px;text-align:center}
+.stat-card .val{font-size:24px;font-weight:700;color:#6c5ce7}
+.stat-card .lbl{font-size:11px;color:#888;margin-top:2px}
+.finding{background:#12121e;border-left:3px solid #6c5ce7;border-radius:0 8px 8px 0;padding:10px 14px;margin:6px 0}
+.finding .title{font-size:13px;font-weight:600;color:#a29bfe;margin-bottom:2px}
+.finding .desc{font-size:12px;color:#999;line-height:1.5}
+.coaching-ex{background:#0f3a0f;border:1px solid #1a5c1a;border-radius:10px;padding:12px;margin:8px 0;position:relative}
+.coaching-ex::before{content:'AI Coach';position:absolute;top:-8px;left:12px;background:#1a5c1a;color:#4ade80;font-size:9px;padding:1px 8px;border-radius:8px;font-weight:600}
+.coaching-ex .text{font-size:13px;color:#4ade80;margin-top:4px}
+.cta-btn{display:inline-block;background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff;padding:10px 24px;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;margin-top:8px;cursor:pointer;border:none}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">Go2<span>.ai</span> Consultant</div>
+  <div class="badge">Interactive Analysis</div>
+</div>
+<div class="chat-container" id="chat"></div>
+<div class="input-area">
+  <div class="input-row">
+    <input id="userInput" type="text" placeholder="Type your response..." autofocus>
+    <button id="sendBtn" onclick="sendMessage()">Send</button>
+  </div>
+  <div class="quick-btns" id="quickBtns"></div>
+</div>
+<script>
+const chat=document.getElementById('chat'),input=document.getElementById('userInput'),sendBtn=document.getElementById('sendBtn'),quickBtnsEl=document.getElementById('quickBtns');
+let step=0,userData={},conversationLock=false;
+
+const industries={
+  'e-commerce':{waste:32,top:['Order processing has 6 manual handoffs','Inventory updates require 3 systems','Customer emails average 4.2 min response craft time','Return processing is 78% manual'],coaching:['You just updated inventory in Shopify but not in your warehouse system. Want me to sync them automatically?','You\'ve answered 12 similar refund questions today. I\'ve drafted a template that would save ~35 min/day.'],bars:[{l:'Order Processing',v:72,c:'#e74c3c'},{l:'Customer Support',v:58,c:'#e67e22'},{l:'Inventory Mgmt',v:85,c:'#e74c3c'},{l:'Marketing Tasks',v:34,c:'#2ecc71'},{l:'Reporting',v:61,c:'#e67e22'}]},
+  'saas':{waste:28,top:['Onboarding flow has 11 steps, 4 are redundant','Support tickets avg 3 tool switches per resolution','Feature requests logged in 4 different places','Weekly reporting takes 6.5 hours across team'],coaching:['You switched between Jira, Slack, and Notion 14 times in the last hour. Want me to consolidate notifications?','This bug report matches 3 others from this week. I\'ve linked them and drafted a root cause summary.'],bars:[{l:'User Onboarding',v:65,c:'#e67e22'},{l:'Bug Triage',v:78,c:'#e74c3c'},{l:'Feature Planning',v:42,c:'#2ecc71'},{l:'Support Queue',v:71,c:'#e74c3c'},{l:'Sprint Reporting',v:55,c:'#e67e22'}]},
+  'agency':{waste:38,top:['Client reporting consumes 22% of billable capacity','Creative briefs require avg 5 revision rounds','Time tracking is 40% inaccurate (post-hoc entries)','Cross-team handoffs lose context 67% of the time'],coaching:['You spent 48 minutes building this client report. Last month\'s took 52 min. I can auto-generate 80% of it from your project data.','This creative brief is missing target audience specs — that caused 3 revision rounds on the Acme project.'],bars:[{l:'Client Reporting',v:82,c:'#e74c3c'},{l:'Brief Creation',v:68,c:'#e67e22'},{l:'Time Tracking',v:74,c:'#e74c3c'},{l:'Asset Management',v:51,c:'#e67e22'},{l:'Invoicing',v:45,c:'#2ecc71'}]},
+  'healthcare':{waste:35,top:['Patient intake forms require triple data entry','Scheduling conflicts cause 12% no-show rate','Compliance documentation takes 3.5 hrs/day per provider','Referral processing averages 4.2 days'],coaching:['You just entered this patient\'s insurance info for the third time today. Want me to auto-populate across all systems?','This referral has been pending for 3 days. Similar referrals that wait >4 days have a 34% drop-off rate.'],bars:[{l:'Patient Intake',v:88,c:'#e74c3c'},{l:'Scheduling',v:62,c:'#e67e22'},{l:'Documentation',v:91,c:'#e74c3c'},{l:'Referrals',v:73,c:'#e74c3c'},{l:'Billing',v:56,c:'#e67e22'}]},
+  'finance':{waste:30,top:['Reconciliation involves 5 manual data sources','Client reports have 23% error rate from copy-paste','Compliance checks duplicate across 3 departments','Month-end close takes 8 days (industry best: 3)'],coaching:['You\'re reconciling the Q3 accounts — I noticed 3 entries that don\'t match your bank feed. Want me to flag them?','This compliance report overlaps 60% with the one Sarah filed yesterday. Want me to merge and deduplicate?'],bars:[{l:'Reconciliation',v:79,c:'#e74c3c'},{l:'Client Reports',v:66,c:'#e67e22'},{l:'Compliance',v:72,c:'#e74c3c'},{l:'Month-End Close',v:84,c:'#e74c3c'},{l:'Data Entry',v:58,c:'#e67e22'}]}
+};
+
+function addMsg(text,isUser,html=false){
+  const d=document.createElement('div');
+  d.className=`msg ${isUser?'user':'bot'}`;
+  d.innerHTML=`<div class="label">${isUser?'You':'Go2 AI Consultant'}</div><div class="msg-bubble">${html?text:escHtml(text)}</div>`;
+  chat.appendChild(d);
+  chat.scrollTop=chat.scrollHeight;
+  return d;
+}
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function showTyping(){
+  const d=document.createElement('div');
+  d.className='msg bot';d.id='typing';
+  d.innerHTML='<div class="label">Go2 AI Consultant</div><div class="typing"><span></span><span></span><span></span></div>';
+  chat.appendChild(d);chat.scrollTop=chat.scrollHeight;
+}
+function hideTyping(){const t=document.getElementById('typing');if(t)t.remove();}
+
+function setQuickBtns(btns){
+  quickBtnsEl.innerHTML='';
+  btns.forEach(b=>{
+    const el=document.createElement('button');
+    el.className='quick-btn';el.textContent=b;
+    el.onclick=()=>{input.value=b;sendMessage()};
+    quickBtnsEl.appendChild(el);
+  });
+}
+
+async function botReply(text,html=false,delay=1200){
+  conversationLock=true;sendBtn.disabled=true;
+  showTyping();
+  await new Promise(r=>setTimeout(r,delay));
+  hideTyping();
+  addMsg(text,false,html);
+  conversationLock=false;sendBtn.disabled=false;
+  input.focus();
+}
+
+async function botReplyMulti(msgs){
+  for(const m of msgs){
+    await botReply(m.text,m.html||false,m.delay||1200);
+  }
+}
+
+function buildBarChart(title,bars){
+  let html=`<div class="chart-container"><div class="chart-title">${title}</div><div class="bar-chart">`;
+  bars.forEach((b,i)=>{
+    html+=`<div class="bar-row"><div class="bar-label">${b.l}</div><div class="bar-track"><div class="bar-fill" style="background:${b.c}" data-width="${b.v}%"></div><div class="bar-value">${b.v}% waste</div></div></div>`;
+  });
+  html+='</div></div>';
+  return html;
+}
+
+function buildStats(hoursWasted,teamSize,salary){
+  const annualWaste=Math.round(hoursWasted*52*teamSize);
+  const costWaste=Math.round(annualWaste*(salary/2080));
+  const recoverable=Math.round(costWaste*0.6);
+  return `<div class="stat-grid">
+    <div class="stat-card"><div class="val">${annualWaste.toLocaleString()}</div><div class="lbl">Hours Wasted / Year</div></div>
+    <div class="stat-card"><div class="val">$${(costWaste/1000).toFixed(0)}K</div><div class="lbl">Annual Cost of Waste</div></div>
+    <div class="stat-card"><div class="val">$${(recoverable/1000).toFixed(0)}K</div><div class="lbl">Recoverable with Go2</div></div>
+  </div>`;
+}
+
+function buildFindings(findings){
+  return findings.map(f=>`<div class="finding"><div class="title">${f}</div></div>`).join('');
+}
+function buildCoaching(examples){
+  return examples.map(e=>`<div class="coaching-ex"><div class="text">"${e}"</div></div>`).join('');
+}
+
+async function processStep(userText){
+  const txt=userText.trim().toLowerCase();
+  switch(step){
+    case 0:
+      addMsg(userText,true);
+      userData.industry=txt;
+      step=1;
+      await botReply(`Got it — ${userText}. How many people are on your team?`,false,800);
+      setQuickBtns(['1-5','6-15','16-50','50+']);
+      break;
+    case 1:
+      addMsg(userText,true);
+      const sizeMap={'1-5':3,'6-15':10,'16-50':30,'50+':75};
+      userData.teamSize=sizeMap[userText]||parseInt(userText)||10;
+      step=2;
+      await botReply('What\'s the approximate average salary on your team? (Annual, USD)',false,800);
+      setQuickBtns(['$50K','$75K','$100K','$125K','$150K']);
+      break;
+    case 2:
+      addMsg(userText,true);
+      const salStr=userText.replace(/[^0-9]/g,'');
+      userData.salary=parseInt(salStr)||75000;
+      if(userData.salary<1000)userData.salary*=1000;
+      step=3;
+      setQuickBtns([]);
+      await runAnalysis();
+      break;
+    case 3:
+      addMsg(userText,true);
+      if(txt.includes('coaching')||txt.includes('coach')){
+        const ind=findIndustry();
+        const data=industries[ind];
+        await botReply('Here\'s what Go2\'s real-time coaching looks like for your team:',false,800);
+        await botReply(buildCoaching(data.coaching)+`<p style="margin-top:12px;font-size:13px;color:#888">These coaching nudges appear in real-time as your team works — no workflow interruption, just contextual guidance that compounds over time.</p>`,false,true,1500);
+        setQuickBtns(['Show ROI breakdown','How does data capture work?','Start free pilot']);
+      } else if(txt.includes('roi')||txt.includes('breakdown')){
+        const ind=findIndustry();
+        const data=industries[ind];
+        const weeklyWaste=data.waste*userData.teamSize;
+        const html=`<div style="font-size:13px;line-height:1.8">
+          <strong style="color:#a29bfe">90-Day ROI Projection:</strong><br>
+          <strong>Month 1:</strong> Data capture & workflow mapping<br>
+          <span style="color:#888">Investment: ~$${(userData.teamSize*49).toLocaleString()}/mo | Returns: Baseline data</span><br><br>
+          <strong>Month 2:</strong> Coaching active, first automations deployed<br>
+          <span style="color:#4ade80">Projected savings: ${Math.round(weeklyWaste*0.3*4)} hrs (${Math.round(weeklyWaste*0.3*4*(userData.salary/2080))} USD)</span><br><br>
+          <strong>Month 3:</strong> AI agents handling routine tasks<br>
+          <span style="color:#4ade80">Projected savings: ${Math.round(weeklyWaste*0.6*4)} hrs ($${Math.round(weeklyWaste*0.6*4*(userData.salary/2080)).toLocaleString()} USD)</span><br><br>
+          <strong style="color:#6c5ce7">Payback period: ${userData.teamSize>20?'3':'5'} weeks</strong>
+        </div>`;
+        await botReply(html,false,true,1500);
+        setQuickBtns(['Show coaching examples','How does data capture work?','Start free pilot']);
+      } else if(txt.includes('data')||txt.includes('capture')){
+        await botReply(`<div style="font-size:13px;line-height:1.8">
+          <strong style="color:#a29bfe">How Go2 captures work data:</strong><br><br>
+          <strong>1. Cowork.ai Desktop Agent</strong> — Lightweight agent runs on each team member's machine. Captures app usage, workflows, and process patterns. No keylogging, no screenshots of personal content.<br><br>
+          <strong>2. Workflow Fingerprinting</strong> — AI identifies repeated patterns: "Every time a support ticket comes in, Sarah opens Zendesk, checks Stripe, updates the CRM, and sends an email." That's a workflow.<br><br>
+          <strong>3. Process Documentation</strong> — Automatically generates SOPs from observed workflows. Your team's actual processes, not what they think they do.<br><br>
+          <strong>4. Training Data for AI Agents</strong> — Once a workflow is mapped and validated, Go2 can train an AI agent to handle it. Real work data = agents that actually work.<br><br>
+          <em style="color:#888">This is why 95% of AI implementations fail (MIT) — they lack this context data.</em>
+        </div>`,false,true,2000);
+        setQuickBtns(['Show coaching examples','Show ROI breakdown','Start free pilot']);
+      } else if(txt.includes('pilot')||txt.includes('start')||txt.includes('free')){
+        await botReply(`<div style="font-size:13px;line-height:1.8">
+          <strong style="color:#4ade80">Let's get you started.</strong><br><br>
+          Go2 offers a <strong>14-day free pilot</strong> — full platform, no credit card.<br><br>
+          Your team of ${userData.teamSize} would have:<br>
+          - Desktop agent installed in under 2 minutes<br>
+          - First workflow insights within 24 hours<br>
+          - Coaching active by day 3<br>
+          - Full ROI report at day 14<br><br>
+          <button class="cta-btn" onclick="window.open('https://go2.io','_blank')">Start Your Free Pilot at go2.io &rarr;</button>
+        </div>`,false,true,1200);
+      } else {
+        await botReply('I can show you coaching examples, an ROI breakdown, explain how our data capture works, or help you start a free pilot. What interests you most?');
+        setQuickBtns(['Show coaching examples','Show ROI breakdown','How does data capture work?','Start free pilot']);
+      }
+      break;
+  }
+}
+
+function findIndustry(){
+  const ind=userData.industry||'';
+  if(ind.includes('ecom')||ind.includes('shop')||ind.includes('retail')||ind.includes('store'))return 'e-commerce';
+  if(ind.includes('saas')||ind.includes('software')||ind.includes('tech')||ind.includes('startup'))return 'saas';
+  if(ind.includes('agenc')||ind.includes('market')||ind.includes('creative')||ind.includes('design'))return 'agency';
+  if(ind.includes('health')||ind.includes('medical')||ind.includes('clinic')||ind.includes('hospital'))return 'healthcare';
+  if(ind.includes('financ')||ind.includes('bank')||ind.includes('account')||ind.includes('insur'))return 'finance';
+  const keys=Object.keys(industries);
+  return keys[Math.floor(Math.random()*keys.length)];
+}
+
+async function runAnalysis(){
+  const ind=findIndustry();
+  const data=industries[ind];
+
+  await botReply(`Analyzing workflow patterns for <strong>${userData.industry}</strong> teams of <strong>${userData.teamSize}</strong>...`,false,true,600);
+
+  await botReply(`<div style="font-size:13px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <div style="width:10px;height:10px;background:#6c5ce7;border-radius:50%;animation:pulse 1s infinite"></div>
+      <span style="color:#a29bfe">Scanning industry benchmarks...</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <div style="width:10px;height:10px;background:#6c5ce7;border-radius:50%;animation:pulse 1s infinite .3s"></div>
+      <span style="color:#a29bfe">Modeling workflow inefficiencies...</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="width:10px;height:10px;background:#6c5ce7;border-radius:50%;animation:pulse 1s infinite .6s"></div>
+      <span style="color:#a29bfe">Calculating waste metrics...</span>
+    </div>
+    <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}</style>
+  </div>`,false,true,2500);
+
+  const chartHtml=buildBarChart('Workflow Waste Analysis (% of time lost)',data.bars);
+  await botReply(chartHtml,false,true,1000);
+
+  // Animate bars
+  setTimeout(()=>{
+    document.querySelectorAll('.bar-fill').forEach(el=>{el.style.width=el.dataset.width});
+  },100);
+
+  const statsHtml=buildStats(data.waste,userData.teamSize,userData.salary);
+  await botReply(statsHtml,false,true,1000);
+
+  const findingsHtml=`<strong style="color:#a29bfe">Key Findings:</strong>`+buildFindings(data.top);
+  await botReply(findingsHtml,false,true,1200);
+
+  await botReply('That\'s your workflow analysis. Want to see what Go2\'s real-time coaching looks like for your team? Or I can break down the ROI projections.',false,false,800);
+  setQuickBtns(['Show coaching examples','Show ROI breakdown','How does data capture work?','Start free pilot']);
+}
+
+function sendMessage(){
+  if(conversationLock)return;
+  const v=input.value.trim();
+  if(!v)return;
+  input.value='';
+  processStep(v);
+}
+
+input.addEventListener('keydown',e=>{if(e.key==='Enter')sendMessage()});
+
+// Init
+(async()=>{
+  await botReply('Welcome to the Go2 AI Workflow Consultant. I\'ll analyze your team\'s workflow and show you exactly where you\'re losing time and money.',false,false,600);
+  await botReply('Let\'s start: <strong>What industry or type of business are you in?</strong>',false,true,800);
+  setQuickBtns(['E-commerce','SaaS','Agency','Healthcare','Finance']);
+})();
+</script>
+</body>
+</html>

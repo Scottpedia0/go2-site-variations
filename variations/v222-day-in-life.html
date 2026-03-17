@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 - A Day in the Life</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #0a0a0f; color: #fff; min-height: 100vh; }
+
+  .bg-gradient {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(ellipse at 20% 20%, rgba(99,102,241,0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(168,85,247,0.08) 0%, transparent 50%);
+    z-index: 0; pointer-events: none;
+  }
+
+  .logo {
+    position: fixed; top: 24px; left: 32px; font-size: 22px; font-weight: 800; z-index: 100;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  /* Role Selection */
+  .role-select {
+    position: relative; z-index: 1; min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 40px 20px; transition: all 0.6s ease;
+  }
+
+  .role-select.hidden { opacity: 0; pointer-events: none; position: absolute; }
+
+  .role-select h1 {
+    font-size: clamp(32px, 5vw, 56px); font-weight: 300; text-align: center;
+    margin-bottom: 12px; line-height: 1.2;
+  }
+  .role-select h1 strong { font-weight: 800; }
+  .role-select p { color: #64748b; font-size: 18px; margin-bottom: 48px; }
+
+  .roles-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px; max-width: 900px; width: 100%;
+  }
+
+  .role-card {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; padding: 32px 24px; text-align: center; cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .role-card:hover {
+    background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.3);
+    transform: translateY(-4px); box-shadow: 0 12px 40px rgba(99,102,241,0.15);
+  }
+
+  .role-icon { font-size: 40px; margin-bottom: 12px; display: block; }
+  .role-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .role-desc { font-size: 13px; color: #64748b; }
+
+  /* Timeline View */
+  .timeline-view {
+    position: relative; z-index: 1; min-height: 100vh; padding: 80px 20px 40px;
+    display: none;
+  }
+
+  .timeline-view.visible { display: block; animation: fadeIn 0.6s ease; }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .timeline-header {
+    text-align: center; margin-bottom: 40px;
+  }
+
+  .timeline-header h2 { font-size: clamp(24px, 3vw, 36px); font-weight: 300; margin-bottom: 8px; }
+  .timeline-header h2 strong { font-weight: 800; }
+
+  .view-toggle {
+    display: inline-flex; background: rgba(255,255,255,0.05); border-radius: 10px;
+    padding: 4px; margin-top: 16px;
+  }
+
+  .toggle-btn {
+    padding: 10px 24px; border-radius: 8px; border: none;
+    background: transparent; color: #64748b; font-size: 14px;
+    font-family: 'Inter', sans-serif; font-weight: 600; cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .toggle-btn.active { background: rgba(99,102,241,0.2); color: #818cf8; }
+
+  .timeline-columns {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+    max-width: 1200px; margin: 0 auto;
+  }
+
+  .timeline-column { position: relative; }
+
+  .column-header {
+    position: sticky; top: 0; z-index: 10; padding: 16px 0;
+    font-size: 16px; font-weight: 700; text-align: center;
+    margin-bottom: 16px; border-radius: 12px;
+  }
+
+  .column-header.without {
+    background: rgba(239,68,68,0.1); color: #f87171;
+    border: 1px solid rgba(239,68,68,0.2);
+  }
+
+  .column-header.with {
+    background: rgba(34,197,94,0.1); color: #4ade80;
+    border: 1px solid rgba(34,197,94,0.2);
+  }
+
+  .hour-block {
+    background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 14px; padding: 20px; margin-bottom: 12px;
+    cursor: pointer; transition: all 0.3s ease; position: relative;
+    overflow: hidden;
+  }
+
+  .hour-block:hover {
+    background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.1);
+    transform: translateX(4px);
+  }
+
+  .hour-block.expanded {
+    background: rgba(99,102,241,0.05); border-color: rgba(99,102,241,0.2);
+  }
+
+  .hour-time {
+    font-size: 12px; font-weight: 700; color: #6366f1;
+    letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px;
+  }
+
+  .hour-activity { font-size: 15px; font-weight: 600; margin-bottom: 4px; color: #e2e8f0; }
+
+  .hour-detail { font-size: 13px; color: #94a3b8; line-height: 1.5; }
+
+  .hour-waste {
+    display: inline-block; margin-top: 8px; padding: 3px 10px; border-radius: 6px;
+    font-size: 11px; font-weight: 700;
+  }
+
+  .hour-waste.high { background: rgba(239,68,68,0.15); color: #f87171; }
+  .hour-waste.medium { background: rgba(251,191,36,0.15); color: #fbbf24; }
+  .hour-waste.low { background: rgba(34,197,94,0.15); color: #4ade80; }
+  .hour-waste.none { background: rgba(99,102,241,0.15); color: #818cf8; }
+
+  .go2-insight {
+    max-height: 0; overflow: hidden; transition: max-height 0.4s ease, padding 0.4s ease;
+    background: rgba(99,102,241,0.06); border-radius: 10px; margin-top: 0;
+  }
+
+  .hour-block.expanded .go2-insight {
+    max-height: 300px; padding: 16px; margin-top: 12px;
+  }
+
+  .go2-label {
+    font-size: 11px; font-weight: 700; color: #818cf8;
+    letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .go2-label::before {
+    content: ''; display: block; width: 8px; height: 8px;
+    background: #6366f1; border-radius: 50%;
+    box-shadow: 0 0 8px rgba(99,102,241,0.6);
+  }
+
+  .go2-text { font-size: 13px; color: #cbd5e1; line-height: 1.6; }
+
+  .time-saved {
+    display: inline-block; margin-top: 8px; padding: 4px 12px;
+    background: rgba(34,197,94,0.15); color: #4ade80;
+    border-radius: 6px; font-size: 12px; font-weight: 700;
+  }
+
+  .day-summary {
+    max-width: 1200px; margin: 40px auto 0; padding: 32px;
+    background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
+  }
+
+  .summary-stat { text-align: center; }
+  .summary-label { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .summary-value { font-size: 32px; font-weight: 800; }
+  .summary-value.red { color: #f87171; }
+  .summary-value.green { color: #4ade80; }
+  .summary-value.blue { color: #60a5fa; }
+  .summary-value.purple { color: #a78bfa; }
+  .summary-sub { font-size: 12px; color: #475569; margin-top: 2px; }
+
+  .back-btn {
+    position: fixed; top: 24px; right: 32px; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1); color: #94a3b8;
+    padding: 8px 20px; border-radius: 8px; font-family: 'Inter', sans-serif;
+    font-size: 14px; cursor: pointer; z-index: 100; transition: all 0.3s;
+  }
+
+  .back-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+  .click-hint {
+    text-align: center; color: #475569; font-size: 13px; margin-bottom: 20px;
+    animation: pulse2 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse2 { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+  @media (max-width: 768px) {
+    .timeline-columns { grid-template-columns: 1fr; }
+    .day-summary { grid-template-columns: repeat(2, 1fr); }
+    .roles-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="bg-gradient"></div>
+<div class="logo">Go2</div>
+
+<div class="role-select" id="roleSelect">
+  <h1>A Day in <strong>Your</strong> Life</h1>
+  <p>Pick your role. See how Go2 transforms every hour.</p>
+  <div class="roles-grid">
+    <div class="role-card" onclick="selectRole('ceo')">
+      <span class="role-icon">&#128081;</span>
+      <div class="role-name">CEO / Founder</div>
+      <div class="role-desc">Strategic decisions, all-hands, fires</div>
+    </div>
+    <div class="role-card" onclick="selectRole('vpops')">
+      <span class="role-icon">&#9881;&#65039;</span>
+      <div class="role-name">VP Operations</div>
+      <div class="role-desc">Process optimization, team management</div>
+    </div>
+    <div class="role-card" onclick="selectRole('sales')">
+      <span class="role-icon">&#128176;</span>
+      <div class="role-name">Sales Rep</div>
+      <div class="role-desc">Prospecting, calls, CRM updates</div>
+    </div>
+    <div class="role-card" onclick="selectRole('dev')">
+      <span class="role-icon">&#128187;</span>
+      <div class="role-name">Developer</div>
+      <div class="role-desc">Code, reviews, sprint rituals</div>
+    </div>
+    <div class="role-card" onclick="selectRole('support')">
+      <span class="role-icon">&#127897;&#65039;</span>
+      <div class="role-name">Customer Support</div>
+      <div class="role-desc">Tickets, escalations, documentation</div>
+    </div>
+  </div>
+</div>
+
+<div class="timeline-view" id="timelineView">
+  <button class="back-btn" onclick="goBack()">&larr; Choose Another Role</button>
+  <div class="timeline-header">
+    <h2>A day as a <strong id="roleTitle"></strong></h2>
+    <p style="color:#64748b;font-size:15px;" id="roleSubtitle"></p>
+  </div>
+  <p class="click-hint">Click any hour to see what Go2 would do</p>
+  <div class="timeline-columns" id="timeline"></div>
+  <div class="day-summary" id="daySummary"></div>
+</div>
+
+<script>
+const roleData = {
+  ceo: {
+    title: 'CEO / Founder',
+    subtitle: 'Your day: back-to-back meetings, strategic decisions, and too many Slack pings.',
+    hours: [
+      { time: '8:00 AM', activity: 'Morning Email Triage', detail: '47 emails. 30 min scanning, mentally prioritizing. Reply to 8 urgent ones.', waste: 'medium', wasteLabel: '15 min wasted on low-priority',
+        go2: 'Go2 pre-categorizes emails by business impact. Auto-drafts replies for routine requests. You see only the 8 that matter.', saved: '20 min saved' },
+      { time: '9:00 AM', activity: 'Leadership Standup', detail: '45-min meeting with 6 direct reports. Status updates, some useful, some could be a Slack message.', waste: 'medium', wasteLabel: '20 min of updates that could be async',
+        go2: 'Go2 auto-generates status summaries from each team\'s actual work patterns. Meeting drops to 15 min of decisions only.', saved: '30 min saved' },
+      { time: '10:00 AM', activity: 'Board Deck Preparation', detail: 'Pulling metrics from 4 different dashboards into slides. Manual data gathering.', waste: 'high', wasteLabel: '40 min of manual data pulls',
+        go2: 'Go2 auto-compiles metrics from your tool stack. Board deck data is pre-populated. You focus on narrative.', saved: '35 min saved' },
+      { time: '11:00 AM', activity: 'Slack Fire: Customer Escalation', detail: 'VP of Sales pings about a churning enterprise account. 30 min of context-gathering across 4 threads.', waste: 'high', wasteLabel: '25 min gathering context',
+        go2: 'Go2 surfaces the full customer timeline instantly: support tickets, usage data, NPS scores. You have context in 2 minutes.', saved: '25 min saved' },
+      { time: '12:00 PM', activity: 'Working Lunch + Investor Call', detail: 'Quick prep, 30-min update call. Scramble to remember Q3 hiring numbers.', waste: 'low', wasteLabel: '10 min scrambling for data',
+        go2: 'Go2 prepares a one-page investor brief with real-time KPIs before every scheduled call. Zero scramble.', saved: '10 min saved' },
+      { time: '1:00 PM', activity: 'Product Review Meeting', detail: 'Engineering walks through sprint progress. Hard to tell what\'s actually on track vs. optimistic estimates.', waste: 'medium', wasteLabel: '15 min of ambiguous status',
+        go2: 'Go2 shows actual velocity data, compares estimates to reality, flags at-risk items. Decisions are data-backed.', saved: '15 min saved' },
+      { time: '2:00 PM', activity: '1:1 with VP Sales', detail: 'Review pipeline. Numbers look different in HubSpot vs. the spreadsheet she sent.', waste: 'medium', wasteLabel: '20 min reconciling data',
+        go2: 'Go2 maintains a single source of truth. Pipeline data is live, auto-reconciled. Conversation focuses on strategy.', saved: '20 min saved' },
+      { time: '3:00 PM', activity: 'Strategic Planning Block', detail: 'Finally, 60 min of real thinking time. Except 12 Slack interruptions break it into 5-min fragments.', waste: 'high', wasteLabel: '35 min lost to interruptions',
+        go2: 'Go2 activates Focus Mode. Non-urgent messages batched. Team coached to async. You get 55 min of unbroken think time.', saved: '35 min saved' },
+      { time: '4:00 PM', activity: 'Interview: VP Marketing Candidate', detail: 'Good interview but you forgot to review their assessment beforehand.', waste: 'low', wasteLabel: '5 min unprepared',
+        go2: 'Go2 sends a prep brief 15 min before every interview: candidate summary, key questions, team fit analysis.', saved: '10 min saved' },
+      { time: '5:00 PM', activity: 'End-of-Day Slack Catchup', detail: '89 unread messages. 20 min scanning, 15 need responses, most are FYI.', waste: 'high', wasteLabel: '15 min on noise',
+        go2: 'Go2 summarizes your Slack day: 3 items need your response, 2 decisions pending, everything else handled.', saved: '15 min saved' }
+    ]
+  },
+  vpops: {
+    title: 'VP Operations',
+    subtitle: 'Your day: processes, people, and putting out fires nobody else can see.',
+    hours: [
+      { time: '8:00 AM', activity: 'Review Team Dashboards', detail: 'Check 5 dashboards across different tools. Manually note discrepancies.', waste: 'high', wasteLabel: '30 min manual dashboard review',
+        go2: 'Go2 sends an automated morning briefing: anomalies flagged, trends highlighted, action items pre-identified.', saved: '25 min saved' },
+      { time: '9:00 AM', activity: 'Ops Team Standup', detail: '30 min standup that runs 45 min. Two people give 10-min updates on things you already knew.', waste: 'medium', wasteLabel: '15 min of redundant updates',
+        go2: 'Go2 auto-generates standup notes from actual work. Meeting is 12 min of blockers and decisions only.', saved: '30 min saved' },
+      { time: '10:00 AM', activity: 'Process Documentation', detail: 'Trying to document the onboarding workflow. Chase 3 people for "how they actually do it."', waste: 'high', wasteLabel: '40 min chasing tribal knowledge',
+        go2: 'Go2 already captured how each person actually does onboarding. Process documentation is auto-generated from real patterns.', saved: '40 min saved' },
+      { time: '11:00 AM', activity: 'Vendor Management Calls', detail: '2 vendor check-ins. Prep by pulling usage data from scattered spreadsheets.', waste: 'medium', wasteLabel: '20 min manual data prep',
+        go2: 'Go2 tracks tool usage patterns automatically. Vendor meeting prep is pre-built: ROI data, usage stats, renegotiation triggers.', saved: '20 min saved' },
+      { time: '12:00 PM', activity: 'Lunch + Slack Triage', detail: 'Eating while answering "how do I..." questions from 4 different teams.', waste: 'medium', wasteLabel: '20 min answering repeated questions',
+        go2: 'Go2\'s knowledge base answers how-to questions automatically. Your FAQ queries drop 70%.', saved: '20 min saved' },
+      { time: '1:00 PM', activity: 'New Hire Onboarding Check-in', detail: 'Week-2 new hire is confused about 3 tools. You walk them through manually.', waste: 'high', wasteLabel: '45 min manual walkthrough',
+        go2: 'Go2 provides real-time guided coaching for new hires. They get contextual tips as they work. Your involvement: 10-min check-in.', saved: '35 min saved' },
+      { time: '2:00 PM', activity: 'Cross-Team Process Audit', detail: 'Compare how 3 teams handle the same workflow. Discover they all do it differently.', waste: 'high', wasteLabel: '30 min discovering inconsistencies',
+        go2: 'Go2 maps all workflow variations automatically. Shows you the optimal path and which teams deviate. One click to coach all teams to best practice.', saved: '25 min saved' },
+      { time: '3:00 PM', activity: 'Automation Brainstorm', detail: 'Meeting to identify what to automate. Lots of guessing about time spent.', waste: 'medium', wasteLabel: '20 min guessing at data',
+        go2: 'Go2 shows exact time data for every workflow. Top automation candidates ranked by hours saved. No guessing required.', saved: '20 min saved' },
+      { time: '4:00 PM', activity: 'Budget Review with Finance', detail: 'Justify headcount with productivity data. Pull data from 3 sources manually.', waste: 'medium', wasteLabel: '25 min manual reporting',
+        go2: 'Go2 provides real-time productivity analytics. Headcount justification is automated with actual work output data.', saved: '25 min saved' },
+      { time: '5:00 PM', activity: 'Quarterly OKR Progress Review', detail: 'Update OKR tracker manually. Estimate completion percentages from gut feel.', waste: 'medium', wasteLabel: '20 min on gut-feel estimates',
+        go2: 'Go2 tracks work patterns against OKR milestones. Progress is measured from actual output, not self-reported estimates.', saved: '20 min saved' }
+    ]
+  },
+  sales: {
+    title: 'Sales Rep',
+    subtitle: 'Your day: supposed to be selling. Actually: CRM updates, meeting prep, and admin.',
+    hours: [
+      { time: '8:00 AM', activity: 'CRM Morning Updates', detail: 'Log yesterday\'s activities in Salesforce. Update 6 opportunity stages. Copy notes from notebook.', waste: 'high', wasteLabel: '35 min CRM admin',
+        go2: 'Go2 auto-logs activities from your actual tool usage. Opportunity stages update from email/calendar signals. Zero manual entry.', saved: '30 min saved' },
+      { time: '9:00 AM', activity: 'Team Sales Standup', detail: '30 min round-robin of pipeline updates. Repeat what\'s already in the CRM.', waste: 'medium', wasteLabel: '20 min of redundant reporting',
+        go2: 'Go2 pre-generates pipeline summaries. Standup is 10 min: coaching moments and deal strategy only.', saved: '20 min saved' },
+      { time: '10:00 AM', activity: 'Prospect Research', detail: 'Research 5 prospects for afternoon calls. LinkedIn, website, news. 10 min each.', waste: 'medium', wasteLabel: '25 min of manual research',
+        go2: 'Go2 auto-generates prospect briefs from public data, past interactions, and similar deal patterns. Ready when you are.', saved: '25 min saved' },
+      { time: '11:00 AM', activity: 'Discovery Call: Enterprise Lead', detail: 'Great 30-min call. Now spend 20 min writing up notes and next steps.', waste: 'medium', wasteLabel: '20 min post-call admin',
+        go2: 'Go2 captures call highlights, auto-generates summary, creates follow-up tasks. Notes are in CRM before you hang up.', saved: '18 min saved' },
+      { time: '12:00 PM', activity: 'Proposal Creation', detail: 'Customize template for a deal. Pull pricing, case studies, ROI calculator. 40 min of assembly work.', waste: 'high', wasteLabel: '25 min of template assembly',
+        go2: 'Go2 auto-generates proposals tailored to each prospect based on their industry, size, and pain points from discovery.', saved: '25 min saved' },
+      { time: '1:00 PM', activity: 'Lunch + LinkedIn Engagement', detail: 'Comment on prospects\' posts. Write 3 connection requests. Try to look natural.', waste: 'low', wasteLabel: 'Useful but time-consuming',
+        go2: 'Go2 coaches your social selling with timing suggestions and engagement templates based on what works for top reps.', saved: '10 min saved' },
+      { time: '2:00 PM', activity: 'Follow-Up Calls Block', detail: '8 follow-up calls planned. 3 no-answers, 2 voicemails, 3 conversations. Log each one.', waste: 'medium', wasteLabel: '15 min logging calls',
+        go2: 'Go2 auto-logs all calls, suggests optimal call times based on past answer rates, and prioritizes highest-probability contacts.', saved: '15 min saved' },
+      { time: '3:00 PM', activity: 'Deal Review with Manager', detail: 'Walk through 4 stuck deals. Manually pull data to explain why they\'re stuck.', waste: 'medium', wasteLabel: '15 min prepping for review',
+        go2: 'Go2 pre-analyzes stuck deals: shows engagement patterns, risk factors, and suggested next moves. Manager sees it too.', saved: '15 min saved' },
+      { time: '4:00 PM', activity: 'Email Outreach Block', detail: 'Write 12 personalized emails. Research + write = 8 min each. Get through 7.', waste: 'medium', wasteLabel: '20 min on repetitive personalization',
+        go2: 'Go2 drafts personalized emails based on prospect data. Your job: review, tweak tone, send. 12 emails in 25 min.', saved: '30 min saved' },
+      { time: '5:00 PM', activity: 'Forecast Update + EOD Admin', detail: 'Update weekly forecast spreadsheet. Clean up CRM. Plan tomorrow.', waste: 'high', wasteLabel: '30 min end-of-day admin',
+        go2: 'Go2 auto-updates forecast from deal signals. Tomorrow\'s priorities are suggested based on deal urgency and calendar gaps.', saved: '25 min saved' }
+    ]
+  },
+  dev: {
+    title: 'Developer',
+    subtitle: 'Your day: supposed to be coding. Actually: meetings, context-switching, and waiting.',
+    hours: [
+      { time: '9:00 AM', activity: 'Morning Slack Catchup', detail: '45 messages overnight. 3 channels need attention. Code review request from yesterday.', waste: 'medium', wasteLabel: '15 min on noise',
+        go2: 'Go2 summarizes overnight messages by priority. Code review flagged with estimated review time. Non-essential batched.', saved: '12 min saved' },
+      { time: '9:30 AM', activity: 'Sprint Standup', detail: '15 min standup that lasts 25 min. Two people give detailed technical breakdowns nobody asked for.', waste: 'medium', wasteLabel: '10 min of over-detailed updates',
+        go2: 'Go2 auto-generates standup updates from commit history and tool activity. Standup is 8 min of blockers only.', saved: '15 min saved' },
+      { time: '10:00 AM', activity: 'Deep Work: Feature Development', detail: 'Finally coding. 45 min of productive flow before a Slack ping breaks concentration.', waste: 'high', wasteLabel: '20 min recovering focus after interruption',
+        go2: 'Go2 activates Shield Mode during deep work blocks. Messages queued. Team coached on async patterns. 90 min unbroken flow.', saved: '20 min saved' },
+      { time: '11:00 AM', activity: 'Code Review', detail: 'Review PR from teammate. 300-line change. 15 min reading, 10 min writing comments, 5 min discussing.', waste: 'low', wasteLabel: 'Valuable but could be faster',
+        go2: 'Go2 pre-annotates PRs with context: what changed, why, related issues. Highlights patterns that differ from team conventions. Review in 15 min.', saved: '10 min saved' },
+      { time: '12:00 PM', activity: 'Sprint Planning Meeting', detail: '60 min meeting. 20 min of useful estimation, 40 min of scope discussion that goes in circles.', waste: 'high', wasteLabel: '30 min of circular discussion',
+        go2: 'Go2 provides historical velocity data, auto-estimates stories from similar past work, and flags scope creep patterns. Meeting drops to 30 min.', saved: '30 min saved' },
+      { time: '1:00 PM', activity: 'Lunch + Debugging', detail: 'Eating while debugging a production issue. Context-switching between food and stack traces.', waste: 'medium', wasteLabel: '15 min of fragmented debugging',
+        go2: 'Go2 captures debugging patterns and suggests similar past issues from team history. Time-to-resolution drops 40%.', saved: '15 min saved' },
+      { time: '2:00 PM', activity: 'Deep Work: Bug Fixes', detail: '2 bugs to fix. First takes 20 min. Second requires asking 3 people how the legacy code works.', waste: 'high', wasteLabel: '30 min hunting for tribal knowledge',
+        go2: 'Go2\'s auto-documented codebase knowledge means legacy code context is one search away. No human scavenger hunt.', saved: '25 min saved' },
+      { time: '3:00 PM', activity: 'Architecture Discussion', detail: 'Meeting about new microservice. Whiteboard session. Good but unrecorded decisions.', waste: 'medium', wasteLabel: '10 min of lost context (no docs)',
+        go2: 'Go2 captures architectural decisions as they\'re made. ADRs auto-generated. Future devs can trace why decisions were made.', saved: '10 min saved' },
+      { time: '4:00 PM', activity: 'Documentation Debt', detail: 'Write docs for the feature you shipped last week. Already forgot some decisions.', waste: 'high', wasteLabel: '25 min reconstructing context',
+        go2: 'Go2 wrote the docs as you coded. Auto-generated from your actual workflow: what you built, why, and how it connects.', saved: '25 min saved' },
+      { time: '5:00 PM', activity: 'Jira Housekeeping', detail: 'Update 8 tickets. Move cards. Add time logs. Write sprint notes.', waste: 'medium', wasteLabel: '20 min of ticket admin',
+        go2: 'Go2 auto-updates tickets from git activity. Time logs inferred from actual work. Sprint notes auto-generated.', saved: '18 min saved' }
+    ]
+  },
+  support: {
+    title: 'Customer Support Rep',
+    subtitle: 'Your day: tickets, escalations, and the same 5 questions asked 50 different ways.',
+    hours: [
+      { time: '8:00 AM', activity: 'Queue Review', detail: '34 tickets in queue. Manually triage by scanning subject lines. Some mislabeled priorities.', waste: 'medium', wasteLabel: '15 min manual triage',
+        go2: 'Go2 auto-triages tickets by sentiment, customer value, and issue complexity. Queue is pre-prioritized when you arrive.', saved: '12 min saved' },
+      { time: '9:00 AM', activity: 'First Ticket Batch', detail: 'Handle 6 tickets. 4 are variations of the same FAQ. Write similar responses with slight tweaks.', waste: 'high', wasteLabel: '25 min on repetitive answers',
+        go2: 'Go2 auto-resolves FAQ tickets with personalized responses. Your queue shows only unique issues. 4 tickets handled in 0 min.', saved: '25 min saved' },
+      { time: '10:00 AM', activity: 'Escalation: Enterprise Account', detail: 'Complex technical issue. Spend 20 min reading past tickets to understand history. Loop in engineering.', waste: 'high', wasteLabel: '20 min context-gathering',
+        go2: 'Go2 surfaces complete customer history: past issues, resolutions, account health score. Engineering context included.', saved: '18 min saved' },
+      { time: '11:00 AM', activity: 'Live Chat Shift', detail: '8 simultaneous chats. Constant context-switching. Copy-pasting links to docs.', waste: 'medium', wasteLabel: '15 min on repetitive link-finding',
+        go2: 'Go2 suggests responses in real-time based on conversation context. Auto-surfaces relevant docs. You handle 12 chats.', saved: '15 min saved' },
+      { time: '12:00 PM', activity: 'Knowledge Base Update', detail: 'New feature launched. Write 3 help articles from scratch using engineering docs.', waste: 'medium', wasteLabel: '20 min translating tech docs',
+        go2: 'Go2 auto-generates help articles from product changes and common questions. You review and publish.', saved: '20 min saved' },
+      { time: '1:00 PM', activity: 'Team Sync + Lunch', detail: '20 min team meeting: review metrics, discuss problem tickets. Metrics manually compiled.', waste: 'low', wasteLabel: '10 min on manual metrics',
+        go2: 'Go2 auto-compiles team metrics. Meeting shows AI-identified trends: rising issues, resolution bottlenecks, coaching moments.', saved: '10 min saved' },
+      { time: '2:00 PM', activity: 'Ticket Batch #2', detail: '10 more tickets. 3 require checking internal Slack channels for answers. 2 need engineering input.', waste: 'high', wasteLabel: '30 min hunting for answers internally',
+        go2: 'Go2\'s knowledge graph connects customer issues to internal discussions. Answers surfaced instantly from past Slack threads.', saved: '25 min saved' },
+      { time: '3:00 PM', activity: 'Customer Onboarding Call', detail: '45 min walking a new customer through setup. Same walkthrough you\'ve done 200 times.', waste: 'medium', wasteLabel: '20 min of repetitive walkthrough',
+        go2: 'Go2 provides guided in-app coaching for new customers. Your call is 20 min of specific questions, not generic walkthroughs.', saved: '25 min saved' },
+      { time: '4:00 PM', activity: 'Bug Report Processing', detail: 'Reproduce 3 bugs. Write detailed reports for engineering. Screenshot, steps, logs.', waste: 'medium', wasteLabel: '15 min on report formatting',
+        go2: 'Go2 auto-generates bug reports from customer interaction data: steps, environment, frequency. Engineering gets actionable reports.', saved: '15 min saved' },
+      { time: '5:00 PM', activity: 'CSAT Survey Review + EOD', detail: 'Review 12 CSAT responses. Flag 2 negative ones. Update spreadsheet. Write EOD summary.', waste: 'medium', wasteLabel: '15 min manual review',
+        go2: 'Go2 auto-analyzes CSAT with sentiment trends. Negative responses triaged. EOD summary auto-generated from your actual output.', saved: '15 min saved' }
+    ]
+  }
+};
+
+let currentRole = null;
+
+function selectRole(role) {
+  currentRole = role;
+  const data = roleData[role];
+  document.getElementById('roleSelect').classList.add('hidden');
+  document.getElementById('timelineView').classList.add('visible');
+  document.getElementById('roleTitle').textContent = data.title;
+  document.getElementById('roleSubtitle').textContent = data.subtitle;
+  buildTimeline(data);
+}
+
+function goBack() {
+  document.getElementById('roleSelect').classList.remove('hidden');
+  document.getElementById('timelineView').classList.remove('visible');
+}
+
+function buildTimeline(data) {
+  const container = document.getElementById('timeline');
+  let totalWaste = 0;
+  let totalSaved = 0;
+
+  data.hours.forEach(h => {
+    const wasteMin = parseInt(h.wasteLabel) || 15;
+    totalWaste += wasteMin;
+    const savedMin = parseInt(h.saved) || 15;
+    totalSaved += savedMin;
+  });
+
+  let html = '<div class="timeline-column">';
+  html += '<div class="column-header without">Without Go2</div>';
+  data.hours.forEach((h, i) => {
+    html += `
+      <div class="hour-block" onclick="this.classList.toggle('expanded')">
+        <div class="hour-time">${h.time}</div>
+        <div class="hour-activity">${h.activity}</div>
+        <div class="hour-detail">${h.detail}</div>
+        <span class="hour-waste ${h.waste}">${h.wasteLabel}</span>
+        <div class="go2-insight">
+          <div class="go2-label">Go2 Coaching Insight</div>
+          <div class="go2-text">${h.go2}</div>
+          <span class="time-saved">${h.saved}</span>
+        </div>
+      </div>`;
+  });
+  html += '</div>';
+
+  html += '<div class="timeline-column">';
+  html += '<div class="column-header with">With Go2</div>';
+  data.hours.forEach((h, i) => {
+    const savedMin = parseInt(h.saved) || 15;
+    html += `
+      <div class="hour-block" style="border-left: 3px solid rgba(34,197,94,0.3);">
+        <div class="hour-time">${h.time}</div>
+        <div class="hour-activity">${h.activity}</div>
+        <div class="hour-detail" style="color:#4ade80;">${h.go2}</div>
+        <span class="time-saved">${h.saved}</span>
+      </div>`;
+  });
+  html += '</div>';
+
+  container.innerHTML = html;
+
+  const productivity = Math.round((totalSaved / (8 * 60)) * 100);
+  document.getElementById('daySummary').innerHTML = `
+    <div class="summary-stat">
+      <div class="summary-label">Daily Time Wasted</div>
+      <div class="summary-value red">${Math.round(totalWaste)} min</div>
+      <div class="summary-sub">${(totalWaste / 60).toFixed(1)} hours lost per day</div>
+    </div>
+    <div class="summary-stat">
+      <div class="summary-label">Time Recovered by Go2</div>
+      <div class="summary-value green">${Math.round(totalSaved)} min</div>
+      <div class="summary-sub">${(totalSaved / 60).toFixed(1)} hours back per day</div>
+    </div>
+    <div class="summary-stat">
+      <div class="summary-label">Productivity Gain</div>
+      <div class="summary-value blue">+${productivity}%</div>
+      <div class="summary-sub">More time on real work</div>
+    </div>
+    <div class="summary-stat">
+      <div class="summary-label">Annual Value</div>
+      <div class="summary-value purple">$${Math.round(totalSaved / 60 * 75 * 250 / 1000)}K</div>
+      <div class="summary-sub">At $75/hr avg cost</div>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>
