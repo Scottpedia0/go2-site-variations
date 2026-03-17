@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Market Landscape</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+body{background:#0a0e17;color:#c8d6e5;font-family:'Inter',sans-serif;min-height:100vh;display:flex}
+.sidebar{width:340px;background:#0d1117;border-right:1px solid #1e293b;padding:24px;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column}
+.sidebar h1{font-size:22px;font-weight:800;color:#fff;margin-bottom:4px}
+.sidebar h1 span{color:#00ff87}
+.sidebar .sub{font-size:11px;color:#4a6fa5;font-family:'JetBrains Mono',monospace;margin-bottom:24px;line-height:1.6}
+.quadrant-labels{margin-bottom:20px}
+.ql{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #1e293b;font-size:12px}
+.ql:last-child{border-bottom:none}
+.ql-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ql-name{color:#fff;font-weight:500;flex:1}
+.ql-desc{color:#4a6fa5;font-size:10px}
+.detail-panel{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:20px;margin-top:auto;display:none}
+.detail-panel.show{display:block;animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.dp-name{font-size:18px;font-weight:700;color:#fff;margin-bottom:4px}
+.dp-tag{font-size:10px;text-transform:uppercase;letter-spacing:1px;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:12px}
+.dp-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1e293b33;font-size:12px}
+.dp-row:last-child{border-bottom:none}
+.dp-label{color:#4a6fa5}
+.dp-val{color:#fff;font-family:'JetBrains Mono',monospace;font-weight:500}
+.dp-desc{font-size:12px;color:#8892b0;margin-top:12px;line-height:1.6}
+.dp-differentiator{margin-top:12px;padding:10px;background:#00ff8711;border:1px solid #00ff8733;border-radius:8px;font-size:11px;color:#00ff87;display:none}
+
+.chart-area{flex:1;position:relative;padding:40px}
+canvas{width:100%;height:100%;cursor:crosshair}
+.axis-label{position:absolute;font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#4a6fa5;font-family:'JetBrains Mono',monospace}
+.axis-label.x-left{bottom:16px;left:60px}
+.axis-label.x-right{bottom:16px;right:40px}
+.axis-label.y-bottom{left:16px;bottom:60px;writing-mode:vertical-rl;transform:rotate(180deg)}
+.axis-label.y-top{left:16px;top:40px;writing-mode:vertical-rl;transform:rotate(180deg)}
+.quadrant-name{position:absolute;font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#1e293b;font-family:'JetBrains Mono',monospace;pointer-events:none}
+.qn-tl{top:50px;left:calc(50% - 200px)}
+.qn-tr{top:50px;right:60px}
+.qn-bl{bottom:50px;left:calc(50% - 200px)}
+.qn-br{bottom:50px;right:60px}
+
+.filter-row{position:absolute;top:12px;right:40px;display:flex;gap:8px;z-index:5}
+.filter-btn{background:#111827;border:1px solid #1e293b;border-radius:6px;padding:6px 12px;font-size:10px;color:#8892b0;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
+.filter-btn.active{background:#00ff8722;border-color:#00ff87;color:#00ff87}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <h1>Market <span>Landscape</span></h1>
+  <div class="sub">Workforce intelligence & productivity space. Interactive scatter plot showing where each product sits on the spectrum from surveillance to coaching, reactive to predictive.</div>
+
+  <div class="quadrant-labels">
+    <div class="ql"><div class="ql-dot" style="background:#1e293b"></div><div><div class="ql-name">Monitoring + Reactive</div><div class="ql-desc">Traditional time tracking, screenshots</div></div></div>
+    <div class="ql"><div class="ql-dot" style="background:#64b5f6"></div><div><div class="ql-name">Monitoring + Predictive</div><div class="ql-desc">Analytics dashboards, trend reports</div></div></div>
+    <div class="ql"><div class="ql-dot" style="background:#ffd54f"></div><div><div class="ql-name">Coaching + Reactive</div><div class="ql-desc">Post-hoc recommendations, weekly reports</div></div></div>
+    <div class="ql"><div class="ql-dot" style="background:#00ff87"></div><div><div class="ql-name">AI Coaching + Predictive</div><div class="ql-desc">Real-time AI, proactive optimization</div></div></div>
+  </div>
+
+  <div class="detail-panel" id="detail-panel">
+    <div class="dp-name" id="dp-name"></div>
+    <div class="dp-tag" id="dp-tag"></div>
+    <div id="dp-rows"></div>
+    <div class="dp-desc" id="dp-desc"></div>
+    <div class="dp-differentiator" id="dp-diff"></div>
+  </div>
+</div>
+
+<div class="chart-area">
+  <canvas id="canvas"></canvas>
+  <div class="axis-label x-left">Monitoring</div>
+  <div class="axis-label x-right">Coaching</div>
+  <div class="axis-label y-bottom">Reactive</div>
+  <div class="axis-label y-top">Predictive</div>
+  <div class="quadrant-name qn-tl">Predictive Monitoring</div>
+  <div class="quadrant-name qn-tr">AI Coaching + Predictive</div>
+  <div class="quadrant-name qn-bl">Traditional Monitoring</div>
+  <div class="quadrant-name qn-br">Reactive Coaching</div>
+  <div class="filter-row">
+    <button class="filter-btn active" onclick="toggleFilter('all',this)">All</button>
+    <button class="filter-btn" onclick="toggleFilter('monitor',this)">Monitoring</button>
+    <button class="filter-btn" onclick="toggleFilter('coach',this)">Coaching</button>
+    <button class="filter-btn" onclick="toggleFilter('hybrid',this)">Hybrid</button>
+  </div>
+</div>
+
+<script>
+const products=[
+  {name:'Go2',x:.88,y:.92,r:28,color:'#00ff87',glow:true,category:'coach',
+    tag:'AI Coaching Platform',tagColor:'#00ff87',tagBg:'#00ff8722',
+    founded:'2019',employees:'120+',customers:'12,800+',workers:'2M+',funding:'$60M+ platform sales',
+    approach:'AI-first',pricing:'Per worker/month',
+    desc:'Captures how work actually happens via desktop agent. Real-time AI coaching, auto-documents processes, finds automation opportunities, trains AI agents on real work data. 89% worker satisfaction.',
+    diff:'Go2 is the only platform that turns observation into action — coaching workers in real-time, auto-generating process documentation, and training AI agents to automate repetitive work. Not monitoring. Augmentation.'},
+  {name:'Hubstaff',x:.18,y:.35,r:14,color:'#8892b0',category:'monitor',
+    tag:'Time Tracking + Monitoring',tagColor:'#8892b0',tagBg:'#1e293b',
+    founded:'2012',employees:'100+',customers:'95,000+',workers:'N/A',funding:'Bootstrapped',
+    approach:'Monitoring-first',pricing:'$5-25/user/mo',
+    desc:'Time tracking with screenshots, activity levels, GPS tracking. Primarily focused on remote team oversight and payroll integration. Limited analytics beyond activity percentages.',
+    diff:null},
+  {name:'Time Doctor',x:.22,y:.42,r:13,color:'#8892b0',category:'monitor',
+    tag:'Employee Monitoring',tagColor:'#8892b0',tagBg:'#1e293b',
+    founded:'2012',employees:'200+',customers:'83,000+',workers:'N/A',funding:'Private',
+    approach:'Monitoring-first',pricing:'$7-20/user/mo',
+    desc:'Screenshots, website/app tracking, distraction alerts. Pop-up notifications when workers visit non-work sites. Focus on visibility and compliance rather than improvement.',
+    diff:null},
+  {name:'Teramind',x:.12,y:.55,r:12,color:'#64b5f6',category:'monitor',
+    tag:'DLP + Monitoring',tagColor:'#64b5f6',tagBg:'#64b5f622',
+    founded:'2014',employees:'200+',customers:'10,000+',workers:'N/A',funding:'Private',
+    approach:'Security-first',pricing:'$10-25/user/mo',
+    desc:'Deep monitoring with keystroke logging, email monitoring, DLP features. Strong security angle but surveillance-heavy approach. Some predictive risk scoring for insider threats.',
+    diff:null},
+  {name:'ActivTrak',x:.38,y:.58,r:14,color:'#64b5f6',category:'hybrid',
+    tag:'Workforce Analytics',tagColor:'#64b5f6',tagBg:'#64b5f622',
+    founded:'2009',employees:'300+',customers:'9,500+',workers:'N/A',funding:'$77M raised',
+    approach:'Analytics-focused',pricing:'$10-17/user/mo',
+    desc:'Moved beyond pure monitoring toward analytics and insights. Productivity dashboards, team comparisons, work pattern analysis. Getting closer to coaching but still primarily retrospective.',
+    diff:null},
+  {name:'Toggl Track',x:.55,y:.2,r:11,color:'#ffd54f',category:'coach',
+    tag:'Time Tracking',tagColor:'#ffd54f',tagBg:'#ffd54f22',
+    founded:'2006',employees:'400+',customers:'70,000+',workers:'N/A',funding:'Bootstrapped',
+    approach:'User-friendly',pricing:'$9-18/user/mo',
+    desc:'Simple, worker-friendly time tracking. Good UX but limited intelligence. Manual time entry, basic reports. No AI, no automation, no coaching. Pleasant but passive.',
+    diff:null},
+  {name:'Clockify',x:.48,y:.15,r:10,color:'#ffd54f',category:'coach',
+    tag:'Free Time Tracking',tagColor:'#ffd54f',tagBg:'#ffd54f22',
+    founded:'2017',employees:'100+',customers:'260,000+',workers:'N/A',funding:'Bootstrapped',
+    approach:'Freemium',pricing:'Free - $12/user/mo',
+    desc:'Free time tracking tool with basic reporting. Large user base driven by free tier. No intelligence layer, no AI, no automation. Captures time but does nothing with the data.',
+    diff:null},
+  {name:'Veriato',x:.1,y:.48,r:9,color:'#8892b0',category:'monitor',
+    tag:'Insider Threat',tagColor:'#8892b0',tagBg:'#1e293b',
+    founded:'1998',employees:'100+',customers:'5,000+',workers:'N/A',funding:'Private',
+    approach:'Security-first',pricing:'Custom',
+    desc:'Heavy-duty insider threat detection and employee monitoring. Keystroke logging, video recording, behavioral analytics focused on security risks rather than productivity.',
+    diff:null},
+  {name:'DeskTime',x:.3,y:.28,r:9,color:'#8892b0',category:'monitor',
+    tag:'Automatic Tracking',tagColor:'#8892b0',tagBg:'#1e293b',
+    founded:'2011',employees:'50+',customers:'47,000+',workers:'N/A',funding:'Bootstrapped',
+    approach:'Automatic tracking',pricing:'$7-20/user/mo',
+    desc:'Automatic time tracking with productivity categorization. URL and app tracking, optional screenshots. Reasonable approach but no intelligence or coaching layer.',
+    diff:null},
+  {name:'Prodoscore',x:.52,y:.65,r:10,color:'#64b5f6',category:'hybrid',
+    tag:'Productivity Intelligence',tagColor:'#64b5f6',tagBg:'#64b5f622',
+    founded:'2016',employees:'50+',customers:'2,000+',workers:'N/A',funding:'$4M raised',
+    approach:'Scoring-focused',pricing:'Custom',
+    desc:'Single productivity score aggregated from multiple data sources. Non-invasive approach using cloud tool APIs rather than desktop agents. Provides visibility but limited coaching.',
+    diff:null},
+  {name:'Sapience',x:.42,y:.72,r:9,color:'#64b5f6',category:'hybrid',
+    tag:'Work Analytics',tagColor:'#64b5f6',tagBg:'#64b5f622',
+    founded:'2009',employees:'200+',customers:'1,500+',workers:'N/A',funding:'Private',
+    approach:'Enterprise analytics',pricing:'Custom',
+    desc:'Enterprise workforce analytics focused on operational efficiency. Effort analytics, capacity planning, workload balancing. More analytics than coaching, primarily for management.',
+    diff:null},
+  {name:'Workpuls',x:.25,y:.38,r:8,color:'#8892b0',category:'monitor',
+    tag:'Employee Monitoring',tagColor:'#8892b0',tagBg:'#1e293b',
+    founded:'2016',employees:'50+',customers:'3,000+',workers:'N/A',funding:'Private',
+    approach:'Monitoring',pricing:'$6-12/user/mo',
+    desc:'Screenshots, app/URL tracking, real-time monitoring dashboard. Standard monitoring feature set with stealth mode option. Surveillance-oriented approach.',
+    diff:null},
+];
+
+const canvas=document.getElementById('canvas');
+const ctx=canvas.getContext('2d');
+let W,H,hoveredProduct=null,selectedProduct=null;
+let animProgress=0;
+
+function resize(){
+  const rect=canvas.parentElement.getBoundingClientRect();
+  W=canvas.width=rect.width*2;
+  H=canvas.height=rect.height*2;
+}
+resize();
+window.addEventListener('resize',resize);
+
+let activeFilter='all';
+function toggleFilter(f,btn){
+  activeFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function toCanvas(x,y){
+  const pad=80;
+  return{
+    cx:pad+(W-pad*2)*x,
+    cy:H-pad-(H-pad*2)*y
+  };
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  animProgress=Math.min(1,animProgress+.02);
+  const ease=1-Math.pow(1-animProgress,3);
+
+  const pad=80;
+  // Grid
+  ctx.strokeStyle='#1e293b33';
+  ctx.lineWidth=1;
+  for(let i=0;i<=10;i++){
+    const x=pad+(W-pad*2)*(i/10);
+    const y=H-pad-(H-pad*2)*(i/10);
+    ctx.beginPath();ctx.moveTo(x,pad);ctx.lineTo(x,H-pad);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(W-pad,y);ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle='#1e293b';
+  ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(pad,H-pad);ctx.lineTo(W-pad,H-pad);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(pad,pad);ctx.lineTo(pad,H-pad);ctx.stroke();
+
+  // Quadrant dividers
+  const midX=pad+(W-pad*2)*.5;
+  const midY=H-pad-(H-pad*2)*.5;
+  ctx.strokeStyle='#1e293b66';
+  ctx.lineWidth=1;
+  ctx.setLineDash([8,6]);
+  ctx.beginPath();ctx.moveTo(midX,pad);ctx.lineTo(midX,H-pad);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(pad,midY);ctx.lineTo(W-pad,midY);ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Quadrant fills
+  // Top-right (AI coaching + predictive) - slight green tint
+  ctx.fillStyle='#00ff8706';
+  ctx.fillRect(midX,pad,W-pad-midX,midY-pad);
+
+  // Products
+  products.forEach(p=>{
+    if(activeFilter!=='all'&&p.category!==activeFilter)return;
+    const pos=toCanvas(p.x,p.y);
+    const r=p.r*ease*(W/1400);
+    const isHovered=hoveredProduct===p.name;
+    const isSelected=selectedProduct===p.name;
+    const isGo2=p.glow;
+
+    // Glow for Go2
+    if(isGo2){
+      const t=Date.now()/1000;
+      const pulseR=r+8+Math.sin(t*2)*4;
+      const grad=ctx.createRadialGradient(pos.cx,pos.cy,r*.5,pos.cx,pos.cy,pulseR*2.5);
+      grad.addColorStop(0,p.color+'44');
+      grad.addColorStop(.5,p.color+'11');
+      grad.addColorStop(1,'transparent');
+      ctx.fillStyle=grad;
+      ctx.beginPath();ctx.arc(pos.cx,pos.cy,pulseR*2.5,0,Math.PI*2);ctx.fill();
+    }
+
+    // Dot
+    const dotR=isHovered||isSelected?r*1.2:r;
+    ctx.beginPath();
+    ctx.arc(pos.cx,pos.cy,dotR,0,Math.PI*2);
+    if(isGo2){
+      const grad=ctx.createRadialGradient(pos.cx-dotR*.3,pos.cy-dotR*.3,0,pos.cx,pos.cy,dotR);
+      grad.addColorStop(0,'#66ffaa');
+      grad.addColorStop(1,p.color);
+      ctx.fillStyle=grad;
+    } else {
+      ctx.fillStyle=(isHovered||isSelected)?p.color:p.color+'88';
+    }
+    ctx.fill();
+
+    if(isHovered||isSelected){
+      ctx.strokeStyle=p.color;
+      ctx.lineWidth=2;
+      ctx.stroke();
+    }
+
+    // Label
+    ctx.fillStyle=(isHovered||isSelected||isGo2)?'#fff':'#8892b0';
+    ctx.font=`${isGo2?'700':'500'} ${isGo2?26:20}px Inter`;
+    ctx.textAlign='center';
+    ctx.textBaseline='bottom';
+    ctx.fillText(p.name,pos.cx,pos.cy-dotR-8);
+  });
+
+  requestAnimationFrame(draw);
+}
+
+// Mouse interaction
+canvas.addEventListener('mousemove',e=>{
+  const rect=canvas.getBoundingClientRect();
+  const mx=(e.clientX-rect.left)*(W)/rect.width;
+  const my=(e.clientY-rect.top)*(H)/rect.height;
+  let found=null;
+  products.forEach(p=>{
+    if(activeFilter!=='all'&&p.category!==activeFilter)return;
+    const pos=toCanvas(p.x,p.y);
+    const r=p.r*(W/1400);
+    const dist=Math.sqrt((mx-pos.cx)**2+(my-pos.cy)**2);
+    if(dist<r+15)found=p.name;
+  });
+  hoveredProduct=found;
+  canvas.style.cursor=found?'pointer':'crosshair';
+});
+
+canvas.addEventListener('click',e=>{
+  if(hoveredProduct){
+    selectedProduct=hoveredProduct;
+    showDetail(hoveredProduct);
+  } else {
+    selectedProduct=null;
+    document.getElementById('detail-panel').classList.remove('show');
+    document.getElementById('detail-panel').style.display='none';
+  }
+});
+
+function showDetail(name){
+  const p=products.find(x=>x.name===name);
+  if(!p)return;
+  const panel=document.getElementById('detail-panel');
+  document.getElementById('dp-name').textContent=p.name;
+  const tag=document.getElementById('dp-tag');
+  tag.textContent=p.tag;
+  tag.style.color=p.tagColor;
+  tag.style.background=p.tagBg;
+
+  const rows=document.getElementById('dp-rows');
+  rows.innerHTML=`
+    <div class="dp-row"><span class="dp-label">Founded</span><span class="dp-val">${p.founded}</span></div>
+    <div class="dp-row"><span class="dp-label">Employees</span><span class="dp-val">${p.employees}</span></div>
+    <div class="dp-row"><span class="dp-label">Customers</span><span class="dp-val">${p.customers}</span></div>
+    ${p.workers?`<div class="dp-row"><span class="dp-label">Worker Profiles</span><span class="dp-val">${p.workers}</span></div>`:''}
+    <div class="dp-row"><span class="dp-label">Revenue/Funding</span><span class="dp-val">${p.funding}</span></div>
+    <div class="dp-row"><span class="dp-label">Approach</span><span class="dp-val">${p.approach}</span></div>
+    <div class="dp-row"><span class="dp-label">Pricing</span><span class="dp-val">${p.pricing}</span></div>
+    <div class="dp-row"><span class="dp-label">Coaching (x)</span><span class="dp-val">${Math.round(p.x*100)}%</span></div>
+    <div class="dp-row"><span class="dp-label">Predictive (y)</span><span class="dp-val">${Math.round(p.y*100)}%</span></div>`;
+
+  document.getElementById('dp-desc').textContent=p.desc;
+
+  const diff=document.getElementById('dp-diff');
+  if(p.diff){
+    diff.style.display='block';
+    diff.textContent=p.diff;
+  } else {
+    diff.style.display='none';
+  }
+
+  panel.style.display='block';
+  panel.classList.add('show');
+}
+
+draw();
+// Auto-select Go2 after a moment
+setTimeout(()=>{selectedProduct='Go2';showDetail('Go2')},1500);
+</script>
+</body>
+</html>

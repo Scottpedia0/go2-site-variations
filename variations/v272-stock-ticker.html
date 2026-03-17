@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACME Workforce Index | Go2 Bloomberg Terminal</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap');
+:root{--bg:#0a0e17;--panel:#111827;--border:#1e293b;--green:#22c55e;--red:#ef4444;--blue:#3b82f6;--amber:#f59e0b;--text:#e2e8f0;--muted:#64748b;--orange:#f97316}
+body{font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--text);min-height:100vh;font-size:12px;overflow-x:hidden}
+/* TOP BAR */
+.top-bar{background:#000;border-bottom:2px solid var(--amber);padding:4px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.top-bar .logo{color:var(--amber);font-weight:700;font-size:14px;letter-spacing:2px}
+.top-bar .market-status{display:flex;gap:16px;align-items:center}
+.top-bar .dot{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.time-display{color:var(--amber);font-size:11px}
+/* TICKER TAPE */
+.ticker-tape{background:#000;border-bottom:1px solid var(--border);overflow:hidden;height:32px;display:flex;align-items:center}
+.ticker-scroll{display:flex;animation:scroll 40s linear infinite;white-space:nowrap}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ticker-item{display:flex;align-items:center;gap:6px;padding:0 20px;font-size:11px}
+.ticker-item .symbol{color:var(--amber);font-weight:700}
+.ticker-item .price{color:var(--text)}
+.ticker-item .change{font-weight:500}
+.ticker-item .change.up{color:var(--green)}
+.ticker-item .change.down{color:var(--red)}
+/* MAIN GRID */
+.main-grid{display:grid;grid-template-columns:280px 1fr 300px;grid-template-rows:auto;gap:1px;background:var(--border);min-height:calc(100vh - 70px)}
+@media(max-width:1024px){.main-grid{grid-template-columns:1fr;}}
+.panel{background:var(--panel);padding:12px}
+.panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.panel-title{color:var(--amber);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:1px}
+/* WATCHLIST */
+.watchlist-row{display:grid;grid-template-columns:70px 1fr 60px 70px;gap:4px;padding:6px 0;border-bottom:1px solid rgba(30,41,59,.5);cursor:pointer;transition:background .2s}
+.watchlist-row:hover{background:rgba(59,130,246,.1)}
+.watchlist-row.active{background:rgba(59,130,246,.15);border-left:2px solid var(--blue)}
+.watchlist-row .sym{font-weight:700;color:var(--text)}
+.watchlist-row .name{color:var(--muted);font-size:10px;overflow:hidden;text-overflow:ellipsis}
+.watchlist-row .price{text-align:right}
+.watchlist-row .chg{text-align:right;font-weight:500}
+.up{color:var(--green)}.down{color:var(--red)}
+/* CHART */
+.chart-container{position:relative;height:350px;background:#0f172a;border-radius:4px;overflow:hidden;margin-bottom:12px}
+canvas{width:100%!important;height:100%!important}
+.chart-controls{display:flex;gap:4px;margin-bottom:8px}
+.chart-btn{padding:4px 10px;background:var(--bg);border:1px solid var(--border);color:var(--muted);cursor:pointer;font-family:inherit;font-size:10px;border-radius:2px;transition:all .2s}
+.chart-btn:hover,.chart-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+/* STATS ROW */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.stat-card{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:10px;text-align:center}
+.stat-card .value{font-size:18px;font-weight:700;margin:4px 0}
+.stat-card .label{color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:1px}
+@media(max-width:768px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+/* NEWS */
+.news-item{padding:10px 0;border-bottom:1px solid var(--border)}
+.news-item .time{color:var(--amber);font-size:9px;margin-bottom:2px}
+.news-item .headline{font-size:12px;line-height:1.5;margin-bottom:4px}
+.news-item .source{color:var(--muted);font-size:9px}
+.news-tag{display:inline-block;padding:1px 6px;border-radius:2px;font-size:9px;font-weight:700;margin-right:4px}
+.news-tag.breaking{background:var(--red);color:#fff}
+.news-tag.analysis{background:var(--blue);color:#fff}
+.news-tag.earnings{background:var(--green);color:#fff}
+/* ANALYST */
+.analyst-card{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:10px;margin-bottom:8px}
+.analyst-card .rating{font-size:16px;font-weight:700;margin:4px 0}
+.analyst-card .firm{color:var(--muted);font-size:10px}
+.rating-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin:6px 0}
+.rating-fill{height:100%;border-radius:3px;transition:width 1s}
+/* ORDER BOOK */
+.order-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;padding:3px 0;font-size:10px}
+.order-row.header{color:var(--muted);font-size:9px;text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:4px}
+.bid-bar,.ask-bar{position:relative;padding:2px 4px}
+.bid-bar::before,.ask-bar::before{content:'';position:absolute;top:0;bottom:0;right:0;border-radius:2px}
+.bid-bar::before{background:rgba(34,197,94,.1)}
+.ask-bar::before{background:rgba(239,68,68,.1)}
+/* ALERT */
+.alert-banner{background:linear-gradient(90deg,rgba(239,68,68,.2),rgba(239,68,68,.05));border:1px solid rgba(239,68,68,.3);border-radius:4px;padding:8px 12px;margin-bottom:12px;display:flex;align-items:center;gap:8px;animation:alertPulse 3s infinite}
+@keyframes alertPulse{0%,100%{border-color:rgba(239,68,68,.3)}50%{border-color:rgba(239,68,68,.6)}}
+.alert-banner .icon{color:var(--red);font-size:14px}
+/* BOTTOM TICKER */
+.bottom-bar{background:#000;border-top:1px solid var(--border);padding:4px 16px;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--muted);position:fixed;bottom:0;left:0;right:0;z-index:100}
+/* TABS */
+.tab-bar{display:flex;gap:2px;margin-bottom:12px}
+.tab{padding:6px 12px;background:var(--bg);color:var(--muted);cursor:pointer;font-family:inherit;font-size:10px;border:1px solid var(--border);border-bottom:none;border-radius:2px 2px 0 0;transition:all .2s}
+.tab.active{background:var(--panel);color:var(--amber);border-color:var(--amber) var(--amber) transparent}
+/* CTA */
+.cta-card{background:linear-gradient(135deg,rgba(245,158,11,.1),rgba(59,130,246,.1));border:1px solid var(--amber);border-radius:4px;padding:16px;text-align:center;margin-top:12px}
+.cta-card h3{color:var(--amber);font-size:13px;margin-bottom:6px}
+.cta-card p{color:var(--muted);font-size:10px;line-height:1.5;margin-bottom:10px}
+.cta-btn{display:inline-block;padding:8px 20px;background:var(--amber);color:#000;font-family:inherit;font-weight:700;font-size:11px;border:none;border-radius:2px;cursor:pointer;text-decoration:none;transition:all .2s}
+.cta-btn:hover{background:#fbbf24;transform:translateY(-1px)}
+</style>
+</head>
+<body>
+<div class="top-bar">
+<div class="logo">GO2 WORKFORCE TERMINAL</div>
+<div class="market-status">
+<span><span class="dot"></span> MARKETS OPEN</span>
+<span class="time-display" id="clock"></span>
+</div>
+</div>
+<div class="ticker-tape">
+<div class="ticker-scroll" id="ticker-scroll"></div>
+</div>
+<div class="main-grid">
+<!-- LEFT: WATCHLIST -->
+<div class="panel">
+<div class="panel-header"><span class="panel-title">Workforce Index</span><span style="color:var(--muted);font-size:9px">LIVE</span></div>
+<div id="watchlist"></div>
+<div class="cta-card">
+<h3>JOIN THE INDEX</h3>
+<p>Companies using Go2 outperform the market. 2M+ workers. 89% satisfaction.</p>
+<a href="https://go2.io" target="_blank" class="cta-btn">GET GO2 DATA</a>
+</div>
+</div>
+<!-- CENTER: CHART + STATS -->
+<div class="panel">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+<div><span id="chart-symbol" style="font-size:16px;font-weight:700;color:var(--amber)">GO2X</span> <span id="chart-name" style="color:var(--muted);font-size:10px">Go2 Productivity Index</span></div>
+<div id="chart-price" style="font-size:18px;font-weight:700;color:var(--green)">$247.83</div>
+</div>
+<div class="chart-controls">
+<button class="chart-btn active" onclick="setTimeframe('1D')">1D</button>
+<button class="chart-btn" onclick="setTimeframe('1W')">1W</button>
+<button class="chart-btn" onclick="setTimeframe('1M')">1M</button>
+<button class="chart-btn" onclick="setTimeframe('3M')">3M</button>
+<button class="chart-btn" onclick="setTimeframe('1Y')">1Y</button>
+</div>
+<div class="chart-container"><canvas id="chart"></canvas></div>
+<div class="stats-grid">
+<div class="stat-card"><div class="label">Market Cap</div><div class="value" style="color:var(--green)">$4.2B</div></div>
+<div class="stat-card"><div class="label">Avg Productivity</div><div class="value" style="color:var(--amber)">+34%</div></div>
+<div class="stat-card"><div class="label">AI Success Rate</div><div class="value" style="color:var(--green)">89%</div></div>
+<div class="stat-card"><div class="label">Workers Tracked</div><div class="value">2.1M</div></div>
+</div>
+<div class="alert-banner"><span class="icon">&#x26A0;</span><span style="color:var(--red);font-weight:700">ALERT:</span><span style="font-size:11px">Non-Go2 companies showing 95% AI project failure rate. Analysts recommend immediate data infrastructure investment.</span></div>
+<div class="tab-bar">
+<div class="tab active" onclick="switchTab('orders')">Order Book</div>
+<div class="tab" onclick="switchTab('trades')">Recent Trades</div>
+<div class="tab" onclick="switchTab('analysis')">AI Analysis</div>
+</div>
+<div id="tab-content"></div>
+</div>
+<!-- RIGHT: NEWS + ANALYSTS -->
+<div class="panel" style="overflow-y:auto;max-height:calc(100vh - 70px)">
+<div class="panel-header"><span class="panel-title">Breaking News</span><span style="color:var(--red);font-size:9px">&#x1F534; LIVE</span></div>
+<div id="news-feed"></div>
+<div class="panel-header" style="margin-top:16px"><span class="panel-title">Analyst Ratings</span></div>
+<div id="analyst-ratings"></div>
+</div>
+</div>
+<div class="bottom-bar">
+<span>GO2 WORKFORCE TERMINAL v3.7.2 | Data delayed 0ms | For institutional use</span>
+<span id="bottom-clock"></span>
+</div>
+<script>
+const stocks=[
+{sym:'GO2X',name:'Go2 Productivity Index',price:247.83,change:34.21,pct:16.02,vol:'12.4M',sector:'AI Workforce'},
+{sym:'WKFL',name:'Workflow Analytics Corp',price:189.45,change:12.67,pct:7.17,vol:'8.2M',sector:'Analytics'},
+{sym:'COAC',name:'AI Coaching Systems',price:156.22,change:8.93,pct:6.07,vol:'5.1M',sector:'AI Coaching'},
+{sym:'ATDX',name:'Auto-Documentation Inc',price:134.91,change:5.44,pct:4.20,vol:'3.8M',sector:'Documentation'},
+{sym:'PRDT',name:'Productivity Dynamics',price:98.76,change:-2.31,pct:-2.28,vol:'9.7M',sector:'Productivity'},
+{sym:'MNLT',name:'Manual Labor Tech',price:23.44,change:-8.92,pct:-27.57,vol:'22.1M',sector:'Legacy'},
+{sym:'CNSQ',name:'Consultant Quarterly',price:45.67,change:-5.43,pct:-10.63,vol:'15.3M',sector:'Consulting'},
+{sym:'EXLS',name:'Excel Spreadsheet Holdings',price:12.33,change:-3.21,pct:-20.66,vol:'31.2M',sector:'Legacy'},
+{sym:'AGNT',name:'AI Agent Deployers',price:201.55,change:18.77,pct:10.27,vol:'7.6M',sector:'AI Agents'},
+{sym:'DSHB',name:'Dashboard Nobody Looked At',price:8.91,change:-4.56,pct:-33.87,vol:'44.8M',sector:'Legacy'}
+];
+let selectedStock=0;
+function initWatchlist(){
+const w=document.getElementById('watchlist');
+w.innerHTML='';
+stocks.forEach((s,i)=>{
+const up=s.change>=0;
+w.innerHTML+=`<div class="watchlist-row${i===selectedStock?' active':''}" onclick="selectStock(${i})">
+<div class="sym">${s.sym}</div><div class="name">${s.name}</div>
+<div class="price">${s.price.toFixed(2)}</div>
+<div class="chg ${up?'up':'down'}">${up?'+':''}${s.pct.toFixed(2)}%</div></div>`;
+});
+}
+function selectStock(i){
+selectedStock=i;
+const s=stocks[i];
+document.getElementById('chart-symbol').textContent=s.sym;
+document.getElementById('chart-name').textContent=s.name;
+document.getElementById('chart-price').textContent='$'+s.price.toFixed(2);
+document.getElementById('chart-price').style.color=s.change>=0?'var(--green)':'var(--red)';
+initWatchlist();drawChart();
+}
+function initTicker(){
+const t=document.getElementById('ticker-scroll');
+let html='';
+for(let r=0;r<2;r++){stocks.forEach(s=>{
+const up=s.change>=0;
+html+=`<div class="ticker-item"><span class="symbol">${s.sym}</span><span class="price">$${s.price.toFixed(2)}</span><span class="change ${up?'up':'down'}">${up?'&#9650;':'&#9660;'} ${up?'+':''}${s.change.toFixed(2)} (${up?'+':''}${s.pct.toFixed(2)}%)</span></div>`;
+});}
+t.innerHTML=html;
+}
+function drawChart(){
+const canvas=document.getElementById('chart');
+const ctx=canvas.getContext('2d');
+const rect=canvas.parentElement.getBoundingClientRect();
+canvas.width=rect.width*2;canvas.height=rect.height*2;
+ctx.scale(2,2);
+const w=rect.width,h=rect.height;
+ctx.clearRect(0,0,w,h);
+const s=stocks[selectedStock];
+const isUp=s.change>=0;
+const points=generateChartData(80,s.price,s.change>=0);
+const minP=Math.min(...points)*0.98;
+const maxP=Math.max(...points)*1.02;
+// Grid
+ctx.strokeStyle='rgba(30,41,59,.5)';ctx.lineWidth=.5;
+for(let i=0;i<5;i++){
+const y=h*0.05+i*(h*0.9/4);
+ctx.beginPath();ctx.moveTo(50,y);ctx.lineTo(w-10,y);ctx.stroke();
+ctx.fillStyle='#475569';ctx.font='9px JetBrains Mono';
+ctx.fillText((maxP-(maxP-minP)*i/4).toFixed(2),2,y+3);
+}
+// Candles
+const cw=(w-70)/points.length;
+for(let i=1;i<points.length;i++){
+const x=55+i*cw;
+const open=points[i-1],close=points[i];
+const high=Math.max(open,close)*(1+Math.random()*.01);
+const low=Math.min(open,close)*(1-Math.random()*.01);
+const yO=h*0.05+(maxP-open)/(maxP-minP)*(h*0.9);
+const yC=h*0.05+(maxP-close)/(maxP-minP)*(h*0.9);
+const yH=h*0.05+(maxP-high)/(maxP-minP)*(h*0.9);
+const yL=h*0.05+(maxP-low)/(maxP-minP)*(h*0.9);
+const up=close>=open;
+ctx.strokeStyle=up?'#22c55e':'#ef4444';ctx.lineWidth=1;
+ctx.beginPath();ctx.moveTo(x,yH);ctx.lineTo(x,yL);ctx.stroke();
+ctx.fillStyle=up?'rgba(34,197,94,.8)':'rgba(239,68,68,.8)';
+ctx.fillRect(x-cw*.3,Math.min(yO,yC),cw*.6,Math.abs(yO-yC)||1);
+}
+// Volume bars
+for(let i=0;i<points.length;i++){
+const x=55+i*cw;
+const vol=Math.random();
+ctx.fillStyle=points[i]>=(points[i-1]||points[i])?'rgba(34,197,94,.15)':'rgba(239,68,68,.15)';
+ctx.fillRect(x-cw*.3,h-vol*h*.15,cw*.6,vol*h*.15);
+}
+}
+function generateChartData(n,endPrice,trending){
+const pts=[];let p=endPrice*(trending?0.85:1.15);
+for(let i=0;i<n;i++){
+const progress=i/n;
+const trend=trending?1:-1;
+p+=trend*endPrice*0.003+Math.random()*endPrice*0.015-endPrice*0.0075;
+p=Math.max(p,endPrice*0.5);
+pts.push(p);
+}
+pts[pts.length-1]=endPrice;
+return pts;
+}
+const newsItems=[
+{time:'2 MIN AGO',tag:'breaking',headline:'Go2 clients report 34% average productivity increase in Q4 — outpacing S&P workforce indices by 3x',source:'Workforce Wire'},
+{time:'18 MIN AGO',tag:'analysis',headline:'ANALYSIS: Why companies without work-data infrastructure are losing the AI race. "You can\'t coach what you can\'t see."',source:'AI Market Report'},
+{time:'34 MIN AGO',tag:'earnings',headline:'$MNLT (Manual Labor Tech) shares crater -27% as clients migrate to Go2 automated coaching platform',source:'Market Beat'},
+{time:'1 HR AGO',tag:'breaking',headline:'BREAKING: Go2 crosses 2 million active workers milestone. CEO: "This is just the beginning of AI-powered workforce transformation."',source:'Tech Insider'},
+{time:'1 HR AGO',tag:'analysis',headline:'McKinsey: 95% of AI implementations fail without proper work-data capture. Go2 clients buck the trend at 89% success rate.',source:'Consulting Weekly'},
+{time:'2 HR AGO',tag:'earnings',headline:'$EXLS (Excel Spreadsheet Holdings) hits all-time low as auto-documentation renders manual tracking obsolete',source:'Market Data'},
+{time:'3 HR AGO',tag:'breaking',headline:'Go2 surpasses $60M in cumulative sales. Automation discovery feature cited as key differentiator.',source:'SaaS Daily'},
+{time:'4 HR AGO',tag:'analysis',headline:'The "Work Data Gap": Why generic AI tools fail and purpose-built workforce AI wins. A deep dive into Go2\'s moat.',source:'AI Insights'},
+{time:'5 HR AGO',tag:'earnings',headline:'$CNSQ plunges as Go2 auto-documentation eliminates need for $2M consulting engagements',source:'Consulting Today'}
+];
+function initNews(){
+const nf=document.getElementById('news-feed');
+nf.innerHTML=newsItems.map(n=>`<div class="news-item"><div class="time">${n.time}</div><div class="headline"><span class="news-tag ${n.tag}">${n.tag.toUpperCase()}</span>${n.headline}</div><div class="source">${n.source}</div></div>`).join('');
+}
+const analysts=[
+{firm:'Goldman AI Research',rating:'STRONG BUY',target:'$340',confidence:95,color:'var(--green)'},
+{firm:'Morgan Workforce Analytics',rating:'OUTPERFORM',target:'$310',confidence:88,color:'var(--green)'},
+{firm:'JP Productivity Partners',rating:'BUY',target:'$285',confidence:82,color:'var(--green)'},
+{firm:'Bernstein Digital Labor',rating:'MARKET PERFORM',target:'$250',confidence:65,color:'var(--amber)'}
+];
+function initAnalysts(){
+document.getElementById('analyst-ratings').innerHTML=analysts.map(a=>`<div class="analyst-card"><div class="firm">${a.firm}</div><div class="rating" style="color:${a.color}">${a.rating}</div><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted)"><span>Price Target: ${a.target}</span><span>Confidence: ${a.confidence}%</span></div><div class="rating-bar"><div class="rating-fill" style="width:${a.confidence}%;background:${a.color}"></div></div></div>`).join('');
+}
+function switchTab(tab){
+document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+event.target.classList.add('active');
+const tc=document.getElementById('tab-content');
+if(tab==='orders'){
+let html='<div class="order-row header"><div>Price</div><div style="text-align:center">Size</div><div style="text-align:right">Total</div></div>';
+for(let i=0;i<8;i++){
+const s=stocks[selectedStock];
+const bidP=(s.price-Math.random()*2).toFixed(2);
+const askP=(s.price+Math.random()*2).toFixed(2);
+const bidS=Math.floor(Math.random()*5000+500);
+const askS=Math.floor(Math.random()*5000+500);
+html+=`<div class="order-row"><div class="up">${bidP}</div><div style="text-align:center">${bidS}</div><div style="text-align:right;color:var(--muted)">${(bidP*bidS/1000).toFixed(0)}K</div></div>`;
+}
+html+='<div style="text-align:center;padding:8px;color:var(--amber);font-weight:700;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:4px 0">SPREAD: $0.03</div>';
+for(let i=0;i<8;i++){
+const s=stocks[selectedStock];
+const askP=(s.price+Math.random()*2+0.5).toFixed(2);
+const askS=Math.floor(Math.random()*5000+500);
+html+=`<div class="order-row"><div class="down">${askP}</div><div style="text-align:center">${askS}</div><div style="text-align:right;color:var(--muted)">${(askP*askS/1000).toFixed(0)}K</div></div>`;
+}
+tc.innerHTML=html;
+}else if(tab==='trades'){
+let html='<div class="order-row header"><div>Time</div><div style="text-align:center">Price</div><div style="text-align:right">Volume</div></div>';
+for(let i=0;i<15;i++){
+const s=stocks[selectedStock];
+const p=(s.price+Math.random()*4-2).toFixed(2);
+const up=Math.random()>.4;
+const t=new Date(Date.now()-i*Math.random()*60000);
+html+=`<div class="order-row"><div style="color:var(--muted)">${t.toLocaleTimeString()}</div><div style="text-align:center" class="${up?'up':'down'}">${p}</div><div style="text-align:right">${Math.floor(Math.random()*3000+100)}</div></div>`;
+}
+tc.innerHTML=html;
+}else{
+tc.innerHTML=`<div style="padding:12px;background:var(--bg);border-radius:4px;border-left:3px solid var(--amber)">
+<div style="color:var(--amber);font-weight:700;margin-bottom:8px">AI ANALYSIS — ${stocks[selectedStock].sym}</div>
+<p style="color:var(--text);line-height:1.8;font-size:11px">
+<strong>Sentiment:</strong> <span class="${stocks[selectedStock].change>=0?'up':'down'}">${stocks[selectedStock].change>=0?'BULLISH':'BEARISH'}</span><br><br>
+${stocks[selectedStock].change>=0?
+`This security benefits from the structural shift toward AI-powered workforce management. Go2's work-data capture creates a compounding data moat — the more workers use the platform, the smarter the AI coaching becomes. Key catalysts: (1) Automation discovery reducing manual labor costs by 40%, (2) Auto-documentation eliminating $2M+ consulting engagements, (3) 89% satisfaction rate driving organic expansion within enterprise accounts. The $60M+ sales milestone validates product-market fit.`
+:`WARNING: Legacy workforce tools face existential risk from AI-native platforms like Go2. Without real work-data capture, these companies cannot train effective AI agents. The 95% AI failure rate disproportionately impacts companies relying on outdated manual tracking methods. Recommend rotating into $GO2X exposure.`}
+</p></div>`;
+}
+}
+function updateClock(){
+const now=new Date();
+const ts=now.toLocaleTimeString();
+document.getElementById('clock').textContent=ts+' EST';
+document.getElementById('bottom-clock').textContent='Last Update: '+ts;
+}
+// Live price updates
+function updatePrices(){
+stocks.forEach(s=>{
+const delta=(Math.random()-.48)*s.price*0.002;
+s.price=Math.max(1,s.price+delta);
+s.change+= delta;
+s.pct=(s.change/(s.price-s.change))*100;
+});
+initWatchlist();
+const s=stocks[selectedStock];
+document.getElementById('chart-price').textContent='$'+s.price.toFixed(2);
+document.getElementById('chart-price').style.color=s.change>=0?'var(--green)':'var(--red)';
+}
+// Init
+initTicker();initWatchlist();initNews();initAnalysts();
+switchTab('orders');drawChart();updateClock();
+setInterval(updateClock,1000);
+setInterval(updatePrices,2000);
+setInterval(drawChart,5000);
+window.addEventListener('resize',drawChart);
+function setTimeframe(tf){
+document.querySelectorAll('.chart-btn').forEach(b=>b.classList.remove('active'));
+event.target.classList.add('active');
+drawChart();
+}
+</script>
+</body>
+</html>

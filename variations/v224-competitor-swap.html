@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 - What If You Switched?</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #0a0a0f; color: #fff; min-height: 100vh; }
+
+  .bg-gradient {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(ellipse at 30% 20%, rgba(99,102,241,0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 80%, rgba(168,85,247,0.08) 0%, transparent 50%);
+    z-index: 0; pointer-events: none;
+  }
+
+  .logo {
+    position: fixed; top: 24px; left: 32px; font-size: 22px; font-weight: 800; z-index: 100;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  /* Selection Screen */
+  .select-screen {
+    position: relative; z-index: 1; min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 40px 20px; transition: all 0.6s;
+  }
+
+  .select-screen.hidden { opacity: 0; pointer-events: none; position: absolute; }
+
+  .select-screen h1 {
+    font-size: clamp(32px, 5vw, 56px); font-weight: 300; text-align: center;
+    margin-bottom: 12px; line-height: 1.2;
+  }
+  .select-screen h1 strong { font-weight: 800; }
+  .select-screen > p { color: #64748b; font-size: 18px; margin-bottom: 48px; text-align: center; }
+
+  .competitor-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px; max-width: 800px; width: 100%;
+  }
+
+  .comp-card {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; padding: 32px 20px; text-align: center; cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .comp-card:hover {
+    background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.3);
+    transform: translateY(-4px);
+  }
+
+  .comp-icon { font-size: 36px; margin-bottom: 12px; display: block; }
+  .comp-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .comp-desc { font-size: 12px; color: #64748b; }
+
+  /* Comparison View */
+  .comparison-view {
+    position: relative; z-index: 1; min-height: 100vh; padding: 80px 20px 60px;
+    display: none; max-width: 1200px; margin: 0 auto;
+  }
+
+  .comparison-view.visible { display: block; animation: fadeIn 0.5s ease; }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .back-btn {
+    position: fixed; top: 24px; right: 32px; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1); color: #94a3b8;
+    padding: 8px 20px; border-radius: 8px; font-family: 'Inter', sans-serif;
+    font-size: 14px; cursor: pointer; z-index: 100; transition: all 0.3s;
+  }
+  .back-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+  .comp-header {
+    text-align: center; margin-bottom: 48px;
+  }
+
+  .comp-header h2 {
+    font-size: clamp(24px, 3.5vw, 40px); font-weight: 300; margin-bottom: 8px;
+  }
+  .comp-header h2 strong { font-weight: 800; }
+
+  .vs-badge {
+    display: inline-flex; align-items: center; gap: 12px;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 100px; padding: 8px 24px; font-size: 14px; margin-top: 16px;
+  }
+
+  .vs-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .vs-dot.red { background: #ef4444; }
+  .vs-dot.green { background: #22c55e; }
+
+  /* Feature Comparison */
+  .feature-table {
+    width: 100%; border-collapse: collapse; margin-bottom: 40px;
+  }
+
+  .feature-table th {
+    padding: 16px 20px; text-align: left; font-size: 13px;
+    font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    color: #64748b; border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .feature-table th:nth-child(2) { text-align: center; color: #f87171; }
+  .feature-table th:nth-child(3) { text-align: center; color: #4ade80; }
+
+  .feature-table td {
+    padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.03);
+    font-size: 14px; color: #cbd5e1; vertical-align: top;
+  }
+
+  .feature-table td:nth-child(2),
+  .feature-table td:nth-child(3) { text-align: center; }
+
+  .feature-table tr { opacity: 0; animation: rowIn 0.4s ease forwards; }
+  .feature-table tr:nth-child(1) { animation-delay: 0.1s; }
+  .feature-table tr:nth-child(2) { animation-delay: 0.2s; }
+  .feature-table tr:nth-child(3) { animation-delay: 0.3s; }
+  .feature-table tr:nth-child(4) { animation-delay: 0.4s; }
+  .feature-table tr:nth-child(5) { animation-delay: 0.5s; }
+  .feature-table tr:nth-child(6) { animation-delay: 0.6s; }
+  .feature-table tr:nth-child(7) { animation-delay: 0.7s; }
+  .feature-table tr:nth-child(8) { animation-delay: 0.8s; }
+  .feature-table tr:nth-child(9) { animation-delay: 0.9s; }
+  .feature-table tr:nth-child(10) { animation-delay: 1.0s; }
+
+  @keyframes rowIn { to { opacity: 1; } }
+
+  .check { color: #4ade80; font-weight: 700; }
+  .cross { color: #475569; }
+  .partial { color: #fbbf24; font-size: 12px; }
+
+  .feature-name { font-weight: 600; color: #e2e8f0; }
+  .feature-desc { font-size: 12px; color: #64748b; margin-top: 2px; display: block; }
+
+  .feature-table td .go2-extra {
+    background: rgba(99,102,241,0.1); border-radius: 6px;
+    padding: 2px 8px; font-size: 11px; color: #818cf8; font-weight: 600;
+    display: inline-block; margin-top: 4px;
+  }
+
+  /* Hidden Costs */
+  .hidden-costs {
+    margin-bottom: 40px;
+  }
+
+  .hidden-costs h3 {
+    font-size: 24px; font-weight: 700; margin-bottom: 20px; text-align: center;
+    color: #f87171;
+  }
+
+  .cost-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;
+  }
+
+  .cost-card {
+    background: rgba(239,68,68,0.04); border: 1px solid rgba(239,68,68,0.12);
+    border-radius: 14px; padding: 24px; opacity: 0;
+    animation: cardIn 0.5s ease forwards;
+  }
+
+  .cost-card:nth-child(1) { animation-delay: 1.2s; }
+  .cost-card:nth-child(2) { animation-delay: 1.4s; }
+  .cost-card:nth-child(3) { animation-delay: 1.6s; }
+  .cost-card:nth-child(4) { animation-delay: 1.8s; }
+
+  @keyframes cardIn { to { opacity: 1; } }
+
+  .cost-card-icon { font-size: 28px; margin-bottom: 12px; }
+  .cost-card-title { font-size: 16px; font-weight: 700; color: #f87171; margin-bottom: 6px; }
+  .cost-card-text { font-size: 13px; color: #94a3b8; line-height: 1.6; }
+
+  /* ROI Calculator */
+  .roi-section {
+    background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px; padding: 40px; margin-bottom: 40px; text-align: center;
+  }
+
+  .roi-section h3 { font-size: 24px; font-weight: 700; margin-bottom: 24px; }
+
+  .roi-slider-group { margin-bottom: 24px; }
+  .roi-label {
+    font-size: 14px; color: #94a3b8; margin-bottom: 8px;
+    display: flex; justify-content: space-between;
+  }
+  .roi-label strong { color: #fff; }
+
+  .roi-slider {
+    width: 100%; max-width: 500px; -webkit-appearance: none;
+    height: 6px; border-radius: 3px; background: rgba(255,255,255,0.1);
+    outline: none; margin: 0 auto; display: block;
+  }
+
+  .roi-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 20px; height: 20px;
+    border-radius: 50%; background: #6366f1; cursor: pointer;
+    box-shadow: 0 0 10px rgba(99,102,241,0.5);
+  }
+
+  .roi-results {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+    margin-top: 32px; max-width: 600px; margin-left: auto; margin-right: auto;
+  }
+
+  .roi-stat-label { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .roi-stat-value { font-size: 32px; font-weight: 800; }
+  .roi-stat-value.red { color: #f87171; }
+  .roi-stat-value.green { color: #4ade80; }
+  .roi-stat-value.blue { color: #60a5fa; }
+
+  .cta-section {
+    text-align: center; padding-bottom: 40px;
+  }
+
+  .cta-btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff; border: none; padding: 18px 48px;
+    border-radius: 14px; font-size: 18px; font-weight: 700;
+    font-family: 'Inter', sans-serif; cursor: pointer; transition: all 0.3s;
+  }
+
+  .cta-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(99,102,241,0.5);
+  }
+
+  .migration-note {
+    margin-top: 16px; font-size: 13px; color: #64748b;
+  }
+
+  @media (max-width: 768px) {
+    .feature-table { font-size: 13px; }
+    .feature-table td, .feature-table th { padding: 12px 8px; }
+    .roi-results { grid-template-columns: 1fr; }
+    .cost-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="bg-gradient"></div>
+<div class="logo">Go2</div>
+
+<div class="select-screen" id="selectScreen">
+  <h1>What if you <strong>switched?</strong></h1>
+  <p>Select what you're currently using. We'll show you the difference.</p>
+  <div class="competitor-grid">
+    <div class="comp-card" onclick="selectComp('timedoctor')">
+      <span class="comp-icon">&#9201;</span>
+      <div class="comp-name">Time Doctor</div>
+      <div class="comp-desc">Time tracking + screenshots</div>
+    </div>
+    <div class="comp-card" onclick="selectComp('hubstaff')">
+      <span class="comp-icon">&#128247;</span>
+      <div class="comp-name">Hubstaff</div>
+      <div class="comp-desc">Tracking + GPS + invoicing</div>
+    </div>
+    <div class="comp-card" onclick="selectComp('teramind')">
+      <span class="comp-icon">&#128065;</span>
+      <div class="comp-name">Teramind</div>
+      <div class="comp-desc">DLP + insider threat + UBA</div>
+    </div>
+    <div class="comp-card" onclick="selectComp('activtrak')">
+      <span class="comp-icon">&#128200;</span>
+      <div class="comp-name">ActivTrak</div>
+      <div class="comp-desc">Workforce analytics</div>
+    </div>
+    <div class="comp-card" onclick="selectComp('toggl')">
+      <span class="comp-icon">&#128339;</span>
+      <div class="comp-name">Toggl</div>
+      <div class="comp-desc">Simple time tracking</div>
+    </div>
+    <div class="comp-card" onclick="selectComp('nothing')">
+      <span class="comp-icon">&#129335;</span>
+      <div class="comp-name">Nothing</div>
+      <div class="comp-desc">No workforce tool yet</div>
+    </div>
+  </div>
+</div>
+
+<div class="comparison-view" id="comparisonView">
+  <button class="back-btn" onclick="goBack()">&larr; Choose Another</button>
+  <div class="comp-header" id="compHeader"></div>
+  <table class="feature-table" id="featureTable"></table>
+  <div class="hidden-costs" id="hiddenCosts"></div>
+  <div class="roi-section" id="roiSection"></div>
+  <div class="cta-section" id="ctaSection"></div>
+</div>
+
+<script>
+const competitors = {
+  timedoctor: {
+    name: 'Time Doctor',
+    price: 7,
+    approach: 'Surveillance-first',
+    tagline: 'From watching people to coaching them',
+    features: [
+      { name: 'Time Tracking', desc: 'Track hours worked', them: 'check', go2: 'check', extra: 'Auto, no manual input' },
+      { name: 'Screenshots', desc: 'Periodic screen captures', them: 'check', go2: 'cross', extra: null },
+      { name: 'AI Coaching', desc: 'Real-time productivity tips', them: 'cross', go2: 'check', extra: 'Context-aware nudges' },
+      { name: 'Process Documentation', desc: 'Auto-document workflows', them: 'cross', go2: 'check', extra: 'Built from real patterns' },
+      { name: 'Automation Discovery', desc: 'Find automatable tasks', them: 'cross', go2: 'check', extra: 'AI agent deployment' },
+      { name: 'Employee Coaching', desc: 'Improve individual performance', them: 'partial', go2: 'check', extra: 'Personalized, not punitive' },
+      { name: 'Distraction Alerts', desc: 'Notify on off-task behavior', them: 'check', go2: 'check', extra: 'Coaching tone, not policing' },
+      { name: 'Team Analytics', desc: 'Team-level insights', them: 'check', go2: 'check', extra: 'AI-powered recommendations' },
+      { name: 'Knowledge Capture', desc: 'Capture tribal knowledge', them: 'cross', go2: 'check', extra: 'Continuous auto-capture' },
+      { name: 'AI Agent Training', desc: 'Train AI on real workflows', them: 'cross', go2: 'check', extra: 'Unique to Go2' }
+    ],
+    hiddenCosts: [
+      { icon: '&#128544;', title: 'Employee Resentment', text: 'Screenshots breed distrust. 78% of employees say screenshot monitoring makes them feel like criminals. Attrition rises 23% in monitored teams.' },
+      { icon: '&#127918;', title: 'Gaming the System', text: 'Employees learn to keep mouse jigglers running. "Active time" goes up but real output doesn\'t. You\'re measuring theater, not performance.' },
+      { icon: '&#128683;', title: 'No Improvement Path', text: 'Time Doctor tells you WHO is unproductive but not WHY or HOW to fix it. It\'s a surveillance camera, not a coach.' },
+      { icon: '&#128184;', title: 'Hidden Feature Costs', text: 'Screenshots, detailed reporting, and integrations are premium features. Actual cost is $12-20/user after add-ons.' }
+    ]
+  },
+  hubstaff: {
+    name: 'Hubstaff',
+    price: 7,
+    approach: 'Tracking-first',
+    tagline: 'From tracking time to transforming work',
+    features: [
+      { name: 'Time Tracking', desc: 'Manual + automatic', them: 'check', go2: 'check', extra: 'Fully automatic' },
+      { name: 'GPS Tracking', desc: 'Location monitoring', them: 'check', go2: 'cross', extra: null },
+      { name: 'Screenshots', desc: 'Random screen captures', them: 'check', go2: 'cross', extra: null },
+      { name: 'AI Coaching', desc: 'Real-time productivity coaching', them: 'cross', go2: 'check', extra: 'Personalized coaching' },
+      { name: 'Invoicing', desc: 'Bill clients from time data', them: 'check', go2: 'partial', extra: 'Via integrations' },
+      { name: 'Process Auto-Documentation', desc: 'Capture how work happens', them: 'cross', go2: 'check', extra: 'Living knowledge base' },
+      { name: 'Automation Discovery', desc: 'Find tasks to automate', them: 'cross', go2: 'check', extra: 'AI-powered detection' },
+      { name: 'Activity Levels', desc: 'Keyboard/mouse activity %', them: 'check', go2: 'cross', extra: null },
+      { name: 'Workflow Optimization', desc: 'Improve how work is done', them: 'cross', go2: 'check', extra: 'Data-driven coaching' },
+      { name: 'AI Agent Deployment', desc: 'Deploy agents for repetitive work', them: 'cross', go2: 'check', extra: 'Train from real data' }
+    ],
+    hiddenCosts: [
+      { icon: '&#128247;', title: 'Screenshot Surveillance Culture', text: 'Hubstaff takes screenshots every 10 minutes. Top performers hate this. You lose your best people to companies that trust them.' },
+      { icon: '&#128170;', title: 'Activity Level Is a Lie', text: 'Keyboard/mouse activity doesn\'t measure thinking, planning, or creative work. Your best strategist looks "idle" while solving million-dollar problems.' },
+      { icon: '&#9200;', title: 'Manual Time Entry Overhead', text: 'Even with auto-tracking, teams spend 15 min/day managing timers. That\'s 65 hours/year per person on meta-work.' },
+      { icon: '&#128200;', title: 'Data Without Action', text: 'Hubstaff gives you dashboards but no recommendations. You see problems but don\'t know how to fix them.' }
+    ]
+  },
+  teramind: {
+    name: 'Teramind',
+    price: 15,
+    approach: 'Surveillance-heavy',
+    tagline: 'From surveillance to empowerment',
+    features: [
+      { name: 'Screen Recording', desc: 'Continuous video capture', them: 'check', go2: 'cross', extra: null },
+      { name: 'Keystroke Logging', desc: 'Record every keystroke', them: 'check', go2: 'cross', extra: null },
+      { name: 'DLP / Data Loss Prevention', desc: 'Prevent data exfiltration', them: 'check', go2: 'cross', extra: null },
+      { name: 'AI Coaching', desc: 'Real-time productivity coaching', them: 'cross', go2: 'check', extra: 'Coaching, not surveillance' },
+      { name: 'Insider Threat Detection', desc: 'Behavioral analytics for threats', them: 'check', go2: 'cross', extra: null },
+      { name: 'Process Documentation', desc: 'Auto-document work patterns', them: 'partial', go2: 'check', extra: 'AI-powered' },
+      { name: 'Employee Sentiment', desc: 'How employees feel', them: 'cross', go2: 'check', extra: 'Trust-based approach' },
+      { name: 'Automation Discovery', desc: 'Find automation opportunities', them: 'cross', go2: 'check', extra: 'Deploy AI agents' },
+      { name: 'Knowledge Capture', desc: 'Preserve institutional knowledge', them: 'cross', go2: 'check', extra: 'Automatic' },
+      { name: 'Performance Coaching', desc: 'Improve individual output', them: 'cross', go2: 'check', extra: 'AI coach, not a warden' }
+    ],
+    hiddenCosts: [
+      { icon: '&#128274;', title: 'Legal & Privacy Risk', text: 'Keystroke logging and screen recording create massive legal liability. GDPR, CCPA, and employee lawsuits. Your legal team is nervous.' },
+      { icon: '&#128531;', title: 'Toxic Culture Creation', text: 'Employees who know they\'re recorded keystroke-by-keystroke develop anxiety. Productivity drops, creativity dies. Studies show 31% productivity decrease.' },
+      { icon: '&#128176;', title: 'Enterprise-Level Pricing', text: 'Teramind starts at $15/user/month and scales to $25+. You\'re paying premium prices for a tool your employees hate.' },
+      { icon: '&#9888;&#65039;', title: 'Security Theater', text: 'Most data breaches come from phishing and misconfiguration, not malicious insiders. You\'re watching for the wrong threat.' }
+    ]
+  },
+  activtrak: {
+    name: 'ActivTrak',
+    price: 10,
+    approach: 'Analytics-focused',
+    tagline: 'From passive analytics to active coaching',
+    features: [
+      { name: 'Workforce Analytics', desc: 'Dashboards and reports', them: 'check', go2: 'check', extra: 'AI-powered insights' },
+      { name: 'App/Website Tracking', desc: 'Categorize tool usage', them: 'check', go2: 'check', extra: 'With coaching layer' },
+      { name: 'AI Coaching', desc: 'Real-time coaching nudges', them: 'cross', go2: 'check', extra: 'Context-aware' },
+      { name: 'Productivity Scoring', desc: 'Score work activities', them: 'check', go2: 'check', extra: 'Outcome-based' },
+      { name: 'Process Documentation', desc: 'Auto-document workflows', them: 'cross', go2: 'check', extra: 'Living docs' },
+      { name: 'Automation Discovery', desc: 'Identify automation candidates', them: 'partial', go2: 'check', extra: 'AI agent deployment' },
+      { name: 'Team Comparison', desc: 'Benchmark teams', them: 'check', go2: 'check', extra: 'With coaching path' },
+      { name: 'Burnout Detection', desc: 'Identify overwork patterns', them: 'check', go2: 'check', extra: 'Proactive intervention' },
+      { name: 'Knowledge Capture', desc: 'Preserve tribal knowledge', them: 'cross', go2: 'check', extra: 'Automatic' },
+      { name: 'AI Agent Training', desc: 'Train AI on real workflows', them: 'cross', go2: 'check', extra: 'Unique capability' }
+    ],
+    hiddenCosts: [
+      { icon: '&#128202;', title: 'Dashboards Without Action', text: 'ActivTrak shows you beautiful charts about productivity patterns but gives no coaching or improvement path. It\'s a mirror, not a coach.' },
+      { icon: '&#128683;', title: 'No Process Improvement', text: 'You see WHERE time goes but can\'t change HOW work is done. Knowing is only half the battle.' },
+      { icon: '&#128176;', title: 'Premium Feature Lock', text: 'Advanced analytics, team insights, and coaching features require Enterprise tier at $17+/user. Base plan is a glorified time tracker.' },
+      { icon: '&#128260;', title: 'No Automation Path', text: 'ActivTrak identifies repetitive work but can\'t automate it. You still need to manually find and deploy automation solutions.' }
+    ]
+  },
+  toggl: {
+    name: 'Toggl',
+    price: 9,
+    approach: 'Simple tracking',
+    tagline: 'From tracking time to transforming it',
+    features: [
+      { name: 'Time Tracking', desc: 'One-click timer', them: 'check', go2: 'check', extra: 'Fully automatic' },
+      { name: 'Project Billing', desc: 'Track billable hours', them: 'check', go2: 'partial', extra: 'Via integrations' },
+      { name: 'AI Coaching', desc: 'Real-time productivity tips', them: 'cross', go2: 'check', extra: 'Personalized coaching' },
+      { name: 'Reports', desc: 'Time reports and summaries', them: 'check', go2: 'check', extra: 'AI-enhanced insights' },
+      { name: 'Process Documentation', desc: 'Auto-capture workflows', them: 'cross', go2: 'check', extra: 'Living knowledge base' },
+      { name: 'Automation Discovery', desc: 'Find tasks to automate', them: 'cross', go2: 'check', extra: 'AI-powered' },
+      { name: 'Team Insights', desc: 'How the team works', them: 'partial', go2: 'check', extra: 'Deep workflow analytics' },
+      { name: 'Calendar Integration', desc: 'Sync with calendar', them: 'check', go2: 'check', extra: 'Plus all other tools' },
+      { name: 'Knowledge Capture', desc: 'Document tribal knowledge', them: 'cross', go2: 'check', extra: 'Automatic' },
+      { name: 'AI Agent Deployment', desc: 'Automate repetitive work', them: 'cross', go2: 'check', extra: 'Deploy from data' }
+    ],
+    hiddenCosts: [
+      { icon: '&#128336;', title: 'Manual Entry Fatigue', text: 'Toggl requires employees to remember to start/stop timers. Average accuracy: 67%. One-third of work goes untracked.' },
+      { icon: '&#128587;', title: 'It Just Counts Hours', text: 'Toggl tells you how long things took but not whether that time was well-spent. An 8-hour day of busywork looks the same as 8 hours of deep work.' },
+      { icon: '&#128200;', title: 'No Intelligence Layer', text: 'No coaching, no automation, no insights. It\'s a stopwatch with a dashboard. For 2026, that\'s bringing a clipboard to a gunfight.' },
+      { icon: '&#128184;', title: 'Hidden Scaling Costs', text: 'Toggl Plan + Track + additional features add up. Teams end up paying $15-20/user for what\'s still just time tracking.' }
+    ]
+  },
+  nothing: {
+    name: 'Nothing',
+    price: 0,
+    approach: 'Flying blind',
+    tagline: 'From guessing to knowing',
+    features: [
+      { name: 'Work Visibility', desc: 'Know how work happens', them: 'cross', go2: 'check', extra: 'Complete visibility' },
+      { name: 'AI Coaching', desc: 'Real-time productivity coaching', them: 'cross', go2: 'check', extra: 'Personalized per person' },
+      { name: 'Process Documentation', desc: 'Captured workflows', them: 'cross', go2: 'check', extra: 'Auto-generated' },
+      { name: 'Automation Discovery', desc: 'Find what to automate', them: 'cross', go2: 'check', extra: 'AI agent deployment' },
+      { name: 'Onboarding Speed', desc: 'Get new hires productive', them: 'cross', go2: 'check', extra: '3x faster ramp-up' },
+      { name: 'Knowledge Preservation', desc: 'Tribal knowledge saved', them: 'cross', go2: 'check', extra: 'Never lose context' },
+      { name: 'Team Analytics', desc: 'Understand team patterns', them: 'cross', go2: 'check', extra: 'AI-powered insights' },
+      { name: 'Tool Stack Optimization', desc: 'Optimize tool usage', them: 'cross', go2: 'check', extra: 'Cross-tool coaching' },
+      { name: 'Burnout Prevention', desc: 'Catch overwork early', them: 'cross', go2: 'check', extra: 'Proactive alerts' },
+      { name: 'AI Agent Training', desc: 'Build AI from real work', them: 'cross', go2: 'check', extra: 'Train on your data' }
+    ],
+    hiddenCosts: [
+      { icon: '&#128566;', title: 'You Don\'t Know What You Don\'t Know', text: 'Without any visibility tool, you\'re managing based on gut feel and self-reported status. The gap between what you think happens and what actually happens is massive.' },
+      { icon: '&#128682;', title: 'Tribal Knowledge Time Bomb', text: 'Every person who leaves takes 6-12 months of institutional knowledge with them. No tool means no capture. It\'s a ticking clock.' },
+      { icon: '&#128184;', title: 'Invisible Waste', text: 'Studies show 28% of knowledge work is wasted on low-value tasks. Without Go2, you can\'t see it, measure it, or fix it.' },
+      { icon: '&#127939;', title: 'Competitors Are Moving', text: 'Companies using AI coaching are seeing 30-40% productivity gains. Every month without it, you fall further behind.' }
+    ]
+  }
+};
+
+let teamSize = 50;
+
+function selectComp(key) {
+  const comp = competitors[key];
+  document.getElementById('selectScreen').classList.add('hidden');
+  const view = document.getElementById('comparisonView');
+  view.classList.add('visible');
+
+  // Header
+  document.getElementById('compHeader').innerHTML = `
+    <h2>${comp.tagline.split(' ').map((w, i) => i === 0 ? `<strong>${w}</strong>` : w).join(' ')}</h2>
+    <div class="vs-badge">
+      <span class="vs-dot red"></span> ${comp.name}
+      <span style="color:#475569;">vs</span>
+      <span class="vs-dot green"></span> Go2
+    </div>
+  `;
+
+  // Feature table
+  let tableHTML = `<thead><tr><th>Capability</th><th>${comp.name}</th><th>Go2</th></tr></thead><tbody>`;
+  comp.features.forEach(f => {
+    const themCell = f.them === 'check' ? '<span class="check">&#10003;</span>'
+      : f.them === 'partial' ? '<span class="partial">Partial</span>'
+      : '<span class="cross">&mdash;</span>';
+    const go2Cell = f.go2 === 'check'
+      ? `<span class="check">&#10003;</span>${f.extra ? `<br><span class="go2-extra">${f.extra}</span>` : ''}`
+      : f.go2 === 'partial' ? `<span class="partial">Partial</span>${f.extra ? `<br><span class="go2-extra">${f.extra}</span>` : ''}`
+      : '<span class="cross">&mdash;</span>';
+    tableHTML += `<tr><td><span class="feature-name">${f.name}</span><span class="feature-desc">${f.desc}</span></td><td>${themCell}</td><td>${go2Cell}</td></tr>`;
+  });
+  tableHTML += '</tbody>';
+  document.getElementById('featureTable').innerHTML = tableHTML;
+
+  // Hidden costs
+  document.getElementById('hiddenCosts').innerHTML = `
+    <h3>&#9888;&#65039; The Hidden Costs of ${comp.name}</h3>
+    <div class="cost-grid">
+      ${comp.hiddenCosts.map(c => `
+        <div class="cost-card">
+          <div class="cost-card-icon">${c.icon}</div>
+          <div class="cost-card-title">${c.title}</div>
+          <div class="cost-card-text">${c.text}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  // ROI section
+  const go2Price = 12;
+  buildROI(comp, go2Price);
+}
+
+function buildROI(comp, go2Price) {
+  const section = document.getElementById('roiSection');
+  section.innerHTML = `
+    <h3>Switching ROI Calculator</h3>
+    <div class="roi-slider-group">
+      <div class="roi-label"><span>Team Size</span><strong id="sizeLabel">${teamSize} people</strong></div>
+      <input type="range" class="roi-slider" id="sizeSlider" min="5" max="500" value="${teamSize}" oninput="updateROI('${comp.name}', ${comp.price}, ${go2Price})">
+    </div>
+    <div id="roiResults"></div>
+  `;
+  updateROI(comp.name, comp.price, go2Price);
+
+  document.getElementById('ctaSection').innerHTML = `
+    <button class="cta-btn" onclick="window.open('https://go2.io','_blank')">
+      Switch to Go2 &mdash; Free 14-Day Trial
+    </button>
+    <p class="migration-note">${comp.name !== 'Nothing' ? `We'll migrate your data from ${comp.name} in under 24 hours. No downtime.` : 'Set up in 5 minutes. See results in 7 days.'}</p>
+  `;
+}
+
+function updateROI(compName, compPrice, go2Price) {
+  teamSize = parseInt(document.getElementById('sizeSlider').value);
+  document.getElementById('sizeLabel').textContent = teamSize + ' people';
+
+  const currentCost = compPrice * teamSize * 12;
+  const go2Cost = go2Price * teamSize * 12;
+  const productivityGain = teamSize * 1.5 * 75 * 250; // 1.5 hrs/day * $75/hr * 250 days
+  const netROI = productivityGain - go2Cost;
+
+  document.getElementById('roiResults').innerHTML = `
+    <div class="roi-results">
+      <div>
+        <div class="roi-stat-label">${compName} Annual Cost</div>
+        <div class="roi-stat-value red">$${(currentCost / 1000).toFixed(0)}K</div>
+      </div>
+      <div>
+        <div class="roi-stat-label">Go2 Annual Cost</div>
+        <div class="roi-stat-value blue">$${(go2Cost / 1000).toFixed(0)}K</div>
+      </div>
+      <div>
+        <div class="roi-stat-label">Net Productivity Gain</div>
+        <div class="roi-stat-value green">$${(netROI / 1000).toFixed(0)}K</div>
+      </div>
+    </div>
+    <p style="color:#94a3b8;font-size:13px;margin-top:20px;line-height:1.6;">
+      Go2 recovers an average of 1.5 hrs/day per person through AI coaching and automation.
+      At $75/hr, that's <strong style="color:#4ade80;">$${(productivityGain / 1000).toFixed(0)}K/year</strong> in recovered productivity
+      for a team of ${teamSize}.
+      ${compName !== 'Nothing' ? ` Switching from ${compName} saves you $${((currentCost - go2Cost) / 1000).toFixed(0)}K/year in licensing alone.` : ''}
+    </p>
+  `;
+}
+
+function goBack() {
+  document.getElementById('selectScreen').classList.remove('hidden');
+  document.getElementById('comparisonView').classList.remove('visible');
+}
+</script>
+</body>
+</html>

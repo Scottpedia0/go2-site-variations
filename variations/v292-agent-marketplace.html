@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 Agent Marketplace</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0a0a0f;color:#fff;overflow-x:hidden}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,10,15,0.9);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.06);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-size:1.3rem;font-weight:800;background:linear-gradient(135deg,#6366f1,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-search{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:0.6rem 1.2rem;color:#fff;width:400px;font-size:0.9rem;outline:none;transition:all 0.3s}
+.nav-search:focus{border-color:#6366f1;box-shadow:0 0 20px rgba(99,102,241,0.2)}
+.nav-search::placeholder{color:#64748b}
+.nav-actions{display:flex;gap:1rem;align-items:center}
+.nav-btn{padding:0.5rem 1.2rem;border-radius:8px;font-size:0.85rem;font-weight:500;cursor:pointer;border:none;transition:all 0.3s}
+.nav-btn.primary{background:#6366f1;color:#fff}
+.nav-btn.ghost{background:transparent;color:#94a3b8;border:1px solid rgba(255,255,255,0.1)}
+
+.hero{padding:8rem 2rem 4rem;text-align:center;position:relative}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(99,102,241,0.2),transparent 60%)}
+.hero h1{font-size:3.5rem;font-weight:900;margin-bottom:1rem;background:linear-gradient(135deg,#fff 0%,#c7d2fe 50%,#818cf8 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;position:relative}
+.hero p{color:#64748b;font-size:1.2rem;max-width:600px;margin:0 auto}
+.stats-bar{display:flex;gap:3rem;justify-content:center;margin-top:3rem;position:relative}
+.stat{text-align:center}
+.stat-num{font-size:2rem;font-weight:800;color:#a5b4fc}
+.stat-label{font-size:0.8rem;color:#64748b;margin-top:0.25rem}
+
+.categories{padding:0 2rem;max-width:1400px;margin:0 auto}
+.cat-tabs{display:flex;gap:0.5rem;margin-bottom:2rem;flex-wrap:wrap;justify-content:center}
+.cat-tab{padding:0.6rem 1.5rem;border-radius:50px;font-size:0.85rem;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#94a3b8;transition:all 0.3s}
+.cat-tab.active,.cat-tab:hover{background:#6366f1;color:#fff;border-color:#6366f1}
+
+.featured{padding:2rem;max-width:1400px;margin:0 auto}
+.featured-title{font-size:1.5rem;font-weight:700;margin-bottom:1.5rem;display:flex;align-items:center;gap:0.5rem}
+.featured-title .badge{background:linear-gradient(135deg,#f59e0b,#ef4444);padding:0.2rem 0.8rem;border-radius:50px;font-size:0.7rem;font-weight:600;text-transform:uppercase}
+
+.agents-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.5rem}
+.agent-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:1.5rem;cursor:pointer;transition:all 0.4s ease;position:relative;overflow:hidden}
+.agent-card:hover{border-color:rgba(99,102,241,0.4);transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,0.3)}
+.agent-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent,#6366f1),var(--accent2,#8b5cf6));opacity:0;transition:opacity 0.3s}
+.agent-card:hover::before{opacity:1}
+.agent-header{display:flex;align-items:center;gap:1rem;margin-bottom:1rem}
+.agent-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0}
+.agent-name{font-size:1.1rem;font-weight:700}
+.agent-vendor{font-size:0.75rem;color:#64748b}
+.agent-desc{color:#94a3b8;font-size:0.85rem;line-height:1.6;margin-bottom:1rem}
+.agent-stats{display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap}
+.agent-stat{background:rgba(255,255,255,0.04);padding:0.4rem 0.8rem;border-radius:8px;font-size:0.75rem}
+.agent-stat strong{color:#a5b4fc;display:block;font-size:0.85rem}
+.agent-stat span{color:#64748b}
+.agent-footer{display:flex;justify-content:space-between;align-items:center;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.06)}
+.agent-rating{display:flex;align-items:center;gap:0.3rem;color:#fbbf24;font-size:0.85rem}
+.agent-installs{color:#64748b;font-size:0.8rem}
+.install-btn{padding:0.5rem 1.2rem;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer;border:none;background:#6366f1;color:#fff;transition:all 0.3s}
+.install-btn:hover{background:#818cf8;transform:scale(1.05)}
+.install-btn.installed{background:rgba(52,211,153,0.15);color:#34d399}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(10px);z-index:200;display:none;align-items:center;justify-content:center;padding:2rem}
+.modal-overlay.active{display:flex}
+.modal{background:#13131f;border:1px solid rgba(255,255,255,0.1);border-radius:24px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto;padding:2.5rem;position:relative}
+.modal-close{position:absolute;top:1rem;right:1rem;background:none;border:none;color:#64748b;cursor:pointer;font-size:1.5rem;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:all 0.3s}
+.modal-close:hover{background:rgba(255,255,255,0.1);color:#fff}
+.modal-icon{width:80px;height:80px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:2.5rem;margin-bottom:1.5rem}
+.modal h2{font-size:1.8rem;font-weight:800;margin-bottom:0.5rem}
+.modal-vendor{color:#64748b;margin-bottom:1.5rem}
+.modal-stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem}
+.modal-stat-card{background:rgba(255,255,255,0.04);border-radius:12px;padding:1rem;text-align:center}
+.modal-stat-card .value{font-size:1.5rem;font-weight:800;color:#a5b4fc}
+.modal-stat-card .label{font-size:0.75rem;color:#64748b;margin-top:0.25rem}
+.modal-section{margin-bottom:1.5rem}
+.modal-section h3{font-size:1rem;font-weight:600;margin-bottom:0.75rem;color:#e2e8f0}
+.modal-section p,.modal-section li{color:#94a3b8;font-size:0.9rem;line-height:1.7}
+.modal-section ul{list-style:none;padding:0}
+.modal-section li{padding:0.3rem 0;padding-left:1.5rem;position:relative}
+.modal-section li::before{content:'';position:absolute;left:0;top:0.7rem;width:6px;height:6px;border-radius:50%;background:#6366f1}
+.modal-install{width:100%;padding:1rem;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;border:none;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;margin-top:1rem;transition:all 0.3s}
+.modal-install:hover{box-shadow:0 8px 32px rgba(99,102,241,0.4)}
+
+.section-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.3),transparent);max-width:1400px;margin:3rem auto}
+
+@media(max-width:768px){.nav-search{display:none}.agents-grid{grid-template-columns:1fr}.hero h1{font-size:2.5rem}.modal-stats-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+<div class="nav-logo">Go2 Marketplace</div>
+<input type="text" class="nav-search" id="searchInput" placeholder="Search 240+ agents...">
+<div class="nav-actions">
+<button class="nav-btn ghost">My Agents</button>
+<button class="nav-btn primary">Publish Agent</button>
+</div>
+</nav>
+
+<section class="hero">
+<h1>Agent Marketplace</h1>
+<p>Browse, install, and deploy pre-built AI agents. From invoice processing to customer support — find the agent for any job.</p>
+<div class="stats-bar">
+<div class="stat"><div class="stat-num">243</div><div class="stat-label">Available Agents</div></div>
+<div class="stat"><div class="stat-num">18K</div><div class="stat-label">Active Deployments</div></div>
+<div class="stat"><div class="stat-num">2.1M</div><div class="stat-label">Hours Saved</div></div>
+<div class="stat"><div class="stat-num">4.8</div><div class="stat-label">Avg Rating</div></div>
+</div>
+</section>
+
+<section class="categories">
+<div class="cat-tabs">
+<div class="cat-tab active" data-cat="all">All Agents</div>
+<div class="cat-tab" data-cat="sales">Sales</div>
+<div class="cat-tab" data-cat="ops">Operations</div>
+<div class="cat-tab" data-cat="finance">Finance</div>
+<div class="cat-tab" data-cat="support">Support</div>
+<div class="cat-tab" data-cat="hr">HR</div>
+<div class="cat-tab" data-cat="marketing">Marketing</div>
+<div class="cat-tab" data-cat="engineering">Engineering</div>
+</div>
+</section>
+
+<div class="section-divider"></div>
+
+<section class="featured">
+<div class="featured-title">Featured Agents <span class="badge">Hot</span></div>
+<div class="agents-grid" id="agentsGrid"></div>
+</section>
+
+<div class="section-divider"></div>
+
+<section class="featured">
+<div class="featured-title">Recently Added</div>
+<div class="agents-grid" id="recentGrid"></div>
+</section>
+
+<div class="modal-overlay" id="modalOverlay">
+<div class="modal" id="modal"></div>
+</div>
+
+<script>
+const agents = [
+{name:"InvoiceBot Pro",vendor:"Go2 Labs",cat:"finance",icon:"💰",color:"#f59e0b",desc:"Automatically processes, validates, and routes invoices. Extracts data from PDFs, matches POs, flags discrepancies, and posts to your accounting system.",rating:4.9,installs:"2.4K",timeSaved:"18 hrs/week",deployTime:"5 min",price:"$29/mo",capabilities:["PDF/image invoice extraction","PO matching & validation","Multi-currency support","QuickBooks/Xero integration","Anomaly detection"],metrics:{accuracy:"99.8%",processed:"847/day",errorRate:"0.02%"}},
+{name:"Sales Copilot",vendor:"RevAI",cat:"sales",icon:"🎯",color:"#ef4444",desc:"Rides along on every sales call and email. Provides real-time coaching, auto-generates follow-ups, updates CRM, and predicts deal outcomes.",rating:4.8,installs:"3.1K",timeSaved:"12 hrs/week",deployTime:"10 min",price:"$49/mo",capabilities:["Real-time call coaching","Auto CRM updates","Email follow-up generation","Deal scoring & prediction","Competitor intelligence"],metrics:{winRateIncrease:"+23%",avgDealSize:"+15%",responseTime:"2 min"}},
+{name:"Support Sentinel",vendor:"Go2 Labs",cat:"support",icon:"🛡️",color:"#06b6d4",desc:"Handles tier-1 support tickets autonomously. Resolves 73% of tickets without human intervention. Escalates complex issues with full context.",rating:4.7,installs:"1.8K",timeSaved:"30 hrs/week",deployTime:"15 min",price:"$39/mo",capabilities:["Autonomous ticket resolution","Sentiment analysis","Smart escalation","Knowledge base auto-update","Multi-channel support"],metrics:{autoResolved:"73%",avgResponse:"< 30 sec",csat:"4.6/5"}},
+{name:"HR Onboarder",vendor:"PeopleAI",cat:"hr",icon:"👋",color:"#8b5cf6",desc:"Complete new hire onboarding automation. Sets up accounts, schedules training, assigns mentors, tracks progress, and ensures nothing falls through the cracks.",rating:4.6,installs:"980",timeSaved:"8 hrs/hire",deployTime:"20 min",price:"$35/mo",capabilities:["Account provisioning","Training schedule generation","Mentor matching","Progress tracking","Compliance checklist automation"],metrics:{onboardTime:"2 days → 4 hrs",satisfaction:"94%",completionRate:"100%"}},
+{name:"Ops Commander",vendor:"Go2 Labs",cat:"ops",icon:"⚙️",color:"#34d399",desc:"Monitors your operations in real-time. Detects bottlenecks, suggests optimizations, auto-routes tasks, and generates operational reports.",rating:4.8,installs:"1.5K",timeSaved:"15 hrs/week",deployTime:"30 min",price:"$59/mo",capabilities:["Real-time bottleneck detection","Auto task routing","Predictive resource allocation","Custom report generation","SLA monitoring"],metrics:{efficiency:"+34%",bottlenecksFound:"12/week",costSaved:"$4.2K/mo"}},
+{name:"Content Engine",vendor:"CreativeAI",cat:"marketing",icon:"✍️",color:"#ec4899",desc:"Generates on-brand content across channels. Blog posts, social media, email campaigns, ad copy — all in your brand voice with SEO optimization.",rating:4.5,installs:"2.7K",timeSaved:"20 hrs/week",deployTime:"15 min",price:"$45/mo",capabilities:["Multi-channel content generation","Brand voice learning","SEO optimization","A/B copy variants","Content calendar management"],metrics:{contentPieces:"50/week",engagement:"+45%",seoRank:"+12 positions"}},
+{name:"Code Reviewer",vendor:"DevBot Inc",cat:"engineering",icon:"🔍",color:"#6366f1",desc:"Reviews every PR with senior-engineer quality. Catches bugs, security issues, performance problems, and style violations before they reach production.",rating:4.9,installs:"4.2K",timeSaved:"10 hrs/week",deployTime:"5 min",price:"$25/mo",capabilities:["Bug detection","Security vulnerability scanning","Performance analysis","Code style enforcement","Auto-fix suggestions"],metrics:{bugsFound:"8.3/week",falsePositive:"< 3%",reviewTime:"45 sec"}},
+{name:"Compliance Guardian",vendor:"RegTech AI",cat:"ops",icon:"📋",color:"#14b8a6",desc:"Monitors regulatory changes, ensures compliance, auto-updates policies, and generates audit trails. Never miss a regulation update again.",rating:4.7,installs:"890",timeSaved:"25 hrs/week",deployTime:"45 min",price:"$79/mo",capabilities:["Regulatory monitoring","Policy auto-updates","Audit trail generation","Risk assessment","Training compliance tracking"],metrics:{regulations:"500+ tracked",compliance:"99.9%",auditTime:"-80%"}},
+{name:"Meeting Scribe",vendor:"Go2 Labs",cat:"ops",icon:"📝",color:"#f97316",desc:"Joins your meetings, takes perfect notes, identifies action items, assigns owners, and follows up. Never lose a meeting insight again.",rating:4.8,installs:"5.1K",timeSaved:"6 hrs/week",deployTime:"2 min",price:"$19/mo",capabilities:["Auto-join meetings","Real-time transcription","Action item extraction","Owner assignment","Follow-up automation"],metrics:{meetings:"1.2K/day",actionItems:"97% captured",followUp:"100% tracked"}},
+{name:"Data Analyst",vendor:"InsightAI",cat:"finance",icon:"📊",color:"#a855f7",desc:"Connects to your data sources, runs analysis on demand, generates visualizations, and surfaces insights you didn't know to look for.",rating:4.6,installs:"1.9K",timeSaved:"15 hrs/week",deployTime:"30 min",price:"$55/mo",capabilities:["Multi-source data connection","Natural language queries","Auto-visualization","Anomaly detection","Scheduled reports"],metrics:{queries:"200/day",insights:"12/week",accuracy:"96%"}},
+{name:"Lead Qualifier",vendor:"RevAI",cat:"sales",icon:"🏆",color:"#eab308",desc:"Scores and qualifies inbound leads instantly. Enriches with firmographic data, predicts conversion probability, and routes to the right rep.",rating:4.7,installs:"2.1K",timeSaved:"14 hrs/week",deployTime:"10 min",price:"$39/mo",capabilities:["Instant lead scoring","Firmographic enrichment","Conversion prediction","Smart routing","Auto follow-up sequences"],metrics:{qualified:"+40%",convRate:"+28%",responseTime:"< 1 min"}},
+{name:"Expense Manager",vendor:"FinBot",cat:"finance",icon:"🧾",color:"#22c55e",desc:"Processes expense reports in seconds. Scans receipts, categorizes expenses, checks policy compliance, and auto-approves within limits.",rating:4.5,installs:"1.3K",timeSaved:"8 hrs/week",deployTime:"10 min",price:"$22/mo",capabilities:["Receipt scanning","Auto-categorization","Policy compliance check","Approval automation","Spend analytics"],metrics:{processed:"340/day",accuracy:"99.5%",approvalTime:"< 5 min"}}
+];
+
+function renderCard(agent, idx) {
+return `<div class="agent-card" data-cat="${agent.cat}" data-idx="${idx}" onclick="showModal(${idx})" style="--accent:${agent.color}">
+<div class="agent-header">
+<div class="agent-icon" style="background:${agent.color}20">${agent.icon}</div>
+<div><div class="agent-name">${agent.name}</div><div class="agent-vendor">by ${agent.vendor}</div></div>
+</div>
+<div class="agent-desc">${agent.desc}</div>
+<div class="agent-stats">
+<div class="agent-stat"><strong>${agent.timeSaved}</strong><span>Time saved</span></div>
+<div class="agent-stat"><strong>${agent.deployTime}</strong><span>Deploy time</span></div>
+<div class="agent-stat"><strong>${agent.price}</strong><span>Per month</span></div>
+</div>
+<div class="agent-footer">
+<div class="agent-rating">${'★'.repeat(Math.floor(agent.rating))}${'☆'.repeat(5-Math.floor(agent.rating))} ${agent.rating}</div>
+<div class="agent-installs">${agent.installs} installs</div>
+<button class="install-btn" onclick="event.stopPropagation();installAgent(this)">Install</button>
+</div>
+</div>`;
+}
+
+const grid = document.getElementById('agentsGrid');
+const recentGrid = document.getElementById('recentGrid');
+grid.innerHTML = agents.slice(0,8).map((a,i) => renderCard(a,i)).join('');
+recentGrid.innerHTML = agents.slice(8).map((a,i) => renderCard(a,i+8)).join('');
+
+// Category filter
+document.querySelectorAll('.cat-tab').forEach(tab => {
+tab.addEventListener('click', function() {
+document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+this.classList.add('active');
+const cat = this.dataset.cat;
+document.querySelectorAll('.agent-card').forEach(card => {
+card.style.display = (cat === 'all' || card.dataset.cat === cat) ? '' : 'none';
+});
+});
+});
+
+// Search
+document.getElementById('searchInput').addEventListener('input', function() {
+const q = this.value.toLowerCase();
+document.querySelectorAll('.agent-card').forEach(card => {
+card.style.display = card.textContent.toLowerCase().includes(q) ? '' : 'none';
+});
+});
+
+// Install
+function installAgent(btn) {
+if (btn.classList.contains('installed')) return;
+btn.classList.add('installed');
+btn.textContent = '✓ Installed';
+}
+
+// Modal
+function showModal(idx) {
+const a = agents[idx];
+const m = document.getElementById('modal');
+const metricsHtml = Object.entries(a.metrics).map(([k,v]) => `<div class="modal-stat-card"><div class="value">${v}</div><div class="label">${k.replace(/([A-Z])/g,' $1').trim()}</div></div>`).join('');
+m.innerHTML = `
+<button class="modal-close" onclick="closeModal()">&times;</button>
+<div class="modal-icon" style="background:${a.color}20">${a.icon}</div>
+<h2>${a.name}</h2>
+<div class="modal-vendor">by ${a.vendor} &bull; ${a.installs} installs &bull; ${'★'.repeat(Math.floor(a.rating))} ${a.rating}</div>
+<div class="modal-stats-grid">${metricsHtml}</div>
+<div class="modal-section"><h3>About</h3><p>${a.desc}</p></div>
+<div class="modal-section"><h3>Capabilities</h3><ul>${a.capabilities.map(c=>`<li>${c}</li>`).join('')}</ul></div>
+<div class="modal-section"><h3>Pricing</h3><p>${a.price} &bull; 14-day free trial &bull; Cancel anytime</p></div>
+<div class="modal-section"><h3>Deployment</h3><p>Average deployment time: ${a.deployTime}. Works with your existing tools. No code required.</p></div>
+<button class="modal-install" onclick="this.textContent='✓ Installing...';setTimeout(()=>{this.textContent='✓ Installed';this.style.background='rgba(52,211,153,0.15)';this.style.color='#34d399'},1500)">Install ${a.name}</button>`;
+document.getElementById('modalOverlay').classList.add('active');
+}
+
+function closeModal() {
+document.getElementById('modalOverlay').classList.remove('active');
+}
+document.getElementById('modalOverlay').addEventListener('click', e => {
+if (e.target === e.currentTarget) closeModal();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// Animate cards in
+const obs = new IntersectionObserver(entries => {
+entries.forEach((e, i) => {
+if (e.isIntersecting) {
+setTimeout(() => { e.target.style.opacity = 1; e.target.style.transform = 'translateY(0)'; }, i * 50);
+obs.unobserve(e.target);
+}
+});
+}, {threshold: 0.1});
+document.querySelectorAll('.agent-card').forEach(c => {
+c.style.opacity = 0; c.style.transform = 'translateY(20px)'; c.style.transition = 'all 0.5s ease';
+obs.observe(c);
+});
+</script>
+</body>
+</html>

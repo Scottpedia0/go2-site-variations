@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Company's Heartbeat - Go2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Mono&display=swap');
+body{font-family:'Inter',sans-serif;background:#050510;color:#fff;overflow-x:hidden;min-height:100vh}
+.header{text-align:center;padding:40px 20px 20px}
+.header h1{font-size:42px;font-weight:900;margin-bottom:8px}
+.header h1 span{background:linear-gradient(135deg,#ff3366,#00ccff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header p{color:#666;font-size:15px;max-width:500px;margin:0 auto}
+.toggle-container{display:flex;justify-content:center;gap:0;margin:24px auto;background:rgba(255,255,255,0.05);border-radius:30px;padding:4px;width:fit-content;border:1px solid rgba(255,255,255,0.08)}
+.toggle-btn{padding:10px 28px;border-radius:26px;border:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.3s;color:#888;background:transparent}
+.toggle-btn.active-before{background:linear-gradient(135deg,#ff3366,#ff6633);color:#fff;box-shadow:0 4px 20px rgba(255,51,102,0.3)}
+.toggle-btn.active-after{background:linear-gradient(135deg,#00ccff,#00ff88);color:#fff;box-shadow:0 4px 20px rgba(0,204,255,0.3)}
+.canvas-container{position:relative;width:100%;max-width:1200px;margin:0 auto;padding:0 20px}
+canvas{width:100%;height:400px;display:block;cursor:crosshair}
+.tooltip{position:fixed;background:rgba(10,10,20,0.95);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:14px 18px;font-size:12px;pointer-events:none;z-index:100;display:none;backdrop-filter:blur(10px);max-width:240px}
+.tooltip-time{font-family:'Space Mono',monospace;color:#888;margin-bottom:6px;font-size:11px}
+.tooltip-activity{font-weight:700;font-size:14px;margin-bottom:4px}
+.tooltip-detail{color:#999;font-size:12px;line-height:1.5}
+.stats-row{display:flex;gap:16px;justify-content:center;padding:12px 20px;flex-wrap:wrap}
+.stat-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px 24px;text-align:center;min-width:140px;transition:all 0.5s}
+.stat-label{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#666;margin-bottom:4px}
+.stat-value{font-size:24px;font-weight:800;font-family:'Space Mono',monospace;transition:color 0.5s}
+.stat-delta{font-size:11px;margin-top:4px;font-weight:600}
+.rhythm-section{max-width:1200px;margin:20px auto;padding:0 20px}
+.rhythm-grid{display:grid;grid-template-columns:repeat(24,1fr);gap:3px;margin-top:10px}
+.rhythm-cell{aspect-ratio:1;border-radius:3px;cursor:pointer;transition:all 0.3s;position:relative}
+.rhythm-cell:hover{transform:scale(1.5);z-index:10}
+.rhythm-label{font-size:10px;color:#555;text-align:center;margin-top:4px}
+.section-title{font-size:14px;font-weight:700;color:#888;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.workers-pulse{max-width:1200px;margin:24px auto;padding:0 20px}
+.workers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+.worker-pulse{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px;text-align:center;transition:all 0.5s}
+.worker-dot{width:12px;height:12px;border-radius:50%;margin:0 auto 6px;transition:all 0.5s}
+.worker-name{font-size:10px;color:#888;margin-bottom:2px}
+.worker-state{font-size:9px;font-weight:600;transition:color 0.5s}
+.comparison{max-width:1200px;margin:30px auto;padding:0 20px 40px;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.compare-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px;text-align:center}
+.compare-card h3{font-size:16px;margin-bottom:4px}
+.compare-card .big-num{font-size:48px;font-weight:900;font-family:'Space Mono',monospace;margin:12px 0}
+.compare-card .desc{font-size:12px;color:#888}
+.legend{display:flex;gap:20px;justify-content:center;padding:8px;font-size:11px;color:#888}
+.legend-item{display:flex;align-items:center;gap:6px}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>Your Company's <span>Heartbeat</span></h1>
+  <p>Every company has a rhythm. Most just can't see it. Go2 makes the invisible visible.</p>
+</div>
+
+<div class="toggle-container">
+  <button class="toggle-btn active-before" id="btnBefore" onclick="setMode('before')">Before Go2</button>
+  <button class="toggle-btn" id="btnAfter" onclick="setMode('after')">After Go2</button>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#33ff88"></div> Deep Work</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#ffcc00"></div> Meetings</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#ff3366"></div> Context Switching</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#333"></div> Wasted Time</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#00ccff"></div> Automated</div>
+</div>
+
+<div class="canvas-container">
+  <canvas id="heartbeat"></canvas>
+</div>
+
+<div class="stats-row" id="statsRow">
+  <div class="stat-card"><div class="stat-label">Deep Work</div><div class="stat-value" id="statDeep">2.1h</div><div class="stat-delta" id="deltaDeep"></div></div>
+  <div class="stat-card"><div class="stat-label">In Meetings</div><div class="stat-value" id="statMeet">4.8h</div><div class="stat-delta" id="deltaMeet"></div></div>
+  <div class="stat-card"><div class="stat-label">Context Switches</div><div class="stat-value" id="statSwitch">47</div><div class="stat-delta" id="deltaSwitch"></div></div>
+  <div class="stat-card"><div class="stat-label">Wasted Time</div><div class="stat-value" id="statWaste">2.4h</div><div class="stat-delta" id="deltaWaste"></div></div>
+  <div class="stat-card"><div class="stat-label">Productivity Score</div><div class="stat-value" id="statProd">34</div><div class="stat-delta" id="deltaProd"></div></div>
+</div>
+
+<div class="rhythm-section">
+  <div class="section-title">24-Hour Activity Heatmap</div>
+  <div class="rhythm-grid" id="heatmap"></div>
+  <div class="rhythm-grid" style="margin-top:2px">
+    <div class="rhythm-label">12a</div><div class="rhythm-label"></div><div class="rhythm-label"></div>
+    <div class="rhythm-label">3a</div><div class="rhythm-label"></div><div class="rhythm-label"></div>
+    <div class="rhythm-label">6a</div><div class="rhythm-label"></div><div class="rhythm-label"></div>
+    <div class="rhythm-label">9a</div><div class="rhythm-label"></div><div class="rhythm-label"></div>
+    <div class="rhythm-label">12p</div><div class="rhythm-label"></div><div class="rhythm-label"></div>
+    <div class="rhythm-label">3p</div><div class="rhythm-label"></div><div class="rhythm-label"></div>
+    <div class="rhythm-label">6p</div><div class="rhythm-label"></div><div class="rhythm-label"></div>
+    <div class="rhythm-label">9p</div><div class="rhythm-label"></div><div class="rhythm-label"></div>
+  </div>
+</div>
+
+<div class="workers-pulse">
+  <div class="section-title">Team Pulse — Real-Time Status</div>
+  <div class="workers-grid" id="workersGrid"></div>
+</div>
+
+<div class="comparison">
+  <div class="compare-card">
+    <h3>Before Go2</h3>
+    <div class="big-num" style="color:#ff3366" id="beforeScore">34</div>
+    <div class="desc">Productivity Score<br>Erratic rhythms, constant interruptions, undocumented chaos</div>
+  </div>
+  <div class="compare-card">
+    <h3>After Go2</h3>
+    <div class="big-num" style="color:#33ff88" id="afterScore">87</div>
+    <div class="desc">Productivity Score<br>Steady rhythms, deep work protected, AI-coached efficiency</div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip">
+  <div class="tooltip-time" id="ttTime"></div>
+  <div class="tooltip-activity" id="ttActivity"></div>
+  <div class="tooltip-detail" id="ttDetail"></div>
+</div>
+
+<script>
+const canvas = document.getElementById('heartbeat');
+const ctx = canvas.getContext('2d');
+let mode = 'before';
+let animFrame;
+let time = 0;
+let mouseX = -1, mouseY = -1;
+const tooltip = document.getElementById('tooltip');
+
+const names = ['Sarah','Mike','Priya','James','Lisa','Alex','Jordan','Casey','Taylor','Morgan','Riley','Avery','Quinn','Blake','Drew','Sam'];
+const beforeStates = ['In meeting','Switching tabs','Waiting','Email','Manual entry','On hold','Searching docs','Copy-pasting'];
+const afterStates = ['Deep work','AI-coached','Reviewing automation','Strategic planning','Coaching session','Building process','Analyzing data','Creative work'];
+
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+}
+resize();
+window.addEventListener('resize', resize);
+
+// Generate work day data
+function generateDay(chaotic) {
+  const points = [];
+  for (let i = 0; i < 480; i++) { // 8 hours, minute by minute
+    const hour = i / 60;
+    let value, type;
+
+    if (chaotic) {
+      // Before Go2: erratic, lots of meetings, flat zones
+      if (hour < 0.5) { value = 0.1 + Math.random() * 0.15; type = 'startup'; }
+      else if (hour >= 0.5 && hour < 1.5) { value = 0.8 + Math.random() * 0.2; type = 'meeting'; } // meeting
+      else if (hour >= 1.5 && hour < 2) { value = 0.05 + Math.random() * 0.1; type = 'waste'; } // recovery
+      else if (hour >= 2 && hour < 2.3) { value = 0.3 + Math.random() * 0.4; type = 'switching'; } // context switch
+      else if (hour >= 2.3 && hour < 3) { value = 0.5 + Math.random() * 0.15; type = 'work'; }
+      else if (hour >= 3 && hour < 4) { value = 0.85 + Math.random() * 0.15; type = 'meeting'; } // another meeting
+      else if (hour >= 4 && hour < 4.5) { value = 0.02 + Math.random() * 0.08; type = 'waste'; } // lunch/dead
+      else if (hour >= 4.5 && hour < 5) { value = 0.1 + Math.random() * 0.2; type = 'switching'; }
+      else if (hour >= 5 && hour < 5.5) { value = 0.4 + Math.random() * 0.2; type = 'work'; }
+      else if (hour >= 5.5 && hour < 6.5) { value = 0.9 + Math.random() * 0.1; type = 'meeting'; }
+      else if (hour >= 6.5 && hour < 7) { value = 0.15 + Math.random() * 0.3; type = 'switching'; }
+      else { value = 0.05 + Math.random() * 0.1; type = 'waste'; }
+
+      // Add random spikes (context switches)
+      if (Math.random() < 0.08) { value = Math.random(); type = 'switching'; }
+      // Add flat zones (wasted time)
+      if (Math.random() < 0.05) { value = 0.02; type = 'waste'; }
+    } else {
+      // After Go2: steady productive rhythm
+      if (hour < 0.3) { value = 0.2 + hour * 2; type = 'startup'; }
+      else if (hour >= 0.3 && hour < 2.5) { value = 0.7 + Math.sin(i/8)*0.1 + Math.random()*0.05; type = 'deepwork'; } // deep work block
+      else if (hour >= 2.5 && hour < 3) { value = 0.6 + Math.random()*0.1; type = 'meeting'; } // short standup
+      else if (hour >= 3 && hour < 3.2) { value = 0.3 + Math.random()*0.1; type = 'break'; }
+      else if (hour >= 3.2 && hour < 5.5) { value = 0.75 + Math.sin(i/10)*0.08 + Math.random()*0.04; type = 'deepwork'; } // deep work
+      else if (hour >= 5.5 && hour < 6) { value = 0.5 + Math.random()*0.1; type = 'automated'; } // AI handling routine
+      else if (hour >= 6 && hour < 7.5) { value = 0.65 + Math.sin(i/12)*0.1 + Math.random()*0.05; type = 'deepwork'; }
+      else { value = 0.4 - (hour-7.5)*0.5; type = 'winddown'; }
+
+      // Occasional automation blips (AI doing work)
+      if (Math.random() < 0.03) { value = 0.9; type = 'automated'; }
+    }
+
+    points.push({ value: Math.max(0, Math.min(1, value)), type });
+  }
+  return points;
+}
+
+let beforeData = generateDay(true);
+let afterData = generateDay(false);
+
+const typeColors = {
+  meeting: '#ffcc00',
+  work: '#33ff88',
+  deepwork: '#33ff88',
+  switching: '#ff3366',
+  waste: '#1a1a2e',
+  startup: '#555',
+  break: '#555',
+  automated: '#00ccff',
+  winddown: '#333'
+};
+
+const typeLabels = {
+  meeting: 'Meeting',
+  work: 'Working',
+  deepwork: 'Deep Work',
+  switching: 'Context Switching',
+  waste: 'Wasted Time',
+  startup: 'Starting Up',
+  break: 'Break',
+  automated: 'AI Automated',
+  winddown: 'Winding Down'
+};
+
+function draw() {
+  const w = canvas.getBoundingClientRect().width;
+  const h = canvas.getBoundingClientRect().height;
+  const data = mode === 'before' ? beforeData : afterData;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 8; i++) {
+    const x = (i / 8) * w;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+  }
+  for (let i = 0; i <= 4; i++) {
+    const y = (i / 4) * h;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+  }
+
+  // Hour labels
+  ctx.fillStyle = '#333';
+  ctx.font = '10px Inter';
+  for (let i = 0; i <= 8; i++) {
+    ctx.fillText(`${9 + i}:00`, (i / 8) * w + 4, h - 4);
+  }
+
+  // Draw waveform
+  const barWidth = w / data.length;
+  const centerY = h / 2;
+
+  // Glow pass
+  data.forEach((d, i) => {
+    const x = (i / data.length) * w;
+    const amplitude = d.value * (h * 0.4);
+    const color = typeColors[d.type] || '#333';
+
+    ctx.fillStyle = color + '15';
+    ctx.fillRect(x, centerY - amplitude, barWidth + 0.5, amplitude * 2);
+  });
+
+  // Main waveform - seismograph style
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  data.forEach((d, i) => {
+    const x = (i / data.length) * w;
+    const y = centerY - d.value * (h * 0.35) * Math.sin(time + i * 0.02);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  const grad = ctx.createLinearGradient(0, 0, w, 0);
+  if (mode === 'before') {
+    grad.addColorStop(0, '#ff3366');
+    grad.addColorStop(0.3, '#ffcc00');
+    grad.addColorStop(0.5, '#ff3366');
+    grad.addColorStop(0.7, '#ffcc00');
+    grad.addColorStop(1, '#ff3366');
+  } else {
+    grad.addColorStop(0, '#00ccff');
+    grad.addColorStop(0.5, '#33ff88');
+    grad.addColorStop(1, '#00ccff');
+  }
+  ctx.strokeStyle = grad;
+  ctx.stroke();
+
+  // Mirror wave
+  ctx.beginPath();
+  data.forEach((d, i) => {
+    const x = (i / data.length) * w;
+    const y = centerY + d.value * (h * 0.35) * Math.sin(time + i * 0.02);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = grad;
+  ctx.globalAlpha = 0.4;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // Pulse dots at peaks
+  data.forEach((d, i) => {
+    if (d.value > 0.7 && i % 12 === Math.floor(time * 2) % 12) {
+      const x = (i / data.length) * w;
+      const y = centerY - d.value * (h * 0.35) * Math.sin(time + i * 0.02);
+      const color = typeColors[d.type] || '#fff';
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x, y, 8, 0, Math.PI * 2);
+      ctx.fillStyle = color + '22';
+      ctx.fill();
+    }
+  });
+
+  // Hover line
+  if (mouseX >= 0) {
+    const dataIdx = Math.floor((mouseX / w) * data.length);
+    if (dataIdx >= 0 && dataIdx < data.length) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(mouseX, 0);
+      ctx.lineTo(mouseX, h);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const d = data[dataIdx];
+      const hour = Math.floor(dataIdx / 60) + 9;
+      const min = dataIdx % 60;
+      document.getElementById('ttTime').textContent = `${hour}:${String(min).padStart(2,'0')}`;
+      document.getElementById('ttActivity').textContent = typeLabels[d.type] || 'Unknown';
+      document.getElementById('ttActivity').style.color = typeColors[d.type] || '#fff';
+      const details = {
+        meeting: 'Team sync — 12 attendees, 45 min scheduled',
+        deepwork: 'Focused coding session — no interruptions',
+        work: 'Processing customer requests',
+        switching: 'Switching between 6 apps in 2 minutes',
+        waste: 'Waiting for approval / idle',
+        automated: 'AI agent handling routine invoice processing',
+        startup: 'Email triage, Slack catchup',
+        break: 'Healthy break — Go2 recommended',
+        winddown: 'Daily summary and tomorrow prep'
+      };
+      document.getElementById('ttDetail').textContent = details[d.type] || '';
+      tooltip.style.display = 'block';
+    }
+  }
+
+  time += 0.015;
+  animFrame = requestAnimationFrame(draw);
+}
+
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  mouseX = e.clientX - rect.left;
+  mouseY = e.clientY - rect.top;
+  tooltip.style.left = (e.clientX + 16) + 'px';
+  tooltip.style.top = (e.clientY - 80) + 'px';
+});
+canvas.addEventListener('mouseleave', () => {
+  mouseX = -1;
+  tooltip.style.display = 'none';
+});
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btnBefore').className = 'toggle-btn' + (m === 'before' ? ' active-before' : '');
+  document.getElementById('btnAfter').className = 'toggle-btn' + (m === 'after' ? ' active-after' : '');
+  updateStats();
+  updateHeatmap();
+  updateWorkers();
+}
+
+function updateStats() {
+  if (mode === 'before') {
+    document.getElementById('statDeep').textContent = '2.1h';
+    document.getElementById('statDeep').style.color = '#ff3366';
+    document.getElementById('statMeet').textContent = '4.8h';
+    document.getElementById('statMeet').style.color = '#ff3366';
+    document.getElementById('statSwitch').textContent = '47';
+    document.getElementById('statSwitch').style.color = '#ff3366';
+    document.getElementById('statWaste').textContent = '2.4h';
+    document.getElementById('statWaste').style.color = '#ff3366';
+    document.getElementById('statProd').textContent = '34';
+    document.getElementById('statProd').style.color = '#ff3366';
+    document.getElementById('deltaDeep').textContent = '';
+    document.getElementById('deltaMeet').textContent = '';
+    document.getElementById('deltaSwitch').textContent = '';
+    document.getElementById('deltaWaste').textContent = '';
+    document.getElementById('deltaProd').textContent = '';
+  } else {
+    document.getElementById('statDeep').textContent = '5.8h';
+    document.getElementById('statDeep').style.color = '#33ff88';
+    document.getElementById('statMeet').textContent = '1.2h';
+    document.getElementById('statMeet').style.color = '#33ff88';
+    document.getElementById('statSwitch').textContent = '8';
+    document.getElementById('statSwitch').style.color = '#33ff88';
+    document.getElementById('statWaste').textContent = '0.3h';
+    document.getElementById('statWaste').style.color = '#33ff88';
+    document.getElementById('statProd').textContent = '87';
+    document.getElementById('statProd').style.color = '#33ff88';
+    document.getElementById('deltaDeep').textContent = '+176%';
+    document.getElementById('deltaDeep').style.color = '#33ff88';
+    document.getElementById('deltaMeet').textContent = '-75%';
+    document.getElementById('deltaMeet').style.color = '#33ff88';
+    document.getElementById('deltaSwitch').textContent = '-83%';
+    document.getElementById('deltaSwitch').style.color = '#33ff88';
+    document.getElementById('deltaWaste').textContent = '-88%';
+    document.getElementById('deltaWaste').style.color = '#33ff88';
+    document.getElementById('deltaProd').textContent = '+156%';
+    document.getElementById('deltaProd').style.color = '#33ff88';
+  }
+}
+
+function updateHeatmap() {
+  const hm = document.getElementById('heatmap');
+  hm.innerHTML = '';
+  for (let h = 0; h < 24; h++) {
+    const cell = document.createElement('div');
+    cell.className = 'rhythm-cell';
+    let intensity, color;
+
+    if (mode === 'before') {
+      if (h < 6 || h > 22) { intensity = 0; color = '#0a0a1a'; }
+      else if (h >= 9 && h <= 17) {
+        intensity = Math.random() * 0.6 + 0.2;
+        const colors = ['#ff3366','#ffcc00','#ff3366','#333','#ffcc00'];
+        color = colors[Math.floor(Math.random() * colors.length)];
+      } else {
+        intensity = Math.random() * 0.2;
+        color = '#1a1a2e';
+      }
+    } else {
+      if (h < 6 || h > 20) { intensity = 0; color = '#0a0a1a'; }
+      else if (h >= 9 && h < 12) { intensity = 0.8; color = '#33ff88'; } // morning deep work
+      else if (h === 12) { intensity = 0.3; color = '#555'; } // lunch
+      else if (h >= 13 && h < 17) { intensity = 0.75; color = '#33ff88'; } // afternoon deep work
+      else if (h >= 17 && h <= 18) { intensity = 0.4; color = '#00ccff'; } // AI wrap-up
+      else { intensity = 0.15; color = '#1a1a2e'; }
+    }
+
+    cell.style.background = color;
+    cell.style.opacity = Math.max(0.15, intensity);
+    cell.title = `${h}:00 - ${h < 6 || h > 22 ? 'Offline' : mode === 'before' ? 'Chaotic activity' : 'Productive rhythm'}`;
+    hm.appendChild(cell);
+  }
+}
+
+function updateWorkers() {
+  const grid = document.getElementById('workersGrid');
+  grid.innerHTML = '';
+  names.forEach((name, i) => {
+    const div = document.createElement('div');
+    div.className = 'worker-pulse';
+
+    if (mode === 'before') {
+      const states = beforeStates;
+      const state = states[Math.floor(Math.random() * states.length)];
+      const colors = ['#ff3366','#ffcc00','#333','#ff8833'];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      div.innerHTML = `<div class="worker-dot" style="background:${color};box-shadow:0 0 8px ${color}44;animation:pulse ${0.5+Math.random()*2}s infinite alternate"></div><div class="worker-name">${name}</div><div class="worker-state" style="color:${color}">${state}</div>`;
+    } else {
+      const states = afterStates;
+      const state = states[Math.floor(Math.random() * states.length)];
+      const color = state.includes('AI') || state.includes('Auto') ? '#00ccff' : '#33ff88';
+      div.innerHTML = `<div class="worker-dot" style="background:${color};box-shadow:0 0 8px ${color}44;animation:pulse ${1.5+Math.random()}s infinite alternate"></div><div class="worker-name">${name}</div><div class="worker-state" style="color:${color}">${state}</div>`;
+    }
+    grid.appendChild(div);
+  });
+}
+
+// Init
+updateStats();
+updateHeatmap();
+updateWorkers();
+draw();
+
+// Cycle worker states
+setInterval(() => updateWorkers(), 3000);
+
+// Keyboard shortcut
+document.addEventListener('keydown', e => {
+  if (e.key === '1') setMode('before');
+  if (e.key === '2') setMode('after');
+});
+</script>
+</body>
+</html>

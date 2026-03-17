@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 Desktop Experience</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+  body { font-family: 'Inter', -apple-system, sans-serif; overflow: hidden; height: 100vh; }
+
+  /* Desktop wallpaper */
+  #desktop {
+    width: 100vw; height: 100vh; position: relative;
+    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+    overflow: hidden;
+  }
+
+  /* Wallpaper pattern */
+  #desktop::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 20% 80%, rgba(120,80,255,0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(80,200,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(255,120,80,0.05) 0%, transparent 60%);
+  }
+
+  /* Desktop icons */
+  .desktop-icon {
+    position: absolute; width: 80px; text-align: center; cursor: pointer; padding: 6px;
+    border-radius: 8px; transition: background 0.15s;
+  }
+  .desktop-icon:hover { background: rgba(255,255,255,0.1); }
+  .desktop-icon:active { background: rgba(255,255,255,0.2); }
+  .desktop-icon .icon { width: 52px; height: 52px; margin: 0 auto 4px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; font-size: 28px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+  .desktop-icon .label { color: white; font-size: 11px; font-weight: 500;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8); line-height: 1.2; }
+
+  /* Menubar */
+  #menubar {
+    position: fixed; top: 0; left: 0; right: 0; height: 28px; z-index: 9999;
+    background: rgba(30,30,30,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    display: flex; align-items: center; padding: 0 12px; color: white; font-size: 13px; font-weight: 500;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  #menubar .apple { font-size: 16px; margin-right: 16px; cursor: pointer; }
+  #menubar .app-name { font-weight: 600; margin-right: 20px; }
+  #menubar .menu-item { margin-right: 16px; cursor: pointer; opacity: 0.85; }
+  #menubar .menu-item:hover { opacity: 1; }
+  #menubar .right { margin-left: auto; display: flex; align-items: center; gap: 14px; font-size: 12px; }
+  .menubar-badge { background: #ff3b30; color: white; border-radius: 50%; width: 16px; height: 16px;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700;
+    position: relative; top: -1px; }
+
+  /* Dock */
+  #dock {
+    position: fixed; bottom: 4px; left: 50%; transform: translateX(-50%); z-index: 9998;
+    background: rgba(30,30,30,0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-radius: 18px; padding: 4px 8px; display: flex; gap: 4px;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .dock-icon {
+    width: 52px; height: 52px; border-radius: 12px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; font-size: 28px;
+    transition: transform 0.2s; position: relative;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  }
+  .dock-icon:hover { transform: scale(1.3) translateY(-10px); }
+  .dock-icon .dock-dot {
+    position: absolute; bottom: -4px; width: 4px; height: 4px; border-radius: 50%;
+    background: rgba(255,255,255,0.7);
+  }
+  .dock-separator { width: 1px; background: rgba(255,255,255,0.2); margin: 8px 4px; }
+
+  /* Windows */
+  .window {
+    position: absolute; min-width: 400px; min-height: 250px; border-radius: 10px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1);
+    overflow: hidden; display: flex; flex-direction: column; z-index: 100;
+    animation: windowOpen 0.25s ease-out;
+  }
+  @keyframes windowOpen { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  .window.minimized { display: none; }
+
+  .window .titlebar {
+    height: 38px; background: rgba(50,50,50,0.95); backdrop-filter: blur(10px);
+    display: flex; align-items: center; padding: 0 12px; cursor: grab; flex-shrink: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .window .titlebar:active { cursor: grabbing; }
+  .window .titlebar .buttons { display: flex; gap: 7px; margin-right: 12px; }
+  .window .titlebar .btn { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; }
+  .window .titlebar .btn-close { background: #ff5f57; }
+  .window .titlebar .btn-close:hover { background: #ff3b30; }
+  .window .titlebar .btn-minimize { background: #ffbd2e; }
+  .window .titlebar .btn-maximize { background: #28c940; }
+  .window .titlebar .title { color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 500; flex: 1; text-align: center; }
+  .window .content { flex: 1; background: #1e1e1e; color: #e0e0e0; overflow-y: auto; font-size: 13px; }
+
+  /* Notification toast */
+  .notification {
+    position: fixed; top: 36px; right: 12px; width: 340px; z-index: 10000;
+    background: rgba(40,40,40,0.95); backdrop-filter: blur(20px);
+    border-radius: 14px; padding: 14px 16px; color: white;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);
+    animation: slideIn 0.3s ease-out; cursor: pointer;
+  }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .notification .notif-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .notification .notif-icon { width: 20px; height: 20px; border-radius: 5px; background: linear-gradient(135deg, #7c3aed, #2563eb);
+    display: flex; align-items: center; justify-content: center; font-size: 11px; }
+  .notification .notif-app { font-size: 12px; font-weight: 600; flex: 1; }
+  .notification .notif-time { font-size: 11px; color: rgba(255,255,255,0.5); }
+  .notification .notif-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .notification .notif-body { font-size: 12px; color: rgba(255,255,255,0.7); line-height: 1.4; }
+
+  /* Specific window content styles */
+  .dashboard-content { padding: 20px; }
+  .dashboard-content h2 { font-size: 20px; font-weight: 600; margin-bottom: 16px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: rgba(255,255,255,0.05); border-radius: 10px; padding: 16px; border: 1px solid rgba(255,255,255,0.08); }
+  .stat-card .stat-label { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .stat-card .stat-value { font-size: 28px; font-weight: 700; }
+  .stat-card .stat-change { font-size: 11px; margin-top: 4px; }
+  .stat-card .stat-change.up { color: #34d399; }
+  .stat-card .stat-change.down { color: #f87171; }
+
+  .workflow-list { list-style: none; }
+  .workflow-item { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex; align-items: center; gap: 12px; }
+  .workflow-item:hover { background: rgba(255,255,255,0.03); }
+  .workflow-status { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .workflow-status.active { background: #34d399; }
+  .workflow-status.learning { background: #fbbf24; }
+  .workflow-status.idle { background: #6b7280; }
+  .workflow-name { flex: 1; font-weight: 500; }
+  .workflow-meta { font-size: 11px; color: rgba(255,255,255,0.4); }
+
+  .coaching-content { padding: 0; }
+  .coaching-msg { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .coaching-msg:hover { background: rgba(255,255,255,0.03); }
+  .coaching-msg .msg-time { font-size: 10px; color: rgba(255,255,255,0.4); margin-bottom: 4px; }
+  .coaching-msg .msg-title { font-weight: 600; margin-bottom: 4px; font-size: 13px; }
+  .coaching-msg .msg-body { font-size: 12px; color: rgba(255,255,255,0.65); line-height: 1.5; }
+  .coaching-msg .msg-action { display: inline-block; margin-top: 8px; background: #7c3aed; color: white;
+    padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; }
+  .coaching-msg .msg-action:hover { background: #6d28d9; }
+
+  .agent-content { padding: 16px; }
+  .agent-card { background: rgba(255,255,255,0.05); border-radius: 10px; padding: 16px;
+    border: 1px solid rgba(255,255,255,0.08); margin-bottom: 12px; }
+  .agent-card .agent-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .agent-card .agent-avatar { width: 36px; height: 36px; border-radius: 8px; display: flex;
+    align-items: center; justify-content: center; font-size: 18px; }
+  .agent-card .agent-name { font-weight: 600; }
+  .agent-card .agent-status-text { font-size: 11px; }
+  .agent-card .agent-status-text.running { color: #34d399; }
+  .agent-card .agent-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 11px; }
+  .agent-card .agent-stat { text-align: center; }
+  .agent-card .agent-stat-val { font-size: 18px; font-weight: 600; }
+  .agent-card .agent-stat-label { color: rgba(255,255,255,0.4); }
+  .agent-card .agent-log { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 10px;
+    background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; font-family: 'SF Mono', monospace; line-height: 1.6; }
+
+  .process-content { padding: 20px; }
+  .process-map { position: relative; padding: 20px 0; }
+  .process-node { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px;
+    background: rgba(255,255,255,0.08); border-radius: 8px; margin: 6px; border: 1px solid rgba(255,255,255,0.12); }
+  .process-node.automated { border-color: #34d399; background: rgba(52,211,153,0.1); }
+  .process-node.coaching { border-color: #fbbf24; background: rgba(251,191,36,0.1); }
+  .process-arrow { display: inline-block; color: rgba(255,255,255,0.3); margin: 0 4px; }
+  .process-legend { display: flex; gap: 16px; margin-top: 16px; font-size: 11px; }
+  .process-legend span { display: flex; align-items: center; gap: 6px; }
+  .process-legend .dot { width: 10px; height: 10px; border-radius: 3px; }
+
+  .about-content { padding: 24px; }
+  .about-content h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .about-content .tagline { font-size: 15px; color: #a78bfa; margin-bottom: 20px; }
+  .about-content p { margin-bottom: 14px; color: rgba(255,255,255,0.75); line-height: 1.7; font-size: 13px; }
+  .about-content .phases { margin: 20px 0; }
+  .about-content .phase { display: flex; gap: 12px; margin-bottom: 14px; }
+  .about-content .phase-num { width: 28px; height: 28px; border-radius: 50%; background: #7c3aed;
+    display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .about-content .phase-text h4 { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+  .about-content .phase-text p { margin-bottom: 0; font-size: 12px; }
+  .about-cta { display: inline-block; background: linear-gradient(135deg, #7c3aed, #2563eb); color: white;
+    padding: 10px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; margin-top: 10px; text-decoration: none; }
+  .about-cta:hover { opacity: 0.9; }
+
+  /* System tray Go2 icon pulse */
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .tray-go2 { animation: pulse 3s infinite; }
+</style>
+</head>
+<body>
+<div id="desktop">
+  <!-- Desktop Icons -->
+  <div class="desktop-icon" style="top:50px;left:30px" onclick="openWindow('dashboard')">
+    <div class="icon" style="background:linear-gradient(135deg,#7c3aed,#2563eb)">&#128202;</div>
+    <div class="label">Go2 Dashboard</div>
+  </div>
+  <div class="desktop-icon" style="top:160px;left:30px" onclick="openWindow('coaching')">
+    <div class="icon" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">&#128172;</div>
+    <div class="label">AI Coach</div>
+  </div>
+  <div class="desktop-icon" style="top:270px;left:30px" onclick="openWindow('agents')">
+    <div class="icon" style="background:linear-gradient(135deg,#10b981,#059669)">&#129302;</div>
+    <div class="label">AI Agents</div>
+  </div>
+  <div class="desktop-icon" style="top:380px;left:30px" onclick="openWindow('workflows')">
+    <div class="icon" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)">&#128736;</div>
+    <div class="label">Workflow Map</div>
+  </div>
+  <div class="desktop-icon" style="top:490px;left:30px" onclick="openWindow('about')">
+    <div class="icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">&#9432;</div>
+    <div class="label">About Go2</div>
+  </div>
+  <div class="desktop-icon" style="top:50px;left:130px" onclick="openWindow('terminal')">
+    <div class="icon" style="background:#1e1e1e;border:1px solid rgba(255,255,255,0.15)">&#9000;</div>
+    <div class="label">Terminal</div>
+  </div>
+</div>
+
+<!-- Menubar -->
+<div id="menubar">
+  <span class="apple">&#63743;</span>
+  <span class="app-name">Finder</span>
+  <span class="menu-item">File</span>
+  <span class="menu-item">Edit</span>
+  <span class="menu-item">View</span>
+  <span class="menu-item">Go</span>
+  <span class="menu-item">Window</span>
+  <span class="menu-item">Help</span>
+  <div class="right">
+    <span class="tray-go2" title="Go2 Active" style="cursor:pointer" onclick="openWindow('coaching')">&#9672; Go2 <span class="menubar-badge">3</span></span>
+    <span>Wi-Fi</span>
+    <span>100%</span>
+    <span id="menubar-clock"></span>
+  </div>
+</div>
+
+<!-- Dock -->
+<div id="dock">
+  <div class="dock-icon" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)" onclick="openWindow('about')" title="Finder">&#128193;</div>
+  <div class="dock-icon" style="background:#1e1e1e" onclick="openWindow('terminal')" title="Terminal">&#9000;</div>
+  <div class="dock-icon" style="background:linear-gradient(135deg,#ef4444,#dc2626)" title="Mail">&#9993;</div>
+  <div class="dock-icon" style="background:linear-gradient(135deg,#60a5fa,#2563eb)" title="Browser">&#127760;</div>
+  <div class="dock-separator"></div>
+  <div class="dock-icon" style="background:linear-gradient(135deg,#7c3aed,#2563eb)" onclick="openWindow('dashboard')" title="Go2 Dashboard">
+    &#128202;<span class="dock-dot"></span>
+  </div>
+  <div class="dock-icon" style="background:linear-gradient(135deg,#f59e0b,#ef4444)" onclick="openWindow('coaching')" title="AI Coach">
+    &#128172;<span class="dock-dot"></span>
+  </div>
+  <div class="dock-icon" style="background:linear-gradient(135deg,#10b981,#059669)" onclick="openWindow('agents')" title="AI Agents">
+    &#129302;<span class="dock-dot"></span>
+  </div>
+</div>
+
+<script>
+// --- CLOCK ---
+function updateClock() {
+  const now = new Date();
+  document.getElementById('menubar-clock').textContent = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+updateClock();
+setInterval(updateClock, 30000);
+
+// --- WINDOW MANAGEMENT ---
+let windowZ = 100;
+let windows = {};
+let dragState = null;
+
+const WINDOW_DEFS = {
+  dashboard: {
+    title: 'Go2 Dashboard',
+    width: 680, height: 480, x: 180, y: 60,
+    content: `<div class="dashboard-content">
+      <h2>&#128202; Team Performance Overview</h2>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Time Saved This Week</div>
+          <div class="stat-value" style="color:#34d399">47.2 hrs</div>
+          <div class="stat-change up">&#9650; 12% vs last week</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Active Automations</div>
+          <div class="stat-value" style="color:#a78bfa">14</div>
+          <div class="stat-change up">&#9650; 3 new this month</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">AI Agents Running</div>
+          <div class="stat-value" style="color:#60a5fa">5</div>
+          <div class="stat-change up">99.7% uptime</div>
+        </div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Workflows Documented</div>
+          <div class="stat-value">47</div>
+          <div class="stat-change up">Auto-generated from real work</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Coaching Tips Delivered</div>
+          <div class="stat-value">1,284</div>
+          <div class="stat-change up">89% acceptance rate</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">90-Day ROI</div>
+          <div class="stat-value" style="color:#fbbf24">340%</div>
+          <div class="stat-change up">&#9650; Verified by finance</div>
+        </div>
+      </div>
+      <h2 style="font-size:16px;margin-top:8px">Recent Activity</h2>
+      <ul class="workflow-list">
+        <li class="workflow-item"><span class="workflow-status active"></span><span class="workflow-name">Invoice Processing Agent</span><span class="workflow-meta">Processed 47 invoices today</span></li>
+        <li class="workflow-item"><span class="workflow-status active"></span><span class="workflow-name">Customer Onboarding Flow</span><span class="workflow-meta">Automated 3 hrs ago</span></li>
+        <li class="workflow-item"><span class="workflow-status learning"></span><span class="workflow-name">Inventory Restock Workflow</span><span class="workflow-meta">Learning... 72% mapped</span></li>
+        <li class="workflow-item"><span class="workflow-status active"></span><span class="workflow-name">Weekly Report Generation</span><span class="workflow-meta">Runs every Monday 8am</span></li>
+        <li class="workflow-item"><span class="workflow-status learning"></span><span class="workflow-name">Vendor Communication</span><span class="workflow-meta">Learning... 45% mapped</span></li>
+        <li class="workflow-item"><span class="workflow-status idle"></span><span class="workflow-name">Payroll Data Entry</span><span class="workflow-meta">Queued for automation</span></li>
+      </ul>
+    </div>`
+  },
+  coaching: {
+    title: 'Go2 AI Coach',
+    width: 420, height: 520, x: 300, y: 80,
+    content: `<div class="coaching-content">
+      <div class="coaching-msg" style="background:rgba(124,58,237,0.1)">
+        <div class="msg-time">Just now</div>
+        <div class="msg-title">&#128161; Shortcut Detected</div>
+        <div class="msg-body">You've copied data from the CRM to the spreadsheet 4 times today. Want me to create an automation that syncs these automatically?</div>
+        <div class="msg-action" onclick="this.textContent='&#10003; Automation Created!';this.style.background='#059669'">Automate This</div>
+      </div>
+      <div class="coaching-msg">
+        <div class="msg-time">14 min ago</div>
+        <div class="msg-title">&#9889; Faster Path Found</div>
+        <div class="msg-body">When generating the weekly sales report, you're pulling data from 3 tabs. The same data is available in a single API call. This would save ~25 min per report.</div>
+        <div class="msg-action" onclick="this.textContent='&#10003; Tip Applied!';this.style.background='#059669'">Show Me How</div>
+      </div>
+      <div class="coaching-msg">
+        <div class="msg-time">1 hour ago</div>
+        <div class="msg-title">&#128640; Process Improvement</div>
+        <div class="msg-body">Your customer onboarding flow has 12 steps. Based on successful completions, steps 4-6 can be consolidated into 1 automated step. Teams who've done this save 40 min per onboard.</div>
+        <div class="msg-action" onclick="this.textContent='&#10003; Reviewing...';this.style.background='#059669'">Review Suggestion</div>
+      </div>
+      <div class="coaching-msg">
+        <div class="msg-time">3 hours ago</div>
+        <div class="msg-title">&#127942; Achievement Unlocked</div>
+        <div class="msg-body">You've saved 2.5 hours this week using Go2 coaching tips. That's in the top 15% of your team. Keep it up!</div>
+      </div>
+      <div class="coaching-msg">
+        <div class="msg-time">Yesterday</div>
+        <div class="msg-title">&#128203; Documentation Auto-Generated</div>
+        <div class="msg-body">Go2 has documented your "New Vendor Setup" process based on the last 8 times you performed it. Review the generated SOP to confirm accuracy.</div>
+        <div class="msg-action" onclick="this.textContent='&#10003; Reviewed!';this.style.background='#059669'">Review SOP</div>
+      </div>
+      <div class="coaching-msg">
+        <div class="msg-time">Yesterday</div>
+        <div class="msg-title">&#128201; Weekly Summary</div>
+        <div class="msg-body">Last week: 8.4 hours saved, 3 new workflows documented, 1 automation deployed. You're on track for 340% ROI this quarter.</div>
+      </div>
+    </div>`
+  },
+  agents: {
+    title: 'Go2 AI Agents',
+    width: 560, height: 500, x: 250, y: 100,
+    content: `<div class="agent-content">
+      <h2 style="font-size:18px;font-weight:600;margin-bottom:16px">&#129302; Active AI Agents</h2>
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-avatar" style="background:linear-gradient(135deg,#34d399,#059669)">&#128230;</div>
+          <div><div class="agent-name">Order Processing Agent</div><div class="agent-status-text running">&#9679; Running</div></div>
+        </div>
+        <div class="agent-stats">
+          <div class="agent-stat"><div class="agent-stat-val">247</div><div class="agent-stat-label">Orders Today</div></div>
+          <div class="agent-stat"><div class="agent-stat-val">99.8%</div><div class="agent-stat-label">Accuracy</div></div>
+          <div class="agent-stat"><div class="agent-stat-val">12s</div><div class="agent-stat-label">Avg Time</div></div>
+        </div>
+        <div class="agent-log">
+[14:32:01] Processed order #48291 - Standard fulfillment
+[14:31:44] Processed order #48290 - Flagged: unusual quantity
+[14:31:22] Processed order #48289 - Rush shipping applied
+[14:30:58] Processed order #48288 - Standard fulfillment</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-avatar" style="background:linear-gradient(135deg,#60a5fa,#2563eb)">&#128203;</div>
+          <div><div class="agent-name">Invoice Reconciliation Agent</div><div class="agent-status-text running">&#9679; Running</div></div>
+        </div>
+        <div class="agent-stats">
+          <div class="agent-stat"><div class="agent-stat-val">47</div><div class="agent-stat-label">Invoices Today</div></div>
+          <div class="agent-stat"><div class="agent-stat-val">100%</div><div class="agent-stat-label">Match Rate</div></div>
+          <div class="agent-stat"><div class="agent-stat-val">3.2hr</div><div class="agent-stat-label">Saved Today</div></div>
+        </div>
+        <div class="agent-log">
+[14:28:15] Matched invoice INV-2847 to PO-9921
+[14:27:02] Auto-approved invoice INV-2846 ($1,240)
+[14:25:33] Flagged INV-2845 - Amount mismatch, sent to review</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-avatar" style="background:linear-gradient(135deg,#fbbf24,#f59e0b)">&#128231;</div>
+          <div><div class="agent-name">Customer Response Agent</div><div class="agent-status-text running">&#9679; Running</div></div>
+        </div>
+        <div class="agent-stats">
+          <div class="agent-stat"><div class="agent-stat-val">89</div><div class="agent-stat-label">Responses</div></div>
+          <div class="agent-stat"><div class="agent-stat-val">4.8/5</div><div class="agent-stat-label">CSAT Score</div></div>
+          <div class="agent-stat"><div class="agent-stat-val">45s</div><div class="agent-stat-label">Avg Response</div></div>
+        </div>
+        <div class="agent-log">
+[14:30:11] Responded to shipping inquiry - tracking provided
+[14:29:45] Escalated complaint to human agent (policy issue)
+[14:28:30] Processed return request #R-4481 automatically</div>
+      </div>
+    </div>`
+  },
+  workflows: {
+    title: 'Go2 Workflow Map',
+    width: 620, height: 440, x: 220, y: 90,
+    content: `<div class="process-content">
+      <h2 style="font-size:18px;font-weight:600;margin-bottom:16px">&#128736; Order-to-Delivery Workflow</h2>
+      <div class="process-map">
+        <div class="process-node automated">&#128230; Order Received</div>
+        <span class="process-arrow">&#8594;</span>
+        <div class="process-node automated">&#9989; Validation</div>
+        <span class="process-arrow">&#8594;</span>
+        <div class="process-node automated">&#128179; Payment</div>
+        <span class="process-arrow">&#8594;</span>
+        <div class="process-node coaching">&#128196; Pick & Pack</div>
+        <span class="process-arrow">&#8594;</span>
+        <div class="process-node">&#128666; Shipping</div>
+        <span class="process-arrow">&#8594;</span>
+        <div class="process-node automated">&#128232; Notification</div>
+        <span class="process-arrow">&#8594;</span>
+        <div class="process-node">&#128100; Delivery</div>
+      </div>
+      <div class="process-legend">
+        <span><span class="dot" style="background:#34d399"></span> Automated by Go2</span>
+        <span><span class="dot" style="background:#fbbf24"></span> Being Coached</span>
+        <span><span class="dot" style="background:rgba(255,255,255,0.15)"></span> Manual (queued)</span>
+      </div>
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:20px 0">
+      <h2 style="font-size:16px;font-weight:600;margin-bottom:12px">All Documented Workflows</h2>
+      <ul class="workflow-list">
+        <li class="workflow-item"><span class="workflow-status active"></span><span class="workflow-name">Order Processing</span><span class="workflow-meta">7 steps &#8226; Fully automated</span></li>
+        <li class="workflow-item"><span class="workflow-status active"></span><span class="workflow-name">Invoice Reconciliation</span><span class="workflow-meta">5 steps &#8226; Fully automated</span></li>
+        <li class="workflow-item"><span class="workflow-status active"></span><span class="workflow-name">Customer Onboarding</span><span class="workflow-meta">12 steps &#8226; 8 automated</span></li>
+        <li class="workflow-item"><span class="workflow-status active"></span><span class="workflow-name">Weekly Reporting</span><span class="workflow-meta">4 steps &#8226; Fully automated</span></li>
+        <li class="workflow-item"><span class="workflow-status coaching"></span><span class="workflow-name">Vendor Setup</span><span class="workflow-meta">9 steps &#8226; Being optimized</span></li>
+        <li class="workflow-item"><span class="workflow-status coaching"></span><span class="workflow-name">Inventory Restock</span><span class="workflow-meta">6 steps &#8226; 72% mapped</span></li>
+        <li class="workflow-item"><span class="workflow-status idle"></span><span class="workflow-name">Payroll Data Entry</span><span class="workflow-meta">8 steps &#8226; Queued</span></li>
+        <li class="workflow-item"><span class="workflow-status idle"></span><span class="workflow-name">HR Onboarding</span><span class="workflow-meta">15 steps &#8226; Queued</span></li>
+      </ul>
+    </div>`
+  },
+  about: {
+    title: 'About Go2',
+    width: 500, height: 520, x: 320, y: 70,
+    content: `<div class="about-content">
+      <h2>Go2</h2>
+      <div class="tagline">AI that learns how you actually work.</div>
+      <p>95% of AI implementations fail. They fail because they automate processes they don't understand, deployed by consultants who've never done the work, trained on data that doesn't reflect reality.</p>
+      <p>Go2 is different. Our desktop agent --- Cowork.ai --- sits on your team's machines and quietly observes how work actually happens. No disruption. No behavior change. Just observation.</p>
+      <p>Then it starts coaching. Small tips. Real improvements. Your team gets better before a single thing is automated.</p>
+      <p>Then --- and only then --- it identifies what should be automated, based on real workflow data. Not guesses. Not best practices from some consultant's playbook. Your actual work.</p>
+      <div class="phases">
+        <div class="phase"><div class="phase-num">1</div><div class="phase-text"><h4>Capture</h4><p>Desktop agent observes real workflows silently</p></div></div>
+        <div class="phase"><div class="phase-num">2</div><div class="phase-text"><h4>Coach</h4><p>AI coaching tips improve workers in real-time</p></div></div>
+        <div class="phase"><div class="phase-num">3</div><div class="phase-text"><h4>Document</h4><p>Auto-generate process docs from real data</p></div></div>
+        <div class="phase"><div class="phase-num">4</div><div class="phase-text"><h4>Automate</h4><p>Deploy automations grounded in actual workflows</p></div></div>
+        <div class="phase"><div class="phase-num">5</div><div class="phase-text"><h4>AI Agents</h4><p>Train agents on real work patterns</p></div></div>
+      </div>
+      <a class="about-cta" href="https://go2.io" target="_blank">Get Started at go2.io</a>
+    </div>`
+  },
+  terminal: {
+    title: 'Terminal',
+    width: 580, height: 380, x: 200, y: 120,
+    content: `<div style="background:#0a0a0a;color:#33ff33;font-family:'SF Mono',monospace;font-size:12px;padding:16px;height:100%;line-height:1.7">
+<div>Last login: Mon Mar 17 09:14:22 on ttys001</div>
+<div>$ go2 status</div>
+<div style="color:#ccc">
+Go2 Agent v3.2.1 | Status: <span style="color:#34d399">ACTIVE</span>
+Uptime: 47 days, 3 hours
+Workers monitored: 40
+Workflows documented: 47
+Active automations: 14
+AI agents running: 5
+</div>
+<div>$ go2 roi --period 90d</div>
+<div style="color:#ccc">
+Calculating 90-day ROI...
+
+  Investment:      $35,400 (licenses + setup)
+  Time saved:      1,847 hours
+  Value of time:   $120,280 (at avg loaded cost)
+  <span style="color:#fbbf24;font-weight:bold">ROI:             340%</span>
+
+  Breakdown:
+    Coaching improvements:    $28,400 (23.6%)
+    Workflow automations:     $61,200 (50.9%)
+    AI agent labor savings:   $30,680 (25.5%)
+</div>
+<div>$ <span style="animation:blink 1s infinite">_</span></div>
+</div>`
+  }
+};
+
+function openWindow(id) {
+  if (windows[id] && !windows[id].classList.contains('minimized')) {
+    // Bring to front
+    windows[id].style.zIndex = ++windowZ;
+    return;
+  }
+  if (windows[id]) {
+    windows[id].classList.remove('minimized');
+    windows[id].style.zIndex = ++windowZ;
+    return;
+  }
+
+  const def = WINDOW_DEFS[id];
+  const win = document.createElement('div');
+  win.className = 'window';
+  win.style.width = def.width + 'px';
+  win.style.height = def.height + 'px';
+  win.style.left = def.x + 'px';
+  win.style.top = def.y + 'px';
+  win.style.zIndex = ++windowZ;
+  win.dataset.id = id;
+
+  win.innerHTML = `
+    <div class="titlebar">
+      <div class="buttons">
+        <div class="btn btn-close"></div>
+        <div class="btn btn-minimize"></div>
+        <div class="btn btn-maximize"></div>
+      </div>
+      <div class="title">${def.title}</div>
+    </div>
+    <div class="content">${def.content}</div>
+  `;
+
+  document.getElementById('desktop').appendChild(win);
+  windows[id] = win;
+
+  // Close button
+  win.querySelector('.btn-close').addEventListener('click', (e) => {
+    e.stopPropagation();
+    win.remove();
+    delete windows[id];
+  });
+
+  // Minimize
+  win.querySelector('.btn-minimize').addEventListener('click', (e) => {
+    e.stopPropagation();
+    win.classList.add('minimized');
+  });
+
+  // Maximize
+  win.querySelector('.btn-maximize').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (win.dataset.maximized === 'true') {
+      win.style.width = def.width + 'px';
+      win.style.height = def.height + 'px';
+      win.style.left = def.x + 'px';
+      win.style.top = def.y + 'px';
+      win.dataset.maximized = 'false';
+    } else {
+      win.style.width = '100vw';
+      win.style.height = 'calc(100vh - 28px)';
+      win.style.left = '0';
+      win.style.top = '28px';
+      win.dataset.maximized = 'true';
+    }
+  });
+
+  // Focus on click
+  win.addEventListener('mousedown', () => { win.style.zIndex = ++windowZ; });
+
+  // Drag
+  const titlebar = win.querySelector('.titlebar');
+  titlebar.addEventListener('mousedown', (e) => {
+    if (e.target.classList.contains('btn')) return;
+    win.style.zIndex = ++windowZ;
+    dragState = {
+      win,
+      startX: e.clientX - win.offsetLeft,
+      startY: e.clientY - win.offsetTop
+    };
+  });
+
+  // Resize handle (bottom-right corner)
+  win.addEventListener('mousedown', (e) => {
+    const rect = win.getBoundingClientRect();
+    if (e.clientX > rect.right - 12 && e.clientY > rect.bottom - 12) {
+      dragState = {
+        win,
+        resize: true,
+        startX: e.clientX,
+        startY: e.clientY,
+        startW: rect.width,
+        startH: rect.height
+      };
+      e.preventDefault();
+    }
+  });
+}
+
+document.addEventListener('mousemove', (e) => {
+  if (!dragState) return;
+  if (dragState.resize) {
+    const newW = Math.max(300, dragState.startW + (e.clientX - dragState.startX));
+    const newH = Math.max(200, dragState.startH + (e.clientY - dragState.startY));
+    dragState.win.style.width = newW + 'px';
+    dragState.win.style.height = newH + 'px';
+  } else {
+    dragState.win.style.left = (e.clientX - dragState.startX) + 'px';
+    dragState.win.style.top = (e.clientY - dragState.startY) + 'px';
+  }
+});
+document.addEventListener('mouseup', () => { dragState = null; });
+
+// --- NOTIFICATIONS ---
+const notifications = [
+  { app: 'Go2 Coach', title: 'Shortcut Detected', body: 'You\'ve copied data between apps 4 times today. Want to automate this?', delay: 3000 },
+  { app: 'Go2 Agent', title: 'Automation Complete', body: 'Invoice reconciliation agent processed 47 invoices today with 100% accuracy.', delay: 12000 },
+  { app: 'Go2 Coach', title: 'Weekly Summary', body: 'Your team saved 47.2 hours this week. That\'s a new record!', delay: 22000 }
+];
+
+notifications.forEach(n => {
+  setTimeout(() => showNotification(n), n.delay);
+});
+
+function showNotification(n) {
+  const el = document.createElement('div');
+  el.className = 'notification';
+  el.innerHTML = `
+    <div class="notif-header">
+      <div class="notif-icon">G</div>
+      <div class="notif-app">${n.app}</div>
+      <div class="notif-time">now</div>
+    </div>
+    <div class="notif-title">${n.title}</div>
+    <div class="notif-body">${n.body}</div>
+  `;
+  el.addEventListener('click', () => {
+    el.remove();
+    openWindow('coaching');
+  });
+  document.body.appendChild(el);
+  setTimeout(() => { if (el.parentNode) el.remove(); }, 6000);
+}
+
+// Open dashboard on load
+setTimeout(() => openWindow('dashboard'), 500);
+setTimeout(() => openWindow('coaching'), 800);
+</script>
+</body>
+</html>
