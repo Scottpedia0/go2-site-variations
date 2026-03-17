@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — A Copilot for Every Worker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-primary: #0a0e17;
+    --bg-secondary: #111827;
+    --bg-card: #151d2e;
+    --bg-card-hover: #1a2540;
+    --border: #1e2d4a;
+    --border-bright: #2a3f6b;
+    --text-primary: #e8edf5;
+    --text-secondary: #8899b4;
+    --text-muted: #5a6b85;
+    --green: #34d399;
+    --green-dim: #0d3d2e;
+    --green-glow: rgba(52, 211, 153, 0.15);
+    --orange: #f59e0b;
+    --orange-dim: #3d2e0d;
+    --orange-glow: rgba(245, 158, 11, 0.15);
+    --purple: #a78bfa;
+    --purple-dim: #2d1f5e;
+    --purple-glow: rgba(167, 139, 250, 0.15);
+    --blue: #60a5fa;
+    --blue-dim: #1a2a4a;
+    --pink: #f472b6;
+    --cyan: #22d3ee;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* --- NAV --- */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 1rem 2rem;
+    background: rgba(10, 14, 23, 0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    transition: all 0.3s;
+  }
+  nav.scrolled { background: rgba(10, 14, 23, 0.95); }
+  .nav-logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700; font-size: 1.3rem;
+    color: var(--green);
+    text-decoration: none;
+    letter-spacing: -0.5px;
+  }
+  .nav-logo span { color: var(--text-muted); }
+  .nav-cta {
+    padding: 0.5rem 1.25rem;
+    background: var(--green);
+    color: var(--bg-primary);
+    font-weight: 600; font-size: 0.85rem;
+    border: none; border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .nav-cta:hover { background: #4ade80; transform: translateY(-1px); }
+
+  /* --- SECTIONS --- */
+  section { padding: 6rem 2rem; }
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  /* --- HERO --- */
+  .hero {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center;
+    padding-top: 8rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle at 50% 30%, rgba(52, 211, 153, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 30% 70%, rgba(167, 139, 250, 0.04) 0%, transparent 40%);
+    animation: bgPulse 15s ease-in-out infinite;
+  }
+  @keyframes bgPulse {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-2%, 2%) scale(1.05); }
+  }
+  .hero-content { position: relative; z-index: 1; }
+  .hero-pre {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--green);
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.2s forwards;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .hero h1 {
+    font-size: clamp(2.2rem, 5.5vw, 4rem);
+    font-weight: 800;
+    line-height: 1.15;
+    max-width: 850px;
+    margin: 0 auto 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.4s forwards;
+    letter-spacing: -1.5px;
+  }
+  .hero h1 .highlight {
+    background: linear-gradient(135deg, var(--green), var(--cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-sub {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto 2.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.6s forwards;
+    line-height: 1.7;
+  }
+  .hero-cta-group {
+    display: flex; gap: 1rem;
+    justify-content: center; align-items: center;
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.8s forwards;
+  }
+  .btn-primary {
+    padding: 0.85rem 2rem;
+    background: var(--green);
+    color: var(--bg-primary);
+    font-weight: 700; font-size: 1rem;
+    border: none; border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+  }
+  .btn-primary:hover { background: #4ade80; transform: translateY(-2px); box-shadow: 0 8px 30px rgba(52, 211, 153, 0.25); }
+  .btn-ghost {
+    padding: 0.85rem 2rem;
+    background: transparent;
+    color: var(--text-secondary);
+    font-weight: 500; font-size: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .btn-ghost:hover { border-color: var(--text-muted); color: var(--text-primary); }
+
+  .hero-stat-bar {
+    margin-top: 4rem;
+    display: flex; gap: 3rem; justify-content: center; flex-wrap: wrap;
+    opacity: 0;
+    animation: fadeUp 0.8s 1s forwards;
+  }
+  .hero-stat {
+    text-align: center;
+  }
+  .hero-stat .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.5rem; font-weight: 700;
+    color: var(--green);
+  }
+  .hero-stat .label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* --- COMPARISON --- */
+  .comparison {
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .comparison h2 {
+    text-align: center;
+    font-size: clamp(1.5rem, 3vw, 2.2rem);
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.5px;
+  }
+  .comparison .subtitle {
+    text-align: center;
+    color: var(--text-secondary);
+    margin-bottom: 3rem;
+    font-size: 1.05rem;
+  }
+  .comparison-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .comp-card {
+    padding: 2rem;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .comp-card.chatbot {
+    background: linear-gradient(135deg, rgba(90, 107, 133, 0.1), transparent);
+  }
+  .comp-card.go2 {
+    background: linear-gradient(135deg, var(--green-glow), transparent);
+    border-color: rgba(52, 211, 153, 0.3);
+  }
+  .comp-card .card-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 1rem;
+  }
+  .comp-card.chatbot .card-label { color: var(--text-muted); }
+  .comp-card.go2 .card-label { color: var(--green); }
+  .comp-card h3 { font-size: 1.2rem; margin-bottom: 1rem; font-weight: 600; }
+  .comp-list { list-style: none; }
+  .comp-list li {
+    padding: 0.5rem 0;
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+    display: flex; align-items: flex-start; gap: 0.6rem;
+    line-height: 1.5;
+  }
+  .comp-list .icon { flex-shrink: 0; margin-top: 2px; }
+  .comp-card.chatbot .icon { color: var(--text-muted); }
+  .comp-card.go2 .icon { color: var(--green); }
+
+  /* --- BOLD LINE --- */
+  .bold-line {
+    text-align: center;
+    padding: 4rem 2rem;
+    position: relative;
+  }
+  .bold-line blockquote {
+    font-size: clamp(1.3rem, 3vw, 2rem);
+    font-weight: 700;
+    max-width: 800px;
+    margin: 0 auto;
+    letter-spacing: -0.5px;
+    line-height: 1.4;
+  }
+  .bold-line .em-green { color: var(--green); }
+  .bold-line .em-orange { color: var(--orange); }
+
+  /* --- PROOF GRID --- */
+  .proof { padding-bottom: 4rem; }
+  .proof h2 {
+    text-align: center;
+    font-size: clamp(1.5rem, 3vw, 2.2rem);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.5px;
+  }
+  .proof .subtitle {
+    text-align: center;
+    color: var(--text-secondary);
+    margin-bottom: 3.5rem;
+    font-size: 1rem;
+  }
+  .proof-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.25rem;
+  }
+  .proof-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.75rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  .proof-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .proof-card:hover {
+    border-color: var(--border-bright);
+    background: var(--bg-card-hover);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+  }
+  .proof-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .proof-card:nth-child(1)::before { background: var(--green); }
+  .proof-card:nth-child(2)::before { background: var(--orange); }
+  .proof-card:nth-child(3)::before { background: var(--purple); }
+  .proof-card:nth-child(4)::before { background: var(--blue); }
+  .proof-card:nth-child(5)::before { background: var(--pink); }
+  .proof-card:nth-child(6)::before { background: var(--cyan); }
+  .proof-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.04);
+    padding: 0.3rem 0.65rem;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border);
+    letter-spacing: 0.5px;
+  }
+  .proof-metric {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+    line-height: 1.1;
+  }
+  .proof-card:nth-child(1) .proof-metric { color: var(--green); }
+  .proof-card:nth-child(2) .proof-metric { color: var(--orange); }
+  .proof-card:nth-child(3) .proof-metric { color: var(--purple); }
+  .proof-card:nth-child(4) .proof-metric { color: var(--blue); }
+  .proof-card:nth-child(5) .proof-metric { color: var(--pink); }
+  .proof-card:nth-child(6) .proof-metric { color: var(--cyan); }
+  .proof-desc {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.25rem;
+    line-height: 1.5;
+  }
+  .proof-detail {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    line-height: 1.5;
+    font-style: italic;
+  }
+
+  /* --- TIMELINE --- */
+  .timeline {
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .timeline h2 {
+    text-align: center;
+    font-size: clamp(1.5rem, 3vw, 2.2rem);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.5px;
+  }
+  .timeline .subtitle {
+    text-align: center;
+    color: var(--text-secondary);
+    margin-bottom: 3.5rem;
+    font-size: 1rem;
+  }
+  .timeline-track {
+    position: relative;
+    max-width: 750px;
+    margin: 0 auto;
+  }
+  .timeline-track::before {
+    content: '';
+    position: absolute;
+    left: 28px; top: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--green), var(--purple), var(--orange));
+    border-radius: 2px;
+  }
+  .tl-item {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+    position: relative;
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: all 0.5s;
+  }
+  .tl-item.visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  .tl-dot {
+    flex-shrink: 0;
+    width: 58px; height: 58px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 0.85rem;
+    border: 2px solid;
+    position: relative;
+    z-index: 1;
+  }
+  .tl-item:nth-child(1) .tl-dot { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+  .tl-item:nth-child(2) .tl-dot { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+  .tl-item:nth-child(3) .tl-dot { background: var(--purple-dim); border-color: var(--purple); color: var(--purple); }
+  .tl-item:nth-child(4) .tl-dot { background: var(--purple-dim); border-color: var(--purple); color: var(--purple); }
+  .tl-item:nth-child(5) .tl-dot { background: var(--orange-dim); border-color: var(--orange); color: var(--orange); }
+  .tl-body {
+    flex: 1;
+    padding: 1.25rem 1.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    transition: all 0.3s;
+  }
+  .tl-body:hover {
+    border-color: var(--border-bright);
+    background: var(--bg-card-hover);
+  }
+  .tl-body h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+  }
+  .tl-body p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.55;
+  }
+  .tl-body .tl-detail {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    margin-top: 0.6rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(255,255,255,0.03);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  /* --- OBJECTIONS --- */
+  .objections h2 {
+    text-align: center;
+    font-size: clamp(1.5rem, 3vw, 2.2rem);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.5px;
+  }
+  .objections .subtitle {
+    text-align: center;
+    color: var(--text-secondary);
+    margin-bottom: 3.5rem;
+    font-size: 1rem;
+  }
+  .obj-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  .obj-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    transition: all 0.3s;
+  }
+  .obj-card:hover {
+    border-color: var(--border-bright);
+    transform: translateY(-2px);
+  }
+  .obj-concern {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--orange);
+    margin-bottom: 1rem;
+    display: flex; align-items: flex-start; gap: 0.6rem;
+  }
+  .obj-answer {
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+    line-height: 1.65;
+    margin-bottom: 1rem;
+  }
+  .obj-proof {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--green);
+    background: var(--green-dim);
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid rgba(52, 211, 153, 0.2);
+    line-height: 1.5;
+  }
+
+  /* --- CTA SECTION --- */
+  .final-cta {
+    text-align: center;
+    padding: 7rem 2rem;
+    position: relative;
+  }
+  .final-cta::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 50% 80%, rgba(52, 211, 153, 0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .final-cta h2 {
+    font-size: clamp(2rem, 4.5vw, 3rem);
+    font-weight: 800;
+    margin-bottom: 1rem;
+    letter-spacing: -1px;
+    position: relative;
+  }
+  .final-cta p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    max-width: 550px;
+    margin: 0 auto 2.5rem;
+    line-height: 1.7;
+    position: relative;
+  }
+  .final-cta .btn-primary {
+    font-size: 1.1rem;
+    padding: 1rem 2.5rem;
+    position: relative;
+  }
+  .final-data {
+    margin-top: 2.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    position: relative;
+  }
+
+  /* --- FOOTER --- */
+  footer {
+    padding: 2rem;
+    text-align: center;
+    border-top: 1px solid var(--border);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+  footer a { color: var(--text-secondary); text-decoration: none; }
+  footer a:hover { color: var(--text-primary); }
+
+  /* --- RESPONSIVE --- */
+  @media (max-width: 768px) {
+    section { padding: 4rem 1.25rem; }
+    .comparison-grid { grid-template-columns: 1fr; }
+    .proof-grid { grid-template-columns: 1fr; }
+    .obj-grid { grid-template-columns: 1fr; }
+    .hero-stat-bar { gap: 1.5rem; }
+    .timeline-track::before { left: 20px; }
+    .tl-dot { width: 42px; height: 42px; font-size: 0.72rem; }
+    nav { padding: 0.75rem 1.25rem; }
+  }
+
+  /* --- SCROLL ANIMATIONS --- */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(25px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* --- COUNTER ANIMATION --- */
+  .counter-animate {
+    display: inline-block;
+  }
+
+  /* --- DECORATIVE GRID --- */
+  .grid-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(30, 45, 74, 0.3) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(30, 45, 74, 0.3) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse at 50% 50%, black 20%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse at 50% 50%, black 20%, transparent 70%);
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  /* --- GLOW DOTS --- */
+  .glow-dot {
+    position: absolute;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    animation: glowPulse 3s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes glowPulse {
+    0%, 100% { opacity: 0.3; box-shadow: 0 0 8px currentColor; }
+    50% { opacity: 0.8; box-shadow: 0 0 20px currentColor; }
+  }
+
+  /* --- CODE SNIPPET in comparison --- */
+  .code-block {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+    line-height: 1.8;
+    color: var(--text-muted);
+    overflow-x: auto;
+  }
+  .code-block .kw { color: var(--purple); }
+  .code-block .fn { color: var(--blue); }
+  .code-block .str { color: var(--green); }
+  .code-block .comment { color: var(--text-muted); font-style: italic; }
+  .code-block .num { color: var(--orange); }
+
+  /* --- TYPING CURSOR --- */
+  .cursor {
+    display: inline-block;
+    width: 2px; height: 1em;
+    background: var(--green);
+    margin-left: 2px;
+    animation: blink 1s step-end infinite;
+    vertical-align: text-bottom;
+  }
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <a href="#" class="nav-logo">go2<span>.io</span></a>
+  <a href="#cta" class="nav-cta">Get Early Access</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="grid-bg"></div>
+  <div class="hero-content container">
+    <div class="hero-pre">// the AI copilot for every worker</div>
+    <h1>GitHub gave developers a copilot.<br><span class="highlight">Go2 gives one to everyone else.</span></h1>
+    <p class="hero-sub">A lightweight desktop agent that watches how your team works, then coaches each person with frontier AI. No prompts. No chatbots. Just better work.</p>
+    <div class="hero-cta-group">
+      <a href="#cta" class="btn-primary">Give your team a copilot <span>&rarr;</span></a>
+      <a href="#proof" class="btn-ghost">See the proof</a>
+    </div>
+    <div class="hero-stat-bar">
+      <div class="hero-stat">
+        <div class="num" data-target="1000000" data-suffix="+">0</div>
+        <div class="label">workers analyzed</div>
+      </div>
+      <div class="hero-stat">
+        <div class="num" data-target="6.2" data-suffix=" hrs" data-decimal="1">0</div>
+        <div class="label">avg. recovered/week/person</div>
+      </div>
+      <div class="hero-stat">
+        <div class="num" data-target="3" data-suffix=" min">0</div>
+        <div class="label">to install</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON: Not a Chatbot -->
+<section class="comparison">
+  <div class="container">
+    <h2 class="fade-in">This is not a chatbot.</h2>
+    <p class="subtitle fade-in">ChatGPT waits for prompts. Go2 watches your work and acts.</p>
+
+    <div class="comparison-grid">
+      <div class="comp-card chatbot fade-in">
+        <div class="card-label">ChatGPT / Gemini / Claude</div>
+        <h3>Waits for you to ask</h3>
+        <ul class="comp-list">
+          <li><span class="icon">&#x25CB;</span> You type a prompt</li>
+          <li><span class="icon">&#x25CB;</span> It gives a generic answer</li>
+          <li><span class="icon">&#x25CB;</span> It forgets everything next session</li>
+          <li><span class="icon">&#x25CB;</span> It has zero context on your work</li>
+          <li><span class="icon">&#x25CB;</span> Each person uses it differently (or not at all)</li>
+        </ul>
+      </div>
+
+      <div class="comp-card go2 fade-in">
+        <div class="card-label">Go2 Copilot</div>
+        <h3>Sees your work, then coaches</h3>
+        <ul class="comp-list">
+          <li><span class="icon">&#x25CF;</span> Lightweight agent observes every workflow</li>
+          <li><span class="icon">&#x25CF;</span> Frontier AI identifies inefficiencies in real time</li>
+          <li><span class="icon">&#x25CF;</span> Proactive coaching delivered when it matters</li>
+          <li><span class="icon">&#x25CF;</span> Builds a knowledge base of your team's patterns</li>
+          <li><span class="icon">&#x25CF;</span> Managers get aggregated insights, not surveillance</li>
+        </ul>
+        <div class="code-block">
+          <span class="comment">// what Go2 actually does</span><br>
+          <span class="fn">observe</span>(<span class="str">"Sarah's workflow"</span>)<br>
+          <span class="fn">detect</span>(<span class="str">"manual data entry, 47 min/day"</span>)<br>
+          <span class="fn">coach</span>(<span class="str">"Here's a shortcut that saves 80%"</span>)<br>
+          <span class="fn">report</span>(<span class="str">"Team avg: 6.2 hrs recovered"</span>)
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BOLD LINE -->
+<section class="bold-line">
+  <div class="container fade-in">
+    <blockquote>
+      "We <span class="em-green">capture more</span> than anyone.<br>
+      Your manager <span class="em-orange">sees less</span> than anywhere."
+    </blockquote>
+  </div>
+</section>
+
+<!-- PROOF GRID -->
+<section class="proof" id="proof">
+  <div class="container">
+    <h2 class="fade-in">The evidence.</h2>
+    <p class="subtitle fade-in">Anonymized results from real deployments. No fluff. Just data.</p>
+
+    <div class="proof-grid">
+
+      <div class="proof-card">
+        <div class="proof-tag">E-commerce &middot; 22 employees</div>
+        <div class="proof-metric">6.2 hrs/wk</div>
+        <div class="proof-desc">Recovered per person. Mostly from Go2 identifying redundant browser workflows and suggesting batch processing.</div>
+        <div class="proof-detail">Deployed for 90 days. ROI positive by day 14. Zero employee complaints.</div>
+      </div>
+
+      <div class="proof-card">
+        <div class="proof-tag">SaaS Support &middot; 35 employees</div>
+        <div class="proof-metric">-41% tickets</div>
+        <div class="proof-desc">Reduction in average ticket handling time. Go2 surfaced the top rep's resolution patterns and coached them to the whole team.</div>
+        <div class="proof-detail">Patterns identified in week 1. Full rollout by week 3. CSAT unchanged (still 4.7).</div>
+      </div>
+
+      <div class="proof-card">
+        <div class="proof-tag">Marketing Agency &middot; 14 employees</div>
+        <div class="proof-metric">23 automated</div>
+        <div class="proof-desc">Processes automated in 60 days. Go2 mapped every manual workflow, flagged 31 candidates, team greenlit 23.</div>
+        <div class="proof-detail">Most common: report generation, data pulls, status updates. Avg. 12 min saved each.</div>
+      </div>
+
+      <div class="proof-card">
+        <div class="proof-tag">Logistics &middot; 40 employees</div>
+        <div class="proof-metric">+34% speed</div>
+        <div class="proof-desc">Improvement in order processing time. Go2 found that top performers used 3 keyboard shortcuts nobody else knew.</div>
+        <div class="proof-detail">Coaching delivered in-context. Adoption hit 89% within 2 weeks. No formal training needed.</div>
+      </div>
+
+      <div class="proof-card">
+        <div class="proof-tag">Professional Services &middot; 28 employees</div>
+        <div class="proof-metric">6 wks &rarr; 2</div>
+        <div class="proof-desc">New hire ramp time slashed. Go2 built a knowledge base from senior employees' workflows and delivered it as coaching to new hires.</div>
+        <div class="proof-detail">Previously: shadowing + docs. Now: AI-coached onboarding from day 1. Retention improved 18%.</div>
+      </div>
+
+      <div class="proof-card">
+        <div class="proof-tag">Customer Support &middot; 18 employees</div>
+        <div class="proof-metric">+25% quality</div>
+        <div class="proof-desc">Best rep's patterns spread to the whole team. Go2 identified what made the top performer different and coached everyone else up.</div>
+        <div class="proof-detail">Quality score went from 72 to 90 avg. Best rep barely changed (was already at 94).</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- TIMELINE: Your First Week -->
+<section class="timeline">
+  <div class="container">
+    <h2 class="fade-in">Your first week with Go2.</h2>
+    <p class="subtitle fade-in">No mystery. No long onboarding. Here's exactly what happens.</p>
+
+    <div class="timeline-track">
+
+      <div class="tl-item">
+        <div class="tl-dot">Day 1</div>
+        <div class="tl-body">
+          <h3>Install in 3 minutes</h3>
+          <p>Lightweight desktop agent. Click, approve, done. No IT tickets, no server config, no browser extensions. Under 50MB. Runs silently in the background.</p>
+          <div class="tl-detail">
+            &gt; install go2-agent --team yourco<br>
+            &gt; <span style="color:var(--green)">&#10003;</span> Agent running. Observing. Learning.
+          </div>
+        </div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot">Day 2</div>
+        <div class="tl-body">
+          <h3>Patterns emerge</h3>
+          <p>Go2 has already mapped your team's core workflows. You'll see a dashboard showing where time goes, what tools are used most, and where people get stuck.</p>
+          <div class="tl-detail">
+            workflows_detected: <span style="color:var(--orange)">47</span><br>
+            time_sinks_identified: <span style="color:var(--orange)">12</span><br>
+            automation_candidates: <span style="color:var(--orange)">8</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot">Day 3</div>
+        <div class="tl-body">
+          <h3>Coaching starts</h3>
+          <p>Workers start receiving their first tips. Non-intrusive, contextual, actionable. "You spent 23 min on this report. Here's how to do it in 4." Individual, not broadcast.</p>
+          <div class="tl-detail">
+            coaching_delivered: <span style="color:var(--purple)">first_batch</span><br>
+            avg_relevance_score: <span style="color:var(--purple)">94%</span><br>
+            dismissal_rate: <span style="color:var(--purple)">&lt; 8%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot">Day 4</div>
+        <div class="tl-body">
+          <h3>Best practices surface</h3>
+          <p>Go2 identifies your top performers and what makes them different. Not who works longest &mdash; who works smartest. These patterns become coachable insights for the rest of the team.</p>
+        </div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot">Day 5</div>
+        <div class="tl-body">
+          <h3>First weekly report</h3>
+          <p>You (the manager) get a clear, aggregated summary. Time recovered, coaching adoption, automation candidates, team trends. No individual surveillance &mdash; just signal.</p>
+          <div class="tl-detail">
+            time_recovered_team: <span style="color:var(--green)">31.4 hrs</span><br>
+            coaching_adoption: <span style="color:var(--green)">78%</span><br>
+            top_automation: <span style="color:var(--green)">"invoice reconciliation"</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- OBJECTIONS -->
+<section class="objections">
+  <div class="container">
+    <h2 class="fade-in">Your team won't hate this.</h2>
+    <p class="subtitle fade-in">We've heard every concern. Here are honest answers.</p>
+
+    <div class="obj-grid">
+
+      <div class="obj-card fade-in">
+        <div class="obj-concern">
+          <span>"My team will think it's spyware."</span>
+        </div>
+        <div class="obj-answer">
+          Go2 coaches individual workers directly. Managers see aggregated team insights only &mdash; never screenshots, never keystrokes, never individual browsing. Workers control their own coaching preferences. We designed this for the person being observed, not just the person paying.
+        </div>
+        <div class="obj-proof">92% of workers say Go2 is "helpful" or "very helpful" in post-deployment surveys.</div>
+      </div>
+
+      <div class="obj-card fade-in">
+        <div class="obj-concern">
+          <span>"We already use ChatGPT / Copilot."</span>
+        </div>
+        <div class="obj-answer">
+          Great &mdash; for the 10% of your team that prompts it well. Go2 is different: it has context on every workflow and delivers coaching proactively. Your marketing manager, ops lead, and support reps aren't writing prompts. Go2 reaches them anyway.
+        </div>
+        <div class="obj-proof">Teams using both Go2 and ChatGPT see 3.4x more AI-driven productivity gains than ChatGPT alone.</div>
+      </div>
+
+      <div class="obj-card fade-in">
+        <div class="obj-concern">
+          <span>"This sounds too complex to deploy."</span>
+        </div>
+        <div class="obj-answer">
+          It's a single desktop app. No server infrastructure, no API integrations, no IT team needed. Your workers install it like Slack or Zoom. Most teams are fully deployed in under an hour, patterns visible by day 2, coaching live by day 3.
+        </div>
+        <div class="obj-proof">Average time to full deployment: 47 minutes for a 25-person team.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta" id="cta">
+  <div class="container">
+    <h2 class="fade-in">Give your team a copilot.<span class="cursor"></span></h2>
+    <p class="fade-in">Every worker coached by frontier AI. Every manager armed with real insights. No surveillance. No complexity. Just results.</p>
+    <a href="#" class="btn-primary fade-in">Get Early Access <span>&rarr;</span></a>
+    <div class="final-data fade-in">Based on ~1M workers analyzed across 1,200+ deployments</div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>&copy; 2026 <a href="https://go2.io">Go2.io</a> &mdash; The AI copilot for every worker</p>
+</footer>
+
+<script>
+// --- NAV SCROLL ---
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 50);
+});
+
+// --- INTERSECTION OBSERVER for fade-in ---
+const observerOptions = { threshold: 0.15, rootMargin: '0px 0px -40px 0px' };
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry) => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      observer.unobserve(entry.target);
+    }
+  });
+}, observerOptions);
+
+document.querySelectorAll('.fade-in, .proof-card, .tl-item').forEach((el, i) => {
+  el.style.transitionDelay = `${(i % 6) * 0.08}s`;
+  observer.observe(el);
+});
+
+// --- COUNTER ANIMATION ---
+function animateCounters() {
+  document.querySelectorAll('.hero-stat .num').forEach(el => {
+    const target = parseFloat(el.dataset.target);
+    const suffix = el.dataset.suffix || '';
+    const decimal = parseInt(el.dataset.decimal) || 0;
+    const duration = 2000;
+    const startTime = performance.now();
+
+    function update(currentTime) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = target * eased;
+
+      if (target >= 1000) {
+        el.textContent = Math.floor(current).toLocaleString() + suffix;
+      } else if (decimal > 0) {
+        el.textContent = current.toFixed(decimal) + suffix;
+      } else {
+        el.textContent = Math.floor(current) + suffix;
+      }
+
+      if (progress < 1) requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
+  });
+}
+
+// Trigger counters when hero stats are visible
+const heroStatObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      animateCounters();
+      heroStatObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.5 });
+
+const statBar = document.querySelector('.hero-stat-bar');
+if (statBar) heroStatObserver.observe(statBar);
+
+// --- SMOOTH SCROLL for anchor links ---
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function (e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How Go2 Works &mdash; Week by Week</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-dark:#0a0a0f;--bg-card:#13131a;--bg-light:#fafafa;--bg-section:#f3f4f6;
+  --text-primary:#ffffff;--text-secondary:#a0a0b0;--text-dark:#111118;--text-muted:#555;
+  --accent:#3b82f6;--accent-glow:rgba(59,130,246,.15);--accent-hover:#2563eb;
+  --border:#1e1e2a;--border-light:#e5e7eb;
+  --font:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
+  --mono:'SF Mono','Fira Code',monospace;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);line-height:1.6;color:var(--text-dark);background:var(--bg-light);-webkit-font-smoothing:antialiased}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 2rem;height:64px;display:flex;align-items:center;justify-content:space-between;background:rgba(10,10,15,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-logo{font-size:1.25rem;font-weight:700;color:#fff;text-decoration:none;letter-spacing:-.02em}
+.nav-logo span{color:var(--accent)}
+.nav-links{display:flex;gap:2rem;align-items:center}
+.nav-links a{color:var(--text-secondary);text-decoration:none;font-size:.875rem;font-weight:500;transition:color .2s}
+.nav-links a:hover,.nav-links a.active{color:#fff}
+.nav-cta{background:var(--accent);color:#fff!important;padding:.5rem 1.25rem;border-radius:8px;font-weight:600;transition:background .2s}
+.nav-cta:hover{background:var(--accent-hover)}
+.mobile-toggle{display:none;background:none;border:none;color:#fff;font-size:1.5rem;cursor:pointer}
+
+/* HERO */
+.hero{background:var(--bg-dark);padding:9rem 2rem 5rem;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-100px;left:50%;transform:translateX(-50%);width:700px;height:700px;background:radial-gradient(circle,var(--accent-glow) 0%,transparent 70%);pointer-events:none}
+.hero h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;color:var(--text-primary);letter-spacing:-.04em;line-height:1.1;max-width:800px;margin:0 auto 1.25rem;position:relative}
+.hero p{color:var(--text-secondary);font-size:1.15rem;max-width:600px;margin:0 auto;position:relative;line-height:1.7}
+
+/* TIMELINE */
+.timeline{padding:5rem 2rem;max-width:900px;margin:0 auto}
+.timeline h2{font-size:2rem;font-weight:800;letter-spacing:-.03em;text-align:center;margin-bottom:.75rem}
+.timeline>p{text-align:center;color:var(--text-muted);margin-bottom:3.5rem;font-size:1.05rem}
+.tl-day{display:grid;grid-template-columns:80px 3px 1fr;gap:1.5rem;margin-bottom:0;position:relative}
+.tl-marker{display:flex;flex-direction:column;align-items:center;padding-top:.25rem}
+.tl-dot{width:14px;height:14px;border-radius:50%;background:var(--accent);border:3px solid var(--bg-light);box-shadow:0 0 0 2px var(--accent);flex-shrink:0}
+.tl-line{width:3px;background:linear-gradient(to bottom,var(--accent),var(--border-light));flex:1;margin-top:.25rem;border-radius:2px}
+.tl-day:last-child .tl-line{background:transparent}
+.tl-label{font-family:var(--mono);font-size:.8rem;font-weight:700;color:var(--accent);text-align:right;padding-top:.15rem}
+.tl-content{background:#fff;border:1px solid var(--border-light);border-radius:14px;padding:1.75rem;margin-bottom:1.5rem;transition:all .3s}
+.tl-content:hover{box-shadow:0 12px 40px rgba(0,0,0,.06);border-color:var(--accent)}
+.tl-content h3{font-size:1.1rem;font-weight:700;margin-bottom:.5rem;letter-spacing:-.01em}
+.tl-content p{color:var(--text-muted);font-size:.92rem;line-height:1.65}
+.tl-content .highlight{display:inline-block;background:var(--accent-glow);color:var(--accent);font-weight:600;font-size:.8rem;padding:.2rem .6rem;border-radius:6px;margin-top:.75rem}
+
+/* TWO AUDIENCES */
+.audiences{padding:5rem 2rem;background:var(--bg-section)}
+.audiences h2{font-size:2rem;font-weight:800;letter-spacing:-.03em;text-align:center;margin-bottom:3rem}
+.aud-grid{display:grid;grid-template-columns:1fr 1fr;max-width:1000px;margin:0 auto;gap:2rem}
+.aud-card{background:#fff;border-radius:16px;padding:2.5rem;border:1px solid var(--border-light)}
+.aud-card h3{font-size:1.25rem;font-weight:700;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem}
+.aud-card .subtitle{color:var(--text-muted);font-size:.9rem;margin-bottom:1.75rem}
+.aud-item{padding:.75rem 0;border-bottom:1px solid var(--bg-section);display:flex;gap:.75rem;align-items:flex-start}
+.aud-item:last-child{border:none}
+.aud-icon{color:var(--accent);font-size:1rem;margin-top:2px;flex-shrink:0}
+.aud-item p{color:var(--text-muted);font-size:.9rem;line-height:1.55}
+.aud-item strong{color:var(--text-dark)}
+
+/* PRIVACY */
+.privacy{padding:5rem 2rem;text-align:center}
+.privacy-box{max-width:750px;margin:0 auto;background:var(--bg-dark);border-radius:20px;padding:3.5rem;color:var(--text-primary)}
+.privacy-box h2{font-size:1.75rem;font-weight:800;letter-spacing:-.03em;margin-bottom:1.25rem}
+.privacy-box p{color:var(--text-secondary);font-size:1.05rem;line-height:1.75;max-width:580px;margin:0 auto}
+.privacy-box p+p{margin-top:1rem}
+.privacy-box strong{color:#fff}
+
+/* FAQ */
+.faq{padding:5rem 2rem;max-width:800px;margin:0 auto}
+.faq h2{font-size:2rem;font-weight:800;letter-spacing:-.03em;text-align:center;margin-bottom:3rem}
+.faq-item{border-bottom:1px solid var(--border-light);padding:1.5rem 0}
+.faq-q{font-size:1.05rem;font-weight:700;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:1rem}
+.faq-q::after{content:'+';font-size:1.5rem;color:var(--accent);transition:transform .3s;flex-shrink:0}
+.faq-item.open .faq-q::after{content:'\2212'}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .4s ease,padding .4s ease;color:var(--text-muted);font-size:.95rem;line-height:1.7}
+.faq-item.open .faq-a{max-height:300px;padding-top:1rem}
+
+/* CTA */
+.cta-section{padding:6rem 2rem;background:var(--bg-dark);text-align:center;position:relative;overflow:hidden}
+.cta-section::before{content:'';position:absolute;bottom:-200px;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,var(--accent-glow) 0%,transparent 70%);pointer-events:none}
+.cta-section h2{font-size:clamp(1.75rem,4vw,2.5rem);font-weight:800;color:var(--text-primary);letter-spacing:-.03em;margin-bottom:1rem;position:relative}
+.cta-section p{color:var(--text-secondary);font-size:1.1rem;margin-bottom:2.5rem;position:relative}
+.btn-primary{display:inline-flex;align-items:center;gap:.5rem;padding:.875rem 2rem;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s;text-decoration:none}
+.btn-primary:hover{background:var(--accent-hover);transform:translateY(-1px);box-shadow:0 8px 30px rgba(59,130,246,.3)}
+footer{padding:3rem 2rem;background:var(--bg-dark);border-top:1px solid var(--border);text-align:center}
+.footer-links{display:flex;justify-content:center;gap:2rem;margin-bottom:1.5rem;flex-wrap:wrap}
+.footer-links a{color:var(--text-secondary);text-decoration:none;font-size:.85rem;transition:color .2s}
+.footer-links a:hover{color:#fff}
+.footer-copy{color:rgba(255,255,255,.3);font-size:.8rem}
+
+@media(max-width:768px){
+  .nav-links{display:none;position:absolute;top:64px;left:0;right:0;background:rgba(10,10,15,.98);flex-direction:column;padding:1.5rem;gap:1rem;border-bottom:1px solid var(--border)}
+  .nav-links.open{display:flex}
+  .mobile-toggle{display:block}
+  .aud-grid{grid-template-columns:1fr}
+  .tl-day{grid-template-columns:60px 3px 1fr;gap:1rem}
+  .hero{padding:8rem 1.5rem 4rem}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">go<span>2</span></a>
+  <button class="mobile-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">&#9776;</button>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="how-it-works.html" class="active">How It Works</a>
+    <a href="results.html">Results</a>
+    <a href="for-your-team.html">For Your Team</a>
+    <a href="#" class="nav-cta">See It in Action</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <h1>Install Monday.<br>First insight by lunch.</h1>
+  <p>Go2 is a lightweight desktop agent. It watches how work happens, coaches your people with frontier AI, and gives you the operational clarity you've never had.</p>
+</section>
+
+<!-- WEEK 1 TIMELINE -->
+<section class="timeline">
+  <h2>Your first week with Go2</h2>
+  <p>Here's exactly what happens after you install.</p>
+
+  <div class="tl-day">
+    <div class="tl-label">Day 1</div>
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <h3>Silent install. Zero disruption.</h3>
+      <p>A lightweight agent installs on each team member's machine. No configuration, no training, no workflow changes. It starts learning how each person works &mdash; which tools they use, what tasks they repeat, where they switch context.</p>
+      <span class="highlight">Takes under 3 minutes per machine</span>
+    </div>
+  </div>
+
+  <div class="tl-day">
+    <div class="tl-label">Day 1<br><small style="color:var(--text-muted);font-weight:400">+4 hrs</small></div>
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <h3>First coaching tips appear</h3>
+      <p>Workers start seeing personalized suggestions: keyboard shortcuts they're missing, integrations that would eliminate copy-paste, faster ways to do tasks they repeat daily. These come from Claude, GPT, and Gemini analyzing their actual workflow.</p>
+      <span class="highlight">Average: first coaching tip within 4 hours</span>
+    </div>
+  </div>
+
+  <div class="tl-day">
+    <div class="tl-label">Day 2</div>
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <h3>Pattern recognition kicks in</h3>
+      <p>Go2 has enough data to identify repetitive patterns. It spots tasks that happen multiple times a day, tools that cause friction, and workflows where people get stuck. The AI gets smarter with every hour of observation.</p>
+    </div>
+  </div>
+
+  <div class="tl-day">
+    <div class="tl-label">Day 3</div>
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <h3>Manager dashboard populates</h3>
+      <p>You get your first aggregated view: where team time goes by workflow category, which tools dominate, where the biggest bottlenecks are. All aggregated &mdash; you see team patterns, never individual screens.</p>
+    </div>
+  </div>
+
+  <div class="tl-day">
+    <div class="tl-label">Day 5</div>
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <h3>First automation recommendations</h3>
+      <p>Go2 delivers a ranked list of automatable tasks across your team: "3 people manually copy data from Tool A to Tool B daily. Here's how to automate it. Estimated savings: 4.2 hours/week." You decide what to act on.</p>
+      <span class="highlight">Average: 5.2 automatable tasks found per team</span>
+    </div>
+  </div>
+
+  <div class="tl-day">
+    <div class="tl-label">Week 2+</div>
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <h3>Continuous improvement, on autopilot</h3>
+      <p>Weekly digests show progress. Coaching tips get more personalized. New patterns emerge as Go2 learns your team's work deeply. Workers adopt tips, managers see measurable improvement in workflow efficiency. The flywheel compounds.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TWO AUDIENCES -->
+<section class="audiences">
+  <h2>Two experiences. One platform.</h2>
+  <div class="aud-grid">
+    <div class="aud-card">
+      <h3>&#128187; What workers see</h3>
+      <p class="subtitle">A personal AI coach that makes them better at their job.</p>
+      <div class="aud-item">
+        <span class="aud-icon">&#10147;</span>
+        <p><strong>"You switch between Slack and Jira 23 times/day."</strong> Here's a shortcut to reduce that by half.</p>
+      </div>
+      <div class="aud-item">
+        <span class="aud-icon">&#10147;</span>
+        <p><strong>"This spreadsheet formula can be simplified."</strong> Here's a version that runs 4x faster.</p>
+      </div>
+      <div class="aud-item">
+        <span class="aud-icon">&#10147;</span>
+        <p><strong>"You spend 45 min/day on status updates."</strong> Want me to draft them from your activity?</p>
+      </div>
+      <div class="aud-item">
+        <span class="aud-icon">&#10147;</span>
+        <p><strong>"You're in your deep work zone."</strong> I'll hold non-urgent notifications for 20 minutes.</p>
+      </div>
+    </div>
+    <div class="aud-card">
+      <h3>&#128202; What managers see</h3>
+      <p class="subtitle">Aggregated operational intelligence. Never individual surveillance.</p>
+      <div class="aud-item">
+        <span class="aud-icon">&#10147;</span>
+        <p><strong>Weekly digest:</strong> "Your team spent 34% of time in communication tools, up from 28%. Three workflows slowed down."</p>
+      </div>
+      <div class="aud-item">
+        <span class="aud-icon">&#10147;</span>
+        <p><strong>Bottleneck alerts:</strong> "Approval workflow takes an average of 2.3 days. Industry benchmark is 4 hours."</p>
+      </div>
+      <div class="aud-item">
+        <span class="aud-icon">&#10147;</span>
+        <p><strong>Automation map:</strong> "5 tasks across your team are automatable. Potential savings: 18 hours/week."</p>
+      </div>
+      <div class="aud-item">
+        <span class="aud-icon">&#10147;</span>
+        <p><strong>Tool utilization:</strong> "You're paying for 12 SaaS tools. 3 have less than 10% weekly active usage."</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRIVACY -->
+<section class="privacy">
+  <div class="privacy-box">
+    <h2>We capture more than anyone.<br>Your manager sees less than anywhere.</h2>
+    <p>Go2's agent observes everything to give <strong>accurate coaching</strong> &mdash; but managers only ever see <strong>aggregated patterns</strong>. No screenshots. No keystroke logs. No individual activity timelines. The AI needs the detail to coach well. Your manager doesn't, and never gets it.</p>
+    <p>Workers can see exactly what data Go2 collects about them, anytime. Full transparency to the individual, full privacy from management. That's the deal.</p>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq">
+  <h2>Common questions</h2>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Does it slow down people's computers?</div>
+    <div class="faq-a">No. The agent uses less than 1% CPU and minimal memory. It's lighter than most browser extensions. Workers won't notice it's running.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What if my team pushes back?</div>
+    <div class="faq-a">We've designed Go2 so workers actually want it. They get a personal AI coach that makes them better at their job. 89% of workers in our data say the coaching tips are useful. We also provide a ready-made page you can share with your team before rollout. <a href="for-your-team.html" style="color:var(--accent)">See it here.</a></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Can managers see individual screens or activity?</div>
+    <div class="faq-a">No. Never. Managers see team-level aggregates: workflow patterns, bottleneck alerts, automation opportunities. They cannot drill down to individual activity. This isn't configurable &mdash; it's the architecture.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">How is this different from Time Doctor, Hubstaff, or Teramind?</div>
+    <div class="faq-a">Those tools monitor and report. Go2 coaches and improves. They take screenshots and count keystrokes. Go2 uses frontier AI (Claude, GPT, Gemini) to understand workflows and help every person work smarter. It's the difference between a surveillance camera and a personal trainer.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What size team does this work for?</div>
+    <div class="faq-a">Go2 is built for teams of 15-500 people. It works best when there's enough team data to find shared patterns, but small enough that you can actually act on insights.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">How fast do we see results?</div>
+    <div class="faq-a">First coaching tips arrive within 4 hours. Manager dashboard populates by day 3. Automation recommendations by end of week 1. Measurable team-wide improvement typically by week 3-4.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What data do you collect?</div>
+    <div class="faq-a">The agent observes application usage, workflow patterns, tool switching, and task sequences. It does NOT capture passwords, personal messages, or financial information. Workers have full visibility into their own data at all times.</div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <h2>See Go2 with your own team's data</h2>
+  <p>15-minute walkthrough. We'll show you exactly what you'd see.</p>
+  <a href="#" class="btn-primary" style="font-size:1.1rem;padding:1rem 2.5rem">See It in Action &rarr;</a>
+</section>
+
+<footer>
+  <div class="footer-links">
+    <a href="index.html">Home</a>
+    <a href="how-it-works.html">How It Works</a>
+    <a href="results.html">Results</a>
+    <a href="for-your-team.html">For Your Team</a>
+  </div>
+  <div class="footer-copy">&copy; 2026 Go2. All rights reserved.</div>
+</footer>
+
+</body>
+</html>
