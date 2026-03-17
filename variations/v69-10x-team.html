@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Build a 10x Team</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0a0a0f;--surface:#12121a;--card:#1a1a25;--border:#2a2a3a;
+    --text:#e8e8f0;--muted:#8888a0;--accent:#6c5ce7;--accent2:#a29bfe;
+    --hot:#ff6b6b;--gold:#ffd93d;--green:#51cf66;
+    --font:'Segoe UI','Helvetica Neue',Arial,sans-serif;
+  }
+  html{scroll-behavior:smooth}
+  body{font-family:var(--font);color:var(--text);background:var(--bg);line-height:1.7;overflow-x:hidden}
+
+  /* NAV */
+  nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,10,15,0.85);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,0.04)}
+  .nav-inner{max-width:1200px;margin:0 auto;padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px}
+  .logo{font-size:1.4rem;font-weight:800;color:#fff;text-decoration:none;letter-spacing:-0.03em}
+  .logo span{color:var(--accent2)}
+  .nav-links{display:flex;gap:2rem;align-items:center}
+  .nav-links a{text-decoration:none;color:var(--muted);font-size:0.85rem;font-weight:500;transition:color .2s}
+  .nav-links a:hover{color:#fff}
+  .nav-cta{background:var(--accent);color:#fff!important;padding:0.5rem 1.25rem;border-radius:8px;font-weight:600;transition:all .2s}
+  .nav-cta:hover{background:var(--accent2)}
+
+  /* HERO */
+  .hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:6rem 2rem;position:relative;overflow:hidden}
+  .hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 50% 40%,rgba(108,92,231,0.08),transparent 50%);z-index:0}
+  .hero-content{position:relative;z-index:1;max-width:900px}
+  .hero-badge{display:inline-flex;align-items:center;gap:0.5rem;background:rgba(108,92,231,0.1);border:1px solid rgba(108,92,231,0.2);color:var(--accent2);padding:0.4rem 1rem;border-radius:50px;font-size:0.8rem;font-weight:600;margin-bottom:2rem;letter-spacing:0.03em}
+  .hero-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .hero h1{font-size:clamp(2.5rem,6vw,4.5rem);font-weight:800;line-height:1.1;letter-spacing:-0.03em;margin-bottom:1.5rem}
+  .hero h1 .highlight{background:linear-gradient(135deg,var(--accent2),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .hero .hero-sub{font-size:1.2rem;color:var(--muted);max-width:620px;margin:0 auto 2.5rem;line-height:1.8}
+  .hero-ctas{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+  .btn-main{background:var(--accent);color:#fff;padding:0.9rem 2.25rem;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;text-decoration:none;transition:all .2s;display:inline-flex;align-items:center;gap:0.5rem}
+  .btn-main:hover{background:var(--accent2);transform:translateY(-2px);box-shadow:0 8px 32px rgba(108,92,231,0.3)}
+  .btn-ghost{background:transparent;color:var(--text);padding:0.9rem 2.25rem;border:1px solid var(--border);border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;text-decoration:none;transition:all .2s}
+  .btn-ghost:hover{border-color:var(--accent2);color:#fff}
+
+  /* Multiplier Visual */
+  .multiplier-bar{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:4rem 2rem;overflow:hidden}
+  .multiplier-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:3rem;justify-content:center;flex-wrap:wrap}
+  .mult-item{text-align:center;min-width:140px}
+  .mult-label{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--muted);margin-bottom:0.5rem}
+  .mult-value{font-size:2.8rem;font-weight:800;letter-spacing:-0.03em}
+  .mult-value.before{color:var(--muted)}
+  .mult-value.after{color:var(--green)}
+  .mult-arrow{font-size:2rem;color:var(--accent2);font-weight:300}
+
+  /* Section */
+  section{padding:6rem 2rem}
+  .section-inner{max-width:1100px;margin:0 auto}
+  .section-tag{display:inline-block;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--accent2);font-weight:700;margin-bottom:1rem;background:rgba(108,92,231,0.08);padding:0.3rem 0.8rem;border-radius:4px}
+  .section-title{font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:800;line-height:1.2;margin-bottom:1rem;letter-spacing:-0.02em}
+  .section-sub{font-size:1.05rem;color:var(--muted);max-width:600px;margin-bottom:3rem;line-height:1.8}
+
+  /* Problem Comparison */
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:2rem}
+  .compare-card{padding:2.5rem;border-radius:16px;border:1px solid var(--border)}
+  .compare-card.old{background:rgba(255,107,107,0.03);border-color:rgba(255,107,107,0.15)}
+  .compare-card.new{background:rgba(81,207,102,0.03);border-color:rgba(81,207,102,0.15)}
+  .compare-card .card-label{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.12em;font-weight:700;margin-bottom:1.25rem}
+  .compare-card.old .card-label{color:var(--hot)}
+  .compare-card.new .card-label{color:var(--green)}
+  .compare-list{list-style:none}
+  .compare-list li{padding:0.75rem 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.95rem;display:flex;align-items:baseline;gap:0.75rem}
+  .compare-list li:last-child{border-bottom:none}
+  .compare-list .icon{font-size:0.8rem;flex-shrink:0;width:20px;text-align:center}
+  .compare-card.old .icon{color:var(--hot)}
+  .compare-card.new .icon{color:var(--green)}
+
+  /* Feature Cards */
+  .feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:2rem}
+  .feature-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;transition:all .3s}
+  .feature-card:hover{border-color:var(--accent);transform:translateY(-4px);box-shadow:0 12px 40px rgba(108,92,231,0.1)}
+  .feature-card .f-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:1.25rem}
+  .feature-card:nth-child(1) .f-icon{background:rgba(108,92,231,0.12)}
+  .feature-card:nth-child(2) .f-icon{background:rgba(81,207,102,0.12)}
+  .feature-card:nth-child(3) .f-icon{background:rgba(255,217,61,0.12)}
+  .feature-card:nth-child(4) .f-icon{background:rgba(255,107,107,0.12)}
+  .feature-card:nth-child(5) .f-icon{background:rgba(162,155,254,0.12)}
+  .feature-card:nth-child(6) .f-icon{background:rgba(81,207,102,0.12)}
+  .feature-card h3{font-size:1.05rem;font-weight:700;margin-bottom:0.5rem}
+  .feature-card p{font-size:0.9rem;color:var(--muted);line-height:1.7}
+  .feature-card .f-stat{display:inline-block;margin-top:0.75rem;font-size:0.8rem;font-weight:700;color:var(--accent2)}
+
+  /* Math Section */
+  .math-section{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+  .math-equation{text-align:center;margin:3rem 0;padding:3rem;background:var(--card);border-radius:16px;border:1px solid var(--border)}
+  .math-equation .eq{font-size:clamp(1.5rem,3.5vw,2.5rem);font-weight:800;letter-spacing:-0.02em}
+  .math-equation .eq .var{color:var(--accent2)}
+  .math-equation .eq .op{color:var(--muted);margin:0 0.75rem;font-weight:300}
+  .math-equation .eq .result{background:linear-gradient(135deg,var(--green),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .math-explanation{font-size:0.9rem;color:var(--muted);margin-top:1.25rem;line-height:1.8}
+
+  /* Impact Grid */
+  .impact-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;margin-top:2rem}
+  .impact-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.75rem;text-align:center}
+  .impact-card .impact-num{font-size:2.2rem;font-weight:800;letter-spacing:-0.03em;margin-bottom:0.25rem}
+  .impact-card:nth-child(1) .impact-num{color:var(--accent2)}
+  .impact-card:nth-child(2) .impact-num{color:var(--green)}
+  .impact-card:nth-child(3) .impact-num{color:var(--gold)}
+  .impact-card:nth-child(4) .impact-num{color:var(--hot)}
+  .impact-card .impact-label{font-size:0.8rem;color:var(--muted);line-height:1.5}
+
+  /* Testimonials */
+  .testimonials{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:2rem}
+  .test-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;position:relative}
+  .test-card::before{content:'';position:absolute;top:0;left:2rem;right:2rem;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:0 0 2px 2px}
+  .test-card p{font-size:0.95rem;line-height:1.8;color:var(--muted);margin-bottom:1rem}
+  .test-card .t-author{font-size:0.85rem;font-weight:600;color:var(--text)}
+  .test-card .t-role{font-size:0.8rem;color:var(--muted)}
+  .test-card .t-result{display:inline-block;margin-top:0.75rem;background:rgba(81,207,102,0.1);color:var(--green);padding:0.2rem 0.6rem;border-radius:4px;font-size:0.75rem;font-weight:700}
+
+  /* How It Works */
+  .how-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.5rem;margin-top:2rem}
+  .how-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;display:flex;gap:1.5rem;align-items:start}
+  .how-num{font-size:2rem;font-weight:800;color:var(--accent);line-height:1;flex-shrink:0;width:50px}
+  .how-card h3{font-size:1rem;font-weight:700;margin-bottom:0.5rem}
+  .how-card p{font-size:0.9rem;color:var(--muted);line-height:1.7}
+
+  /* CTA */
+  .final-cta{text-align:center;padding:8rem 2rem;position:relative;overflow:hidden}
+  .final-cta::before{content:'';position:absolute;top:50%;left:50%;width:600px;height:600px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(108,92,231,0.1),transparent 60%);z-index:0}
+  .final-cta .content{position:relative;z-index:1}
+  .final-cta h2{font-size:clamp(2rem,4vw,3rem);font-weight:800;margin-bottom:1rem;letter-spacing:-0.02em}
+  .final-cta h2 .highlight{background:linear-gradient(135deg,var(--accent2),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .final-cta p{font-size:1.1rem;color:var(--muted);max-width:520px;margin:0 auto 2.5rem;line-height:1.8}
+
+  /* Footer */
+  footer{border-top:1px solid var(--border);padding:2.5rem 2rem}
+  .footer-inner{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+  footer span{font-size:0.8rem;color:var(--muted)}
+  .footer-links{display:flex;gap:1.5rem}
+  .footer-links a{font-size:0.8rem;color:var(--muted);text-decoration:none;transition:color .2s}
+  .footer-links a:hover{color:#fff}
+
+  @media(max-width:900px){
+    .nav-links{display:none}
+    .compare,.testimonials,.how-grid{grid-template-columns:1fr}
+    .feature-grid{grid-template-columns:1fr}
+    .impact-grid{grid-template-columns:repeat(2,1fr)}
+    .multiplier-inner{flex-direction:column;gap:1.5rem}
+  }
+  @media(max-width:600px){
+    .hero{padding:5rem 1.25rem}
+    section{padding:4rem 1.25rem}
+    .impact-grid{grid-template-columns:1fr 1fr}
+    .hero-ctas{flex-direction:column;align-items:center}
+  }
+
+  /* Animations */
+  .reveal{opacity:0;transform:translateY(20px);transition:opacity 0.6s ease,transform 0.6s ease}
+  .reveal.visible{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="logo">Go<span>2</span></a>
+    <div class="nav-links">
+      <a href="#system">The System</a>
+      <a href="#multiplier">Multiplier</a>
+      <a href="#results">Results</a>
+      <a href="#cta" class="nav-cta">Build Your 10x Team</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge reveal"><span class="dot"></span> Coaching ~1M workers right now</div>
+    <h1 class="reveal">You don't need<br>10x engineers.<br>You need a <span class="highlight">10x system.</span></h1>
+    <p class="hero-sub reveal">Stop trying to hire your way to greatness. Go2 takes your current team and makes them dramatically better -- with AI coaching, pattern recognition, and automation mapping powered by Claude, GPT, and Gemini.</p>
+    <div class="hero-ctas reveal">
+      <a href="#cta" class="btn-main">Multiply Your Team <span>&rarr;</span></a>
+      <a href="#system" class="btn-ghost">See the System</a>
+    </div>
+  </div>
+</section>
+
+<div class="multiplier-bar">
+  <div class="multiplier-inner">
+    <div class="mult-item reveal">
+      <div class="mult-label">Your Team Today</div>
+      <div class="mult-value before">1x</div>
+    </div>
+    <div class="mult-arrow reveal">&rarr;</div>
+    <div class="mult-item reveal">
+      <div class="mult-label">+ Go2 System</div>
+      <div class="mult-value" style="color:var(--accent2)">AI</div>
+    </div>
+    <div class="mult-arrow reveal">&rarr;</div>
+    <div class="mult-item reveal">
+      <div class="mult-label">Your Team in 90 Days</div>
+      <div class="mult-value after">10x</div>
+    </div>
+  </div>
+</div>
+
+<section id="system">
+  <div class="section-inner">
+    <div class="section-tag">The Old Way vs. The System</div>
+    <h2 class="section-title">Hiring better is a trap.<br>Building a system is the answer.</h2>
+    <p class="section-sub">Every company wants 10x performers. But competing for talent is expensive, unpredictable, and unsustainable. The real leverage is in the system around your people.</p>
+    <div class="compare">
+      <div class="compare-card old reveal">
+        <div class="card-label">The Hiring Treadmill</div>
+        <ul class="compare-list">
+          <li><span class="icon">&times;</span> Compete for expensive talent you can't afford</li>
+          <li><span class="icon">&times;</span> Hope new hires figure out your way of working</li>
+          <li><span class="icon">&times;</span> Lose months to onboarding and ramp-up</li>
+          <li><span class="icon">&times;</span> Watch good people leave, taking knowledge with them</li>
+          <li><span class="icon">&times;</span> Assume your best performers' methods spread naturally</li>
+          <li><span class="icon">&times;</span> Manage by gut feeling and status meetings</li>
+        </ul>
+      </div>
+      <div class="compare-card new reveal">
+        <div class="card-label">The 10x System</div>
+        <ul class="compare-list">
+          <li><span class="icon">&#10003;</span> Make your current team dramatically better</li>
+          <li><span class="icon">&#10003;</span> AI coaches every person with proven methods</li>
+          <li><span class="icon">&#10003;</span> New hires reach productivity in weeks, not months</li>
+          <li><span class="icon">&#10003;</span> Knowledge is captured and distributed automatically</li>
+          <li><span class="icon">&#10003;</span> Best practices spread through real-time coaching</li>
+          <li><span class="icon">&#10003;</span> Manage by data, patterns, and insights</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="multiplier">
+  <div class="section-inner">
+    <div class="section-tag">The Multiplier Effect</div>
+    <h2 class="section-title">Six ways Go2 multiplies your team</h2>
+    <p class="section-sub">Each capability compounds on the others. That's how ordinary teams become extraordinary.</p>
+    <div class="feature-grid">
+      <div class="feature-card reveal">
+        <div class="f-icon">&#128065;</div>
+        <h3>Desktop Agent</h3>
+        <p>Lightweight agent observes how every team member works -- tools, workflows, patterns, timing. Captures what's invisible to managers.</p>
+        <div class="f-stat">Always learning</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="f-icon">&#129504;</div>
+        <h3>AI Coaching</h3>
+        <p>Claude, GPT, and Gemini analyze patterns and deliver private, contextual coaching to each worker. Specific to their role, their habits, their growth areas.</p>
+        <div class="f-stat">3 frontier models</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="f-icon">&#128200;</div>
+        <h3>Pattern Recognition</h3>
+        <p>Discovers what top performers do differently -- and turns invisible best practices into teachable methods for the whole team.</p>
+        <div class="f-stat">Learns from ~1M workers</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="f-icon">&#9881;</div>
+        <h3>Automation Mapping</h3>
+        <p>Identifies repetitive tasks that should be automated. Estimates time savings. Gives you a prioritized roadmap for where to invest.</p>
+        <div class="f-stat">11 hrs/week avg savings</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="f-icon">&#128202;</div>
+        <h3>Manager Insights</h3>
+        <p>Aggregated team intelligence -- not surveillance. See where time goes, where bottlenecks form, where coaching would have the highest impact.</p>
+        <div class="f-stat">Coaching, not monitoring</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="f-icon">&#127919;</div>
+        <h3>Onboarding Acceleration</h3>
+        <p>New hires get coached from day one with the patterns of your best performers. They reach full productivity 68% faster.</p>
+        <div class="f-stat">68% faster ramp</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="math-section">
+  <div class="section-inner">
+    <div class="section-tag">The Math</div>
+    <h2 class="section-title">Why the multiplier compounds</h2>
+    <p class="section-sub">Each improvement layer amplifies the others. Small gains compound into transformative results.</p>
+    <div class="math-equation reveal">
+      <div class="eq">
+        <span class="var">Your Team</span>
+        <span class="op">+</span>
+        <span class="var">AI Coaching</span>
+        <span class="op">+</span>
+        <span class="var">Best Practice Spread</span>
+        <span class="op">+</span>
+        <span class="var">Automation</span>
+        <span class="op">=</span>
+        <span class="result">10x Output</span>
+      </div>
+      <p class="math-explanation">A 23% productivity boost + 68% faster onboarding + 11 hours/week automated + knowledge that never walks out the door. That's not 10x on paper. That's 10x in practice.</p>
+    </div>
+  </div>
+</section>
+
+<section id="results">
+  <div class="section-inner">
+    <div class="section-tag">Results</div>
+    <h2 class="section-title">The numbers from teams using Go2</h2>
+    <div class="impact-grid">
+      <div class="impact-card reveal">
+        <div class="impact-num">23%</div>
+        <div class="impact-label">Average productivity increase across teams</div>
+      </div>
+      <div class="impact-card reveal">
+        <div class="impact-num">68%</div>
+        <div class="impact-label">Faster new hire onboarding to full productivity</div>
+      </div>
+      <div class="impact-card reveal">
+        <div class="impact-num">11h</div>
+        <div class="impact-label">Weekly hours saved through automation mapping</div>
+      </div>
+      <div class="impact-card reveal">
+        <div class="impact-num">87%</div>
+        <div class="impact-label">Teams see measurable improvement within 30 days</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-inner">
+    <div class="section-tag">From 10x Teams</div>
+    <h2 class="section-title">What the multiplier effect feels like</h2>
+    <div class="testimonials">
+      <div class="test-card reveal">
+        <p>"We stopped trying to hire senior people we couldn't afford. Go2 turned our mid-level team into a senior-performing team. Same people, completely different output."</p>
+        <div class="t-author">CEO</div>
+        <div class="t-role">38-person marketing agency</div>
+        <div class="t-result">Team output +34% in 60 days</div>
+      </div>
+      <div class="test-card reveal">
+        <p>"The automation mapping alone was worth it. Go2 found 14 hours per week of repetitive work across our ops team that we had no idea was happening. We automated 11 of them."</p>
+        <div class="t-author">COO</div>
+        <div class="t-role">Software services, 27 remote employees</div>
+        <div class="t-result">14 hrs/week recaptured</div>
+      </div>
+      <div class="test-card reveal">
+        <p>"Our last three hires hit full productivity in 6 weeks instead of the usual 4-5 months. Go2 coached them with the exact patterns our best people use. It felt like cheating."</p>
+        <div class="t-author">VP of Sales</div>
+        <div class="t-role">SaaS company, 42 employees</div>
+        <div class="t-result">Onboarding time: 6 weeks vs 5 months</div>
+      </div>
+      <div class="test-card reveal">
+        <p>"I used to think productivity tools were about surveillance. Go2 is the opposite. My team actually likes it because it helps them individually. The aggregate insights help me lead better."</p>
+        <div class="t-author">Director of Operations</div>
+        <div class="t-role">Professional services, 50 employees</div>
+        <div class="t-result">82% voluntary adoption rate</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-inner">
+    <div class="section-tag">How It Works</div>
+    <h2 class="section-title">From installation to 10x in four steps</h2>
+    <div class="how-grid">
+      <div class="how-card reveal">
+        <div class="how-num">01</div>
+        <div>
+          <h3>Deploy the agent</h3>
+          <p>Install Go2's lightweight desktop agent across your team. Three-minute setup per person. Runs quietly in the background without slowing anything down.</p>
+        </div>
+      </div>
+      <div class="how-card reveal">
+        <div class="how-num">02</div>
+        <div>
+          <h3>Learn your patterns</h3>
+          <p>Go2 observes work patterns across your whole team for the first two weeks. It maps workflows, identifies top performer methods, and spots automation candidates.</p>
+        </div>
+      </div>
+      <div class="how-card reveal">
+        <div class="how-num">03</div>
+        <div>
+          <h3>Start coaching</h3>
+          <p>Every team member gets private, AI-powered coaching based on what actually works at your company. Managers get aggregated insights -- never surveillance.</p>
+        </div>
+      </div>
+      <div class="how-card reveal">
+        <div class="how-num">04</div>
+        <div>
+          <h3>Watch it compound</h3>
+          <p>Month one: quick wins. Month two: visible patterns. Month three: systemic improvement. By month six, your team operates at a level you didn't think was possible.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="final-cta" id="cta">
+  <div class="content">
+    <h2 class="reveal">Stop hiring for greatness.<br>Start <span class="highlight">building a system</span> for it.</h2>
+    <p class="reveal">Go2 works best for remote teams of 15-50 people. If that's you, your 10x system is one conversation away.</p>
+    <a href="#" class="btn-main reveal">Build Your 10x Team <span>&rarr;</span></a>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <span>&copy; 2026 Go2. All rights reserved.</span>
+    <div class="footer-links">
+      <a href="#">Privacy</a>
+      <a href="#">Security</a>
+      <a href="#">Terms</a>
+      <a href="#">Contact</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const nav=document.querySelector('nav');
+  window.addEventListener('scroll',()=>nav.classList.toggle('scrolled',window.scrollY>40));
+  const obs=new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target)}})
+  },{threshold:0.12});
+  document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+  document.querySelectorAll('a[href^="#"]').forEach(a=>{
+    a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth'})});
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Do You Know How Your Team Actually Spends Their Time?</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafaf9;
+  --bg-alt: #f5f5f4;
+  --text: #1c1917;
+  --text-secondary: #57534e;
+  --text-muted: #a8a29e;
+  --accent: #dc2626;
+  --accent-soft: #fef2f2;
+  --border: #e7e5e4;
+  --green: #16a34a;
+  --green-soft: #f0fdf4;
+}
+
+body {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.8;
+  overflow-x: hidden;
+}
+
+.sans { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }
+
+/* Navigation */
+nav {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 100;
+  background: rgba(250, 250, 249, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+}
+
+nav .nav-inner {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+}
+
+.logo {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+
+nav .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+nav .nav-links a {
+  font-family: -apple-system, sans-serif;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: color 0.3s;
+}
+nav .nav-links a:hover { color: var(--text); }
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 24px;
+  background: var(--text);
+  color: var(--bg);
+  border: none;
+  border-radius: 6px;
+  font-family: -apple-system, sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+.btn-primary:hover { background: #292524; }
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 24px;
+  background: transparent;
+  color: var(--text);
+  border: 1.5px solid var(--text);
+  border-radius: 6px;
+  font-family: -apple-system, sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+.btn-outline:hover { background: var(--text); color: var(--bg); }
+
+/* Hero Question */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 2rem 80px;
+  text-align: center;
+}
+
+.hero .the-question {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 400;
+  line-height: 1.25;
+  max-width: 850px;
+  margin-bottom: 2rem;
+  font-style: italic;
+  color: var(--text);
+}
+
+.hero .the-question em {
+  font-style: normal;
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: rgba(220, 38, 38, 0.3);
+  text-underline-offset: 6px;
+}
+
+.hero .answer-hint {
+  font-family: -apple-system, sans-serif;
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  max-width: 500px;
+  margin-bottom: 3rem;
+}
+
+.scroll-hint {
+  font-family: -apple-system, sans-serif;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--text-muted);
+  margin-top: 3rem;
+  animation: bob 2s ease-in-out infinite;
+}
+
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(8px); }
+}
+
+/* Section Pattern */
+.question-section {
+  padding: 100px 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.question-section.alt-bg {
+  max-width: 100%;
+  background: var(--bg-alt);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.question-section.alt-bg .section-content { max-width: 800px; margin: 0 auto; }
+
+.section-question {
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.35;
+  margin-bottom: 2.5rem;
+  color: var(--text);
+}
+
+.section-question::before {
+  content: '?';
+  display: block;
+  font-family: -apple-system, sans-serif;
+  font-size: 3rem;
+  font-style: normal;
+  font-weight: 200;
+  color: var(--accent);
+  opacity: 0.3;
+  margin-bottom: 1rem;
+}
+
+.answer-block {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+  line-height: 1.9;
+}
+
+.answer-block strong { color: var(--text); font-weight: 600; }
+
+/* Evidence Cards */
+.evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin: 2.5rem 0;
+}
+
+.evidence-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2rem;
+  transition: border-color 0.3s;
+}
+
+.evidence-card:hover { border-color: var(--text-muted); }
+
+.evidence-number {
+  font-family: -apple-system, sans-serif;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--accent);
+  margin-bottom: 0.25rem;
+}
+
+.evidence-label {
+  font-family: -apple-system, sans-serif;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.evidence-card p { font-size: 0.95rem; color: var(--text-secondary); line-height: 1.7; }
+
+/* The Confession List */
+.confession-list {
+  list-style: none;
+  margin: 2rem 0;
+  counter-reset: confession;
+}
+
+.confession-list li {
+  counter-increment: confession;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.confession-list li::before {
+  content: counter(confession);
+  font-family: -apple-system, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+/* Reveal Cards */
+.reveal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin: 2.5rem 0;
+}
+
+.reveal-card {
+  padding: 2rem;
+  border-radius: 8px;
+  border-left: 3px solid var(--green);
+  background: var(--green-soft);
+}
+
+.reveal-card h4 {
+  font-family: -apple-system, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  color: var(--text);
+}
+
+.reveal-card p { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; }
+
+/* Quote Block */
+.insight-quote {
+  border-left: 3px solid var(--accent);
+  padding: 1.5rem 2rem;
+  margin: 2.5rem 0;
+  background: var(--accent-soft);
+  border-radius: 0 8px 8px 0;
+}
+
+.insight-quote p {
+  font-size: 1.15rem;
+  font-style: italic;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.insight-quote .attribution {
+  font-family: -apple-system, sans-serif;
+  font-size: 0.8rem;
+  font-style: normal;
+  color: var(--text-muted);
+}
+
+/* Transition */
+.transition-block {
+  text-align: center;
+  padding: 80px 2rem;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.transition-block .bridge-question {
+  font-size: 1.5rem;
+  font-style: italic;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.transition-block .bridge-answer {
+  font-family: -apple-system, sans-serif;
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+/* How It Works */
+.how-section {
+  padding: 100px 2rem;
+  background: var(--bg-alt);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.how-inner { max-width: 800px; margin: 0 auto; }
+
+.how-step {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 2rem;
+  margin-bottom: 3rem;
+  align-items: start;
+}
+
+.step-marker {
+  width: 64px;
+  height: 64px;
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: -apple-system, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.step-content h3 {
+  font-family: -apple-system, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.step-content p { font-size: 1rem; color: var(--text-secondary); }
+
+/* Privacy Block */
+.privacy-section {
+  padding: 80px 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.privacy-section h2 {
+  font-size: 2rem;
+  font-style: italic;
+  margin-bottom: 1.5rem;
+}
+
+.privacy-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.privacy-item {
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.privacy-icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.privacy-item h4 {
+  font-family: -apple-system, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.privacy-item p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* CTA */
+.cta-section {
+  padding: 120px 2rem;
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.cta-section .final-question {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-style: italic;
+  margin-bottom: 1.5rem;
+  line-height: 1.3;
+}
+
+.cta-section .final-answer {
+  font-family: -apple-system, sans-serif;
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin-bottom: 2.5rem;
+}
+
+.cta-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+/* Footer */
+footer {
+  padding: 3rem 2rem;
+  border-top: 1px solid var(--border);
+}
+
+.footer-inner {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-links { display: flex; gap: 2rem; }
+.footer-links a {
+  font-family: -apple-system, sans-serif;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.8rem;
+  transition: color 0.3s;
+}
+.footer-links a:hover { color: var(--text-secondary); }
+.footer-copy {
+  font-family: -apple-system, sans-serif;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  nav .nav-links a:not(.btn-primary) { display: none; }
+  .evidence-grid { grid-template-columns: 1fr; }
+  .how-step { grid-template-columns: 1fr; gap: 1rem; }
+  .privacy-grid { grid-template-columns: 1fr; }
+  .footer-inner { flex-direction: column; gap: 1rem; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="logo">Go2</div>
+    <div class="nav-links">
+      <a href="#why">Why It Matters</a>
+      <a href="#how">How It Works</a>
+      <a href="#answer">The Answer</a>
+      <a href="#cta" class="btn-primary">Get the Answer</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="the-question">Do you know how your team <em>actually</em> spends their time?</div>
+  <p class="answer-hint sans">Most leaders think they do. The data says otherwise.</p>
+  <div class="scroll-hint">Scroll to find out why</div>
+</section>
+
+<section class="question-section" id="why">
+  <div class="section-question">What if everything you believe about your team's productivity is wrong?</div>
+
+  <p class="answer-block">You have 30 employees. You pay them for 40 hours a week. That's 1,200 hours of human effort every single week flowing through your company.</p>
+
+  <p class="answer-block"><strong>Can you account for where those hours go?</strong> Not vaguely. Not "they're working on the project." Can you actually say, with confidence, how those 1,200 hours break down?</p>
+
+  <p class="answer-block">If you're like most SMB leaders, the honest answer is no. And that's not a character flaw. It's a visibility problem.</p>
+
+  <div class="evidence-grid">
+    <div class="evidence-card">
+      <div class="evidence-number">~1M</div>
+      <div class="evidence-label">Workers Analyzed</div>
+      <p>Go2's desktop agent has captured behavioral data from nearly a million workers. The patterns are clear and consistent.</p>
+    </div>
+    <div class="evidence-card">
+      <div class="evidence-number">41%</div>
+      <div class="evidence-label">Time on Core Work</div>
+      <p>The average knowledge worker spends only 41% of their day on the work they were hired to do. The rest? Meetings, context switching, and process friction.</p>
+    </div>
+    <div class="evidence-card">
+      <div class="evidence-number">23</div>
+      <div class="evidence-label">Minutes to Refocus</div>
+      <p>After an interruption, it takes an average of 23 minutes to return to deep focus. How many interruptions does your team face daily?</p>
+    </div>
+  </div>
+</section>
+
+<div class="transition-block">
+  <p class="bridge-question">So why don't you know?</p>
+  <p class="bridge-answer sans">It's not for lack of trying. It's that your current tools can't show you.</p>
+</div>
+
+<section class="question-section alt-bg">
+  <div class="section-content">
+    <div class="section-question">What are you using to understand your team's work today?</div>
+
+    <p class="answer-block">Be honest. Which of these are you relying on?</p>
+
+    <ol class="confession-list">
+      <li>Status meetings where everyone says "things are going well" because that's what you say in meetings</li>
+      <li>Project management tools that show tasks completed, but not the 4 hours of confusion that preceded each one</li>
+      <li>Time tracking software that everyone resents, games, or fills in on Friday afternoon from memory</li>
+      <li>Your gut feeling, which was reliable when you had 5 people and breaks down at 25</li>
+      <li>Slack messages and email volume, which measure busyness, not productivity</li>
+      <li>Quarterly reviews that tell you what happened three months ago, not what's happening now</li>
+    </ol>
+
+    <div class="insight-quote">
+      <p>"The most dangerous gap in any organization is the gap between what leadership believes is happening and what's actually happening."</p>
+      <span class="attribution">-- Pattern observed across nearly 1M workers in the Go2 dataset</span>
+    </div>
+  </div>
+</section>
+
+<div class="transition-block">
+  <p class="bridge-question">What does this blindness cost you?</p>
+  <p class="bridge-answer sans">More than you think. And in ways you haven't considered.</p>
+</div>
+
+<section class="question-section">
+  <div class="section-question">How much money are you losing to invisible inefficiency?</div>
+
+  <p class="answer-block">Here's a simple thought experiment. You have 30 employees at an average fully-loaded cost of $80,000 per year. That's $2.4 million in annual payroll.</p>
+
+  <p class="answer-block"><strong>If your team is only 41% efficient on core work</strong> -- which is what the data shows for the average company -- you're effectively getting $984,000 of productive output from $2.4 million in spend.</p>
+
+  <p class="answer-block">Now imagine recovering even a fraction of that gap. Not by working people harder. Not by surveillance. By <strong>removing the friction, interruptions, and broken processes</strong> that eat their time.</p>
+
+  <div class="evidence-grid">
+    <div class="evidence-card">
+      <div class="evidence-number">4.2h</div>
+      <div class="evidence-label">Recovered Per Person/Week</div>
+      <p>Go2 customers recover an average of 4.2 hours of deep work per person per week. That's an extra team member's worth of output from every 10 people.</p>
+    </div>
+    <div class="evidence-card">
+      <div class="evidence-number">37%</div>
+      <div class="evidence-label">Less Process Friction</div>
+      <p>Workflow bottlenecks, tool confusion, and redundant steps are identified and resolved. The work itself gets simpler.</p>
+    </div>
+  </div>
+</section>
+
+<div class="transition-block">
+  <p class="bridge-question">But isn't this just surveillance?</p>
+  <p class="bridge-answer sans">No. And that distinction matters. A lot.</p>
+</div>
+
+<section class="question-section alt-bg" id="answer">
+  <div class="section-content">
+    <div class="section-question">What's the difference between watching people and understanding work?</div>
+
+    <p class="answer-block">Surveillance tools track individuals. They screenshot desktops. They log keystrokes. They create fear and destroy trust. <strong>Go2 is not that.</strong></p>
+
+    <p class="answer-block">Go2's desktop agent captures work patterns -- what tools are used, how workflows flow, where friction occurs. But the intelligence it delivers to managers is <strong>always aggregated</strong>. You see team patterns, not individual browsing histories.</p>
+
+    <p class="answer-block">Meanwhile, each individual gets a private AI coach -- powered by Claude, GPT, and Gemini -- that helps them personally optimize their workday. Better focus blocks. Fewer context switches. Smarter tool usage.</p>
+
+    <div class="reveal-grid">
+      <div class="reveal-card">
+        <h4>For the individual</h4>
+        <p>Personal AI coaching that's private to them. Nudges, suggestions, and focus recommendations based on their actual work patterns. Nobody else sees this.</p>
+      </div>
+      <div class="reveal-card">
+        <h4>For the manager</h4>
+        <p>Aggregated team insights. Where time goes across the team. Which processes create friction. What can be automated. Never individual surveillance.</p>
+      </div>
+      <div class="reveal-card">
+        <h4>For the company</h4>
+        <p>Automation mapping shows you exactly which repetitive tasks can be eliminated and in what order by ROI. The compound effect is transformative.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="how-section" id="how">
+  <div class="how-inner">
+    <div class="section-question" style="text-align:center;">How does Go2 answer the question?</div>
+
+    <div class="how-step">
+      <div class="step-marker">1</div>
+      <div class="step-content">
+        <h3>The agent observes</h3>
+        <p>A lightweight desktop agent installs in minutes across your team. It captures work patterns silently -- no interruptions, no behavior changes, no time tracking burden on employees.</p>
+      </div>
+    </div>
+
+    <div class="how-step">
+      <div class="step-marker">2</div>
+      <div class="step-content">
+        <h3>AI interprets</h3>
+        <p>Frontier AI models (Claude, GPT, Gemini) analyze the data. They find patterns a human never could -- workflow bottlenecks, hidden capacity, automation opportunities, and coaching moments.</p>
+      </div>
+    </div>
+
+    <div class="how-step">
+      <div class="step-marker">3</div>
+      <div class="step-content">
+        <h3>Everyone improves</h3>
+        <p>Individuals get private coaching. Managers get aggregated intelligence. The company gets an efficiency engine that compounds over time. Within 30 days, you finally have the answer.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="privacy-section">
+  <h2>Will my team accept this?</h2>
+  <p class="answer-block">89% coaching acceptance rate. Because Go2 helps people work better, not harder.</p>
+
+  <div class="privacy-grid">
+    <div class="privacy-item">
+      <div class="privacy-icon">&#128274;</div>
+      <h4 class="sans">Individual privacy</h4>
+      <p class="sans">Personal coaching data is private. Managers never see individual activity logs or screenshots.</p>
+    </div>
+    <div class="privacy-item">
+      <div class="privacy-icon">&#128200;</div>
+      <h4 class="sans">Aggregated insights</h4>
+      <p class="sans">Leadership sees team patterns and trends, not individual behavior. It's analytics, not surveillance.</p>
+    </div>
+    <div class="privacy-item">
+      <div class="privacy-icon">&#129302;</div>
+      <h4 class="sans">AI coaching</h4>
+      <p class="sans">Workers get a personal productivity coach that actually helps. Most have never had any coaching at all.</p>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section" id="cta">
+  <div class="final-question">Ready to answer the question?</div>
+  <p class="final-answer sans">Find out how your team actually spends their time. No surveillance. No guessing. Just clarity.</p>
+  <div class="cta-buttons">
+    <a href="#" class="btn-primary">Get the Answer</a>
+    <a href="#" class="btn-outline">Schedule a Conversation</a>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-links">
+      <a href="#">About</a>
+      <a href="#">Privacy</a>
+      <a href="#">Security</a>
+      <a href="#">Contact</a>
+    </div>
+    <div class="footer-copy">Go2.io</div>
+  </div>
+</footer>
+
+</body>
+</html>

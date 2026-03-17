@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Close the Gap</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f8f9fc;--surface:#fff;--card:#fff;--border:#e2e5ee;--text:#1a1d2e;--muted:#6c7289;--accent:#6366f1;--accent2:#8b5cf6;--green:#10b981;--red:#ef4444;--orange:#f59e0b;--grad:linear-gradient(135deg,#6366f1,#8b5cf6)}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+a{color:var(--accent);text-decoration:none}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(248,249,252,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 2rem;height:64px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:1.5rem;font-weight:800;color:var(--accent)}
+.nav-links{display:flex;gap:2rem;align-items:center}
+.nav-links a{color:var(--muted);font-size:.9rem;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{background:var(--grad);color:#fff!important;padding:.5rem 1.25rem;border-radius:8px;font-weight:600;font-size:.9rem}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6rem 2rem 4rem;position:relative}
+.hero-gap{display:flex;align-items:flex-end;gap:2rem;margin-bottom:2rem;height:200px}
+.gap-bar{width:120px;border-radius:12px 12px 0 0;position:relative;transition:height 1s ease}
+.gap-bar.actual{background:#e2e5ee;height:130px}
+.gap-bar.potential{background:var(--grad);height:200px}
+.gap-bar-label{position:absolute;bottom:-2rem;left:50%;transform:translateX(-50%);font-size:.8rem;font-weight:600;color:var(--muted);white-space:nowrap}
+.gap-bar.potential .gap-bar-label{color:var(--accent)}
+.gap-arrow{position:absolute;right:-60px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:.25rem}
+.gap-arrow-text{font-size:.8rem;font-weight:700;color:var(--green);background:#ecfdf5;padding:.2rem .5rem;border-radius:4px}
+.hero h1{font-size:clamp(1.5rem,4vw,3rem);max-width:750px;line-height:1.25;margin-bottom:1rem}
+.hero h1 em{font-style:normal;color:var(--accent);font-weight:900}
+.hero p{font-size:1.15rem;color:var(--muted);max-width:600px;margin-bottom:2.5rem}
+.cta-row{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center}
+.btn-primary{background:var(--grad);color:#fff;padding:.85rem 2rem;border-radius:10px;font-weight:700;font-size:1rem;border:none;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(99,102,241,.3)}
+.btn-ghost{background:transparent;color:var(--text);padding:.85rem 2rem;border-radius:10px;font-weight:600;font-size:1rem;border:2px solid var(--border);cursor:pointer;transition:border-color .2s}
+.btn-ghost:hover{border-color:var(--accent)}
+
+/* SECTION HELPERS */
+.section{padding:6rem 2rem}
+.section.alt{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.section-inner{max-width:1100px;margin:0 auto}
+.badge{display:inline-block;padding:.35rem 1rem;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.15);border-radius:20px;font-size:.8rem;color:var(--accent);font-weight:600;margin-bottom:1rem;text-transform:uppercase;letter-spacing:.05em}
+.section-title{font-size:clamp(1.5rem,3.5vw,2.5rem);margin-bottom:.75rem;line-height:1.2}
+.section-sub{color:var(--muted);font-size:1.05rem;max-width:600px;margin-bottom:3rem}
+
+/* GAP VIS */
+.gap-vis-section{padding:6rem 2rem}
+.gap-vis-inner{max-width:900px;margin:0 auto}
+.gap-vis-row{display:grid;grid-template-columns:180px 1fr 60px;align-items:center;gap:1.5rem;margin-bottom:1.5rem}
+.gap-vis-label{font-weight:600;font-size:.95rem}
+.gap-vis-bars{position:relative;height:48px}
+.gap-bar-actual{position:absolute;top:0;left:0;height:22px;background:#e2e5ee;border-radius:6px;transition:width 1s ease}
+.gap-bar-potential{position:absolute;bottom:0;left:0;height:22px;background:var(--grad);border-radius:6px;transition:width 1s ease}
+.gap-bar-actual::after{content:'Now';position:absolute;right:8px;top:3px;font-size:.7rem;font-weight:700;color:var(--muted)}
+.gap-bar-potential::after{content:'Possible';position:absolute;right:8px;top:3px;font-size:.7rem;font-weight:700;color:#fff}
+.gap-vis-delta{font-weight:800;color:var(--green);font-size:1rem}
+
+/* FRICTION */
+.friction-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem}
+.friction-card{padding:2rem;background:var(--card);border:1px solid var(--border);border-radius:16px;transition:border-color .3s,transform .3s}
+.friction-card:hover{border-color:var(--accent);transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,.05)}
+.friction-icon{width:44px;height:44px;border-radius:10px;background:rgba(99,102,241,.08);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1rem}
+.friction-card h3{font-size:1.05rem;margin-bottom:.5rem}
+.friction-card p{color:var(--muted);font-size:.9rem;line-height:1.5}
+.friction-stat{margin-top:.75rem;font-weight:700;color:var(--red);font-size:.9rem}
+
+/* HOW IT CLOSES */
+.close-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem}
+.close-card{padding:2rem;background:var(--bg);border:1px solid var(--border);border-radius:16px;position:relative}
+.close-num{position:absolute;top:16px;right:16px;font-size:2.5rem;font-weight:900;color:rgba(99,102,241,.1)}
+.close-card h3{font-size:1.05rem;margin-bottom:.5rem;color:var(--accent)}
+.close-card p{color:var(--muted);font-size:.9rem}
+
+/* COACHING PREVIEW */
+.preview-section{padding:6rem 2rem}
+.preview-inner{max-width:800px;margin:0 auto}
+.preview-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
+.preview-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--grad)}
+.preview-role{font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--accent);font-weight:700;margin-bottom:.5rem}
+.preview-msg{font-size:1rem;line-height:1.6;margin-bottom:.75rem}
+.preview-impact{font-size:.85rem;color:var(--green);font-weight:600}
+
+/* MATH */
+.math-section{padding:6rem 2rem;background:var(--surface);border-top:1px solid var(--border)}
+.math-inner{max-width:800px;margin:0 auto;text-align:center}
+.math-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin:3rem 0}
+.math-item{padding:2rem}
+.math-item .num{font-size:3rem;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.math-item .label{color:var(--muted);font-size:.9rem;margin-top:.25rem}
+.math-equation{font-size:1.3rem;font-weight:700;color:var(--text);padding:1.5rem;background:var(--bg);border-radius:12px;border:2px dashed var(--border)}
+.math-equation span{color:var(--green);font-weight:900}
+
+/* NOT LAZY */
+.notlazy-section{padding:5rem 2rem;background:var(--accent);color:#fff;text-align:center}
+.notlazy-inner{max-width:650px;margin:0 auto}
+.notlazy-inner h2{font-size:clamp(1.3rem,3vw,2rem);margin-bottom:1rem;line-height:1.4}
+.notlazy-inner p{opacity:.85;font-size:1.05rem;line-height:1.7}
+
+/* PROOF */
+.proof-section{padding:6rem 2rem}
+.proof-inner{max-width:900px;margin:0 auto}
+.proof-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:2rem}
+.proof-stat{text-align:center;padding:2rem}
+.proof-stat .big{font-size:2.5rem;font-weight:900;color:var(--accent)}
+.proof-stat .label{color:var(--muted);font-size:.9rem;margin-top:.25rem}
+
+/* QUOTE */
+.quote-section{padding:5rem 2rem;background:var(--surface);border-top:1px solid var(--border);text-align:center}
+.quote-inner{max-width:650px;margin:0 auto}
+.quote-text{font-size:1.3rem;font-style:italic;line-height:1.7;margin-bottom:1.5rem}
+.quote-attr{color:var(--muted);font-size:.9rem}
+
+/* COMPARE */
+.compare-section{padding:6rem 2rem}
+.compare-inner{max-width:800px;margin:0 auto}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:2rem}
+.compare-col{padding:2rem;border-radius:16px;border:1px solid var(--border)}
+.compare-col.old{background:#fef2f2;border-color:#fecaca}
+.compare-col.new{background:#ecfdf5;border-color:#a7f3d0}
+.compare-col h3{font-size:1.1rem;margin-bottom:1rem}
+.compare-col.old h3{color:var(--red)}
+.compare-col.new h3{color:var(--green)}
+.compare-col ul{list-style:none;display:flex;flex-direction:column;gap:.75rem}
+.compare-col li{font-size:.9rem;padding-left:1.5rem;position:relative;color:var(--muted)}
+.compare-col.old li::before{content:'x';position:absolute;left:0;color:var(--red);font-weight:700}
+.compare-col.new li::before{content:'>';position:absolute;left:0;color:var(--green);font-weight:700}
+
+/* FAQ */
+.faq-section{padding:6rem 2rem;background:var(--surface);border-top:1px solid var(--border)}
+.faq-inner{max-width:700px;margin:0 auto}
+.faq-item{border-bottom:1px solid var(--border);padding:1.5rem 0}
+.faq-q{font-weight:700;font-size:1.05rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.faq-q::after{content:'+';font-size:1.5rem;color:var(--muted);transition:transform .3s}
+.faq-item.open .faq-q::after{transform:rotate(45deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease;color:var(--muted);font-size:.95rem;line-height:1.6}
+.faq-item.open .faq-a{max-height:300px;padding-top:1rem}
+
+/* FINAL */
+.final-section{padding:6rem 2rem;text-align:center}
+.final-inner{max-width:650px;margin:0 auto}
+.final-inner h2{font-size:clamp(1.5rem,4vw,2.5rem);margin-bottom:1rem}
+.final-inner p{color:var(--muted);font-size:1.1rem;margin-bottom:2rem}
+
+footer{padding:3rem 2rem;border-top:1px solid var(--border);text-align:center;color:var(--muted);font-size:.85rem}
+footer a{color:var(--muted)}
+
+@media(max-width:768px){
+  .nav-links a:not(.nav-cta){display:none}
+  .hero-gap{gap:1rem;height:150px}
+  .gap-bar{width:80px}
+  .gap-bar.actual{height:100px}
+  .gap-bar.potential{height:150px}
+  .gap-vis-row{grid-template-columns:1fr;gap:.5rem}
+  .math-grid{grid-template-columns:1fr}
+  .compare-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Go2</div>
+  <div class="nav-links">
+    <a href="#gap">The Gap</a>
+    <a href="#friction">The Friction</a>
+    <a href="#how">How It Works</a>
+    <a href="#faq">FAQ</a>
+    <a href="#cta" class="nav-cta">Get a Demo</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-gap">
+    <div class="gap-bar actual" style="position:relative">
+      <div class="gap-bar-label">What they do</div>
+    </div>
+    <div class="gap-bar potential" style="position:relative">
+      <div class="gap-bar-label">What they could do</div>
+      <div class="gap-arrow">
+        <div class="gap-arrow-text">+30%</div>
+      </div>
+    </div>
+  </div>
+  <h1>There's a gap between what your team <em>can</em> do and what they actually <em>do</em>. Go2 closes it.</h1>
+  <p>Every employee could be 30% more effective. Not because they're lazy -- because invisible friction holds them back. Go2 finds it and fixes it with AI coaching.</p>
+  <div class="cta-row">
+    <button class="btn-primary" onclick="document.getElementById('cta').scrollIntoView({behavior:'smooth'})">Close Your Gap</button>
+    <button class="btn-ghost" onclick="document.getElementById('gap').scrollIntoView({behavior:'smooth'})">See How It Works</button>
+  </div>
+</section>
+
+<section class="gap-vis-section" id="gap">
+  <div class="gap-vis-inner">
+    <span class="badge">The Gap, Visualized</span>
+    <h2 class="section-title">Every role has untapped potential</h2>
+    <p class="section-sub">Based on data from nearly a million workers, here's how much productivity is left on the table by role.</p>
+
+    <div class="gap-vis-row">
+      <div class="gap-vis-label">Customer Support</div>
+      <div class="gap-vis-bars">
+        <div class="gap-bar-actual" style="width:62%"></div>
+        <div class="gap-bar-potential" style="width:92%"></div>
+      </div>
+      <div class="gap-vis-delta">+30%</div>
+    </div>
+    <div class="gap-vis-row">
+      <div class="gap-vis-label">Sales Reps</div>
+      <div class="gap-vis-bars">
+        <div class="gap-bar-actual" style="width:55%"></div>
+        <div class="gap-bar-potential" style="width:88%"></div>
+      </div>
+      <div class="gap-vis-delta">+33%</div>
+    </div>
+    <div class="gap-vis-row">
+      <div class="gap-vis-label">Developers</div>
+      <div class="gap-vis-bars">
+        <div class="gap-bar-actual" style="width:68%"></div>
+        <div class="gap-bar-potential" style="width:91%"></div>
+      </div>
+      <div class="gap-vis-delta">+23%</div>
+    </div>
+    <div class="gap-vis-row">
+      <div class="gap-vis-label">Project Managers</div>
+      <div class="gap-vis-bars">
+        <div class="gap-bar-actual" style="width:50%"></div>
+        <div class="gap-bar-potential" style="width:85%"></div>
+      </div>
+      <div class="gap-vis-delta">+35%</div>
+    </div>
+    <div class="gap-vis-row">
+      <div class="gap-vis-label">Marketing</div>
+      <div class="gap-vis-bars">
+        <div class="gap-bar-actual" style="width:58%"></div>
+        <div class="gap-bar-potential" style="width:89%"></div>
+      </div>
+      <div class="gap-vis-delta">+31%</div>
+    </div>
+    <div class="gap-vis-row">
+      <div class="gap-vis-label">Finance / Admin</div>
+      <div class="gap-vis-bars">
+        <div class="gap-bar-actual" style="width:52%"></div>
+        <div class="gap-bar-potential" style="width:86%"></div>
+      </div>
+      <div class="gap-vis-delta">+34%</div>
+    </div>
+    <p style="color:var(--muted);font-size:.8rem;margin-top:1.5rem;text-align:center">Benchmarked against top performers in each role across ~1M workers</p>
+  </div>
+</section>
+
+<section class="section alt" id="friction">
+  <div class="section-inner">
+    <span class="badge">Why the Gap Exists</span>
+    <h2 class="section-title">Invisible friction steals 30% of your team's output</h2>
+    <p class="section-sub">Your employees aren't lazy. They're fighting friction they can't even see. Go2 makes it visible.</p>
+    <div class="friction-grid">
+      <div class="friction-card">
+        <div class="friction-icon">&#8635;</div>
+        <h3>Context Switching</h3>
+        <p>The average knowledge worker switches tools 78 times per day. Each switch costs up to 23 minutes of refocus time. That's hours lost daily.</p>
+        <div class="friction-stat">Costs 2.1 hrs/day per person</div>
+      </div>
+      <div class="friction-card">
+        <div class="friction-icon">&#9881;</div>
+        <h3>Process Drift</h3>
+        <p>What started as a 3-step workflow became 7 steps over time. Nobody noticed. Go2 spots process bloat that accumulates invisibly.</p>
+        <div class="friction-stat">+133% process overhead</div>
+      </div>
+      <div class="friction-card">
+        <div class="friction-icon">&#9888;</div>
+        <h3>Tool Mismatch</h3>
+        <p>Your team uses 14 different tools. 5 of them overlap. 3 don't integrate. People become the bridge between systems, manually.</p>
+        <div class="friction-stat">14% of work is "bridging"</div>
+      </div>
+      <div class="friction-card">
+        <div class="friction-icon">&#9993;</div>
+        <h3>Notification Fragmentation</h3>
+        <p>Slack, email, Teams, Asana, Jira. Notifications every 3.2 minutes. Deep focus becomes impossible when every ping demands attention.</p>
+        <div class="friction-stat">Avg focus block: 22 min</div>
+      </div>
+      <div class="friction-card">
+        <div class="friction-icon">&#9733;</div>
+        <h3>Knowledge Silos</h3>
+        <p>The best way to do something exists in one person's head. Everyone else reinvents the wheel. Go2 identifies these patterns across teams.</p>
+        <div class="friction-stat">40% of work is reinvented</div>
+      </div>
+      <div class="friction-card">
+        <div class="friction-icon">&#9201;</div>
+        <h3>Meeting Overload</h3>
+        <p>31% of time in meetings. Half could be async. But without data on which ones matter, nobody knows which to cut.</p>
+        <div class="friction-stat">31% of the work week</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="notlazy-section">
+  <div class="notlazy-inner">
+    <h2>Your team isn't underperforming. They're over-obstructed.</h2>
+    <p>The gap between potential and reality isn't about motivation or talent. It's about invisible friction that no amount of management can see. Go2's desktop agent captures everything. Frontier AI (Claude, GPT, Gemini) analyzes the patterns. And each employee gets private coaching to work the way top performers do.</p>
+  </div>
+</section>
+
+<section class="section" id="how">
+  <div class="section-inner">
+    <span class="badge">How Go2 Closes the Gap</span>
+    <h2 class="section-title">Four steps from friction to flow</h2>
+    <p class="section-sub">Go2 doesn't just measure the gap. It actively closes it through AI-powered coaching and automation mapping.</p>
+    <div class="close-grid">
+      <div class="close-card">
+        <div class="close-num">01</div>
+        <h3>Capture</h3>
+        <p>A lightweight desktop agent records work patterns -- not content, not keystrokes. Just how time flows through tools, tasks, and workflows.</p>
+      </div>
+      <div class="close-card">
+        <div class="close-num">02</div>
+        <h3>Benchmark</h3>
+        <p>Go2 compares each person's patterns against the top performers in their role, drawn from nearly a million workers across 142 industries.</p>
+      </div>
+      <div class="close-card">
+        <div class="close-num">03</div>
+        <h3>Coach</h3>
+        <p>Each employee gets private, personalized nudges. "You context-switch 22 times before lunch. Top performers in your role batch into 4 blocks." Specific. Actionable.</p>
+      </div>
+      <div class="close-card">
+        <div class="close-num">04</div>
+        <h3>Optimize</h3>
+        <p>Managers see aggregated team insights. Automation candidates get flagged. Process bottlenecks become visible. The gap closes week by week.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="preview-section">
+  <div class="preview-inner">
+    <span class="badge">Coaching in Action</span>
+    <h2 class="section-title">What closing the gap actually looks like</h2>
+    <p class="section-sub">Real coaching nudges based on patterns Go2 finds in typical teams.</p>
+    <div class="preview-card">
+      <div class="preview-role">Customer Support Rep</div>
+      <div class="preview-msg">"You're averaging 4.2 minutes per ticket resolution, but spending 1.8 minutes navigating between your CRM and knowledge base. Top performers use keyboard shortcuts that cut navigation to 0.3 minutes. Here's a quick guide."</div>
+      <div class="preview-impact">Potential impact: +43% throughput</div>
+    </div>
+    <div class="preview-card">
+      <div class="preview-role">Software Developer</div>
+      <div class="preview-msg">"Your deepest focus block this week was 34 minutes (Tuesday, 10:20am). But you averaged 6 Slack interruptions per hour during coding time. Consider a 2-hour DND window for morning coding."</div>
+      <div class="preview-impact">Potential impact: +2.5 hours deep work/week</div>
+    </div>
+    <div class="preview-card">
+      <div class="preview-role">Project Manager</div>
+      <div class="preview-msg">"You spent 6.4 hours in meetings this week. 3 of those meetings had no action items or decisions documented. Top PMs in our data run 40% fewer meetings by using async standups."</div>
+      <div class="preview-impact">Potential impact: -3 hours/week in meetings</div>
+    </div>
+  </div>
+</section>
+
+<section class="math-section">
+  <div class="math-inner">
+    <span class="badge">The Math</span>
+    <h2 class="section-title">What 30% looks like in dollars</h2>
+    <div class="math-grid">
+      <div class="math-item">
+        <div class="num">30</div>
+        <div class="label">employees</div>
+      </div>
+      <div class="math-item">
+        <div class="num">30%</div>
+        <div class="label">efficiency gap</div>
+      </div>
+      <div class="math-item">
+        <div class="num">9</div>
+        <div class="label">FTE equivalents lost to friction</div>
+      </div>
+    </div>
+    <div class="math-equation">
+      Close the gap = get the output of <span>39 people</span> from 30 headcount
+    </div>
+    <p style="color:var(--muted);font-size:.9rem;margin-top:1.5rem">No new hires. No overtime. Just removing invisible friction.</p>
+  </div>
+</section>
+
+<section class="proof-section">
+  <div class="proof-inner">
+    <span class="badge">By the Numbers</span>
+    <h2 class="section-title" style="text-align:center">Scale creates accuracy</h2>
+    <p class="section-sub" style="text-align:center;margin-left:auto;margin-right:auto">The more data, the better the benchmarks. No competitor has anything close.</p>
+    <div class="proof-grid">
+      <div class="proof-stat"><div class="big">~1M</div><div class="label">Workers in dataset</div></div>
+      <div class="proof-stat"><div class="big">142</div><div class="label">Industries benchmarked</div></div>
+      <div class="proof-stat"><div class="big">34%</div><div class="label">Avg. gap closed in 90 days</div></div>
+      <div class="proof-stat"><div class="big">0</div><div class="label">Competitors with AI coaching</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="quote-section">
+  <div class="quote-inner">
+    <div class="quote-text">"We knew our team could do more. We just couldn't see what was slowing them down. Go2 made the invisible visible. Within six weeks, it felt like we'd hired 8 extra people."</div>
+    <div class="quote-attr">-- COO, 34-person professional services firm</div>
+  </div>
+</section>
+
+<section class="compare-section">
+  <div class="compare-inner">
+    <span class="badge">Before vs. After</span>
+    <h2 class="section-title">The gap, before and after Go2</h2>
+    <div class="compare-grid">
+      <div class="compare-col old">
+        <h3>Without Go2</h3>
+        <ul>
+          <li>Friction is invisible to managers</li>
+          <li>No benchmarks for what "good" looks like</li>
+          <li>Hire more people to get more output</li>
+          <li>Meetings to solve meeting problems</li>
+          <li>Tool sprawl grows unchecked</li>
+          <li>Top performers burn out carrying the load</li>
+        </ul>
+      </div>
+      <div class="compare-col new">
+        <h3>With Go2</h3>
+        <ul>
+          <li>Every friction point is measured and coached</li>
+          <li>Benchmarked against ~1M workers in your role</li>
+          <li>Get more output from existing headcount</li>
+          <li>AI identifies which meetings to cut</li>
+          <li>Automation mapping shows what to consolidate</li>
+          <li>Everyone gets coached toward best practices</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="faq-section" id="faq">
+  <div class="faq-inner">
+    <span class="badge">FAQ</span>
+    <h2 class="section-title" style="margin-bottom:2rem">Common questions</h2>
+    <div class="faq-item">
+      <div class="faq-q">Isn't this just employee monitoring?</div>
+      <div class="faq-a">No. Go2 is a coaching platform. Employees get private coaching to help them work better. Managers only see team-level aggregated data, never individual details. No screenshots, no keystroke logging. The goal is to remove friction, not surveil people.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">How does the ~1M worker dataset help my team?</div>
+      <div class="faq-a">When your support rep gets a coaching nudge, it's based on what the best support reps across hundreds of companies actually do. Not theory. Not generic advice. Proven patterns from nearly a million real workers.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">What if my employees push back?</div>
+      <div class="faq-a">Most employees love it. They get direct coaching that helps them work more efficiently, reduce frustration, and leave fewer hours feeling "busy but unproductive." It's like having a personal productivity coach powered by the world's best data.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">How long until I see the gap close?</div>
+      <div class="faq-a">Most teams see measurable improvement within 2-4 weeks. Full gap closure -- the 30%+ efficiency gain -- typically materializes over 90 days as habits shift and automation gets implemented.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">What AI models power the coaching?</div>
+      <div class="faq-a">Go2 uses frontier AI from Anthropic (Claude), OpenAI (GPT), and Google (Gemini). These models analyze workflow patterns against our dataset and generate personalized, role-specific coaching for each employee.</div>
+    </div>
+  </div>
+</section>
+
+<section class="final-section" id="cta">
+  <div class="final-inner">
+    <h2>Your team has 30% more to give. Go2 unlocks it.</h2>
+    <p>No new hires. No overtime. Just removing the invisible friction between your team's potential and their output.</p>
+    <button class="btn-primary" style="font-size:1.1rem;padding:1rem 2.5rem">Request Your Demo</button>
+  </div>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2. All rights reserved. &nbsp;|&nbsp; <a href="#">Privacy</a> &nbsp;|&nbsp; <a href="#">Terms</a> &nbsp;|&nbsp; <a href="#">Security</a></p>
+</footer>
+
+<script>
+document.querySelectorAll('.faq-q').forEach(q=>{
+  q.addEventListener('click',()=>q.parentElement.classList.toggle('open'));
+});
+</script>
+</body>
+</html>
