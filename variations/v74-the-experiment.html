@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Run One Experiment</title>
+<style>
+  :root {
+    --lab-white: #fefefe;
+    --lab-cream: #f5f3ef;
+    --lab-bg: #faf9f7;
+    --ink: #1c1917;
+    --ink-light: #57534e;
+    --ink-dim: #a8a29e;
+    --accent: #2563eb;
+    --accent-dark: #1d4ed8;
+    --green: #16a34a;
+    --amber: #d97706;
+    --red: #dc2626;
+    --border: #e7e5e4;
+    --border-dark: #d6d3d1;
+    --grid-line: rgba(0,0,0,0.04);
+    --paper: #fffef8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: var(--lab-bg);
+    color: var(--ink);
+    overflow-x: hidden;
+    line-height: 1.7;
+  }
+  .sans {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  .mono {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  }
+
+  /* Nav */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(250,249,247,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem; height: 56px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-logo {
+    font-size: 1.3rem; font-weight: 800;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--ink);
+  }
+  .nav-logo span { color: var(--accent); }
+  .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+  .nav-links a {
+    text-decoration: none; color: var(--ink-light);
+    font-size: 0.85rem; font-weight: 500; transition: color 0.2s;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .nav-links a:hover { color: var(--ink); }
+  .nav-cta {
+    background: var(--accent) !important; color: white !important;
+    padding: 0.4rem 1rem; border-radius: 8px; font-weight: 600 !important;
+  }
+
+  /* Hero */
+  .hero {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 6rem 2rem 4rem; position: relative;
+    background: var(--paper);
+    overflow: hidden;
+  }
+  /* Lab notebook grid lines */
+  .hero::before {
+    content: ''; position: absolute; inset: 0;
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 31px, var(--grid-line) 31px, var(--grid-line) 32px),
+      repeating-linear-gradient(90deg, transparent, transparent 31px, rgba(0,0,0,0.02) 31px, rgba(0,0,0,0.02) 32px);
+    pointer-events: none;
+  }
+  /* Red margin line */
+  .hero::after {
+    content: ''; position: absolute; top: 0; bottom: 0;
+    left: 80px; width: 1px; background: rgba(220,38,38,0.15);
+    pointer-events: none;
+  }
+  .hero-content {
+    max-width: 750px; text-align: center; position: relative; z-index: 2;
+  }
+  .experiment-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(37,99,235,0.06); border: 1px solid rgba(37,99,235,0.15);
+    border-radius: 6px; padding: 0.3rem 0.8rem;
+    font-size: 0.75rem; font-weight: 600; color: var(--accent);
+    margin-bottom: 2rem; letter-spacing: 0.5px;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .hero h1 {
+    font-size: clamp(2.4rem, 5.5vw, 3.8rem);
+    font-weight: 700; line-height: 1.12;
+    margin-bottom: 1.5rem; letter-spacing: -0.5px;
+    font-family: 'Georgia', serif;
+  }
+  .hero h1 em {
+    font-style: italic; color: var(--accent);
+  }
+  .hero-subtitle {
+    font-size: 1.15rem; color: var(--ink-light);
+    max-width: 560px; margin: 0 auto 1rem; line-height: 1.7;
+  }
+  .hero-bold {
+    font-size: 1rem; color: var(--ink); font-weight: 600;
+    margin-bottom: 2.5rem;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: var(--accent); color: white;
+    padding: 0.85rem 1.8rem; border-radius: 10px;
+    font-size: 0.95rem; font-weight: 700; text-decoration: none;
+    transition: all 0.3s; border: none; cursor: pointer;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(37,99,235,0.3); }
+  .btn-secondary {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: transparent; color: var(--ink);
+    padding: 0.85rem 1.8rem; border-radius: 10px;
+    font-size: 0.95rem; font-weight: 600; text-decoration: none;
+    border: 1px solid var(--border-dark); transition: all 0.3s;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .btn-secondary:hover { background: rgba(0,0,0,0.03); }
+
+  /* Lab Notebook Entry */
+  .notebook-entry {
+    max-width: 600px; margin: 3rem auto 0; text-align: left;
+    background: var(--paper); border: 1px solid var(--border);
+    border-radius: 4px; padding: 2rem;
+    box-shadow: 2px 2px 0 var(--border);
+    position: relative;
+  }
+  .notebook-entry::before {
+    content: ''; position: absolute; left: 40px; top: 0; bottom: 0;
+    width: 1px; background: rgba(220,38,38,0.12);
+  }
+  .entry-date {
+    font-size: 0.75rem; color: var(--ink-dim);
+    font-family: 'SF Mono', monospace; margin-bottom: 1rem;
+    padding-left: 50px;
+  }
+  .entry-line {
+    font-size: 0.9rem; color: var(--ink-light); padding: 0.2rem 0;
+    padding-left: 50px; line-height: 1.8;
+  }
+  .entry-line strong { color: var(--ink); }
+  .entry-line .label {
+    color: var(--accent); font-weight: 600;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px;
+  }
+
+  /* Sections */
+  .section { padding: 5rem 2rem; }
+  .container { max-width: 1000px; margin: 0 auto; }
+  .section-label {
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--accent);
+    margin-bottom: 0.75rem;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .section-title {
+    font-size: clamp(1.7rem, 3.5vw, 2.5rem);
+    font-weight: 700; line-height: 1.2; margin-bottom: 1rem;
+  }
+  .section-subtitle {
+    font-size: 1rem; color: var(--ink-light); max-width: 540px;
+    line-height: 1.7; margin-bottom: 3rem;
+  }
+
+  /* Protocol Steps */
+  .protocol-section {
+    padding: 5rem 2rem;
+    background: var(--paper);
+    position: relative;
+  }
+  .protocol-section::before {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 31px, var(--grid-line) 31px, var(--grid-line) 32px);
+    pointer-events: none; opacity: 0.5;
+  }
+  .protocol-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem; margin-top: 3rem; position: relative; z-index: 2;
+  }
+  .protocol-step {
+    background: white; border: 1px solid var(--border);
+    border-radius: 8px; padding: 2rem 1.5rem;
+    box-shadow: 1px 1px 0 var(--border);
+    transition: all 0.3s;
+  }
+  .protocol-step:hover {
+    transform: translateY(-3px);
+    box-shadow: 4px 4px 0 var(--border);
+    border-color: var(--accent);
+  }
+  .step-label {
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 0.75rem;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .step-day {
+    font-size: 0.7rem; color: var(--ink-dim); margin-bottom: 1rem;
+    font-family: 'SF Mono', monospace;
+  }
+  .protocol-step h3 {
+    font-size: 1.05rem; font-weight: 700; margin-bottom: 0.75rem;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .protocol-step p {
+    font-size: 0.85rem; color: var(--ink-light); line-height: 1.6;
+  }
+
+  /* Hypothesis Section */
+  .hypothesis-section { padding: 5rem 2rem; background: white; }
+  .hypothesis-cards {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem; margin-top: 3rem;
+  }
+  .hypothesis-card {
+    background: var(--lab-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 2rem;
+    box-shadow: 1px 1px 0 var(--border);
+    transition: all 0.3s;
+  }
+  .hypothesis-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 3px 3px 0 var(--border);
+  }
+  .hyp-tag {
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; margin-bottom: 1rem;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .hyp-tag.hypothesis { color: var(--accent); }
+  .hyp-tag.measurement { color: var(--green); }
+  .hyp-tag.result { color: var(--amber); }
+  .hypothesis-card h3 {
+    font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .hypothesis-card p {
+    font-size: 0.88rem; color: var(--ink-light); line-height: 1.6;
+  }
+
+  /* Data Visualization */
+  .data-section { padding: 5rem 2rem; background: var(--lab-bg); }
+  .data-chart {
+    max-width: 700px; margin: 3rem auto 0;
+    background: white; border: 1px solid var(--border);
+    border-radius: 8px; padding: 2rem;
+    box-shadow: 2px 2px 0 var(--border);
+  }
+  .chart-title {
+    font-size: 0.85rem; font-weight: 700; margin-bottom: 0.25rem;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .chart-subtitle {
+    font-size: 0.72rem; color: var(--ink-dim); margin-bottom: 1.5rem;
+    font-family: 'SF Mono', monospace;
+  }
+  .chart-row {
+    display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;
+  }
+  .chart-label {
+    width: 120px; font-size: 0.78rem; color: var(--ink-light);
+    text-align: right; flex-shrink: 0;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .chart-bar-bg {
+    flex: 1; height: 28px; background: #f5f5f4;
+    border-radius: 4px; overflow: hidden; position: relative;
+  }
+  .chart-bar {
+    height: 100%; border-radius: 4px;
+    transition: width 1.5s ease; position: relative;
+  }
+  .chart-bar.before { background: var(--border-dark); }
+  .chart-bar.after { background: var(--accent); }
+  .chart-bar-label {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    font-size: 0.7rem; font-weight: 700; color: white;
+    font-family: 'SF Mono', monospace;
+  }
+  .chart-legend {
+    display: flex; gap: 1.5rem; margin-top: 1.25rem;
+    padding-top: 1rem; border-top: 1px solid var(--border);
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.72rem; color: var(--ink-dim);
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .legend-dot {
+    width: 10px; height: 10px; border-radius: 2px;
+  }
+
+  /* Stats */
+  .stats-section { padding: 4rem 2rem; background: white; }
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 2rem; max-width: 1000px; margin: 0 auto;
+  }
+  .stat { text-align: center; }
+  .stat-number {
+    font-size: 2.5rem; font-weight: 800; line-height: 1;
+    color: var(--accent); margin-bottom: 0.5rem;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .stat-label {
+    font-size: 0.78rem; color: var(--ink-light); line-height: 1.4;
+  }
+
+  /* Results / Testimonials */
+  .results-section { padding: 5rem 2rem; }
+  .results-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem; margin-top: 3rem;
+  }
+  .result-card {
+    background: white; border: 1px solid var(--border);
+    border-radius: 8px; padding: 2rem;
+    box-shadow: 1px 1px 0 var(--border);
+  }
+  .result-tag {
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--green); margin-bottom: 1rem;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .result-card blockquote {
+    font-size: 0.95rem; color: var(--ink); line-height: 1.7;
+    font-style: italic; margin-bottom: 1.5rem;
+  }
+  .result-source {
+    display: flex; align-items: center; gap: 0.75rem;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .result-avatar {
+    width: 36px; height: 36px; border-radius: 6px;
+    background: var(--accent); color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 700;
+  }
+  .result-info strong { display: block; font-size: 0.8rem; }
+  .result-info span { font-size: 0.7rem; color: var(--ink-dim); }
+
+  /* Guarantee */
+  .guarantee-section {
+    padding: 4rem 2rem; background: var(--paper);
+    position: relative;
+  }
+  .guarantee-section::before {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 31px, var(--grid-line) 31px, var(--grid-line) 32px);
+    pointer-events: none; opacity: 0.3;
+  }
+  .guarantee-box {
+    max-width: 700px; margin: 0 auto; text-align: center;
+    background: white; border: 2px solid var(--accent);
+    border-radius: 12px; padding: 3rem;
+    position: relative; z-index: 2;
+    box-shadow: 4px 4px 0 rgba(37,99,235,0.1);
+  }
+  .guarantee-box h2 {
+    font-size: 1.6rem; font-weight: 700; margin-bottom: 1rem;
+  }
+  .guarantee-box p {
+    font-size: 1rem; color: var(--ink-light); margin-bottom: 1.5rem;
+    line-height: 1.7;
+  }
+  .guarantee-terms {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 1rem; margin-top: 2rem; text-align: left;
+  }
+  .guarantee-term {
+    padding: 1rem; background: var(--lab-bg); border-radius: 8px;
+  }
+  .term-label {
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 0.5rem;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .guarantee-term p {
+    font-size: 0.82rem; margin: 0; line-height: 1.5;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  /* CTA */
+  .cta-section {
+    padding: 6rem 2rem; text-align: center;
+    background: var(--ink); color: white;
+  }
+  .cta-content { max-width: 600px; margin: 0 auto; }
+  .cta-section h2 {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    font-weight: 700; line-height: 1.2; margin-bottom: 1rem;
+  }
+  .cta-section p {
+    font-size: 1rem; color: rgba(255,255,255,0.6); margin-bottom: 2.5rem;
+  }
+  .cta-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+  .cta-section .btn-primary { background: var(--accent); }
+  .cta-section .btn-secondary { color: rgba(255,255,255,0.7); border-color: rgba(255,255,255,0.2); }
+
+  /* Footer */
+  footer {
+    padding: 2rem 2rem; background: #0c0a09;
+    color: rgba(255,255,255,0.3); font-size: 0.8rem;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .footer-inner {
+    max-width: 1000px; margin: 0 auto;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 1rem;
+  }
+  .footer-links { display: flex; gap: 1.5rem; }
+  .footer-links a { color: rgba(255,255,255,0.3); text-decoration: none; }
+  .footer-links a:hover { color: var(--accent); }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .protocol-grid { grid-template-columns: repeat(2, 1fr); }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .guarantee-terms { grid-template-columns: 1fr; }
+    .hero::after { display: none; }
+    .notebook-entry::before { display: none; }
+    .entry-date, .entry-line { padding-left: 0; }
+  }
+  @media (max-width: 600px) {
+    .nav-links a:not(.nav-cta) { display: none; }
+    .hero { padding: 7rem 1.5rem 4rem; }
+    .hero-actions { flex-direction: column; align-items: center; }
+    .protocol-grid { grid-template-columns: 1fr; }
+    .hypothesis-cards { grid-template-columns: 1fr; }
+    .chart-label { width: 80px; font-size: 0.7rem; }
+  }
+
+  .fade-up {
+    opacity: 0; transform: translateY(25px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">go<span>2</span></div>
+  <div class="nav-links">
+    <a href="#protocol">Protocol</a>
+    <a href="#hypotheses">Hypotheses</a>
+    <a href="#results">Results</a>
+    <a href="#protocol" class="nav-cta">Start the Experiment</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="experiment-badge">Experiment #001 / Your Company</div>
+    <h1>Run one <em>experiment.</em><br>Just 30 days.</h1>
+    <p class="hero-subtitle">Install Go2 for 30 days. If your team doesn't get measurably faster, we failed. Not you. Us.</p>
+    <p class="hero-bold">This isn't a purchase. It's a hypothesis with a deadline.</p>
+    <div class="hero-actions">
+      <a href="#protocol" class="btn-primary">Begin the Experiment</a>
+      <a href="#hypotheses" class="btn-secondary">Read the Protocol</a>
+    </div>
+    <div class="notebook-entry">
+      <div class="entry-date">Experiment Log / Day 0</div>
+      <div class="entry-line"><span class="label">Hypothesis:</span> This team has measurable hidden inefficiency</div>
+      <div class="entry-line"><span class="label">Method:</span> Deploy Go2 agent. Observe 30 days. Measure before/after.</div>
+      <div class="entry-line"><span class="label">Control:</span> Current workflow, unchanged. No disruption.</div>
+      <div class="entry-line"><span class="label">Variable:</span> AI coaching + automation identification</div>
+      <div class="entry-line"><span class="label">Success criteria:</span> <strong>Measurable improvement or experiment fails.</strong></div>
+    </div>
+  </div>
+</section>
+
+<section class="protocol-section" id="protocol">
+  <div class="container fade-up">
+    <div class="section-label">Experimental Protocol</div>
+    <div class="section-title">The 30-day scientific method</div>
+    <div class="section-subtitle">Every claim should be testable. Every result should be measurable. Here's exactly how the experiment runs.</div>
+    <div class="protocol-grid">
+      <div class="protocol-step">
+        <div class="step-label">Phase 1</div>
+        <div class="step-day">Day 1-3</div>
+        <h3>Baseline Measurement</h3>
+        <p>Go2's lightweight desktop agent deploys silently. No workflow changes. It establishes your team's current operational baseline: how work flows, where time goes, what tools get used.</p>
+      </div>
+      <div class="protocol-step">
+        <div class="step-label">Phase 2</div>
+        <div class="step-day">Day 4-14</div>
+        <h3>Observation Period</h3>
+        <p>AI analyzes patterns using data from ~1M workers. Frontier models (Claude, GPT, Gemini) identify inefficiencies, automation opportunities, and coaching moments specific to your team.</p>
+      </div>
+      <div class="protocol-step">
+        <div class="step-label">Phase 3</div>
+        <div class="step-day">Day 15-28</div>
+        <h3>Treatment Applied</h3>
+        <p>Workers begin receiving real-time AI coaching. Not monitoring. Coaching. "Here's a faster way to do this." Managers get aggregated insight reports. Automation candidates are identified.</p>
+      </div>
+      <div class="protocol-step">
+        <div class="step-label">Phase 4</div>
+        <div class="step-day">Day 29-30</div>
+        <h3>Results Analysis</h3>
+        <p>Before vs. after. Hard numbers. Time saved. Processes streamlined. Automations identified. If the data doesn't show improvement, the experiment failed. No spin. No rationalizing.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="hypothesis-section" id="hypotheses">
+  <div class="container fade-up">
+    <div class="section-label">Testable Hypotheses</div>
+    <div class="section-title">What we expect to prove</div>
+    <div class="section-subtitle">These aren't marketing claims. They're hypotheses that the experiment will either confirm or refute with data.</div>
+    <div class="hypothesis-cards">
+      <div class="hypothesis-card">
+        <div class="hyp-tag hypothesis">Hypothesis 1</div>
+        <h3>Your team spends 20-35% of time on automatable tasks</h3>
+        <p>Based on data from ~1M workers across similar companies, we predict your team performs significant manual work that could be automated. The experiment will measure the exact percentage.</p>
+      </div>
+      <div class="hypothesis-card">
+        <div class="hyp-tag hypothesis">Hypothesis 2</div>
+        <h3>AI coaching will improve individual productivity by 15-25%</h3>
+        <p>Real-time suggestions from frontier AI (faster tool paths, process shortcuts, automation triggers) should measurably reduce time-to-completion on routine tasks.</p>
+      </div>
+      <div class="hypothesis-card">
+        <div class="hyp-tag hypothesis">Hypothesis 3</div>
+        <h3>At least 3 high-ROI automations will be identified</h3>
+        <p>Every organization we've studied has had automation opportunities hiding in plain sight. We predict at least 3 tasks that, when automated, save 10+ hours per week combined.</p>
+      </div>
+      <div class="hypothesis-card">
+        <div class="hyp-tag measurement">Measurement</div>
+        <h3>All results will be objectively verifiable</h3>
+        <p>No vague "feels better." We measure: time-on-task, tool switching frequency, process completion rates, automation opportunities with estimated ROI. Numbers, not narratives.</p>
+      </div>
+      <div class="hypothesis-card">
+        <div class="hyp-tag measurement">Measurement</div>
+        <h3>Worker experience will improve, not degrade</h3>
+        <p>We survey workers at day 1 and day 30. If satisfaction doesn't improve (or stays neutral), the coaching model needs adjustment. Workers should feel helped, not watched.</p>
+      </div>
+      <div class="hypothesis-card">
+        <div class="hyp-tag result">Expected Result</div>
+        <h3>ROI visible before the experiment ends</h3>
+        <p>Based on prior experiments: teams see measurable results by week 3. If we can't demonstrate clear value in 30 days, we don't deserve your business. Period.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="data-section">
+  <div class="container fade-up">
+    <div class="section-label">Preliminary Data</div>
+    <div class="section-title">Results from previous experiments</div>
+    <div class="section-subtitle">Aggregated findings from companies that ran the 30-day experiment. Your results will be specific to your team.</div>
+    <div class="data-chart">
+      <div class="chart-title">Productivity Metrics: Before vs. After Go2 (30 days)</div>
+      <div class="chart-subtitle">n = aggregate across SMBs, 15-50 employees</div>
+      <div class="chart-row">
+        <div class="chart-label">Productive Time</div>
+        <div class="chart-bar-bg">
+          <div class="chart-bar before" style="width: 54%;" data-width="54%"><span class="chart-bar-label">54%</span></div>
+        </div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-label"></div>
+        <div class="chart-bar-bg">
+          <div class="chart-bar after" style="width: 0%;" data-width="73%"><span class="chart-bar-label">73%</span></div>
+        </div>
+      </div>
+      <div class="chart-row" style="margin-top: 1.5rem;">
+        <div class="chart-label">Task Automation</div>
+        <div class="chart-bar-bg">
+          <div class="chart-bar before" style="width: 8%;" data-width="8%"><span class="chart-bar-label">8%</span></div>
+        </div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-label"></div>
+        <div class="chart-bar-bg">
+          <div class="chart-bar after" style="width: 0%;" data-width="34%"><span class="chart-bar-label">34%</span></div>
+        </div>
+      </div>
+      <div class="chart-row" style="margin-top: 1.5rem;">
+        <div class="chart-label">Onboarding Speed</div>
+        <div class="chart-bar-bg">
+          <div class="chart-bar before" style="width: 40%;" data-width="40%"><span class="chart-bar-label">40 days</span></div>
+        </div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-label"></div>
+        <div class="chart-bar-bg">
+          <div class="chart-bar after" style="width: 0%;" data-width="64%"><span class="chart-bar-label">16 days</span></div>
+        </div>
+      </div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--border-dark)"></div> Before Go2</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div> After 30-day experiment</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stats-section">
+  <div class="stats-grid fade-up">
+    <div class="stat">
+      <div class="stat-number">~1M</div>
+      <div class="stat-label">Workers generating the data that powers the experiment</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number">23%</div>
+      <div class="stat-label">Average productivity improvement measured in experiments</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number">4.2</div>
+      <div class="stat-label">Hours per worker per week recovered from hidden inefficiency</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number">30</div>
+      <div class="stat-label">Days. That's it. Results or the experiment failed.</div>
+    </div>
+  </div>
+</section>
+
+<section class="results-section" id="results">
+  <div class="container fade-up">
+    <div class="section-label">Experiment Reports</div>
+    <div class="section-title">What previous subjects found</div>
+    <div class="section-subtitle">Post-experiment reports from leaders who agreed to run the 30-day test.</div>
+    <div class="results-grid">
+      <div class="result-card">
+        <div class="result-tag">Experiment Complete / Confirmed</div>
+        <blockquote>"I was skeptical. 'Just install this and your team gets faster?' Sounded too good. But we treated it like what they said: an experiment. The data at day 30 was undeniable. 19% improvement in productive time. 27 hours/week identified for automation. We kept it."</blockquote>
+        <div class="result-source">
+          <div class="result-avatar">CEO</div>
+          <div class="result-info">
+            <strong>CEO &amp; Founder</strong>
+            <span>34-person services company</span>
+          </div>
+        </div>
+      </div>
+      <div class="result-card">
+        <div class="result-tag">Experiment Complete / Confirmed</div>
+        <blockquote>"The lab-notebook framing is cute but the data is real. We found that our ops team was spending 31% of their time on tasks that a $50/month automation could handle. We'd been paying humans to do a robot's job. Go2 showed us the exact tasks and the exact fix."</blockquote>
+        <div class="result-source">
+          <div class="result-avatar">VP</div>
+          <div class="result-info">
+            <strong>VP of Operations</strong>
+            <span>41-person logistics firm</span>
+          </div>
+        </div>
+      </div>
+      <div class="result-card">
+        <div class="result-tag">Experiment Complete / Confirmed</div>
+        <blockquote>"What convinced me was the worker feedback. I expected pushback on 'monitoring software.' Instead, our team said the AI coaching was the best thing we'd ever given them. It made their frustrating daily tasks easier. NPS went up, not down."</blockquote>
+        <div class="result-source">
+          <div class="result-avatar">Dir</div>
+          <div class="result-info">
+            <strong>Director of People Ops</strong>
+            <span>28-person SaaS startup</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="guarantee-section">
+  <div class="guarantee-box fade-up">
+    <div class="section-label" style="margin-bottom: 0.5rem;">The Experimental Guarantee</div>
+    <h2>Measurable results or we failed. Not you.</h2>
+    <p>This is a scientific proposition. We make specific, testable claims about what Go2 will do for your team. If the 30-day experiment doesn't produce measurable improvement, the conclusion is clear: our hypothesis was wrong for your company.</p>
+    <div class="guarantee-terms">
+      <div class="guarantee-term">
+        <div class="term-label">Methodology</div>
+        <p>Baseline measurement before. Treatment period. Post-experiment measurement. Same methodology every time.</p>
+      </div>
+      <div class="guarantee-term">
+        <div class="term-label">Transparency</div>
+        <p>You see all the data. Every metric. Every finding. Nothing hidden. If it's ambiguous, we call it ambiguous.</p>
+      </div>
+      <div class="guarantee-term">
+        <div class="term-label">Falsifiability</div>
+        <p>Our claims are specific enough to be wrong. That's what makes them scientific. We're betting on the data, not the pitch.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container fade-up">
+    <div class="section-label">Important Variable</div>
+    <div class="section-title">Coaching, not surveillance</div>
+    <div class="section-subtitle">The experiment only works if workers feel helped, not watched. Here's how the treatment is designed.</div>
+    <div class="hypothesis-cards">
+      <div class="hypothesis-card">
+        <div class="hyp-tag measurement">Design Principle</div>
+        <h3>Workers receive the coaching</h3>
+        <p>Real-time AI suggestions. "You've been manually exporting this. Here's a one-click method." The coaching comes from frontier AI models trained on data from ~1M workers. It makes the job easier.</p>
+      </div>
+      <div class="hypothesis-card">
+        <div class="hyp-tag measurement">Design Principle</div>
+        <h3>Managers receive aggregated insights</h3>
+        <p>No individual surveillance dashboards. Team-level patterns, process bottlenecks, automation opportunities. The view is systemic, not personal. You see the machine, not the people inside it.</p>
+      </div>
+      <div class="hypothesis-card">
+        <div class="hyp-tag measurement">Design Principle</div>
+        <h3>The experiment measures systems, not souls</h3>
+        <p>We're testing whether your processes are efficient, not whether your people are "good." Every finding is about the system: tool choices, workflow design, automation gaps. Never about individual performance.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <div class="cta-content fade-up">
+    <h2>One experiment.<br>30 days. Real data.</h2>
+    <p>If your team doesn't get measurably faster, the experiment failed. We'll say so ourselves. But in our experience, the data tells a very compelling story.</p>
+    <div class="cta-actions">
+      <a href="#" class="btn-primary">Start the Experiment</a>
+      <a href="#" class="btn-secondary">Talk to a Researcher</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div>&copy; 2026 Go2. Hypothesize. Experiment. Measure. Repeat.</div>
+    <div class="footer-links">
+      <a href="#">Privacy</a>
+      <a href="#">Security</a>
+      <a href="#">Terms</a>
+      <a href="#">Contact</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  // Animate chart bars
+  const chartObs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const bars = entry.target.querySelectorAll('.chart-bar.after');
+        bars.forEach((bar, i) => {
+          setTimeout(() => {
+            bar.style.width = bar.dataset.width;
+          }, 300 + i * 200);
+        });
+        chartObs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+  document.querySelectorAll('.data-chart').forEach(el => chartObs.observe(el));
+
+  // Animate stat numbers
+  const statObs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const el = entry.target;
+        const text = el.textContent;
+        const match = text.match(/(~?)(\d+\.?\d*)/);
+        if (match) {
+          const prefix = match[1] || '';
+          const target = parseFloat(match[2]);
+          const suffix = text.replace(match[0], '');
+          const isFloat = text.includes('.');
+          const duration = 1500;
+          const start = performance.now();
+          const animate = (now) => {
+            const p = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - p, 3);
+            const val = isFloat ? (target * eased).toFixed(1) : Math.round(target * eased);
+            el.textContent = prefix + val + suffix;
+            if (p < 1) requestAnimationFrame(animate);
+          };
+          requestAnimationFrame(animate);
+        }
+        statObs.unobserve(el);
+      }
+    });
+  }, { threshold: 0.5 });
+  document.querySelectorAll('.stat-number').forEach(el => statObs.observe(el));
+
+  // Staggered notebook entry animation
+  const entryLines = document.querySelectorAll('.entry-line');
+  entryLines.forEach((line, i) => {
+    line.style.opacity = '0';
+    line.style.transform = 'translateX(-10px)';
+    line.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+  });
+  const entryObs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const lines = entry.target.querySelectorAll('.entry-line');
+        lines.forEach((line, i) => {
+          setTimeout(() => {
+            line.style.opacity = '1';
+            line.style.transform = 'translateX(0)';
+          }, 200 + i * 150);
+        });
+        entryObs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.5 });
+  document.querySelectorAll('.notebook-entry').forEach(el => entryObs.observe(el));
+</script>
+</body>
+</html>

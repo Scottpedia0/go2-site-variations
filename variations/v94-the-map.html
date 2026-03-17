@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The Map</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0d1117;--bg2:#131920;--bg3:#1a2230;--text:#8b9ab5;--text-muted:#4e5d73;--accent:#56c4a5;--accent2:#3dab8e;--accent-glow:rgba(86,196,165,0.1);--white:#e6ecf5;--contour:rgba(86,196,165,0.06);--topo:#1e2a3a;--orange:#f0983e;--orange-glow:rgba(240,152,62,0.1);--blue:#5b9cf5;--blue-glow:rgba(91,156,245,0.1)}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+a{color:var(--accent);text-decoration:none}
+
+/* Topo background */
+.topo-bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;opacity:0.4}
+.topo-line{position:absolute;border-radius:50%;border:1px solid var(--contour)}
+
+/* Nav */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:1.1rem 2rem;display:flex;justify-content:space-between;align-items:center;background:rgba(13,17,23,0.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(86,196,165,0.06)}
+.logo{font-size:1.4rem;font-weight:700;color:var(--white);letter-spacing:-0.5px}
+.logo span{color:var(--accent)}
+nav ul{display:flex;list-style:none;gap:2rem}
+nav ul a{color:var(--text-muted);font-size:0.85rem;transition:color 0.3s}
+nav ul a:hover{color:var(--accent)}
+.nav-cta{padding:0.5rem 1.2rem;background:var(--accent);color:var(--bg);border-radius:6px;font-weight:600;font-size:0.82rem;transition:all 0.3s}
+.nav-cta:hover{background:var(--accent2);transform:translateY(-1px)}
+
+/* Hero */
+.hero{min-height:100vh;display:flex;align-items:center;position:relative;padding:8rem 2rem 4rem;z-index:1}
+.hero-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center}
+.hero-label{display:inline-flex;align-items:center;gap:0.5rem;padding:0.4rem 1rem;background:var(--accent-glow);border:1px solid rgba(86,196,165,0.15);border-radius:20px;font-size:0.75rem;color:var(--accent);margin-bottom:1.5rem;letter-spacing:0.5px}
+.hero-label-dot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.hero h1{font-size:3.2rem;line-height:1.12;color:var(--white);font-weight:800;margin-bottom:1.5rem;letter-spacing:-1.5px}
+.hero h1 .mapped{color:var(--accent)}
+.hero h1 .unmapped{color:var(--text-muted);opacity:0.5}
+.hero p{font-size:1.1rem;color:var(--text-muted);margin-bottom:2rem;max-width:480px;line-height:1.8}
+.cta-group{display:flex;gap:1rem;flex-wrap:wrap}
+.cta-primary{padding:0.85rem 2rem;background:var(--accent);color:var(--bg);border:none;border-radius:6px;font-size:0.95rem;font-weight:700;cursor:pointer;transition:all 0.3s;display:inline-block}
+.cta-primary:hover{background:var(--accent2);transform:translateY(-2px);box-shadow:0 8px 30px rgba(86,196,165,0.25)}
+.cta-outline{padding:0.85rem 2rem;background:transparent;color:var(--accent);border:1px solid rgba(86,196,165,0.25);border-radius:6px;font-size:0.95rem;font-weight:600;cursor:pointer;transition:all 0.3s;display:inline-block}
+.cta-outline:hover{border-color:var(--accent);background:var(--accent-glow)}
+
+/* Map Visualization */
+.map-viz{position:relative;width:100%;max-width:520px;aspect-ratio:1;margin:0 auto}
+.contour{position:absolute;border-radius:50%;border:1px solid rgba(86,196,165,0.08);top:50%;left:50%;transform:translate(-50%,-50%)}
+.contour:nth-child(1){width:100%;height:100%}
+.contour:nth-child(2){width:85%;height:85%;transform:translate(-50%,-50%) rotate(15deg)}
+.contour:nth-child(3){width:70%;height:68%;transform:translate(-50%,-50%) rotate(-10deg)}
+.contour:nth-child(4){width:55%;height:52%;transform:translate(-50%,-50%) rotate(5deg)}
+.contour:nth-child(5){width:38%;height:36%;transform:translate(-50%,-50%) rotate(-5deg);border-color:rgba(86,196,165,0.15)}
+.contour:nth-child(6){width:20%;height:18%;transform:translate(-50%,-50%);background:var(--accent-glow);border-color:rgba(86,196,165,0.2)}
+.waypoint{position:absolute;transform:translate(-50%,-50%);z-index:2}
+.waypoint-dot{width:12px;height:12px;border-radius:50%;border:2px solid var(--accent);background:var(--bg);position:relative}
+.waypoint-dot::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:4px;height:4px;border-radius:50%;background:var(--accent)}
+.waypoint-label{position:absolute;top:16px;left:50%;transform:translateX(-50%);font-size:0.65rem;color:var(--accent);white-space:nowrap;letter-spacing:0.5px;font-weight:600;text-transform:uppercase}
+.waypoint.orange .waypoint-dot{border-color:var(--orange)}
+.waypoint.orange .waypoint-dot::after{background:var(--orange)}
+.waypoint.orange .waypoint-label{color:var(--orange)}
+.waypoint.blue .waypoint-dot{border-color:var(--blue)}
+.waypoint.blue .waypoint-dot::after{background:var(--blue)}
+.waypoint.blue .waypoint-label{color:var(--blue)}
+.map-path{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+
+/* Sections */
+section{position:relative;z-index:1;padding:6rem 2rem}
+.section-inner{max-width:1100px;margin:0 auto}
+.section-label{font-size:0.7rem;text-transform:uppercase;letter-spacing:3px;color:var(--accent);margin-bottom:0.8rem;font-weight:600}
+.section-title{font-size:2.4rem;color:var(--white);font-weight:800;margin-bottom:1rem;letter-spacing:-1px}
+.section-subtitle{font-size:1rem;color:var(--text-muted);max-width:560px;line-height:1.8}
+
+/* Uncharted Territory */
+.uncharted-section{background:var(--bg2)}
+.uncharted-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin-top:3rem}
+.map-card{padding:2rem;background:var(--bg);border-radius:10px;border:1px solid rgba(86,196,165,0.06);position:relative}
+.map-card-header{display:flex;align-items:center;gap:0.8rem;margin-bottom:1rem}
+.map-card-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;font-weight:700;flex-shrink:0}
+.map-card-icon.has-map{background:var(--accent-glow);color:var(--accent);border:1px solid rgba(86,196,165,0.15)}
+.map-card-icon.no-map{background:rgba(255,255,255,0.03);color:var(--text-muted);border:1px solid rgba(255,255,255,0.06)}
+.map-card h3{color:var(--white);font-size:0.95rem;font-weight:600}
+.map-card p{color:var(--text-muted);font-size:0.85rem;line-height:1.6}
+.map-card-status{margin-top:1rem;font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.map-card-status.mapped{color:var(--accent)}
+.map-card-status.unmapped{color:var(--text-muted)}
+
+/* Legend */
+.legend-section{background:var(--bg)}
+.legend-box{margin-top:3rem;background:var(--bg2);border:1px solid rgba(86,196,165,0.08);border-radius:12px;padding:2.5rem;display:grid;grid-template-columns:200px 1fr;gap:2rem}
+.legend-title{font-size:0.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--accent);font-weight:600;padding-top:0.3rem}
+.legend-items{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+.legend-item{display:flex;gap:1rem;align-items:start}
+.legend-swatch{width:16px;height:16px;border-radius:4px;flex-shrink:0;margin-top:0.2rem}
+.legend-swatch.green{background:var(--accent)}
+.legend-swatch.orange{background:var(--orange)}
+.legend-swatch.blue{background:var(--blue)}
+.legend-swatch.gray{background:var(--text-muted)}
+.legend-item h4{font-size:0.88rem;color:var(--white);margin-bottom:0.2rem;font-weight:600}
+.legend-item p{font-size:0.8rem;color:var(--text-muted);line-height:1.5}
+
+/* Territory Map */
+.territory-section{background:var(--bg2)}
+.territory-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2rem;margin-top:3rem}
+.territory-card{padding:2rem;border-radius:10px;border:1px solid rgba(86,196,165,0.06);background:var(--bg);position:relative;overflow:hidden}
+.territory-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%}
+.territory-card.workflows::before{background:var(--accent)}
+.territory-card.bottlenecks::before{background:var(--orange)}
+.territory-card.automation::before{background:var(--blue)}
+.territory-card.energy::before{background:var(--accent)}
+.territory-region{font-size:0.65rem;text-transform:uppercase;letter-spacing:2px;font-weight:600;margin-bottom:0.8rem}
+.territory-card.workflows .territory-region{color:var(--accent)}
+.territory-card.bottlenecks .territory-region{color:var(--orange)}
+.territory-card.automation .territory-region{color:var(--blue)}
+.territory-card.energy .territory-region{color:var(--accent)}
+.territory-card h3{color:var(--white);font-size:1.05rem;margin-bottom:0.6rem;font-weight:600}
+.territory-card p{font-size:0.88rem;color:var(--text-muted);line-height:1.6}
+.territory-stat{margin-top:1rem;padding:0.6rem 1rem;background:rgba(86,196,165,0.05);border-radius:6px;font-size:0.8rem;color:var(--accent);font-weight:600;display:inline-block}
+.territory-card.bottlenecks .territory-stat{background:var(--orange-glow);color:var(--orange)}
+.territory-card.automation .territory-stat{background:var(--blue-glow);color:var(--blue)}
+
+/* How It Works */
+.how-section{background:var(--bg)}
+.how-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;margin-top:3rem}
+.how-step{position:relative;padding:2rem 1.5rem;text-align:center}
+.how-step::after{content:'';position:absolute;top:2.2rem;right:-1rem;width:2rem;height:2px;background:linear-gradient(90deg,rgba(86,196,165,0.3),transparent)}
+.how-step:last-child::after{display:none}
+.step-marker{width:44px;height:44px;border-radius:50%;background:var(--accent-glow);border:2px solid rgba(86,196,165,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;color:var(--accent);font-weight:700;font-size:0.95rem}
+.how-step h3{color:var(--white);font-size:0.95rem;margin-bottom:0.5rem}
+.how-step p{color:var(--text-muted);font-size:0.82rem;line-height:1.5}
+
+/* AI Coaching */
+.coaching-section{background:var(--bg2)}
+.coaching-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;margin-top:3rem;align-items:start}
+.coaching-terminal{background:var(--bg);border:1px solid rgba(86,196,165,0.08);border-radius:10px;overflow:hidden}
+.terminal-bar{padding:0.8rem 1.2rem;border-bottom:1px solid rgba(86,196,165,0.06);display:flex;align-items:center;gap:0.5rem}
+.terminal-dot{width:8px;height:8px;border-radius:50%}
+.terminal-dot:nth-child(1){background:#ff5f57}
+.terminal-dot:nth-child(2){background:#ffbd2e}
+.terminal-dot:nth-child(3){background:#28c840}
+.terminal-title{font-size:0.72rem;color:var(--text-muted);margin-left:0.5rem;letter-spacing:0.5px}
+.terminal-body{padding:1.5rem}
+.msg{padding:0.8rem 1rem;margin-bottom:0.7rem;border-radius:6px;font-size:0.84rem;line-height:1.6}
+.msg.ai{background:var(--accent-glow);border:1px solid rgba(86,196,165,0.1);color:var(--text)}
+.msg.human{background:rgba(255,255,255,0.02);color:var(--text-muted);margin-left:1.5rem}
+.coaching-info h3{color:var(--white);font-size:1.2rem;margin-bottom:1.2rem;font-weight:700}
+.coaching-bullet{display:flex;gap:0.8rem;margin-bottom:1.2rem;align-items:start}
+.coaching-marker{width:24px;height:24px;border-radius:50%;background:var(--accent-glow);border:1px solid rgba(86,196,165,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent);font-size:0.65rem;font-weight:700;margin-top:0.15rem}
+.coaching-bullet p{font-size:0.88rem;color:var(--text-muted);line-height:1.6}
+.coaching-bullet strong{color:var(--white)}
+
+/* Stats */
+.stats-section{background:var(--bg)}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;margin-top:3rem}
+.stat-card{text-align:center;padding:2.5rem 1rem;background:var(--bg2);border-radius:10px;border:1px solid rgba(86,196,165,0.06)}
+.stat-value{font-size:2.8rem;font-weight:800;color:var(--accent);margin-bottom:0.3rem;font-family:'Courier New',monospace}
+.stat-label{font-size:0.8rem;color:var(--text-muted)}
+
+/* Privacy */
+.privacy-section{background:var(--bg2)}
+.privacy-cols{display:grid;grid-template-columns:1fr 1fr;gap:2.5rem;margin-top:3rem}
+.privacy-col{padding:2rem;background:var(--bg);border-radius:10px;border:1px solid rgba(86,196,165,0.06)}
+.privacy-col h3{color:var(--white);font-size:1rem;margin-bottom:1.2rem;font-weight:600;display:flex;align-items:center;gap:0.6rem}
+.privacy-col ul{list-style:none}
+.privacy-col li{padding:0.6rem 0;font-size:0.88rem;color:var(--text-muted);display:flex;align-items:center;gap:0.6rem;border-bottom:1px solid rgba(255,255,255,0.03)}
+.privacy-col li:last-child{border:none}
+.no{color:#ff5f57;font-weight:700}
+.yes{color:var(--accent);font-weight:700}
+
+/* Automation */
+.auto-section{background:var(--bg)}
+.auto-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3rem}
+.auto-card{padding:1.5rem;background:var(--bg2);border-radius:8px;border:1px solid rgba(86,196,165,0.04)}
+.auto-readiness{font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:0.4rem}
+.auto-card.high .auto-readiness{color:var(--accent)}
+.auto-card.med .auto-readiness{color:var(--orange)}
+.auto-card.low .auto-readiness{color:var(--text-muted)}
+.auto-card h4{color:var(--white);font-size:0.92rem;margin-bottom:0.3rem;font-weight:600}
+.auto-card p{color:var(--text-muted);font-size:0.8rem;line-height:1.5}
+.auto-meter{height:4px;background:rgba(255,255,255,0.04);border-radius:2px;margin-top:0.8rem;overflow:hidden}
+.auto-meter-fill{height:100%;border-radius:2px;transition:width 1s ease}
+.auto-card.high .auto-meter-fill{width:90%;background:var(--accent)}
+.auto-card.med .auto-meter-fill{width:60%;background:var(--orange)}
+.auto-card.low .auto-meter-fill{width:25%;background:var(--text-muted)}
+
+/* Final CTA */
+.final-cta{background:linear-gradient(180deg,var(--bg2),var(--bg));text-align:center;padding:8rem 2rem;position:relative}
+.final-cta::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 60%,rgba(86,196,165,0.03),transparent 60%)}
+.final-cta .section-inner{position:relative;z-index:1}
+.final-cta h2{font-size:2.6rem;color:var(--white);font-weight:800;margin-bottom:1rem;letter-spacing:-1px}
+.final-cta p{font-size:1.05rem;color:var(--text-muted);margin-bottom:2.5rem;max-width:500px;margin-left:auto;margin-right:auto;line-height:1.8}
+
+/* Footer */
+footer{background:var(--bg);border-top:1px solid rgba(86,196,165,0.06);padding:2.5rem 2rem;text-align:center}
+footer p{color:var(--text-muted);font-size:0.75rem}
+
+/* Responsive */
+@media(max-width:900px){
+  .hero-inner{grid-template-columns:1fr}
+  .hero h1{font-size:2.4rem}
+  .map-viz{max-width:320px;margin-top:2rem}
+  .uncharted-grid,.how-steps{grid-template-columns:1fr 1fr}
+  .how-step::after{display:none}
+  .territory-grid,.coaching-grid,.privacy-cols{grid-template-columns:1fr}
+  .legend-box{grid-template-columns:1fr}
+  .auto-grid{grid-template-columns:1fr 1fr}
+  nav ul{display:none}
+}
+@media(max-width:600px){
+  .hero h1{font-size:1.8rem}
+  .uncharted-grid,.stats-grid,.how-steps,.auto-grid,.legend-items{grid-template-columns:1fr}
+  .section-title{font-size:1.8rem}
+  .final-cta h2{font-size:2rem}
+}
+</style>
+</head>
+<body>
+
+<!-- Topographic Background -->
+<div class="topo-bg" id="topoBg"></div>
+
+<nav>
+  <div class="logo">go<span>2</span></div>
+  <ul>
+    <li><a href="#uncharted">The Gap</a></li>
+    <li><a href="#territory">The Territory</a></li>
+    <li><a href="#coaching">AI Coaching</a></li>
+    <li><a href="#trust">Trust</a></li>
+  </ul>
+  <a href="#demo" class="nav-cta">Get a Demo</a>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="hero-label"><div class="hero-label-dot"></div> Operational Cartography</div>
+      <h1>You have a map for your <span class="mapped">finances</span>. A map for your <span class="mapped">customers</span>. <span class="unmapped">No map for how your team actually works.</span></h1>
+      <p>Every part of your business has been mapped, measured, and optimized — except the most important part. Go2 creates the operational map that's been missing.</p>
+      <div class="cta-group">
+        <a href="#demo" class="cta-primary">Request Demo</a>
+        <a href="#uncharted" class="cta-outline">Explore the Territory</a>
+      </div>
+    </div>
+    <div class="map-viz">
+      <div class="contour"></div>
+      <div class="contour"></div>
+      <div class="contour"></div>
+      <div class="contour"></div>
+      <div class="contour"></div>
+      <div class="contour"></div>
+      <!-- Waypoints -->
+      <div class="waypoint" style="top:22%;left:65%">
+        <div class="waypoint-dot"></div>
+        <div class="waypoint-label">Deep Work</div>
+      </div>
+      <div class="waypoint orange" style="top:40%;left:25%">
+        <div class="waypoint-dot"></div>
+        <div class="waypoint-label">Bottleneck</div>
+      </div>
+      <div class="waypoint blue" style="top:60%;left:70%">
+        <div class="waypoint-dot"></div>
+        <div class="waypoint-label">Automate</div>
+      </div>
+      <div class="waypoint" style="top:75%;left:35%">
+        <div class="waypoint-dot"></div>
+        <div class="waypoint-label">Flow State</div>
+      </div>
+      <div class="waypoint orange" style="top:35%;left:55%">
+        <div class="waypoint-dot"></div>
+        <div class="waypoint-label">Queue</div>
+      </div>
+      <svg class="map-path" viewBox="0 0 520 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M338 114 L130 208 L286 182 L364 312 L182 390" stroke="rgba(86,196,165,0.12)" stroke-width="1.5" stroke-dasharray="6 4"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- Uncharted Territory -->
+<section class="uncharted-section" id="uncharted">
+  <div class="section-inner">
+    <div class="section-label">The Gap</div>
+    <div class="section-title">Everything is mapped. Except this.</div>
+    <div class="section-subtitle">You have detailed maps for every dimension of your business — except the one that determines whether any of them actually work.</div>
+    <div class="uncharted-grid">
+      <div class="map-card">
+        <div class="map-card-header">
+          <div class="map-card-icon has-map">$</div>
+          <h3>Finances</h3>
+        </div>
+        <p>Every dollar tracked. P&L statements, cash flow forecasts, budget variance reports. You know exactly where money comes from and goes.</p>
+        <div class="map-card-status mapped">Fully Mapped</div>
+      </div>
+      <div class="map-card">
+        <div class="map-card-header">
+          <div class="map-card-icon has-map">C</div>
+          <h3>Customers</h3>
+        </div>
+        <p>CRM pipeline, engagement metrics, NPS scores, churn analysis. You can trace every customer interaction from first touch to renewal.</p>
+        <div class="map-card-status mapped">Fully Mapped</div>
+      </div>
+      <div class="map-card">
+        <div class="map-card-header">
+          <div class="map-card-icon has-map">M</div>
+          <h3>Marketing</h3>
+        </div>
+        <p>Attribution models, conversion funnels, CAC calculations, campaign performance. Every click, every impression, every lead.</p>
+        <div class="map-card-status mapped">Fully Mapped</div>
+      </div>
+      <div class="map-card">
+        <div class="map-card-header">
+          <div class="map-card-icon has-map">P</div>
+          <h3>Product</h3>
+        </div>
+        <p>Feature usage analytics, user sessions, A/B test results, load times. You know what users do inside your product down to the millisecond.</p>
+        <div class="map-card-status mapped">Fully Mapped</div>
+      </div>
+      <div class="map-card">
+        <div class="map-card-header">
+          <div class="map-card-icon has-map">I</div>
+          <h3>Infrastructure</h3>
+        </div>
+        <p>Uptime dashboards, server metrics, deployment frequency, incident tracking. Your ops team sees everything in real time.</p>
+        <div class="map-card-status mapped">Fully Mapped</div>
+      </div>
+      <div class="map-card" style="border-color:rgba(86,196,165,0.2);background:var(--accent-glow)">
+        <div class="map-card-header">
+          <div class="map-card-icon no-map">?</div>
+          <h3>How Your Team Works</h3>
+        </div>
+        <p>How do people actually spend their time? Where are the bottlenecks? What's automatable? Where is energy wasted? What patterns predict problems?</p>
+        <div class="map-card-status unmapped">Uncharted Territory</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Map Legend -->
+<section class="legend-section">
+  <div class="section-inner">
+    <div class="section-label">Map Legend</div>
+    <div class="section-title">What Go2 charts</div>
+    <div class="section-subtitle">Go2 creates a living, continuously updated map of your team's operational landscape. Here's what you'll see.</div>
+    <div class="legend-box">
+      <div class="legend-title">Legend</div>
+      <div class="legend-items">
+        <div class="legend-item">
+          <div class="legend-swatch green"></div>
+          <div>
+            <h4>Workflow Routes</h4>
+            <p>The actual paths work travels through your organization. Process sequences, handoff points, completion times.</p>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-swatch orange"></div>
+          <div>
+            <h4>Bottleneck Zones</h4>
+            <p>Where work piles up, slows down, or gets stuck. Queue depths, wait times, approval delays.</p>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-swatch blue"></div>
+          <div>
+            <h4>Automation Terrain</h4>
+            <p>Workflows ready for automation, ranked by ROI and readiness. Your roadmap for what to automate and when.</p>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-swatch gray"></div>
+          <div>
+            <h4>Energy Elevation</h4>
+            <p>When and where your team does their deepest work. Peak performance windows, collaboration patterns, focus time.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Territory Map -->
+<section class="territory-section" id="territory">
+  <div class="section-inner">
+    <div class="section-label">The Territory</div>
+    <div class="section-title">What the map reveals</div>
+    <div class="section-subtitle">Real insights Go2 surfaces — the operational terrain that was invisible before.</div>
+    <div class="territory-grid">
+      <div class="territory-card workflows">
+        <div class="territory-region">Workflow Routes</div>
+        <h3>Client onboarding takes 3 routes, not 1</h3>
+        <p>Go2 discovered that client onboarding follows three distinct paths depending on which sales rep closed the deal. Route B takes 2.3x longer than Route A due to redundant data entry across systems.</p>
+        <div class="territory-stat">14 hrs/week recoverable</div>
+      </div>
+      <div class="territory-card bottlenecks">
+        <div class="territory-region">Bottleneck Zone</div>
+        <h3>Legal review: the 2-day black hole</h3>
+        <p>Every proposal sits in legal review for an average of 2.3 days. But 78% of proposals need no changes. A simple pre-check template could cut this to 4 hours.</p>
+        <div class="territory-stat">$52K/year in delay costs</div>
+      </div>
+      <div class="territory-card automation">
+        <div class="territory-region">Automation Terrain</div>
+        <h3>Invoice processing is 94% automatable</h3>
+        <p>The team spends 12 hours per week on invoice reconciliation that follows the same pattern almost every time. This is the highest-ROI automation candidate.</p>
+        <div class="territory-stat">$38K/year savings potential</div>
+      </div>
+      <div class="territory-card energy">
+        <div class="territory-region">Energy Elevation</div>
+        <h3>Peak creative hours wasted on meetings</h3>
+        <p>Engineering's deepest work happens 9-11am. Currently, 73% of those blocks are interrupted by meetings. Shifting standups to afternoon could recover 6+ hours of flow state weekly.</p>
+        <div class="territory-stat">+18% deep work capacity</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="how-section">
+  <div class="section-inner">
+    <div class="section-label">Cartography</div>
+    <div class="section-title">How Go2 draws the map</div>
+    <div class="how-steps">
+      <div class="how-step">
+        <div class="step-marker">1</div>
+        <h3>Survey</h3>
+        <p>A lightweight desktop agent observes work patterns passively. No keylogging, no screenshots — just workflow pattern recognition.</p>
+      </div>
+      <div class="how-step">
+        <div class="step-marker">2</div>
+        <h3>Triangulate</h3>
+        <p>Three frontier AI models (Claude, GPT, Gemini) cross-reference patterns against ~1M worker benchmarks for context.</p>
+      </div>
+      <div class="how-step">
+        <div class="step-marker">3</div>
+        <h3>Chart</h3>
+        <p>Within 14 days, your operational map takes shape — workflows, bottlenecks, automation opportunities, energy patterns.</p>
+      </div>
+      <div class="how-step">
+        <div class="step-marker">4</div>
+        <h3>Navigate</h3>
+        <p>Managers get aggregated insights. Each worker gets a private AI coach. The map becomes your navigation system.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AI Coaching -->
+<section class="coaching-section" id="coaching">
+  <div class="section-inner">
+    <div class="section-label">AI Coaching</div>
+    <div class="section-title">Every person gets their own guide</div>
+    <div class="section-subtitle">The map isn't just for managers. Go2 gives every team member a personal AI guide that helps them navigate their work more effectively.</div>
+    <div class="coaching-grid">
+      <div class="coaching-terminal">
+        <div class="terminal-bar">
+          <div class="terminal-dot"></div>
+          <div class="terminal-dot"></div>
+          <div class="terminal-dot"></div>
+          <span class="terminal-title">Go2 AI Guide</span>
+        </div>
+        <div class="terminal-body">
+          <div class="msg ai">Your productivity map shows your best deep work happens in 45-minute blocks after your first coffee. But you've been scheduling meetings at 9:30am, right in that window.</div>
+          <div class="msg human">I didn't realize that pattern. What do you suggest?</div>
+          <div class="msg ai">Block 9-10:30am for focused work. Based on your map, moving your daily sync to 11am aligns with your natural transition from deep work to collaborative mode. Teams who make this shift see 30% more output in their peak hours.</div>
+          <div class="msg human">Done. What else does the map show?</div>
+          <div class="msg ai">You spend 40 minutes/day on report formatting that follows the same template. I've flagged it as an automation candidate — it could save you 3.5 hours per week. Want me to surface this to your team lead as an aggregated insight?</div>
+        </div>
+      </div>
+      <div class="coaching-info">
+        <h3>Why Go2 coaching is unique</h3>
+        <div class="coaching-bullet">
+          <div class="coaching-marker">&#10003;</div>
+          <p><strong>Based on your actual map.</strong> Coaching comes from real observed work patterns, not self-reported time or generic advice.</p>
+        </div>
+        <div class="coaching-bullet">
+          <div class="coaching-marker">&#10003;</div>
+          <p><strong>Frontier AI powered.</strong> Claude, GPT, and Gemini — not rule-based alerts. Real AI that understands context and nuance.</p>
+        </div>
+        <div class="coaching-bullet">
+          <div class="coaching-marker">&#10003;</div>
+          <p><strong>Scaled to ~1M workers.</strong> Your personal map is contextualized against patterns from nearly a million professionals.</p>
+        </div>
+        <div class="coaching-bullet">
+          <div class="coaching-marker">&#10003;</div>
+          <p><strong>Private territory.</strong> Your individual map is yours. Managers see only the aggregated landscape — never your personal route.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats -->
+<section class="stats-section">
+  <div class="section-inner">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">~1M</div>
+        <div class="stat-label">Workers mapped</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">3</div>
+        <div class="stat-label">AI cartographers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">14d</div>
+        <div class="stat-label">To first map</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">0</div>
+        <div class="stat-label">Competitors with AI guides</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Privacy -->
+<section class="privacy-section" id="trust">
+  <div class="section-inner">
+    <div class="section-label">Trust</div>
+    <div class="section-title">Cartography, not surveillance</div>
+    <div class="section-subtitle">Go2 maps terrain. It doesn't install cameras on every trail. The distinction matters.</div>
+    <div class="privacy-cols">
+      <div class="privacy-col">
+        <h3><span class="no">&#10007;</span> Go2 does NOT</h3>
+        <ul>
+          <li><span class="no">&#10007;</span> Log keystrokes or take screenshots</li>
+          <li><span class="no">&#10007;</span> Show individual routes to managers</li>
+          <li><span class="no">&#10007;</span> Score or rank individual workers</li>
+          <li><span class="no">&#10007;</span> Monitor personal browsing</li>
+          <li><span class="no">&#10007;</span> Create a punitive tracking system</li>
+        </ul>
+      </div>
+      <div class="privacy-col">
+        <h3><span class="yes">&#10003;</span> Go2 DOES</h3>
+        <ul>
+          <li><span class="yes">&#10003;</span> Give each person a private AI guide</li>
+          <li><span class="yes">&#10003;</span> Show managers aggregated terrain maps</li>
+          <li><span class="yes">&#10003;</span> Identify workflow bottlenecks</li>
+          <li><span class="yes">&#10003;</span> Map automation opportunities with ROI</li>
+          <li><span class="yes">&#10003;</span> Flag early warning patterns (burnout, overload)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Automation -->
+<section class="auto-section">
+  <div class="section-inner">
+    <div class="section-label">Automation Terrain</div>
+    <div class="section-title">The automation map</div>
+    <div class="section-subtitle">Go2 charts every automation opportunity by readiness, ROI, and complexity — so you know exactly where to start.</div>
+    <div class="auto-grid">
+      <div class="auto-card high">
+        <div class="auto-readiness">High Readiness</div>
+        <h4>Invoice Processing</h4>
+        <p>94% pattern match. 12 hrs/week. Immediate ROI.</p>
+        <div class="auto-meter"><div class="auto-meter-fill"></div></div>
+      </div>
+      <div class="auto-card high">
+        <div class="auto-readiness">High Readiness</div>
+        <h4>Report Generation</h4>
+        <p>Template-based. 6 hrs/week recoverable.</p>
+        <div class="auto-meter"><div class="auto-meter-fill"></div></div>
+      </div>
+      <div class="auto-card med">
+        <div class="auto-readiness">Medium Readiness</div>
+        <h4>Client Onboarding</h4>
+        <p>78% automatable. Judgment calls in 22%.</p>
+        <div class="auto-meter"><div class="auto-meter-fill"></div></div>
+      </div>
+      <div class="auto-card med">
+        <div class="auto-readiness">Medium Readiness</div>
+        <h4>Data Migration</h4>
+        <p>Needs validation rules defined first.</p>
+        <div class="auto-meter"><div class="auto-meter-fill"></div></div>
+      </div>
+      <div class="auto-card low">
+        <div class="auto-readiness">Low Readiness</div>
+        <h4>Creative Review</h4>
+        <p>High variability. AI assists, doesn't replace.</p>
+        <div class="auto-meter"><div class="auto-meter-fill"></div></div>
+      </div>
+      <div class="auto-card low">
+        <div class="auto-readiness">Low Readiness</div>
+        <h4>Strategic Planning</h4>
+        <p>Go2 provides data. Humans decide direction.</p>
+        <div class="auto-meter"><div class="auto-meter-fill"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Final CTA -->
+<section class="final-cta" id="demo">
+  <div class="section-inner">
+    <div class="section-label">Start Mapping</div>
+    <h2>Chart the territory no one's mapped before</h2>
+    <p>Every other part of your business has a map. It's time to create one for how your team actually works. Book a 30-minute demo.</p>
+    <a href="#" class="cta-primary">Request a Demo</a>
+  </div>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2. All rights reserved. &nbsp;|&nbsp; go2.io</p>
+</footer>
+
+<script>
+// Generate topographic background lines
+const topoBg=document.getElementById('topoBg');
+const topoLines=[];
+for(let i=0;i<12;i++){
+  const div=document.createElement('div');
+  div.className='topo-line';
+  const size=200+i*120;
+  const cx=30+Math.random()*40;
+  const cy=20+Math.random()*60;
+  div.style.cssText=`width:${size}px;height:${size*0.85}px;left:${cx}%;top:${cy}%;transform:translate(-50%,-50%) rotate(${-20+Math.random()*40}deg)`;
+  topoBg.appendChild(div);
+}
+
+// Scroll reveal
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='translateY(0)'}
+  });
+},{threshold:0.08});
+document.querySelectorAll('.section-inner, .hero-inner').forEach(el=>{
+  el.style.opacity='0';el.style.transform='translateY(35px)';el.style.transition='opacity 0.8s ease, transform 0.8s ease';
+  obs.observe(el);
+});
+
+// Animate waypoints
+const wpObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const waypoints=e.target.querySelectorAll('.waypoint');
+      waypoints.forEach((wp,i)=>{
+        wp.style.opacity='0';wp.style.transform='translate(-50%,-50%) scale(0)';
+        setTimeout(()=>{
+          wp.style.transition='opacity 0.5s ease, transform 0.5s ease';
+          wp.style.opacity='1';wp.style.transform='translate(-50%,-50%) scale(1)';
+        },300+i*200);
+      });
+      wpObs.unobserve(e.target);
+    }
+  });
+},{threshold:0.3});
+document.querySelectorAll('.map-viz').forEach(el=>wpObs.observe(el));
+
+// Parallax contour lines
+window.addEventListener('scroll',()=>{
+  const s=window.scrollY;
+  document.querySelectorAll('.contour').forEach((c,i)=>{
+    const base=[0,15,-10,5,-5,0][i]||0;
+    c.style.transform=`translate(-50%,-50%) rotate(${base+s*0.01*(i%2?1:-1)}deg)`;
+  });
+});
+</script>
+</body>
+</html>

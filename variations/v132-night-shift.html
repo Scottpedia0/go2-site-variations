@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Works While You Sleep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Inter', sans-serif; background: #020617; color: #e2e8f0; overflow-x: hidden; }
+
+/* Stars background */
+.stars {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;
+  pointer-events: none;
+}
+.star {
+  position: absolute; width: 2px; height: 2px; background: #fff; border-radius: 50%;
+  animation: twinkle var(--d, 3s) ease-in-out infinite;
+}
+@keyframes twinkle { 0%, 100% { opacity: var(--o, 0.3); } 50% { opacity: 0; } }
+
+.content { position: relative; z-index: 1; }
+
+/* Hero - night scene */
+.hero {
+  min-height: 100vh; display: flex; flex-direction: column;
+  justify-content: center; align-items: center; text-align: center;
+  padding: 2rem; position: relative;
+}
+.hero::before {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 300px;
+  background: linear-gradient(to top, #020617, transparent);
+}
+.moon {
+  width: 120px; height: 120px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fef9c3, #fde68a, #d4a017);
+  box-shadow: 0 0 60px rgba(253, 230, 138, 0.3), 0 0 120px rgba(253, 230, 138, 0.15);
+  margin-bottom: 3rem; position: relative;
+  animation: moon-glow 4s ease-in-out infinite alternate;
+}
+.moon::after {
+  content: ''; position: absolute; top: 15px; left: 25px;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(0,0,0,0.08);
+}
+@keyframes moon-glow {
+  0% { box-shadow: 0 0 60px rgba(253, 230, 138, 0.3), 0 0 120px rgba(253, 230, 138, 0.15); }
+  100% { box-shadow: 0 0 80px rgba(253, 230, 138, 0.4), 0 0 160px rgba(253, 230, 138, 0.2); }
+}
+
+.hero h1 {
+  font-size: clamp(2.8rem, 6vw, 5.5rem); font-weight: 800; line-height: 1.05;
+  max-width: 800px; margin-bottom: 1.5rem;
+}
+.hero h1 .glow { color: #fde68a; text-shadow: 0 0 40px rgba(253, 230, 138, 0.4); }
+.hero p {
+  font-size: 1.2rem; color: #94a3b8; max-width: 560px; line-height: 1.7; margin-bottom: 2.5rem;
+}
+.cta-btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: linear-gradient(135deg, #f59e0b, #d97706); color: #1c1917;
+  padding: 16px 36px; border-radius: 12px; font-size: 1.1rem; font-weight: 700;
+  text-decoration: none; border: none; cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 0 40px rgba(245, 158, 11, 0.25);
+}
+.cta-btn:hover { transform: translateY(-2px); box-shadow: 0 0 60px rgba(245, 158, 11, 0.4); }
+.cta-btn svg { width: 20px; height: 20px; }
+
+/* Timeline */
+.timeline-section { padding: 6rem 2rem; max-width: 900px; margin: 0 auto; }
+.timeline-section h2 {
+  text-align: center; font-size: clamp(2rem, 4vw, 3rem);
+  margin-bottom: 1rem;
+}
+.timeline-section .subtitle {
+  text-align: center; color: #64748b; font-size: 1.1rem; margin-bottom: 4rem;
+}
+
+.timeline { position: relative; }
+.timeline::before {
+  content: ''; position: absolute; left: 50%; top: 0; bottom: 0;
+  width: 2px; background: linear-gradient(to bottom, #1e293b, #f59e0b, #1e293b);
+  transform: translateX(-50%);
+}
+@media (max-width: 768px) { .timeline::before { left: 20px; } }
+
+.tl-item {
+  display: flex; align-items: flex-start; margin-bottom: 3rem;
+  position: relative;
+}
+.tl-item:nth-child(odd) { flex-direction: row-reverse; }
+@media (max-width: 768px) { .tl-item, .tl-item:nth-child(odd) { flex-direction: row; padding-left: 50px; } }
+
+.tl-dot {
+  position: absolute; left: 50%; top: 12px; transform: translateX(-50%);
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 3px solid #f59e0b; background: #020617; z-index: 2;
+}
+@media (max-width: 768px) { .tl-dot { left: 20px; } }
+
+.tl-content {
+  width: 45%; padding: 1.5rem 2rem; border-radius: 16px;
+  background: rgba(30, 41, 59, 0.5); border: 1px solid #1e293b;
+}
+@media (max-width: 768px) { .tl-content { width: 100%; } }
+
+.tl-time {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;
+  color: #f59e0b; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 8px;
+}
+.tl-time .icon { font-size: 1.1rem; }
+.tl-content h4 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+.tl-content p { font-size: 0.9rem; color: #94a3b8; line-height: 1.5; }
+
+/* Briefing section */
+.briefing { padding: 6rem 2rem; }
+.briefing h2 { text-align: center; font-size: clamp(2rem, 4vw, 3rem); margin-bottom: 1rem; }
+.briefing .subtitle { text-align: center; color: #64748b; font-size: 1.1rem; margin-bottom: 3rem; }
+
+.briefing-card {
+  max-width: 700px; margin: 0 auto; background: #0f172a; border-radius: 20px;
+  border: 1px solid #1e293b; overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.briefing-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px; background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid #1e293b;
+}
+.briefing-header .left { display: flex; align-items: center; gap: 10px; }
+.briefing-header .avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.8rem; color: #1c1917;
+}
+.briefing-header .name { font-weight: 600; font-size: 0.95rem; }
+.briefing-header .time { font-size: 0.8rem; color: #64748b; font-family: 'JetBrains Mono', monospace; }
+
+.briefing-body { padding: 24px; }
+.briefing-body .greeting { font-size: 1.1rem; margin-bottom: 1.5rem; color: #e2e8f0; }
+.briefing-item {
+  display: flex; gap: 12px; margin-bottom: 1.2rem; padding: 12px 16px;
+  border-radius: 12px; background: rgba(255,255,255,0.02);
+}
+.briefing-item .emoji { font-size: 1.3rem; flex-shrink: 0; }
+.briefing-item .text { font-size: 0.9rem; color: #cbd5e1; line-height: 1.5; }
+.briefing-item .text strong { color: #f59e0b; }
+
+/* Always-on section */
+.always-on { padding: 6rem 2rem; text-align: center; }
+.always-on h2 { font-size: clamp(2rem, 4vw, 3rem); margin-bottom: 1rem; }
+.always-on .subtitle { color: #64748b; font-size: 1.1rem; max-width: 600px; margin: 0 auto 4rem; }
+
+.clock-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem; max-width: 800px; margin: 0 auto;
+}
+.clock-cell {
+  padding: 1.5rem 1rem; border-radius: 16px; text-align: center;
+  position: relative; overflow: hidden;
+}
+.clock-cell.active {
+  background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.05));
+  border: 1px solid rgba(245,158,11,0.2);
+}
+.clock-cell.sleep {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid #1e293b;
+}
+.clock-cell .hour {
+  font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; font-weight: 600;
+  margin-bottom: 4px;
+}
+.clock-cell.active .hour { color: #f59e0b; }
+.clock-cell.sleep .hour { color: #334155; }
+.clock-cell .status { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
+.clock-cell.active .status { color: #f59e0b; }
+.clock-cell.sleep .status { color: #334155; }
+
+/* Comparison */
+.comparison { padding: 6rem 2rem; max-width: 1000px; margin: 0 auto; }
+.comparison h2 { text-align: center; font-size: clamp(2rem, 4vw, 3rem); margin-bottom: 3rem; }
+
+.comp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+@media (max-width: 768px) { .comp-grid { grid-template-columns: 1fr; } }
+
+.comp-card {
+  padding: 2.5rem; border-radius: 20px; position: relative;
+}
+.comp-card.them {
+  background: rgba(30, 41, 59, 0.3); border: 1px solid #1e293b;
+}
+.comp-card.us {
+  background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(217,119,6,0.04));
+  border: 1px solid rgba(245,158,11,0.2);
+}
+.comp-card h3 { font-size: 1.3rem; margin-bottom: 1.5rem; }
+.comp-card.them h3 { color: #64748b; }
+.comp-card.us h3 { color: #f59e0b; }
+
+.comp-list { list-style: none; }
+.comp-list li {
+  padding: 0.8rem 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 0.95rem; display: flex; align-items: flex-start; gap: 10px;
+  color: #94a3b8; line-height: 1.5;
+}
+.comp-list li:last-child { border-bottom: none; }
+.comp-list li .icon { flex-shrink: 0; font-size: 1rem; }
+
+/* Stats banner */
+.stats-banner {
+  padding: 4rem 2rem; background: rgba(245, 158, 11, 0.04);
+  border-top: 1px solid rgba(245,158,11,0.1); border-bottom: 1px solid rgba(245,158,11,0.1);
+}
+.stats-banner-inner {
+  display: flex; justify-content: center; flex-wrap: wrap; gap: 4rem;
+  max-width: 900px; margin: 0 auto;
+}
+.stat-item { text-align: center; }
+.stat-item .val {
+  font-size: 2.8rem; font-weight: 800; color: #f59e0b;
+  font-family: 'JetBrains Mono', monospace;
+}
+.stat-item .lbl { font-size: 0.9rem; color: #94a3b8; margin-top: 4px; }
+
+/* Final CTA */
+.final-cta {
+  padding: 8rem 2rem; text-align: center;
+  background: radial-gradient(ellipse at center bottom, rgba(245,158,11,0.08) 0%, transparent 60%);
+  position: relative;
+}
+.final-cta h2 { font-size: clamp(2rem, 4.5vw, 3.5rem); margin-bottom: 1.5rem; line-height: 1.15; }
+.final-cta h2 .glow { color: #fde68a; text-shadow: 0 0 30px rgba(253, 230, 138, 0.3); }
+.final-cta p { font-size: 1.1rem; color: #64748b; max-width: 500px; margin: 0 auto 2.5rem; line-height: 1.6; }
+
+footer {
+  padding: 3rem 2rem; text-align: center; border-top: 1px solid #0f172a;
+  color: #334155; font-size: 0.85rem;
+}
+footer a { color: #f59e0b; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<!-- Stars -->
+<div class="stars">
+  <div class="star" style="top:5%;left:12%;--o:0.5;--d:4s"></div>
+  <div class="star" style="top:10%;left:45%;--o:0.3;--d:3s"></div>
+  <div class="star" style="top:15%;left:78%;--o:0.6;--d:5s"></div>
+  <div class="star" style="top:22%;left:25%;--o:0.2;--d:4.5s"></div>
+  <div class="star" style="top:8%;left:90%;--o:0.4;--d:3.5s"></div>
+  <div class="star" style="top:30%;left:55%;--o:0.3;--d:6s"></div>
+  <div class="star" style="top:35%;left:8%;--o:0.5;--d:4s"></div>
+  <div class="star" style="top:18%;left:65%;--o:0.4;--d:5.5s"></div>
+  <div class="star" style="top:40%;left:82%;--o:0.2;--d:3s"></div>
+  <div class="star" style="top:45%;left:35%;--o:0.6;--d:4.5s"></div>
+  <div class="star" style="top:50%;left:92%;--o:0.3;--d:5s"></div>
+  <div class="star" style="top:55%;left:15%;--o:0.4;--d:6s"></div>
+  <div class="star" style="top:60%;left:50%;--o:0.5;--d:3.5s"></div>
+  <div class="star" style="top:65%;left:70%;--o:0.2;--d:4s"></div>
+  <div class="star" style="top:72%;left:20%;--o:0.6;--d:5s"></div>
+  <div class="star" style="top:78%;left:88%;--o:0.3;--d:4.5s"></div>
+  <div class="star" style="top:82%;left:42%;--o:0.4;--d:6s"></div>
+  <div class="star" style="top:88%;left:62%;--o:0.5;--d:3s"></div>
+  <div class="star" style="top:92%;left:5%;--o:0.2;--d:5.5s"></div>
+  <div class="star" style="top:95%;left:75%;--o:0.4;--d:4s"></div>
+</div>
+
+<div class="content">
+
+<!-- Hero -->
+<section class="hero">
+  <div class="moon"></div>
+  <h1>Go2 works<br>while you <span class="glow">sleep</span>.</h1>
+  <p>Overnight analysis. Morning briefings. An AI coach that never clocks out, so your team is always getting better.</p>
+  <a href="#demo" class="cta-btn">
+    See It In Action
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+  </a>
+</section>
+
+<!-- Timeline -->
+<section class="timeline-section">
+  <h2>Your night. Go2's shift.</h2>
+  <p class="subtitle">Here's what happens between the time you close your laptop and open it again.</p>
+
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-content">
+        <div class="tl-time"><span class="icon">&#127769;</span> 6:00 PM &mdash; You log off</div>
+        <h4>Go2 starts its deep analysis</h4>
+        <p>With the day's data complete, Go2 begins processing work patterns, collaboration signals, and productivity trends across your entire team.</p>
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-content">
+        <div class="tl-time"><span class="icon">&#127761;</span> 9:00 PM &mdash; Pattern detection</div>
+        <h4>Cross-team correlations emerge</h4>
+        <p>AI models identify which team dynamics are boosting performance and which are creating drag. Burnout risk scores are recalculated.</p>
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-content">
+        <div class="tl-time"><span class="icon">&#127762;</span> 12:00 AM &mdash; Coaching generation</div>
+        <h4>Personalized recommendations drafted</h4>
+        <p>Go2 crafts specific, actionable coaching for each team member based on their unique patterns and growth areas.</p>
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-content">
+        <div class="tl-time"><span class="icon">&#127763;</span> 3:00 AM &mdash; Trend analysis</div>
+        <h4>Weekly and monthly trends updated</h4>
+        <p>Long-term patterns are compared against benchmarks. Improvement trajectories are plotted. Early warnings are flagged.</p>
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-content">
+        <div class="tl-time"><span class="icon">&#9728;&#65039;</span> 6:00 AM &mdash; Briefing ready</div>
+        <h4>Your morning intelligence report</h4>
+        <p>A concise briefing is waiting in your inbox. Key insights, coaching recommendations, and action items, ready before your first coffee.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Morning Briefing -->
+<section class="briefing">
+  <h2>Your 6 AM briefing looks like this</h2>
+  <p class="subtitle">Open your inbox to a complete overnight analysis.</p>
+
+  <div class="briefing-card">
+    <div class="briefing-header">
+      <div class="left">
+        <div class="avatar">G2</div>
+        <span class="name">Go2 Morning Briefing</span>
+      </div>
+      <span class="time">6:02 AM</span>
+    </div>
+    <div class="briefing-body">
+      <div class="greeting">Good morning, Sarah. Here's what Go2 found overnight:</div>
+
+      <div class="briefing-item">
+        <span class="emoji">&#128200;</span>
+        <div class="text"><strong>Engineering velocity is up 12%</strong> this week. The async standup format is working. Consider making it permanent.</div>
+      </div>
+      <div class="briefing-item">
+        <span class="emoji">&#9888;&#65039;</span>
+        <div class="text"><strong>Burnout signal detected:</strong> Jake in DevOps has worked 3 late nights this week. Patterns suggest he's compensating for a blocked dependency. Recommended: check his blocker list.</div>
+      </div>
+      <div class="briefing-item">
+        <span class="emoji">&#127775;</span>
+        <div class="text"><strong>Hidden contributor:</strong> Maria's code review throughput is 2x the team average. She may be ready for a tech lead conversation.</div>
+      </div>
+      <div class="briefing-item">
+        <span class="emoji">&#128161;</span>
+        <div class="text"><strong>Meeting optimization:</strong> Your team spent 31% of this week in meetings (up from 24%). Three recurring syncs have low engagement scores. Details attached.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Always On Grid -->
+<section class="always-on">
+  <h2>24 hours. Zero downtime.</h2>
+  <p class="subtitle">While other tools wait for you to log in, Go2 is continuously learning and coaching.</p>
+  <div class="clock-grid">
+    <div class="clock-cell sleep"><div class="hour">12a</div><div class="status">analyzing</div></div>
+    <div class="clock-cell sleep"><div class="hour">3a</div><div class="status">analyzing</div></div>
+    <div class="clock-cell active"><div class="hour">6a</div><div class="status">briefing</div></div>
+    <div class="clock-cell active"><div class="hour">9a</div><div class="status">coaching</div></div>
+    <div class="clock-cell active"><div class="hour">12p</div><div class="status">coaching</div></div>
+    <div class="clock-cell active"><div class="hour">3p</div><div class="status">coaching</div></div>
+    <div class="clock-cell active"><div class="hour">6p</div><div class="status">collecting</div></div>
+    <div class="clock-cell sleep"><div class="hour">9p</div><div class="status">analyzing</div></div>
+  </div>
+</section>
+
+<!-- Stats -->
+<section class="stats-banner">
+  <div class="stats-banner-inner">
+    <div class="stat-item"><div class="val">47K+</div><div class="lbl">Workers coached</div></div>
+    <div class="stat-item"><div class="val">23%</div><div class="lbl">Average productivity gain</div></div>
+    <div class="stat-item"><div class="val">24/7</div><div class="lbl">Always-on analysis</div></div>
+    <div class="stat-item"><div class="val">0</div><div class="lbl">Screenshots or surveillance</div></div>
+  </div>
+</section>
+
+<!-- Comparison -->
+<section class="comparison">
+  <h2>Traditional tools vs. Go2</h2>
+  <div class="comp-grid">
+    <div class="comp-card them">
+      <h3>Traditional Analytics</h3>
+      <ul class="comp-list">
+        <li><span class="icon">&#128683;</span> Only works when you're looking at it</li>
+        <li><span class="icon">&#128683;</span> Shows dashboards, not recommendations</li>
+        <li><span class="icon">&#128683;</span> Requires you to interpret the data</li>
+        <li><span class="icon">&#128683;</span> Same view for every manager</li>
+        <li><span class="icon">&#128683;</span> Backward-looking reports</li>
+      </ul>
+    </div>
+    <div class="comp-card us">
+      <h3>Go2 Night Shift</h3>
+      <ul class="comp-list">
+        <li><span class="icon">&#9889;</span> Analyzes continuously, even at 3 AM</li>
+        <li><span class="icon">&#9889;</span> Delivers specific coaching actions</li>
+        <li><span class="icon">&#9889;</span> AI interprets and explains what matters</li>
+        <li><span class="icon">&#9889;</span> Personalized to each team and person</li>
+        <li><span class="icon">&#9889;</span> Forward-looking early warnings</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- Final CTA -->
+<section class="final-cta" id="demo">
+  <h2>Wake up to a team that's<br>already <span class="glow">getting better</span>.</h2>
+  <p>See how Go2 turns your off-hours into your team's biggest advantage. 15-minute demo.</p>
+  <a href="https://calendly.com/go2impact" class="cta-btn">
+    Book a Demo
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+  </a>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2 &mdash; AI Productivity Coaching &middot; <a href="https://go2.io">go2.io</a></p>
+</footer>
+
+</div>
+</body>
+</html>

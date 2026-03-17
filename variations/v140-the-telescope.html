@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — See What's Invisible</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+  :root{--bg:#030014;--surface:rgba(255,255,255,.04);--surface2:rgba(255,255,255,.06);--border:rgba(255,255,255,.08);--text:#e8e4f0;--muted:#8b83a8;--purple:#8b5cf6;--blue:#3b82f6;--cyan:#06b6d4;--pink:#d946ef;--glow:rgba(139,92,246,.15)}
+  body{font-family:'Space Grotesk','Inter',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+
+  /* Starfield */
+  .stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+  .star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;animation:twinkle var(--d,4s) ease infinite}
+  @keyframes twinkle{0%,100%{opacity:.1}50%{opacity:var(--o,.8)}}
+
+  /* Nebula backgrounds */
+  .nebula{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .nebula::before{content:'';position:absolute;width:800px;height:800px;top:-200px;right:-200px;background:radial-gradient(circle,rgba(139,92,246,.12),transparent 60%);filter:blur(80px);animation:drift 20s ease infinite alternate}
+  .nebula::after{content:'';position:absolute;width:600px;height:600px;bottom:-100px;left:-100px;background:radial-gradient(circle,rgba(6,182,212,.1),transparent 60%);filter:blur(60px);animation:drift 25s ease infinite alternate-reverse}
+  @keyframes drift{0%{transform:translate(0,0) scale(1)}100%{transform:translate(50px,-30px) scale(1.1)}}
+
+  section{position:relative;z-index:1}
+
+  /* Hero */
+  .hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:2rem}
+  .telescope-icon{width:120px;height:120px;margin-bottom:2rem;position:relative}
+  .telescope-ring{position:absolute;inset:0;border:2px solid rgba(139,92,246,.3);border-radius:50%;animation:ringPulse 3s ease infinite}
+  .telescope-ring:nth-child(2){inset:-15px;border-color:rgba(6,182,212,.2);animation-delay:1s}
+  .telescope-ring:nth-child(3){inset:-30px;border-color:rgba(217,70,239,.15);animation-delay:2s}
+  @keyframes ringPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(1.05)}}
+  .telescope-core{position:absolute;inset:25px;background:radial-gradient(circle,var(--purple),transparent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.5rem}
+
+  .hero h1{font-size:clamp(2.5rem,7vw,5rem);font-weight:700;line-height:1.1;max-width:850px;letter-spacing:-0.02em}
+  .hero h1 .shimmer{background:linear-gradient(90deg,var(--purple),var(--cyan),var(--pink),var(--purple));background-size:300% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 6s ease infinite}
+  @keyframes shimmer{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+  .hero .subtitle{font-size:clamp(1.1rem,2vw,1.35rem);color:var(--muted);max-width:600px;margin:1.5rem auto 0;line-height:1.6;font-weight:300}
+  .hero-cta{margin-top:2.5rem;display:flex;gap:1rem;flex-wrap:wrap;justify-content:center}
+  .btn-glow{padding:1rem 2.2rem;background:linear-gradient(135deg,var(--purple),var(--blue));border:none;border-radius:12px;color:#fff;font-size:1rem;font-weight:600;cursor:pointer;transition:all .3s;text-decoration:none;display:inline-flex;align-items:center;gap:.5rem;position:relative;overflow:hidden}
+  .btn-glow::before{content:'';position:absolute;inset:-2px;background:linear-gradient(135deg,var(--purple),var(--cyan),var(--pink));border-radius:14px;z-index:-1;filter:blur(12px);opacity:.5;transition:opacity .3s}
+  .btn-glow:hover{transform:translateY(-3px)}
+  .btn-glow:hover::before{opacity:.8}
+  .btn-ghost{padding:1rem 2rem;background:transparent;border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:1rem;font-weight:400;cursor:pointer;transition:all .3s;text-decoration:none}
+  .btn-ghost:hover{border-color:var(--purple);background:rgba(139,92,246,.05)}
+
+  /* Discovery section */
+  .discovery{padding:8rem 2rem;max-width:1100px;margin:0 auto}
+  .discovery-header{text-align:center;max-width:700px;margin:0 auto}
+  .tag{display:inline-block;padding:.4rem 1rem;border-radius:100px;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.2);font-size:.75rem;color:var(--purple);text-transform:uppercase;letter-spacing:.12em;margin-bottom:1rem;font-weight:500}
+  .discovery h2{font-size:clamp(2rem,4vw,2.8rem);font-weight:700;line-height:1.15}
+  .discovery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3.5rem}
+  .disc-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;transition:all .4s;position:relative;overflow:hidden}
+  .disc-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--purple),transparent);opacity:0;transition:opacity .4s}
+  .disc-card:hover{border-color:rgba(139,92,246,.3);transform:translateY(-4px)}
+  .disc-card:hover::before{opacity:1}
+  .disc-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:1.2rem}
+  .disc-card:nth-child(1) .disc-icon{background:linear-gradient(135deg,rgba(139,92,246,.2),rgba(139,92,246,.05))}
+  .disc-card:nth-child(2) .disc-icon{background:linear-gradient(135deg,rgba(6,182,212,.2),rgba(6,182,212,.05))}
+  .disc-card:nth-child(3) .disc-icon{background:linear-gradient(135deg,rgba(217,70,239,.2),rgba(217,70,239,.05))}
+  .disc-card:nth-child(4) .disc-icon{background:linear-gradient(135deg,rgba(59,130,246,.2),rgba(59,130,246,.05))}
+  .disc-card:nth-child(5) .disc-icon{background:linear-gradient(135deg,rgba(34,197,94,.2),rgba(34,197,94,.05))}
+  .disc-card:nth-child(6) .disc-icon{background:linear-gradient(135deg,rgba(249,115,22,.2),rgba(249,115,22,.05))}
+  .disc-card h3{font-size:1.1rem;font-weight:600;margin-bottom:.5rem}
+  .disc-card p{font-size:.9rem;color:var(--muted);line-height:1.6}
+
+  /* Visibility spectrum */
+  .spectrum{padding:8rem 2rem;position:relative}
+  .spectrum::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(139,92,246,.06),transparent 60%)}
+  .spectrum-inner{max-width:1000px;margin:0 auto;text-align:center}
+  .spectrum h2{font-size:clamp(2rem,4vw,2.8rem);font-weight:700}
+  .spectrum-bars{margin-top:3rem;display:flex;flex-direction:column;gap:1.2rem}
+  .spec-bar{display:flex;align-items:center;gap:1.5rem;text-align:left}
+  .spec-label{width:200px;font-size:.9rem;color:var(--muted);text-align:right;flex-shrink:0}
+  .spec-track{flex:1;height:36px;background:var(--surface);border-radius:8px;overflow:hidden;position:relative}
+  .spec-fill{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 1rem;font-size:.8rem;font-weight:600;color:#fff;transition:width 1.5s ease}
+  .spec-bar:nth-child(1) .spec-fill{width:15%;background:linear-gradient(90deg,#ef4444,#f97316)}
+  .spec-bar:nth-child(2) .spec-fill{width:35%;background:linear-gradient(90deg,#f97316,#eab308)}
+  .spec-bar:nth-child(3) .spec-fill{width:55%;background:linear-gradient(90deg,#eab308,#22c55e)}
+  .spec-bar:nth-child(4) .spec-fill{width:85%;background:linear-gradient(90deg,#22c55e,#06b6d4)}
+  .spec-bar:nth-child(5) .spec-fill{width:95%;background:linear-gradient(90deg,#06b6d4,var(--purple))}
+  .spec-value{width:60px;font-size:.85rem;font-weight:600;color:var(--text);flex-shrink:0}
+  .spectrum-caption{margin-top:2rem;color:var(--muted);font-size:.95rem;font-style:italic}
+
+  /* Stats */
+  .stats{padding:6rem 2rem;max-width:1000px;margin:0 auto}
+  .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem}
+  .stat-card{text-align:center;padding:2rem;background:var(--surface);border:1px solid var(--border);border-radius:16px}
+  .stat-num{font-size:2.8rem;font-weight:700;background:linear-gradient(135deg,var(--purple),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .stat-label{font-size:.85rem;color:var(--muted);margin-top:.5rem;line-height:1.4}
+
+  /* Testimonial */
+  .testimonial{padding:6rem 2rem;max-width:800px;margin:0 auto;text-align:center}
+  .test-quote{font-size:clamp(1.2rem,2.5vw,1.6rem);font-weight:400;line-height:1.6;font-style:italic;color:var(--text);position:relative}
+  .test-quote::before,.test-quote::after{content:'"';font-size:4rem;color:var(--purple);opacity:.3;line-height:1;vertical-align:top}
+  .test-quote::after{content:'"'}
+  .test-author{margin-top:1.5rem;font-size:.9rem;color:var(--muted)}
+
+  /* How */
+  .how{padding:6rem 2rem;max-width:1100px;margin:0 auto}
+  .how h2{text-align:center;font-size:clamp(2rem,4vw,2.8rem);font-weight:700}
+  .how-timeline{margin-top:3rem;display:flex;flex-direction:column;gap:0;position:relative}
+  .how-timeline::before{content:'';position:absolute;left:24px;top:0;bottom:0;width:2px;background:linear-gradient(180deg,var(--purple),var(--cyan),var(--pink))}
+  .how-item{display:flex;gap:2rem;align-items:flex-start;padding:2rem 0}
+  .how-dot{width:50px;height:50px;border-radius:50%;background:var(--surface);border:2px solid var(--purple);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0;z-index:1;color:var(--purple)}
+  .how-content h3{font-size:1.15rem;font-weight:600;margin-bottom:.4rem}
+  .how-content p{font-size:.9rem;color:var(--muted);line-height:1.6;max-width:500px}
+
+  /* Not surveillance */
+  .not-surveillance{padding:6rem 2rem;max-width:900px;margin:0 auto}
+  .ns-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3rem;display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+  .ns-side h3{font-size:1.3rem;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+  .ns-list{list-style:none;display:flex;flex-direction:column;gap:.7rem}
+  .ns-list li{font-size:.9rem;color:var(--muted);display:flex;align-items:center;gap:.5rem;line-height:1.4}
+  .ns-list li .x{color:#ef4444;font-weight:700}
+  .ns-list li .check{color:#22c55e;font-weight:700}
+
+  /* CTA */
+  .final{padding:8rem 2rem;text-align:center}
+  .final h2{font-size:clamp(2rem,5vw,3.5rem);font-weight:700;line-height:1.1;max-width:700px;margin:0 auto}
+  .final p{color:var(--muted);font-size:1.15rem;margin:1.5rem auto 0;max-width:500px}
+  .final .hero-cta{margin-top:2rem;justify-content:center}
+
+  footer{padding:3rem 2rem;text-align:center;font-size:.8rem;color:rgba(255,255,255,.3);border-top:1px solid var(--border)}
+
+  @media(max-width:768px){
+    .discovery-grid,.stats-grid{grid-template-columns:1fr}
+    .ns-box{grid-template-columns:1fr}
+    .spec-label{width:120px;font-size:.75rem}
+    .how-timeline::before{left:24px}
+  }
+</style>
+</head>
+<body>
+
+<!-- Stars -->
+<div class="stars" id="stars"></div>
+<div class="nebula"></div>
+
+<script>
+(function(){const s=document.getElementById('stars');for(let i=0;i<120;i++){const d=document.createElement('div');d.className='star';d.style.left=Math.random()*100+'%';d.style.top=Math.random()*100+'%';d.style.setProperty('--d',2+Math.random()*6+'s');d.style.setProperty('--o',.2+Math.random()*.8);d.style.width=d.style.height=(.5+Math.random()*2)+'px';s.appendChild(d)}})();
+</script>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="telescope-icon">
+    <div class="telescope-ring"></div>
+    <div class="telescope-ring"></div>
+    <div class="telescope-ring"></div>
+    <div class="telescope-core">&#128301;</div>
+  </div>
+  <h1>See what's <span class="shimmer">invisible</span> to the naked eye.</h1>
+  <p class="subtitle">Galileo pointed a telescope at the sky and changed everything. Go2 points AI at your operations and reveals the productivity patterns you've never been able to see.</p>
+  <div class="hero-cta">
+    <a href="#" class="btn-glow">See It In Action <span>&rarr;</span></a>
+    <a href="#" class="btn-ghost">Explore the Data</a>
+  </div>
+</section>
+
+<!-- Discovery -->
+<section class="discovery">
+  <div class="discovery-header">
+    <div class="tag">Hidden Signals</div>
+    <h2>Six dimensions of work you've never measured.</h2>
+  </div>
+  <div class="discovery-grid">
+    <div class="disc-card">
+      <div class="disc-icon">&#127756;</div>
+      <h3>Focus Gravity</h3>
+      <p>How strongly your team gets pulled into deep work vs. scattered across shallow tasks. Most teams operate at 30% gravitational pull.</p>
+    </div>
+    <div class="disc-card">
+      <div class="disc-icon">&#128300;</div>
+      <h3>Context Drift</h3>
+      <p>The invisible cost of switching between projects, tools, and conversations. The average worker loses 2.1 hours daily to context drift.</p>
+    </div>
+    <div class="disc-card">
+      <div class="disc-icon">&#x2728;</div>
+      <h3>Knowledge Decay</h3>
+      <p>How quickly institutional knowledge evaporates when people leave. Go2 surfaces the knowledge that exists in only one person's head.</p>
+    </div>
+    <div class="disc-card">
+      <div class="disc-icon">&#127759;</div>
+      <h3>Energy Mapping</h3>
+      <p>When your team does their best work, and when they're running on fumes. Patterns emerge that no survey can capture.</p>
+    </div>
+    <div class="disc-card">
+      <div class="disc-icon">&#127775;</div>
+      <h3>Collaboration Orbits</h3>
+      <p>Who works with whom, how information flows, and where communication breaks down. The org chart is not the real structure.</p>
+    </div>
+    <div class="disc-card">
+      <div class="disc-icon">&#128640;</div>
+      <h3>Momentum Signals</h3>
+      <p>Early indicators that a team is accelerating or stalling. See problems 3 weeks before they show up in your sprint metrics.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Spectrum -->
+<section class="spectrum">
+  <div class="spectrum-inner">
+    <div class="tag">The Visibility Spectrum</div>
+    <h2>Most leaders only see 15% of what's happening.</h2>
+    <div class="spectrum-bars">
+      <div class="spec-bar"><div class="spec-label">Gut feeling alone</div><div class="spec-track"><div class="spec-fill">15%</div></div><div class="spec-value">15%</div></div>
+      <div class="spec-bar"><div class="spec-label">+ Project management</div><div class="spec-track"><div class="spec-fill">35%</div></div><div class="spec-value">35%</div></div>
+      <div class="spec-bar"><div class="spec-label">+ Time tracking</div><div class="spec-track"><div class="spec-fill">55%</div></div><div class="spec-value">55%</div></div>
+      <div class="spec-bar"><div class="spec-label">+ Surveys &amp; 1:1s</div><div class="spec-track"><div class="spec-fill">65%</div></div><div class="spec-value">65%</div></div>
+      <div class="spec-bar"><div class="spec-label">+ Go2 AI Coaching</div><div class="spec-track"><div class="spec-fill">95%</div></div><div class="spec-value">95%</div></div>
+    </div>
+    <p class="spectrum-caption">Go2 doesn't replace your tools. It reveals what they can't see.</p>
+  </div>
+</section>
+
+<!-- Stats -->
+<section class="stats">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-num">47K</div><div class="stat-label">Workers coached by Go2 AI</div></div>
+    <div class="stat-card"><div class="stat-num">23%</div><div class="stat-label">Average productivity gain</div></div>
+    <div class="stat-card"><div class="stat-num">6</div><div class="stat-label">Invisible dimensions revealed</div></div>
+    <div class="stat-card"><div class="stat-num">4wk</div><div class="stat-label">Time to measurable ROI</div></div>
+  </div>
+</section>
+
+<!-- Testimonial -->
+<section class="testimonial">
+  <p class="test-quote">It was like putting on glasses for the first time. We thought we understood our team's workflow. We didn't even know what we were missing.</p>
+  <p class="test-author"><strong>COO</strong>, 120-person logistics company</p>
+</section>
+
+<!-- How -->
+<section class="how">
+  <h2>How the telescope focuses.</h2>
+  <div class="how-timeline">
+    <div class="how-item">
+      <div class="how-dot">1</div>
+      <div class="how-content"><h3>Deploy the Agent</h3><p>A lightweight observer installs in minutes. It watches work patterns, not content. No keylogging, no screenshots, no surveillance.</p></div>
+    </div>
+    <div class="how-item">
+      <div class="how-dot">2</div>
+      <div class="how-content"><h3>AI Maps the Invisible</h3><p>Within days, Go2 builds a real-time model of how your organization actually works. Focus patterns, collaboration flows, energy cycles, knowledge distribution.</p></div>
+    </div>
+    <div class="how-item">
+      <div class="how-dot">3</div>
+      <div class="how-content"><h3>Workers Get Coached</h3><p>Each person receives personalized productivity insights. Not surveillance reports to managers, but coaching tips to the individual. Think Fitbit, not CCTV.</p></div>
+    </div>
+    <div class="how-item">
+      <div class="how-dot">4</div>
+      <div class="how-content"><h3>Leaders See the Cosmos</h3><p>Aggregate dashboards reveal team-level patterns. Where to invest, who needs support, which processes are breaking, and what's actually driving results.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- Not surveillance -->
+<section class="not-surveillance">
+  <div class="ns-box">
+    <div class="ns-side">
+      <h3><span class="x">&#10007;</span> What Go2 Doesn't Do</h3>
+      <ul class="ns-list">
+        <li><span class="x">&#10007;</span> Screenshot monitoring</li>
+        <li><span class="x">&#10007;</span> Keystroke logging</li>
+        <li><span class="x">&#10007;</span> Email or message reading</li>
+        <li><span class="x">&#10007;</span> Activity-based scoring</li>
+        <li><span class="x">&#10007;</span> Punitive reporting to managers</li>
+      </ul>
+    </div>
+    <div class="ns-side">
+      <h3><span class="check">&#10003;</span> What Go2 Does</h3>
+      <ul class="ns-list">
+        <li><span class="check">&#10003;</span> Pattern recognition on work habits</li>
+        <li><span class="check">&#10003;</span> Personalized coaching for each worker</li>
+        <li><span class="check">&#10003;</span> Focus time protection</li>
+        <li><span class="check">&#10003;</span> Team-level productivity insights</li>
+        <li><span class="check">&#10003;</span> Knowledge gap identification</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="final">
+  <h2>Stop guessing.<br>Start <span class="shimmer">seeing.</span></h2>
+  <p>Point the telescope at your operations. You won't believe what's been hiding in plain sight.</p>
+  <div class="hero-cta">
+    <a href="#" class="btn-glow">Book a Demo <span>&rarr;</span></a>
+    <a href="#" class="btn-ghost">See Case Studies</a>
+  </div>
+</section>
+
+<footer>&copy; 2026 Go2. The AI telescope for modern teams.</footer>
+
+</body>
+</html>

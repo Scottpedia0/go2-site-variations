@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — You Need a Telescope, Not a Magnifying Glass</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --space-deep: #050a18;
+  --space-mid: #0c1633;
+  --space-panel: #111d42;
+  --border: #1a2755;
+  --star-white: #e8eaf6;
+  --star-blue: #7c8dff;
+  --nebula-purple: #8b5cf6;
+  --nebula-pink: #ec4899;
+  --comet-cyan: #06b6d4;
+  --text: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--space-deep);
+  color: var(--text);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* Star field */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1px 1px at 30% 40%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1.5px 1.5px at 50% 10%, rgba(255,255,255,0.9), transparent),
+    radial-gradient(1px 1px at 70% 60%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 90% 30%, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1.5px 1.5px at 15% 70%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 40% 85%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 60% 45%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1.5px 1.5px at 80% 75%, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1px 1px at 25% 55%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 85% 15%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 45% 25%, rgba(124,141,255,0.8), transparent),
+    radial-gradient(1px 1px at 65% 80%, rgba(124,141,255,0.5), transparent),
+    radial-gradient(1px 1px at 5% 90%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1px 1px at 95% 50%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1.5px 1.5px at 35% 95%, rgba(139,92,246,0.6), transparent),
+    radial-gradient(1px 1px at 75% 5%, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1px 1px at 55% 65%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 20% 35%, rgba(255,255,255,0.5), transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Navigation */
+nav {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 100;
+  background: rgba(5, 10, 24, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+}
+
+nav .nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+
+.logo {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--star-blue);
+  letter-spacing: 2px;
+}
+
+nav .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+nav .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.85rem; transition: color 0.3s; }
+nav .nav-links a:hover { color: var(--text); }
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 24px;
+  background: linear-gradient(135deg, var(--star-blue), var(--nebula-purple));
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+.btn-primary:hover { box-shadow: 0 0 30px rgba(124, 141, 255, 0.4); transform: translateY(-1px); }
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 24px;
+  background: transparent;
+  color: var(--star-blue);
+  border: 1.5px solid var(--star-blue);
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+.btn-outline:hover { background: rgba(124, 141, 255, 0.1); }
+
+/* Hero */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 2rem 80px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 700px;
+  height: 700px;
+  background: radial-gradient(circle, rgba(124, 141, 255, 0.07) 0%, rgba(139, 92, 246, 0.03) 50%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-content { position: relative; z-index: 2; max-width: 900px; }
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: rgba(124, 141, 255, 0.08);
+  border: 1px solid rgba(124, 141, 255, 0.2);
+  border-radius: 20px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--star-blue);
+  margin-bottom: 2rem;
+}
+
+.hero h1 {
+  font-size: clamp(2.25rem, 5.5vw, 4rem);
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: 1.5rem;
+  letter-spacing: -1px;
+}
+
+.hero h1 .glow {
+  background: linear-gradient(135deg, var(--star-blue), var(--nebula-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero .subtitle {
+  font-size: 1.15rem;
+  color: var(--text-secondary);
+  max-width: 650px;
+  margin: 0 auto 2.5rem;
+  line-height: 1.8;
+}
+
+.hero-ctas { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+/* Lens Comparison */
+.lens-section {
+  padding: 100px 2rem;
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid var(--border);
+}
+
+.section-inner { max-width: 1100px; margin: 0 auto; }
+
+.section-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--nebula-purple);
+  margin-bottom: 1rem;
+}
+
+.section-title {
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  font-weight: 700;
+  margin-bottom: 1rem;
+  letter-spacing: -0.5px;
+}
+
+.section-subtitle {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  max-width: 600px;
+  margin-bottom: 3rem;
+}
+
+.lens-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.lens-card {
+  padding: 2.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.lens-card.magnifying {
+  background: rgba(236, 72, 153, 0.03);
+  border-color: rgba(236, 72, 153, 0.2);
+}
+
+.lens-card.telescope {
+  background: rgba(124, 141, 255, 0.03);
+  border-color: rgba(124, 141, 255, 0.2);
+}
+
+.lens-icon { font-size: 2.5rem; margin-bottom: 1.5rem; }
+
+.lens-card h3 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; }
+.lens-card .lens-subtitle { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; }
+
+.lens-list { list-style: none; }
+.lens-list li {
+  padding: 0.6rem 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  border-bottom: 1px solid rgba(26, 39, 85, 0.5);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.lens-list li:last-child { border-bottom: none; }
+.lens-list .icon { font-size: 0.8rem; margin-top: 3px; }
+
+.magnifying .lens-list .icon { color: var(--nebula-pink); }
+.telescope .lens-list .icon { color: var(--star-blue); }
+
+/* Constellations (Features) */
+.constellation-section {
+  padding: 100px 2rem;
+  background: var(--space-mid);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  z-index: 1;
+}
+
+.constellation-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 3rem;
+}
+
+.star-card {
+  background: var(--space-deep);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2rem;
+  transition: border-color 0.3s, transform 0.3s;
+  position: relative;
+}
+
+.star-card:hover { border-color: var(--star-blue); transform: translateY(-4px); }
+
+.star-card::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: 20%; right: 20%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--star-blue), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.star-card:hover::before { opacity: 1; }
+
+.star-icon {
+  width: 44px; height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  background: rgba(124, 141, 255, 0.08);
+  border: 1px solid rgba(124, 141, 255, 0.15);
+  border-radius: 8px;
+  margin-bottom: 1.25rem;
+}
+
+.star-card h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: 0.75rem; }
+.star-card p { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; }
+
+.star-metric {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.star-metric .value { font-size: 1.5rem; font-weight: 700; color: var(--star-blue); }
+.star-metric .label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+
+/* Orbit Section (How it works) */
+.orbit-section {
+  padding: 100px 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.orbit-steps {
+  max-width: 800px;
+  margin: 3rem auto 0;
+}
+
+.orbit-step {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 2rem;
+  margin-bottom: 3.5rem;
+  align-items: start;
+}
+
+.orbit-marker {
+  width: 64px;
+  height: 64px;
+  border: 2px solid var(--star-blue);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--star-blue);
+  position: relative;
+  background: var(--space-deep);
+}
+
+.orbit-marker::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 2px;
+  height: 40px;
+  background: linear-gradient(180deg, var(--star-blue), transparent);
+  transform: translateX(-50%);
+}
+
+.orbit-step:last-child .orbit-marker::after { display: none; }
+
+.orbit-content h3 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; }
+.orbit-content p { font-size: 0.95rem; color: var(--text-secondary); line-height: 1.8; }
+
+/* Deep Space (Privacy) */
+.privacy-section {
+  padding: 100px 2rem;
+  background: var(--space-mid);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  z-index: 1;
+}
+
+.privacy-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 3rem;
+}
+
+.privacy-card {
+  padding: 2rem;
+  text-align: center;
+  background: var(--space-deep);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.privacy-card .p-icon { font-size: 2rem; margin-bottom: 1rem; }
+.privacy-card h4 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
+.privacy-card p { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.7; }
+
+/* Signals (Stats) */
+.signals-section {
+  padding: 100px 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.signals-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+  max-width: 1000px;
+  margin: 3rem auto 0;
+}
+
+.signal-card { text-align: center; }
+.signal-num {
+  font-size: 3rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--star-blue), var(--nebula-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.25rem;
+}
+.signal-unit { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: var(--star-blue); margin-bottom: 0.5rem; }
+.signal-desc { font-size: 0.85rem; color: var(--text-muted); }
+
+/* Transformation */
+.transform-section {
+  padding: 100px 2rem;
+  background: var(--space-mid);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  z-index: 1;
+}
+
+.transform-grid {
+  display: grid;
+  grid-template-columns: 1fr 60px 1fr;
+  gap: 2rem;
+  max-width: 900px;
+  margin: 3rem auto 0;
+  align-items: start;
+}
+
+.transform-col h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; }
+
+.transform-item {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.transform-item:last-child { border-bottom: none; }
+
+.transform-col.before h3 { color: var(--nebula-pink); }
+.transform-col.after h3 { color: var(--star-blue); }
+
+.transform-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding-top: 3rem;
+  font-size: 1.5rem;
+  color: var(--text-muted);
+}
+
+/* CTA */
+.cta-section {
+  padding: 120px 2rem;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.cta-section h2 {
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.cta-section p { font-size: 1.1rem; color: var(--text-secondary); max-width: 550px; margin: 0 auto 2.5rem; }
+.cta-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+/* Footer */
+footer {
+  padding: 3rem 2rem;
+  border-top: 1px solid var(--border);
+  position: relative;
+  z-index: 1;
+}
+
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-links { display: flex; gap: 2rem; }
+.footer-links a { color: var(--text-muted); text-decoration: none; font-size: 0.8rem; transition: color 0.3s; }
+.footer-links a:hover { color: var(--text-secondary); }
+.footer-copy { font-size: 0.75rem; color: var(--text-muted); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  nav .nav-links a:not(.btn-primary) { display: none; }
+  .lens-grid { grid-template-columns: 1fr; }
+  .constellation-grid { grid-template-columns: 1fr; }
+  .orbit-step { grid-template-columns: 1fr; gap: 1rem; }
+  .orbit-marker::after { display: none; }
+  .privacy-grid { grid-template-columns: 1fr; }
+  .signals-grid { grid-template-columns: repeat(2, 1fr); }
+  .transform-grid { grid-template-columns: 1fr; }
+  .transform-arrow { display: none; }
+  .footer-inner { flex-direction: column; gap: 1rem; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="logo">GO2</div>
+    <div class="nav-links">
+      <a href="#lens">The Shift</a>
+      <a href="#constellations">Capabilities</a>
+      <a href="#orbit">How It Works</a>
+      <a href="#cta" class="btn-primary">Get the Telescope</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">A New Way to See</div>
+    <h1>You've been managing your team<br>with a magnifying glass.<br><span class="glow">You need a telescope.</span></h1>
+    <p class="subtitle">Stop zooming in on individuals. Start seeing the big picture. Go2's desktop agent and frontier AI give you systems-level intelligence about how your team actually works.</p>
+    <div class="hero-ctas">
+      <a href="#cta" class="btn-primary">Get the Telescope</a>
+      <a href="#lens" class="btn-outline">See the Difference</a>
+    </div>
+  </div>
+</section>
+
+<section class="lens-section" id="lens">
+  <div class="section-inner">
+    <div class="section-label">The Fundamental Shift</div>
+    <div class="section-title">Two lenses. Two completely different views.</div>
+    <div class="section-subtitle">The magnifying glass shows you individual pixels. The telescope shows you the entire picture.</div>
+
+    <div class="lens-grid">
+      <div class="lens-card magnifying">
+        <div class="lens-icon">&#128270;</div>
+        <h3>The Magnifying Glass</h3>
+        <p class="lens-subtitle">How most companies manage today</p>
+        <ul class="lens-list">
+          <li><span class="icon">&#10005;</span> Tracking individual hours and activity</li>
+          <li><span class="icon">&#10005;</span> Screenshot monitoring and keystroke logging</li>
+          <li><span class="icon">&#10005;</span> Performance reviews based on gut feeling</li>
+          <li><span class="icon">&#10005;</span> Managing by exception when problems explode</li>
+          <li><span class="icon">&#10005;</span> Asking "who's slacking?" instead of "what's broken?"</li>
+          <li><span class="icon">&#10005;</span> Creating fear and destroying trust</li>
+          <li><span class="icon">&#10005;</span> Missing forest for the trees, every single time</li>
+        </ul>
+      </div>
+
+      <div class="lens-card telescope">
+        <div class="lens-icon">&#128301;</div>
+        <h3>The Telescope</h3>
+        <p class="lens-subtitle">How Go2 lets you see</p>
+        <ul class="lens-list">
+          <li><span class="icon">&#10003;</span> Team-wide patterns and workflow dynamics</li>
+          <li><span class="icon">&#10003;</span> Aggregated intelligence, never individual surveillance</li>
+          <li><span class="icon">&#10003;</span> AI-driven insights backed by ~1M worker dataset</li>
+          <li><span class="icon">&#10003;</span> Proactive alerts before problems become crises</li>
+          <li><span class="icon">&#10003;</span> Asking "what systems can improve?" not "who's at fault?"</li>
+          <li><span class="icon">&#10003;</span> Building trust through personal AI coaching</li>
+          <li><span class="icon">&#10003;</span> Seeing the constellation, not just individual stars</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="constellation-section" id="constellations">
+  <div class="section-inner">
+    <div class="section-label">Telescope Capabilities</div>
+    <div class="section-title">What you see when you look through the telescope</div>
+    <div class="section-subtitle">Six constellations of intelligence that were invisible before.</div>
+
+    <div class="constellation-grid">
+      <div class="star-card">
+        <div class="star-icon">&#127756;</div>
+        <h3>Workflow Galaxies</h3>
+        <p>See how work flows across your entire team. Where handoffs fail. Where bottlenecks form. Where processes duplicate. The orbital view reveals what close-up inspection never could.</p>
+        <div class="star-metric">
+          <span class="value">37%</span>
+          <span class="label">friction reduction</span>
+        </div>
+      </div>
+
+      <div class="star-card">
+        <div class="star-icon">&#11088;</div>
+        <h3>Capacity Mapping</h3>
+        <p>Understand true workload distribution across your team. Who's overloaded, who has bandwidth, and where hidden capacity exists before you spend on another hire.</p>
+        <div class="star-metric">
+          <span class="value">1 FTE</span>
+          <span class="label">found per 10 people</span>
+        </div>
+      </div>
+
+      <div class="star-card">
+        <div class="star-icon">&#9889;</div>
+        <h3>Automation Nebulae</h3>
+        <p>Repetitive tasks light up like nebulae against the dark background of productive work. Go2 identifies them, ranks them by ROI, and shows you the path to automation.</p>
+        <div class="star-metric">
+          <span class="value">12</span>
+          <span class="label">opportunities per month</span>
+        </div>
+      </div>
+
+      <div class="star-card">
+        <div class="star-icon">&#129302;</div>
+        <h3>AI Coaching Signals</h3>
+        <p>Powered by Claude, GPT, and Gemini, each team member gets a private AI coach. Better focus blocks. Fewer context switches. Personalized to their actual work patterns, not generic advice.</p>
+        <div class="star-metric">
+          <span class="value">89%</span>
+          <span class="label">acceptance rate</span>
+        </div>
+      </div>
+
+      <div class="star-card">
+        <div class="star-icon">&#128200;</div>
+        <h3>Focus Depth Scans</h3>
+        <p>Track deep work capacity across your team. See which meetings are productive and which destroy focus. Understand the true cost of every interruption at the systems level.</p>
+        <div class="star-metric">
+          <span class="value">4.2h</span>
+          <span class="label">focus time recovered/person/week</span>
+        </div>
+      </div>
+
+      <div class="star-card">
+        <div class="star-icon">&#128161;</div>
+        <h3>Trend Detection</h3>
+        <p>Spot changes before they become problems. Engagement dropping in one team? New tool causing friction? Workload shifting unexpectedly? The telescope sees it first.</p>
+        <div class="star-metric">
+          <span class="value">2-4w</span>
+          <span class="label">early warning lead time</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="orbit-section" id="orbit">
+  <div class="section-inner" style="text-align:center;">
+    <div class="section-label">Mission Plan</div>
+    <div class="section-title">From magnifying glass to telescope in 30 days</div>
+    <div class="section-subtitle" style="margin: 0 auto;">Your orbit insertion sequence. Four steps to a completely different view of your team.</div>
+  </div>
+
+  <div class="orbit-steps">
+    <div class="orbit-step">
+      <div class="orbit-marker">01</div>
+      <div class="orbit-content">
+        <h3>Deploy the desktop agent</h3>
+        <p>A lightweight agent installs on your team's machines in minutes. Mac and Windows. No IT overhead. It silently captures work patterns, tool usage, and workflow data without disrupting anyone's day.</p>
+      </div>
+    </div>
+    <div class="orbit-step">
+      <div class="orbit-marker">02</div>
+      <div class="orbit-content">
+        <h3>First light: patterns emerge</h3>
+        <p>Within 48 hours, Go2's AI (powered by frontier models) begins finding patterns in your team's work. Bottlenecks, redundancies, capacity imbalances. Things that were invisible up close suddenly become obvious from altitude.</p>
+      </div>
+    </div>
+    <div class="orbit-step">
+      <div class="orbit-marker">03</div>
+      <div class="orbit-content">
+        <h3>AI coaching activates</h3>
+        <p>Each team member gets a private AI coach that helps them optimize their personal work patterns. You get aggregated team intelligence. Nobody gets surveilled. Everyone gets better at their job.</p>
+      </div>
+    </div>
+    <div class="orbit-step">
+      <div class="orbit-marker">04</div>
+      <div class="orbit-content">
+        <h3>Full orbital view</h3>
+        <p>Within 30 days, you have a continuously-updating telescope view of your entire operation. Team health, automation opportunities, workflow efficiency, capacity mapping. The 2-minute weekly summary replaces hours of dashboard analysis.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="privacy-section">
+  <div class="section-inner" style="text-align:center;">
+    <div class="section-label">Deep Space Privacy</div>
+    <div class="section-title">The telescope sees systems, not people</div>
+    <div class="section-subtitle" style="margin: 0 auto;">This distinction is the entire point. Go2 reveals how work flows, not what individuals do.</div>
+  </div>
+
+  <div class="privacy-grid">
+    <div class="privacy-card">
+      <div class="p-icon">&#128274;</div>
+      <h4>Individual coaching is private</h4>
+      <p>Each person's AI coaching data belongs to them. Managers never see individual activity logs, browser histories, or personal work habits.</p>
+    </div>
+    <div class="privacy-card">
+      <div class="p-icon">&#128202;</div>
+      <h4>Manager view is aggregated</h4>
+      <p>Leadership sees team patterns, workflow trends, and system-level insights. You see the forest. You see the constellation. Never individual trees or stars.</p>
+    </div>
+    <div class="privacy-card">
+      <div class="p-icon">&#129302;</div>
+      <h4>AI coaches, not watches</h4>
+      <p>The AI helps each person work better. It's a personal productivity coach. 89% of team members actively engage with coaching suggestions.</p>
+    </div>
+  </div>
+</section>
+
+<section class="signals-section">
+  <div class="section-inner" style="text-align: center;">
+    <div class="section-label">Signal Strength</div>
+    <div class="section-title">The numbers behind the telescope</div>
+  </div>
+
+  <div class="signals-grid">
+    <div class="signal-card">
+      <div class="signal-num">~1M</div>
+      <div class="signal-unit">Workers</div>
+      <div class="signal-desc">Contributing behavioral data</div>
+    </div>
+    <div class="signal-card">
+      <div class="signal-num">4.2h</div>
+      <div class="signal-unit">Per Week</div>
+      <div class="signal-desc">Deep focus time recovered per person</div>
+    </div>
+    <div class="signal-card">
+      <div class="signal-num">89%</div>
+      <div class="signal-unit">Acceptance</div>
+      <div class="signal-desc">AI coaching suggestions acted on</div>
+    </div>
+    <div class="signal-card">
+      <div class="signal-num">2min</div>
+      <div class="signal-unit">Per Week</div>
+      <div class="signal-desc">Your time investment for full visibility</div>
+    </div>
+  </div>
+</section>
+
+<section class="transform-section">
+  <div class="section-inner" style="text-align:center;">
+    <div class="section-label">The Transformation</div>
+    <div class="section-title">What changes when you switch lenses</div>
+  </div>
+
+  <div class="transform-grid">
+    <div class="transform-col before">
+      <h3>&#128270; Magnifying Glass</h3>
+      <div class="transform-item">"Is this person working hard enough?"</div>
+      <div class="transform-item">Hours in seat as a productivity metric</div>
+      <div class="transform-item">Weekly status meetings that waste everyone's time</div>
+      <div class="transform-item">Discovering bottlenecks when deadlines slip</div>
+      <div class="transform-item">Hiring new people when existing team has hidden capacity</div>
+      <div class="transform-item">Managing by walking around (impossible when remote)</div>
+    </div>
+    <div class="transform-arrow">&#8594;</div>
+    <div class="transform-col after">
+      <h3>&#128301; Telescope</h3>
+      <div class="transform-item">"What system-level changes would improve everyone?"</div>
+      <div class="transform-item">Deep work hours and focus quality as metrics</div>
+      <div class="transform-item">AI handles coaching; you get a 2-min weekly summary</div>
+      <div class="transform-item">AI alerts you to bottlenecks weeks before impact</div>
+      <div class="transform-item">Hidden capacity surfaced automatically</div>
+      <div class="transform-item">Real-time orbital intelligence, anywhere in the world</div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section" id="cta">
+  <div class="section-inner">
+    <div class="hero-badge" style="margin-bottom: 2rem;">Ready for Liftoff</div>
+    <h2>Put down the magnifying glass.<br>Pick up the telescope.</h2>
+    <p>See your team the way you were always meant to. Patterns, trends, systems. Not individual pixels. Not surveillance. Intelligence.</p>
+    <div class="cta-buttons">
+      <a href="#" class="btn-primary">Get the Telescope</a>
+      <a href="#" class="btn-outline">Schedule a Viewing</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-links">
+      <a href="#">About</a>
+      <a href="#">Privacy</a>
+      <a href="#">Security</a>
+      <a href="#">Contact</a>
+    </div>
+    <div class="footer-copy">Go2.io</div>
+  </div>
+</footer>
+
+</body>
+</html>

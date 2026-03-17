@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The Invisible Hand</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800;900&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --cream: #faf8f4;
+    --warm-black: #1a1814;
+    --gold: #c4973b;
+    --gold-light: #e8c96a;
+    --warm-gray: #8a8278;
+    --card-bg: rgba(26,24,20,0.03);
+    --border: rgba(26,24,20,0.08);
+    --accent-green: #2d7a4f;
+    --accent-blue: #2d5a7a;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    background: var(--cream);
+    color: var(--warm-black);
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 20px 60px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(250,248,244,0.9);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .logo { font-family: 'DM Serif Display', serif; font-size: 30px; color: var(--warm-black); }
+  .logo span { color: var(--gold); }
+  .nav-links { display: flex; gap: 36px; align-items: center; }
+  .nav-links a {
+    color: var(--warm-gray); text-decoration: none; font-size: 14px;
+    font-weight: 500; transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--warm-black); }
+  .nav-cta {
+    background: var(--warm-black) !important; color: var(--cream) !important;
+    padding: 10px 24px; border-radius: 8px; font-weight: 600;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(0,0,0,0.15); }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh; display: flex; align-items: center;
+    padding: 140px 60px 100px; position: relative;
+    max-width: 1400px; margin: 0 auto;
+  }
+  .hero-content { max-width: 700px; position: relative; z-index: 2; }
+  .hero-eyebrow {
+    font-size: 13px; text-transform: uppercase; letter-spacing: 4px;
+    color: var(--gold); font-weight: 600; margin-bottom: 24px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .hero-eyebrow::before {
+    content: ''; width: 40px; height: 1px; background: var(--gold);
+  }
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 76px; line-height: 1.05; margin-bottom: 32px;
+    letter-spacing: -2px;
+  }
+  .hero h1 em {
+    font-style: italic; color: var(--gold);
+  }
+  .hero p {
+    font-size: 20px; color: var(--warm-gray); max-width: 520px;
+    line-height: 1.8; margin-bottom: 48px;
+  }
+  .hero-cta {
+    display: inline-flex; align-items: center; gap: 14px;
+    background: var(--warm-black); color: var(--cream);
+    padding: 20px 44px; border-radius: 12px;
+    font-size: 17px; font-weight: 600; text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s; border: none; cursor: pointer;
+  }
+  .hero-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+  }
+  .hero-cta svg { width: 20px; height: 20px; }
+
+  /* FLOATING HAND ILLUSTRATION */
+  .hero-visual {
+    position: absolute; right: 60px; top: 50%; transform: translateY(-50%);
+    width: 480px; height: 480px;
+  }
+  .hand-circle {
+    width: 100%; height: 100%; border-radius: 50%;
+    background: linear-gradient(135deg, rgba(196,151,59,0.06), rgba(196,151,59,0.02));
+    border: 1px solid rgba(196,151,59,0.12);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    animation: floatGentle 6s ease-in-out infinite;
+  }
+  @keyframes floatGentle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+  }
+  .hand-icon {
+    font-size: 140px; opacity: 0.15;
+    filter: grayscale(100%);
+  }
+  .orbit-dot {
+    position: absolute; width: 12px; height: 12px; border-radius: 50%;
+    background: var(--gold); opacity: 0.4;
+  }
+  .orbit-dot:nth-child(2) { top: 20%; right: 10%; animation: orbitPulse 3s ease-in-out infinite; }
+  .orbit-dot:nth-child(3) { bottom: 25%; left: 8%; animation: orbitPulse 3s ease-in-out infinite 1s; width: 8px; height: 8px; }
+  .orbit-dot:nth-child(4) { top: 10%; left: 30%; animation: orbitPulse 3s ease-in-out infinite 2s; width: 6px; height: 6px; }
+  @keyframes orbitPulse {
+    0%, 100% { opacity: 0.2; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.5); }
+  }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  }
+  .stat-item {
+    padding: 48px 40px; text-align: center;
+    border-right: 1px solid var(--border);
+  }
+  .stat-item:last-child { border-right: none; }
+  .stat-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 48px; color: var(--warm-black); margin-bottom: 8px;
+  }
+  .stat-label { font-size: 14px; color: var(--warm-gray); font-weight: 500; }
+
+  /* PHILOSOPHY SECTION */
+  .philosophy {
+    padding: 140px 60px; max-width: 900px; margin: 0 auto; text-align: center;
+  }
+  .philosophy blockquote {
+    font-family: 'DM Serif Display', serif;
+    font-size: 36px; line-height: 1.5; color: var(--warm-black);
+    margin-bottom: 24px; font-style: italic;
+  }
+  .philosophy cite {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px; color: var(--gold); font-style: normal;
+    font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+  }
+  .philosophy-body {
+    margin-top: 64px; font-size: 18px; color: var(--warm-gray);
+    line-height: 1.9; max-width: 680px; margin-left: auto; margin-right: auto;
+  }
+
+  /* HOW IT WORKS */
+  .how-section {
+    padding: 120px 60px; max-width: 1200px; margin: 0 auto;
+  }
+  .section-header { margin-bottom: 72px; }
+  .section-eyebrow {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 4px;
+    color: var(--gold); font-weight: 600; margin-bottom: 16px;
+  }
+  .section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 52px; line-height: 1.15; letter-spacing: -1px;
+  }
+
+  .steps-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px;
+  }
+  .step-card {
+    padding: 48px 36px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+    position: relative;
+  }
+  .step-card:hover {
+    border-color: rgba(196,151,59,0.3);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.05);
+    transform: translateY(-4px);
+  }
+  .step-number {
+    font-family: 'DM Serif Display', serif;
+    font-size: 64px; color: rgba(196,151,59,0.15);
+    position: absolute; top: 20px; right: 24px;
+  }
+  .step-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    background: rgba(196,151,59,0.08);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 28px; font-size: 22px;
+  }
+  .step-card h3 {
+    font-size: 22px; font-weight: 700; margin-bottom: 14px;
+  }
+  .step-card p { color: var(--warm-gray); font-size: 15px; line-height: 1.7; }
+
+  /* PRINCIPLES */
+  .principles {
+    padding: 120px 60px;
+    background: var(--warm-black); color: var(--cream);
+  }
+  .principles-inner {
+    max-width: 1200px; margin: 0 auto;
+  }
+  .principles .section-eyebrow { color: var(--gold-light); }
+  .principles .section-title { color: var(--cream); margin-bottom: 72px; }
+  .principles-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+  }
+  .principle-card {
+    padding: 44px; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px; background: rgba(255,255,255,0.03);
+    transition: border-color 0.3s;
+  }
+  .principle-card:hover { border-color: rgba(196,151,59,0.3); }
+  .principle-card h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 24px; margin-bottom: 14px;
+  }
+  .principle-card p {
+    color: rgba(250,248,244,0.55); font-size: 15px; line-height: 1.7;
+  }
+  .principle-tag {
+    display: inline-block; padding: 4px 12px; border-radius: 6px;
+    background: rgba(196,151,59,0.12); color: var(--gold-light);
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 20px;
+  }
+
+  /* RESULTS */
+  .results {
+    padding: 120px 60px; max-width: 1200px; margin: 0 auto;
+  }
+  .results-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 40px;
+    margin-top: 72px;
+  }
+  .result-card {
+    padding: 48px; border: 1px solid var(--border); border-radius: 20px;
+    display: flex; flex-direction: column;
+  }
+  .result-metric {
+    font-family: 'DM Serif Display', serif;
+    font-size: 56px; color: var(--gold); margin-bottom: 8px;
+  }
+  .result-desc { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
+  .result-detail { color: var(--warm-gray); font-size: 15px; line-height: 1.7; }
+  .result-divider {
+    width: 40px; height: 2px; background: var(--gold); margin: 20px 0;
+    opacity: 0.4;
+  }
+
+  /* TESTIMONIAL */
+  .testimonial {
+    padding: 120px 60px; text-align: center;
+    border-top: 1px solid var(--border);
+    max-width: 800px; margin: 0 auto;
+  }
+  .testimonial-quote {
+    font-family: 'DM Serif Display', serif;
+    font-size: 32px; line-height: 1.5; margin-bottom: 40px;
+    font-style: italic; color: var(--warm-black);
+  }
+  .testimonial-author { font-weight: 700; font-size: 16px; }
+  .testimonial-role { color: var(--warm-gray); font-size: 14px; margin-top: 4px; }
+
+  /* INTEGRATIONS */
+  .integrations {
+    padding: 100px 60px; text-align: center;
+    border-top: 1px solid var(--border);
+  }
+  .integrations-row {
+    display: flex; justify-content: center; gap: 32px; margin-top: 48px;
+    flex-wrap: wrap;
+  }
+  .integ-badge {
+    padding: 16px 32px; border: 1px solid var(--border);
+    border-radius: 12px; font-size: 15px; font-weight: 500;
+    color: var(--warm-gray); transition: all 0.3s;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .integ-badge:hover { border-color: var(--gold); color: var(--warm-black); }
+  .integ-badge span { font-size: 20px; }
+
+  /* CTA */
+  .cta-section {
+    padding: 140px 60px; text-align: center;
+    position: relative;
+  }
+  .cta-section::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, rgba(196,151,59,0.05) 0%, transparent 60%);
+  }
+  .cta-section h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 60px; line-height: 1.1; margin-bottom: 24px;
+    position: relative; letter-spacing: -1px;
+  }
+  .cta-section p {
+    font-size: 19px; color: var(--warm-gray); margin-bottom: 48px;
+    position: relative; max-width: 500px; margin-left: auto; margin-right: auto;
+    line-height: 1.7;
+  }
+
+  /* FOOTER */
+  footer {
+    padding: 48px 60px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    max-width: 1200px; margin: 0 auto;
+  }
+  footer p { font-size: 13px; color: var(--warm-gray); }
+  .footer-links { display: flex; gap: 24px; }
+  .footer-links a { font-size: 13px; color: var(--warm-gray); text-decoration: none; }
+  .footer-links a:hover { color: var(--warm-black); }
+
+  @media (max-width: 768px) {
+    nav { padding: 16px 24px; }
+    .nav-links { display: none; }
+    .hero { padding: 120px 24px 80px; }
+    .hero h1 { font-size: 44px; }
+    .hero-visual { display: none; }
+    .stats-bar { grid-template-columns: 1fr 1fr; }
+    .stat-item { border-bottom: 1px solid var(--border); }
+    .philosophy { padding: 80px 24px; }
+    .philosophy blockquote { font-size: 26px; }
+    .how-section, .results { padding: 80px 24px; }
+    .steps-grid { grid-template-columns: 1fr; }
+    .principles { padding: 80px 24px; }
+    .principles-grid { grid-template-columns: 1fr; }
+    .results-grid { grid-template-columns: 1fr; }
+    .section-title { font-size: 38px; }
+    .cta-section { padding: 80px 24px; }
+    .cta-section h2 { font-size: 38px; }
+    footer { flex-direction: column; gap: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Go2<span>.</span></div>
+  <div class="nav-links">
+    <a href="#philosophy">Philosophy</a>
+    <a href="#how">How It Works</a>
+    <a href="#principles">Principles</a>
+    <a href="#results">Results</a>
+    <a href="#cta" class="nav-cta">Book a Demo</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-eyebrow">AI Productivity Coaching</div>
+    <h1>The <em>invisible hand</em> guiding your team</h1>
+    <p>Like Adam Smith's invisible hand guides markets to efficiency, Go2's AI guides your team to peak performance — subtly, intelligently, and without surveillance.</p>
+    <a href="#cta" class="hero-cta">
+      See It In Action
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+  </div>
+  <div class="hero-visual">
+    <div class="hand-circle">
+      <div class="hand-icon">&#9758;</div>
+      <div class="orbit-dot"></div>
+      <div class="orbit-dot"></div>
+      <div class="orbit-dot"></div>
+    </div>
+  </div>
+</section>
+
+<section class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-value">47K+</div>
+    <div class="stat-label">Workers Coached</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value">23%</div>
+    <div class="stat-label">Avg. Productivity Gain</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value">Zero</div>
+    <div class="stat-label">Screenshots Taken</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value">12m</div>
+    <div class="stat-label">Time to Deploy</div>
+  </div>
+</section>
+
+<section class="philosophy" id="philosophy">
+  <blockquote>"Every individual... intends only his own gain, and he is in this, as in many other cases, led by an invisible hand to promote an end which was no part of his intention."</blockquote>
+  <cite>Adam Smith, The Wealth of Nations</cite>
+  <p class="philosophy-body">
+    Smith understood that the best systems don't need a heavy hand. They guide through aligned incentives and natural forces. Go2 applies this principle to the modern workplace: instead of monitoring and mandates, we use AI coaching that aligns individual habits with organizational success. The result? Teams that perform better because they <em>want</em> to, not because they're watched.
+  </p>
+</section>
+
+<section class="how-section" id="how">
+  <div class="section-header">
+    <div class="section-eyebrow">How It Works</div>
+    <div class="section-title">Guidance without<br>the grip</div>
+  </div>
+
+  <div class="steps-grid">
+    <div class="step-card">
+      <div class="step-number">01</div>
+      <div class="step-icon">&#128268;</div>
+      <h3>Connect Your Stack</h3>
+      <p>Go2 integrates with Slack, Teams, Zoom, Google Workspace, and your calendar in under 12 minutes. No agents to install. No IT tickets.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-number">02</div>
+      <div class="step-icon">&#128065;</div>
+      <h3>Patterns Emerge</h3>
+      <p>Our AI observes aggregate work patterns — meeting loads, focus time, collaboration flows — to build a living model of how your org actually operates.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-number">03</div>
+      <div class="step-icon">&#128161;</div>
+      <h3>Coaching Flows</h3>
+      <p>Contextual nudges and insights delivered right in Slack and Teams. Managers get strategic recommendations. Teams get practical habits.</p>
+    </div>
+  </div>
+</section>
+
+<section class="principles" id="principles">
+  <div class="principles-inner">
+    <div class="section-header">
+      <div class="section-eyebrow">Our Principles</div>
+      <div class="section-title">What the invisible<br>hand never does</div>
+    </div>
+
+    <div class="principles-grid">
+      <div class="principle-card">
+        <div class="principle-tag">Privacy</div>
+        <h3>No Screenshots. Ever.</h3>
+        <p>Go2 never captures screens, keystrokes, or webcam images. We analyze aggregate workflow patterns, not individual behavior. Your employees' privacy is non-negotiable.</p>
+      </div>
+      <div class="principle-card">
+        <div class="principle-tag">Trust</div>
+        <h3>No Surveillance Reports</h3>
+        <p>Managers never see individual "productivity scores." They see team-level insights and coaching recommendations. This builds trust instead of anxiety.</p>
+      </div>
+      <div class="principle-card">
+        <div class="principle-tag">Autonomy</div>
+        <h3>No Mandates</h3>
+        <p>Go2 suggests. It never mandates. Teams adopt better habits organically because the coaching makes sense, not because it's forced from above.</p>
+      </div>
+      <div class="principle-card">
+        <div class="principle-tag">Transparency</div>
+        <h3>No Black Boxes</h3>
+        <p>Every recommendation comes with context. Teams can see why a suggestion was made and the data behind it. Understanding drives adoption.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="results" id="results">
+  <div class="section-header">
+    <div class="section-eyebrow">Proven Results</div>
+    <div class="section-title">The hand works</div>
+  </div>
+
+  <div class="results-grid">
+    <div class="result-card">
+      <div class="result-metric">+31%</div>
+      <div class="result-desc">Increase in Deep Work Time</div>
+      <div class="result-divider"></div>
+      <div class="result-detail">Teams recovered an average of 6.2 hours per person per week by identifying and reducing unnecessary meeting overhead.</div>
+    </div>
+    <div class="result-card">
+      <div class="result-metric">-22%</div>
+      <div class="result-desc">Reduction in Meeting Load</div>
+      <div class="result-divider"></div>
+      <div class="result-detail">AI coaching identified redundant meetings and async alternatives. No mandates — teams chose to change because the data was clear.</div>
+    </div>
+    <div class="result-card">
+      <div class="result-metric">89%</div>
+      <div class="result-desc">Employee Approval Rate</div>
+      <div class="result-divider"></div>
+      <div class="result-detail">Unlike monitoring tools that employees resent, Go2's coaching approach earns trust. People actually want the nudges.</div>
+    </div>
+    <div class="result-card">
+      <div class="result-metric">2.4x</div>
+      <div class="result-desc">ROI in First Quarter</div>
+      <div class="result-divider"></div>
+      <div class="result-detail">The productivity gains alone pay for Go2 within 90 days. Add reduced turnover and improved morale, and the ROI compounds.</div>
+    </div>
+  </div>
+</section>
+
+<section class="testimonial">
+  <div class="testimonial-quote">"Go2 did what no management initiative could — it changed how our team works without anyone feeling managed. The invisible hand metaphor is perfect."</div>
+  <div class="testimonial-author">David Okonkwo</div>
+  <div class="testimonial-role">CEO, Meridian Systems (78 employees)</div>
+</section>
+
+<section class="integrations">
+  <div class="section-eyebrow">Integrations</div>
+  <div class="section-title" style="max-width: 500px; margin: 16px auto 0;">Works where<br>your team works</div>
+  <div class="integrations-row">
+    <div class="integ-badge"><span>&#128172;</span> Slack</div>
+    <div class="integ-badge"><span>&#128101;</span> Microsoft Teams</div>
+    <div class="integ-badge"><span>&#127909;</span> Zoom</div>
+    <div class="integ-badge"><span>&#9993;</span> Google Workspace</div>
+    <div class="integ-badge"><span>&#128197;</span> Calendar</div>
+  </div>
+</section>
+
+<section class="cta-section" id="cta">
+  <h2>Let the invisible hand<br>guide your team</h2>
+  <p>See how Go2's AI coaching can transform your organization — without surveillance, without mandates, without friction.</p>
+  <a href="#" class="hero-cta" style="position: relative;">
+    Book a Demo
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+  </a>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2.io. All rights reserved.</p>
+  <div class="footer-links">
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+    <a href="#">Security</a>
+    <a href="#">Contact</a>
+  </div>
+</footer>
+
+</body>
+</html>

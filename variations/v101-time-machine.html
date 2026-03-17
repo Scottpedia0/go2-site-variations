@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Time Machine</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#060612;--surface:#0d0d1f;--surface2:#141428;--cyan:#00d4ff;--cyan-glow:rgba(0,212,255,.12);
+--purple:#8b5cf6;--purple-glow:rgba(139,92,246,.1);--white:#eef0f6;--muted:#6b7194;--accent2:#06b6d4;
+}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--white);overflow-x:hidden;line-height:1.65}
+a{color:var(--cyan);text-decoration:none}
+
+/* Star field */
+.stars{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.stars span{position:absolute;width:2px;height:2px;background:white;border-radius:50%;opacity:.3;animation:twinkle 3s ease-in-out infinite alternate}
+@keyframes twinkle{from{opacity:.1}to{opacity:.6}}
+
+/* ─── HERO ─── */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:3rem 2rem;position:relative;z-index:1}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 30%,var(--cyan-glow),transparent),radial-gradient(ellipse 50% 40% at 30% 70%,var(--purple-glow),transparent);pointer-events:none}
+
+.time-visual{width:200px;height:200px;position:relative;margin-bottom:2.5rem}
+.time-ring{position:absolute;border-radius:50%;border:1px solid;animation:time-spin linear infinite}
+.ring1{inset:0;border-color:rgba(0,212,255,.2);animation-duration:12s}
+.ring2{inset:20px;border-color:rgba(139,92,246,.2);animation-duration:8s;animation-direction:reverse}
+.ring3{inset:45px;border-color:rgba(0,212,255,.15);animation-duration:5s}
+.time-core{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;border-radius:50%;background:var(--cyan);box-shadow:0 0 30px rgba(0,212,255,.5);animation:core-pulse 2s ease-in-out infinite}
+@keyframes time-spin{to{transform:rotate(360deg)}}
+@keyframes core-pulse{0%,100%{box-shadow:0 0 20px rgba(0,212,255,.4)}50%{box-shadow:0 0 40px rgba(0,212,255,.7)}}
+/* Clock hands */
+.time-hand{position:absolute;top:50%;left:50%;transform-origin:0 0;height:1px;background:var(--cyan)}
+.hand1{width:60px;animation:hand-spin 6s linear infinite}
+.hand2{width:40px;background:var(--purple);animation:hand-spin 2.5s linear infinite}
+@keyframes hand-spin{to{transform:rotate(360deg)}}
+
+.hero-badge{display:inline-flex;align-items:center;gap:.5rem;background:var(--surface2);border:1px solid rgba(0,212,255,.15);border-radius:100px;padding:.4rem 1.2rem;font-size:.8rem;color:var(--cyan);margin-bottom:2rem;letter-spacing:.08em;text-transform:uppercase}
+.hero h1{font-size:clamp(2.2rem,5.5vw,4.2rem);font-weight:700;line-height:1.15;max-width:850px;margin-bottom:1.5rem;background:linear-gradient(135deg,var(--white) 30%,var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:clamp(1.05rem,1.8vw,1.3rem);color:var(--muted);max-width:600px;margin-bottom:3rem;line-height:1.7}
+.hero-sub strong{color:var(--white)}
+
+.cta-group{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.85rem 2rem;border-radius:8px;font-size:.95rem;font-weight:600;cursor:pointer;border:none;transition:all .3s}
+.btn-cyan{background:var(--cyan);color:var(--bg)}
+.btn-cyan:hover{box-shadow:0 8px 40px rgba(0,212,255,.35);transform:translateY(-2px)}
+.btn-ghost{background:transparent;color:var(--white);border:1px solid rgba(255,255,255,.12)}
+.btn-ghost:hover{border-color:var(--cyan);color:var(--cyan)}
+
+/* ─── SECTIONS COMMON ─── */
+.section-label{text-transform:uppercase;letter-spacing:.15em;font-size:.75rem;color:var(--cyan);margin-bottom:.5rem}
+.section-title{font-size:clamp(1.7rem,3.5vw,2.8rem);font-weight:700;margin-bottom:1rem}
+.section-desc{color:var(--muted);font-size:1.05rem;max-width:580px;margin-bottom:3rem}
+
+/* ─── TIME JUMP ─── */
+.time-jump{padding:6rem 2rem;background:var(--surface);position:relative;z-index:1}
+.time-jump .container{max-width:1100px;margin:0 auto}
+.jump-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:2rem;align-items:stretch}
+@media(max-width:768px){.jump-grid{grid-template-columns:1fr;gap:1rem}}
+
+.jump-card{background:var(--surface2);border-radius:14px;padding:2rem;border:1px solid rgba(255,255,255,.04)}
+.jump-card.today{border-top:3px solid var(--muted)}
+.jump-card.future{border-top:3px solid var(--cyan)}
+.jump-card .card-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;margin-bottom:1.2rem;display:flex;align-items:center;gap:.4rem}
+.jump-card.today .card-label{color:var(--muted)}
+.jump-card.future .card-label{color:var(--cyan)}
+
+.jump-row{display:flex;justify-content:space-between;align-items:center;padding:.7rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.jump-row:last-child{border-bottom:none}
+.jump-row .label{font-size:.9rem;color:var(--muted)}
+.jump-row .val{font-weight:600;font-size:.95rem}
+.jump-row .val.dim{color:var(--muted)}
+.jump-row .val.glow{color:var(--cyan)}
+
+.jump-arrow{display:flex;align-items:center;justify-content:center;color:var(--cyan);font-size:2rem;opacity:.5}
+@media(max-width:768px){.jump-arrow{transform:rotate(90deg);padding:1rem 0}}
+
+.jump-banner{margin-top:2.5rem;text-align:center;background:linear-gradient(135deg,var(--cyan-glow),var(--purple-glow));border:1px solid rgba(0,212,255,.1);border-radius:12px;padding:2rem}
+.jump-banner .big{font-size:3rem;font-weight:800;color:var(--cyan);line-height:1}
+.jump-banner p{color:var(--muted);margin-top:.4rem;font-size:1rem}
+
+/* ─── ACCELERATION ─── */
+.accel{padding:6rem 2rem;background:var(--bg);position:relative;z-index:1}
+.accel .container{max-width:1000px;margin:0 auto}
+.accel-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:2rem;margin-top:2rem}
+.accel-card{background:var(--surface);border-radius:14px;padding:2rem;border:1px solid rgba(255,255,255,.04);transition:border-color .3s,transform .3s}
+.accel-card:hover{border-color:rgba(0,212,255,.2);transform:translateY(-3px)}
+.accel-card .icon{width:48px;height:48px;border-radius:10px;background:var(--cyan-glow);display:flex;align-items:center;justify-content:center;margin-bottom:1rem;font-size:1.4rem;border:1px solid rgba(0,212,255,.15)}
+.accel-card h4{font-size:1.1rem;margin-bottom:.5rem}
+.accel-card p{color:var(--muted);font-size:.9rem}
+.accel-card .stat{font-size:1.8rem;font-weight:700;color:var(--cyan);margin-top:.8rem}
+
+/* ─── HOW IT WORKS ─── */
+.how{padding:6rem 2rem;background:var(--surface);position:relative;z-index:1}
+.how .container{max-width:900px;margin:0 auto}
+.how-steps{display:grid;gap:2rem;margin-top:2rem}
+.how-step{display:grid;grid-template-columns:80px 1fr;gap:1.5rem;padding:1.5rem;background:var(--surface2);border-radius:12px;border:1px solid rgba(255,255,255,.04);transition:border-color .3s}
+.how-step:hover{border-color:rgba(0,212,255,.15)}
+.how-step .step-icon{width:80px;height:80px;border-radius:12px;background:linear-gradient(135deg,var(--cyan-glow),var(--purple-glow));display:flex;align-items:center;justify-content:center;font-size:2rem;border:1px solid rgba(0,212,255,.1)}
+.how-step h4{font-size:1.05rem;margin-bottom:.3rem}
+.how-step p{color:var(--muted);font-size:.9rem}
+.how-step .time-tag{display:inline-block;font-size:.7rem;background:rgba(0,212,255,.1);color:var(--cyan);padding:.2rem .6rem;border-radius:4px;margin-top:.5rem;letter-spacing:.05em;text-transform:uppercase}
+
+/* ─── COLLECTIVE INTELLIGENCE ─── */
+.collective{padding:6rem 2rem;background:var(--bg);position:relative;z-index:1;text-align:center}
+.collective .container{max-width:900px;margin:0 auto}
+.network-visual{width:300px;height:200px;margin:2rem auto;position:relative}
+.node{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--cyan);opacity:.4;animation:node-float 4s ease-in-out infinite}
+@keyframes node-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.network-visual svg{position:absolute;inset:0;width:100%;height:100%}
+
+.ci-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.5rem;margin-top:2.5rem;text-align:center}
+.ci-stat{padding:1.5rem;background:var(--surface);border-radius:12px;border:1px solid rgba(255,255,255,.04)}
+.ci-stat .num{font-size:2.2rem;font-weight:700;color:var(--cyan)}
+.ci-stat .label{font-size:.85rem;color:var(--muted);margin-top:.3rem}
+
+/* ─── PERSONAS ─── */
+.personas{padding:6rem 2rem;background:var(--surface);position:relative;z-index:1}
+.personas .container{max-width:1000px;margin:0 auto;text-align:center}
+.persona-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:2rem;margin-top:2rem;text-align:left}
+.persona{background:var(--surface2);border-radius:14px;padding:2rem;border:1px solid rgba(255,255,255,.04)}
+.persona .role-tag{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:var(--cyan);margin-bottom:.75rem}
+.persona h4{font-size:1.15rem;margin-bottom:.5rem}
+.persona .before-after{margin-top:1rem}
+.persona .ba-row{display:flex;justify-content:space-between;font-size:.85rem;padding:.4rem 0;border-bottom:1px solid rgba(255,255,255,.03)}
+.persona .ba-row:last-child{border-bottom:none}
+.persona .ba-label{color:var(--muted)}
+.persona .ba-val{font-weight:600}
+.ba-val.old{color:var(--muted);text-decoration:line-through;opacity:.6}
+.ba-val.new{color:var(--cyan)}
+.persona .arrow-right{color:var(--cyan);margin:0 .3rem}
+
+/* ─── TESTIMONIALS ─── */
+.testimonials{padding:6rem 2rem;background:var(--bg);position:relative;z-index:1}
+.testimonials .container{max-width:900px;margin:0 auto;text-align:center}
+.test-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:2rem;margin-top:2rem;text-align:left}
+.test-card{background:var(--surface);border-radius:14px;padding:2rem;border:1px solid rgba(255,255,255,.04);position:relative}
+.test-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--cyan),var(--purple));border-radius:14px 14px 0 0}
+.test-card blockquote{font-size:.98rem;line-height:1.7;margin-bottom:1rem;font-style:italic;color:var(--white)}
+.test-card .attr{font-size:.82rem;color:var(--muted)}
+.test-card .attr strong{color:var(--white);font-weight:600}
+
+/* ─── FAQ ─── */
+.faq{padding:6rem 2rem;background:var(--surface);position:relative;z-index:1}
+.faq .container{max-width:800px;margin:0 auto}
+.faq-item{border-bottom:1px solid rgba(255,255,255,.06);padding:1.3rem 0}
+.faq-q{font-weight:600;font-size:1rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:1rem}
+.faq-q::after{content:'+';font-size:1.3rem;color:var(--cyan);transition:transform .3s}
+.faq-item.open .faq-q::after{transform:rotate(45deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .4s ease;color:var(--muted);font-size:.92rem;line-height:1.7}
+.faq-item.open .faq-a{max-height:300px;padding-top:.8rem}
+
+/* ─── FINAL CTA ─── */
+.final-cta{padding:8rem 2rem;text-align:center;background:var(--bg);position:relative;z-index:1}
+.final-cta::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:500px;height:500px;background:radial-gradient(circle,var(--cyan-glow),transparent 60%);pointer-events:none}
+.final-cta h2{font-size:clamp(2rem,4vw,3.2rem);font-weight:700;margin-bottom:1rem;position:relative}
+.final-cta p{color:var(--muted);font-size:1.1rem;max-width:520px;margin:0 auto 2.5rem;position:relative}
+
+/* ─── FOOTER ─── */
+footer{padding:3rem 2rem;background:var(--bg);border-top:1px solid rgba(255,255,255,.04);text-align:center;position:relative;z-index:1}
+footer .logo{font-size:1.4rem;font-weight:700;color:var(--cyan);margin-bottom:.5rem}
+footer p{color:var(--muted);font-size:.8rem}
+footer .links{display:flex;gap:1.5rem;justify-content:center;margin-top:1rem;flex-wrap:wrap}
+footer .links a{color:var(--muted);font-size:.8rem;transition:color .2s}
+footer .links a:hover{color:var(--cyan)}
+
+/* ─── ANIMATIONS ─── */
+.fade-up{opacity:0;transform:translateY(25px);transition:opacity .7s ease,transform .7s ease}
+.fade-up.visible{opacity:1;transform:translateY(0)}
+
+@media(max-width:600px){
+.hero h1{font-size:2rem}
+.how-step{grid-template-columns:1fr}
+.how-step .step-icon{width:50px;height:50px;font-size:1.2rem}
+}
+</style>
+</head>
+<body>
+
+<!-- STARS -->
+<div class="stars" id="stars"></div>
+
+<!-- HERO -->
+<section class="hero">
+<div class="time-visual">
+<div class="time-ring ring1"></div>
+<div class="time-ring ring2"></div>
+<div class="time-ring ring3"></div>
+<div class="time-core"></div>
+<div class="time-hand hand1"></div>
+<div class="time-hand hand2"></div>
+</div>
+<span class="hero-badge">Powered by ~1M workers' collective intelligence</span>
+<h1>What if you could give every employee the knowledge they'll have in 6 months — today?</h1>
+<p class="hero-sub">Go2 accelerates learning across your entire team. <strong>New hires work like veterans. Veterans work like experts.</strong> Everyone benefits from the collective intelligence of nearly a million workers.</p>
+<div class="cta-group">
+<a href="#" class="btn btn-cyan">Jump Forward</a>
+<a href="#timejump" class="btn btn-ghost">See the Shift</a>
+</div>
+</section>
+
+<!-- TIME JUMP -->
+<section class="time-jump" id="timejump">
+<div class="container fade-up">
+<span class="section-label">The Time Jump</span>
+<h2 class="section-title">Six months of growth. Delivered now.</h2>
+<p class="section-desc">Here's what happens when your team gets access to the collective intelligence of ~1M workers on day one.</p>
+<div class="jump-grid">
+<div class="jump-card today">
+<div class="card-label">&#9711; Without Go2 (today)</div>
+<div class="jump-row"><span class="label">New hire productivity</span><span class="val dim">~30% for 12 weeks</span></div>
+<div class="jump-row"><span class="label">Knowledge transfer</span><span class="val dim">Ad hoc, tribal</span></div>
+<div class="jump-row"><span class="label">Process efficiency</span><span class="val dim">Unknown</span></div>
+<div class="jump-row"><span class="label">Automation identified</span><span class="val dim">0 tasks</span></div>
+<div class="jump-row"><span class="label">Visibility into workflows</span><span class="val dim">Low / anecdotal</span></div>
+</div>
+<div class="jump-arrow">&rarr;</div>
+<div class="jump-card future">
+<div class="card-label">&#9889; With Go2 (day one)</div>
+<div class="jump-row"><span class="label">New hire productivity</span><span class="val glow">~80% by week 4</span></div>
+<div class="jump-row"><span class="label">Knowledge transfer</span><span class="val glow">AI-powered, continuous</span></div>
+<div class="jump-row"><span class="label">Process efficiency</span><span class="val glow">Real-time dashboard</span></div>
+<div class="jump-row"><span class="label">Automation identified</span><span class="val glow">34 hrs/week avg</span></div>
+<div class="jump-row"><span class="label">Visibility into workflows</span><span class="val glow">Complete & aggregated</span></div>
+</div>
+</div>
+<div class="jump-banner">
+<div class="big">6 months &rarr; 4 weeks</div>
+<p>Average time to full productivity with Go2's AI coaching</p>
+</div>
+</div>
+</section>
+
+<!-- ACCELERATION -->
+<section class="accel">
+<div class="container fade-up">
+<span class="section-label">Accelerated Learning</span>
+<h2 class="section-title">How Go2 bends time</h2>
+<p class="section-desc">A desktop agent captures work patterns. Frontier AI (Claude, GPT, Gemini) transforms them into personalized coaching for every employee.</p>
+<div class="accel-grid">
+<div class="accel-card">
+<div class="icon">&#128337;</div>
+<h4>New Hire Fast Track</h4>
+<p>New team members get AI coaching distilled from your best performers. The shortcuts, workflows, and knowledge that took others years — delivered from day one.</p>
+<div class="stat">3x faster</div>
+</div>
+<div class="accel-card">
+<div class="icon">&#128640;</div>
+<h4>Veteran Upgrade</h4>
+<p>Even experienced employees discover patterns from ~1M workers. New approaches, tools, and techniques they've never seen before. Continuous improvement, not stagnation.</p>
+<div class="stat">+27% efficiency</div>
+</div>
+<div class="accel-card">
+<div class="icon">&#9881;</div>
+<h4>Automation Discovered</h4>
+<p>Go2 watches for repetitive patterns and identifies exactly which tasks can be automated. Real ROI calculations, not theoretical estimates.</p>
+<div class="stat">34 hrs/week</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how">
+<div class="container fade-up">
+<span class="section-label">The Process</span>
+<h2 class="section-title">Four steps to time travel</h2>
+<div class="how-steps">
+<div class="how-step">
+<div class="step-icon">&#9201;</div>
+<div>
+<h4>Deploy the agent</h4>
+<p>A lightweight desktop app installs in minutes. Runs silently. No behavior changes. No training. Your team barely notices.</p>
+<span class="time-tag">5 minutes</span>
+</div>
+</div>
+<div class="how-step">
+<div class="step-icon">&#128269;</div>
+<div>
+<h4>Observe patterns</h4>
+<p>Go2 captures how work actually happens — tool usage, process flows, collaboration dynamics. Not keystrokes, not screenshots. Work patterns.</p>
+<span class="time-tag">Continuous</span>
+</div>
+</div>
+<div class="how-step">
+<div class="step-icon">&#129302;</div>
+<div>
+<h4>AI coaches privately</h4>
+<p>Each employee gets personalized suggestions powered by frontier AI and insights from ~1M workers. "Teams in similar roles do this 40% faster. Here's how." Private to each person.</p>
+<span class="time-tag">Always on</span>
+</div>
+</div>
+<div class="how-step">
+<div class="step-icon">&#128202;</div>
+<div>
+<h4>Managers see the big picture</h4>
+<p>Aggregated dashboards show team patterns: bottlenecks, automation opportunities, knowledge gaps. Never individual surveillance. Patterns, not people.</p>
+<span class="time-tag">Real-time</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- COLLECTIVE INTELLIGENCE -->
+<section class="collective">
+<div class="container fade-up">
+<span class="section-label">The Network</span>
+<h2 class="section-title">~1 million workers. One intelligence.</h2>
+<p class="section-desc" style="margin-left:auto;margin-right:auto">Every team using Go2 contributes to a collective intelligence that benefits every other team. The more workers in the network, the smarter every individual coaching session becomes.</p>
+<div class="ci-stats">
+<div class="ci-stat"><div class="num">~1M</div><div class="label">Workers in the network</div></div>
+<div class="ci-stat"><div class="num">500+</div><div class="label">Role patterns identified</div></div>
+<div class="ci-stat"><div class="num">24/7</div><div class="label">AI coaching available</div></div>
+<div class="ci-stat"><div class="num">3</div><div class="label">Frontier AI models</div></div>
+</div>
+</div>
+</section>
+
+<!-- PERSONAS -->
+<section class="personas">
+<div class="container fade-up">
+<span class="section-label">Who Benefits</span>
+<h2 class="section-title">Everyone moves forward</h2>
+<div class="persona-grid">
+<div class="persona">
+<div class="role-tag">New Hire (Week 1)</div>
+<h4>From lost to productive</h4>
+<p style="color:var(--muted);font-size:.9rem;margin-bottom:.75rem">Instead of spending 3 months absorbing tribal knowledge, new hires get AI-distilled best practices from day one.</p>
+<div class="before-after">
+<div class="ba-row"><span class="ba-label">Ramp time</span><span><span class="ba-val old">12 weeks</span><span class="arrow-right">&rarr;</span><span class="ba-val new">4 weeks</span></span></div>
+<div class="ba-row"><span class="ba-label">Questions asked/day</span><span><span class="ba-val old">23</span><span class="arrow-right">&rarr;</span><span class="ba-val new">6</span></span></div>
+<div class="ba-row"><span class="ba-label">Mistakes in first month</span><span><span class="ba-val old">14</span><span class="arrow-right">&rarr;</span><span class="ba-val new">3</span></span></div>
+</div>
+</div>
+<div class="persona">
+<div class="role-tag">Veteran Employee</div>
+<h4>From good to great</h4>
+<p style="color:var(--muted);font-size:.9rem;margin-bottom:.75rem">Even experienced workers discover shortcuts and approaches from ~1M peers they'd never find on their own.</p>
+<div class="before-after">
+<div class="ba-row"><span class="ba-label">Daily efficiency</span><span><span class="ba-val old">Baseline</span><span class="arrow-right">&rarr;</span><span class="ba-val new">+27%</span></span></div>
+<div class="ba-row"><span class="ba-label">Redundant work</span><span><span class="ba-val old">~20%</span><span class="arrow-right">&rarr;</span><span class="ba-val new">~5%</span></span></div>
+<div class="ba-row"><span class="ba-label">New techniques/month</span><span><span class="ba-val old">0-1</span><span class="arrow-right">&rarr;</span><span class="ba-val new">4-6</span></span></div>
+</div>
+</div>
+<div class="persona">
+<div class="role-tag">Manager / Owner</div>
+<h4>From guessing to knowing</h4>
+<p style="color:var(--muted);font-size:.9rem;margin-bottom:.75rem">Stop relying on gut feelings. See aggregated team patterns, automation opportunities, and process bottlenecks in real time.</p>
+<div class="before-after">
+<div class="ba-row"><span class="ba-label">Visibility</span><span><span class="ba-val old">Anecdotal</span><span class="arrow-right">&rarr;</span><span class="ba-val new">Real-time</span></span></div>
+<div class="ba-row"><span class="ba-label">Automation found</span><span><span class="ba-val old">0</span><span class="arrow-right">&rarr;</span><span class="ba-val new">34 hrs/wk</span></span></div>
+<div class="ba-row"><span class="ba-label">Decision basis</span><span><span class="ba-val old">Intuition</span><span class="arrow-right">&rarr;</span><span class="ba-val new">Data</span></span></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials">
+<div class="container fade-up">
+<span class="section-label">From the Future</span>
+<h2 class="section-title">Teams already traveling in time</h2>
+<div class="test-grid">
+<div class="test-card">
+<blockquote>Our last three hires hit full productivity in under a month. Before Go2, it was always three months minimum. It's like they arrived already trained.</blockquote>
+<div class="attr"><strong>Head of Operations</strong> / 28-person fintech</div>
+</div>
+<div class="test-card">
+<blockquote>I've been doing this job for eight years. Go2 showed me techniques I'd never seen. Not generic advice — specific patterns from people in my exact role.</blockquote>
+<div class="attr"><strong>Senior Account Manager</strong> / 40-person agency</div>
+</div>
+<div class="test-card">
+<blockquote>The automation mapping alone paid for itself. Go2 found 40 hours of repetitive work per week that we had no idea existed. We automated 30 of them in the first quarter.</blockquote>
+<div class="attr"><strong>CEO</strong> / 32-person e-commerce company</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- FAQ -->
+<section class="faq">
+<div class="container fade-up">
+<span class="section-label">Questions</span>
+<h2 class="section-title">Temporal FAQs</h2>
+<div class="faq-list">
+<div class="faq-item">
+<div class="faq-q">Is this employee surveillance?</div>
+<div class="faq-a">No. Go2 captures work patterns, not personal activity. Individual coaching is private to each employee. Managers see only aggregated team insights, never individual data. This is a tool that helps workers, not one that watches them.</div>
+</div>
+<div class="faq-item">
+<div class="faq-q">How does collective intelligence from ~1M workers help my team?</div>
+<div class="faq-a">Go2's AI has learned from the work patterns of nearly a million workers across hundreds of roles. When it coaches your employees, it draws on this vast dataset to surface techniques, shortcuts, and approaches that are proven effective — not theoretical suggestions, but patterns that actually work in practice.</div>
+</div>
+<div class="faq-item">
+<div class="faq-q">What AI models power the coaching?</div>
+<div class="faq-a">Go2 uses frontier AI models including Claude, GPT, and Gemini. Each coaching suggestion is generated by the model best suited for that particular insight, giving your team the best of all three.</div>
+</div>
+<div class="faq-item">
+<div class="faq-q">How quickly do we see results?</div>
+<div class="faq-a">Most teams see measurable improvements within 30 days. The AI coaching starts delivering value from day one, and results compound as the system learns more about your team's specific patterns and needs.</div>
+</div>
+<div class="faq-item">
+<div class="faq-q">Will employees resist it?</div>
+<div class="faq-a">Employees typically embrace Go2 because it helps them personally. The AI coach makes their work easier and more efficient. When people see it's supporting them — not monitoring them — adoption happens naturally.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta">
+<h2>Stop waiting for experience.<br>Start accelerating it.</h2>
+<p>Give your entire team the knowledge, skills, and efficiency that usually takes years to develop. Starting today.</p>
+<div class="cta-group">
+<a href="#" class="btn btn-cyan">Start Time Traveling</a>
+<a href="#" class="btn btn-ghost">Book a Demo</a>
+</div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+<div class="logo">Go2</div>
+<p>&copy; 2026 Go2. All rights reserved.</p>
+<div class="links">
+<a href="#">Product</a>
+<a href="#">Security</a>
+<a href="#">Privacy</a>
+<a href="#">Terms</a>
+<a href="#">Contact</a>
+</div>
+</footer>
+
+<script>
+// Stars
+const sf=document.getElementById('stars');
+for(let i=0;i<80;i++){const s=document.createElement('span');s.style.left=Math.random()*100+'%';s.style.top=Math.random()*100+'%';s.style.animationDelay=Math.random()*3+'s';s.style.animationDuration=(2+Math.random()*3)+'s';sf.appendChild(s)}
+
+// Fade observer
+const obs=new IntersectionObserver(entries=>{
+entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target)}})
+},{threshold:.12});
+document.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
+
+// FAQ
+document.querySelectorAll('.faq-q').forEach(q=>{
+q.addEventListener('click',()=>{
+const item=q.parentElement;
+document.querySelectorAll('.faq-item').forEach(i=>{if(i!==item)i.classList.remove('open')});
+item.classList.toggle('open');
+});
+});
+</script>
+</body>
+</html>

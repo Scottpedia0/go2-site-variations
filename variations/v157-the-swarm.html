@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The Swarm: 7 AI Agents Working as One</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#050510;--surface:#0a0a1a;--card:#10102a;--border:rgba(255,255,255,.06);
+--cyan:#06b6d4;--cyan-glow:rgba(6,182,212,.2);--violet:#8b5cf6;--violet-glow:rgba(139,92,246,.2);
+--emerald:#10b981;--rose:#f43f5e;--amber:#f59e0b;--blue:#3b82f6;--pink:#ec4899;
+--white:#f0f0f8;--muted:#6b7294;--slate:#94a3b8;
+}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--white);overflow-x:hidden;line-height:1.6}
+a{color:var(--cyan);text-decoration:none}
+.container{max-width:1100px;margin:0 auto;padding:0 2rem}
+
+/* ─── NAV ─── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;background:rgba(5,5,16,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.logo{font-size:1.4rem;font-weight:800;letter-spacing:-.02em}
+.logo span{background:linear-gradient(135deg,var(--cyan),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+nav .btn-sm{padding:.5rem 1.2rem;font-size:.85rem;border-radius:6px;font-weight:600;background:linear-gradient(135deg,var(--cyan),var(--violet));color:var(--white);border:none;cursor:pointer;transition:all .2s}
+nav .btn-sm:hover{box-shadow:0 4px 20px var(--violet-glow);transform:translateY(-1px)}
+
+/* ─── HERO ─── */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:6rem 2rem 4rem;position:relative;overflow:hidden}
+
+/* Animated particle field */
+.particle-field{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.particle{position:absolute;width:3px;height:3px;border-radius:50%;animation:float linear infinite}
+@keyframes float{0%{transform:translateY(100vh) scale(0);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(-10vh) scale(1);opacity:0}}
+
+/* Connection lines animation */
+.hero::before{content:'';position:absolute;inset:0;background:
+  radial-gradient(circle at 30% 40%,var(--cyan-glow),transparent 40%),
+  radial-gradient(circle at 70% 60%,var(--violet-glow),transparent 40%);
+  animation:nebula 8s ease-in-out infinite alternate;pointer-events:none}
+@keyframes nebula{from{opacity:.3}to{opacity:.6}}
+
+.swarm-badge{display:inline-flex;align-items:center;gap:.5rem;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);border-radius:100px;padding:.5rem 1.4rem;font-size:.8rem;color:var(--violet);margin-bottom:2rem;letter-spacing:.08em;text-transform:uppercase}
+.swarm-badge .dots{display:flex;gap:3px}
+.swarm-badge .dots span{width:6px;height:6px;border-radius:50%;animation:swarm-dot 2s ease-in-out infinite}
+.swarm-badge .dots span:nth-child(1){background:var(--cyan);animation-delay:0s}
+.swarm-badge .dots span:nth-child(2){background:var(--violet);animation-delay:.2s}
+.swarm-badge .dots span:nth-child(3){background:var(--emerald);animation-delay:.4s}
+.swarm-badge .dots span:nth-child(4){background:var(--amber);animation-delay:.6s}
+.swarm-badge .dots span:nth-child(5){background:var(--rose);animation-delay:.8s}
+.swarm-badge .dots span:nth-child(6){background:var(--blue);animation-delay:1s}
+.swarm-badge .dots span:nth-child(7){background:var(--pink);animation-delay:1.2s}
+@keyframes swarm-dot{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.8);opacity:1}}
+
+.hero h1{font-size:clamp(2.8rem,7vw,5.5rem);font-weight:900;line-height:1.05;max-width:900px;margin-bottom:1.5rem;letter-spacing:-.03em}
+.hero h1 .gradient{background:linear-gradient(135deg,var(--cyan),var(--violet),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200% 200%;animation:gradient-shift 4s ease-in-out infinite}
+@keyframes gradient-shift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.hero-sub{font-size:clamp(1.05rem,1.8vw,1.3rem);color:var(--slate);max-width:620px;margin-bottom:3rem;line-height:1.7}
+
+.cta-group{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:1rem 2.2rem;border-radius:10px;font-size:1.05rem;font-weight:700;cursor:pointer;border:none;transition:all .25s}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),var(--violet));color:var(--white)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 40px var(--violet-glow)}
+.btn-ghost{background:transparent;color:var(--white);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--violet);color:var(--violet)}
+
+/* ─── SWARM VISUAL ─── */
+.swarm-visual{padding:4rem 2rem 6rem;position:relative}
+.hive{max-width:700px;margin:0 auto;position:relative;height:500px}
+.hive-node{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;cursor:default;transition:all .4s;z-index:2}
+.hive-node:hover{transform:scale(1.15);z-index:10}
+.hive-node .icon{font-size:1.8rem;margin-bottom:.3rem}
+.hive-node .name{font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;text-align:center;line-height:1.2}
+.hive-center{width:120px;height:120px;background:radial-gradient(circle,rgba(139,92,246,.3),rgba(6,182,212,.15));border:2px solid rgba(139,92,246,.4);left:50%;top:50%;transform:translate(-50%,-50%);box-shadow:0 0 60px var(--violet-glow)}
+.hive-center .icon{font-size:2.5rem}
+.hive-center .name{font-size:.8rem;color:var(--white)}
+
+.hive-agent{width:90px;height:90px;border:1px solid var(--border);background:var(--card)}
+.hive-agent:hover{box-shadow:0 0 30px var(--cyan-glow)}
+.hive-agent .name{color:var(--slate);font-size:.65rem}
+
+.n1{top:5%;left:50%;transform:translateX(-50%)}
+.n2{top:15%;right:10%}
+.n3{top:50%;right:2%;transform:translateY(-50%)}
+.n4{bottom:15%;right:10%}
+.n5{bottom:5%;left:50%;transform:translateX(-50%)}
+.n6{bottom:15%;left:10%}
+.n7{top:50%;left:2%;transform:translateY(-50%)}
+
+/* SVG connections */
+.connections{position:absolute;inset:0;z-index:1;pointer-events:none}
+.connections line{stroke:rgba(139,92,246,.15);stroke-width:1;animation:pulse-line 3s ease-in-out infinite}
+@keyframes pulse-line{0%,100%{opacity:.15}50%{opacity:.4}}
+
+.section-label{text-transform:uppercase;letter-spacing:.15em;font-size:.8rem;color:var(--violet);margin-bottom:.5rem;font-weight:600}
+.section-title{font-size:clamp(2rem,4vw,3.2rem);font-weight:800;margin-bottom:1rem;letter-spacing:-.02em}
+.section-sub{color:var(--slate);font-size:1.05rem;max-width:600px;margin-bottom:3rem;line-height:1.7}
+
+/* ─── AGENT DEEP DIVES ─── */
+.agent-dives{padding:4rem 2rem}
+.dive{display:grid;grid-template-columns:1fr 1fr;gap:3rem;padding:4rem 0;border-bottom:1px solid var(--border);align-items:center}
+.dive:last-child{border-bottom:none}
+.dive:nth-child(even){direction:rtl}
+.dive:nth-child(even) > *{direction:ltr}
+@media(max-width:768px){.dive,.dive:nth-child(even){grid-template-columns:1fr;direction:ltr}}
+
+.dive-visual{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:2.5rem;position:relative;overflow:hidden}
+.dive-visual::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.dive-visual .agent-num{font-size:6rem;font-weight:900;opacity:.06;position:absolute;top:-.5rem;right:1rem;line-height:1}
+.dive-visual .emoji{font-size:3rem;margin-bottom:1rem}
+.dive-visual h3{font-size:1.4rem;margin-bottom:.5rem}
+.dive-visual .powers{list-style:none;margin-top:1rem}
+.dive-visual .powers li{padding:.4rem 0;font-size:.9rem;color:var(--slate);display:flex;align-items:center;gap:.5rem}
+.dive-visual .powers li::before{content:'';width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+.dive-content h4{font-size:.8rem;text-transform:uppercase;letter-spacing:.15em;color:var(--violet);margin-bottom:.5rem}
+.dive-content .headline{font-size:1.6rem;font-weight:800;margin-bottom:1rem;line-height:1.3}
+.dive-content p{color:var(--slate);font-size:.95rem;line-height:1.7;margin-bottom:1rem}
+.dive-content .stat-highlight{display:inline-flex;align-items:baseline;gap:.3rem;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.15);border-radius:8px;padding:.4rem .8rem;font-size:.9rem}
+.dive-content .stat-highlight .num{font-size:1.3rem;font-weight:800;color:var(--cyan)}
+
+.color-coach::before{background:var(--cyan)}
+.color-docs::before{background:var(--violet)}
+.color-scout::before{background:var(--amber)}
+.color-onboard::before{background:var(--emerald)}
+.color-knowledge::before{background:var(--rose)}
+.color-meeting::before{background:var(--blue)}
+.color-workflow::before{background:var(--pink)}
+.d-coach .dive-visual::before{background:linear-gradient(90deg,var(--cyan),transparent)}
+.d-docs .dive-visual::before{background:linear-gradient(90deg,var(--violet),transparent)}
+.d-scout .dive-visual::before{background:linear-gradient(90deg,var(--amber),transparent)}
+.d-onboard .dive-visual::before{background:linear-gradient(90deg,var(--emerald),transparent)}
+.d-knowledge .dive-visual::before{background:linear-gradient(90deg,var(--rose),transparent)}
+.d-meeting .dive-visual::before{background:linear-gradient(90deg,var(--blue),transparent)}
+.d-workflow .dive-visual::before{background:linear-gradient(90deg,var(--pink),transparent)}
+
+/* ─── SWARM INTELLIGENCE ─── */
+.intelligence{padding:6rem 2rem;background:var(--surface)}
+.intel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3rem}
+@media(max-width:768px){.intel-grid{grid-template-columns:1fr}}
+.intel-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;text-align:center;transition:all .3s}
+.intel-card:hover{border-color:rgba(139,92,246,.3);transform:translateY(-4px)}
+.intel-card .icon{font-size:2.5rem;margin-bottom:1rem}
+.intel-card h3{font-size:1.1rem;margin-bottom:.5rem}
+.intel-card p{color:var(--muted);font-size:.85rem;line-height:1.6}
+
+/* ─── EXAMPLES ─── */
+.examples{padding:6rem 2rem}
+.example-list{margin-top:3rem}
+.example{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
+.example::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--cyan),var(--violet))}
+.example .scenario{font-size:.75rem;text-transform:uppercase;letter-spacing:.12em;color:var(--violet);margin-bottom:.5rem;font-weight:600}
+.example h3{font-size:1.15rem;margin-bottom:.75rem}
+.example .agent-chain{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.75rem}
+.example .agent-tag{font-size:.7rem;padding:.25rem .6rem;border-radius:4px;font-weight:600;display:inline-flex;align-items:center;gap:.3rem}
+.tag-coach{background:rgba(6,182,212,.12);color:var(--cyan)}
+.tag-docs{background:rgba(139,92,246,.12);color:var(--violet)}
+.tag-scout{background:rgba(245,158,11,.12);color:var(--amber)}
+.tag-onboard{background:rgba(16,185,129,.12);color:var(--emerald)}
+.tag-knowledge{background:rgba(244,63,94,.12);color:var(--rose)}
+.tag-meeting{background:rgba(59,130,246,.12);color:var(--blue)}
+.tag-workflow{background:rgba(236,72,153,.12);color:var(--pink)}
+.example p{color:var(--slate);font-size:.9rem;line-height:1.6}
+.example .result{margin-top:.75rem;font-weight:700;color:var(--emerald);font-size:.9rem}
+
+/* ─── STATS ─── */
+.stats{padding:4rem 2rem}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem}
+@media(max-width:768px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;text-align:center}
+.stat-card .num{font-size:2.8rem;font-weight:900;line-height:1;margin-bottom:.4rem;background:linear-gradient(135deg,var(--cyan),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-card .desc{font-size:.8rem;color:var(--muted)}
+
+/* ─── FINAL CTA ─── */
+.final-cta{padding:8rem 2rem;text-align:center;position:relative;overflow:hidden}
+.final-cta::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(139,92,246,.1),transparent 60%);pointer-events:none}
+.final-cta h2{font-size:clamp(2.2rem,5vw,4rem);font-weight:900;margin-bottom:1rem;letter-spacing:-.02em}
+.final-cta .gradient{background:linear-gradient(135deg,var(--cyan),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.final-cta p{font-size:1.15rem;color:var(--slate);max-width:550px;margin:0 auto 2.5rem;line-height:1.7}
+.final-cta .fine{margin-top:1.5rem;font-size:.85rem;color:var(--muted)}
+
+footer{padding:3rem 2rem;border-top:1px solid var(--border);text-align:center;color:var(--muted);font-size:.85rem}
+
+.fade-up{opacity:0;transform:translateY(30px);transition:all .6s ease}
+.fade-up.visible{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">go<span>2</span></div>
+  <button class="btn-sm" onclick="document.querySelector('.final-cta').scrollIntoView({behavior:'smooth'})">Deploy Your AI Team</button>
+</nav>
+
+<!-- ─── HERO ─── -->
+<section class="hero">
+  <div class="particle-field" id="particles"></div>
+
+  <div class="swarm-badge">
+    <div class="dots">
+      <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+    Swarm Intelligence
+  </div>
+
+  <h1>One agent is a tool.<br><span class="gradient">Seven agents are a workforce.</span></h1>
+  <p class="hero-sub">Like a hive mind for your company: 7 specialized AI agents that share context, coordinate actions, and collectively see what no single tool ever could.</p>
+
+  <div class="cta-group">
+    <button class="btn btn-primary" onclick="document.querySelector('.final-cta').scrollIntoView({behavior:'smooth'})">Deploy Your AI Team</button>
+    <button class="btn btn-ghost" onclick="document.querySelector('.swarm-visual').scrollIntoView({behavior:'smooth'})">Meet the Swarm</button>
+  </div>
+</section>
+
+<!-- ─── SWARM VISUAL ─── -->
+<section class="swarm-visual fade-up">
+  <div style="text-align:center;margin-bottom:2rem">
+    <div class="section-label">The swarm</div>
+    <h2 class="section-title">Seven minds. One intelligence.</h2>
+    <p class="section-sub" style="margin:0 auto">Each agent specializes. All agents communicate. The swarm sees patterns no individual agent — or human — could detect alone.</p>
+  </div>
+
+  <div class="hive">
+    <svg class="connections" viewBox="0 0 700 500">
+      <line x1="350" y1="250" x2="350" y2="60" style="animation-delay:0s"/>
+      <line x1="350" y1="250" x2="580" y2="120" style="animation-delay:.4s"/>
+      <line x1="350" y1="250" x2="650" y2="250" style="animation-delay:.8s"/>
+      <line x1="350" y1="250" x2="580" y2="380" style="animation-delay:1.2s"/>
+      <line x1="350" y1="250" x2="350" y2="440" style="animation-delay:1.6s"/>
+      <line x1="350" y1="250" x2="120" y2="380" style="animation-delay:2s"/>
+      <line x1="350" y1="250" x2="50" y2="250" style="animation-delay:2.4s"/>
+      <!-- Inter-agent connections -->
+      <line x1="350" y1="60" x2="580" y2="120" style="opacity:.08"/>
+      <line x1="580" y1="120" x2="650" y2="250" style="opacity:.08"/>
+      <line x1="650" y1="250" x2="580" y2="380" style="opacity:.08"/>
+      <line x1="580" y1="380" x2="350" y2="440" style="opacity:.08"/>
+      <line x1="350" y1="440" x2="120" y2="380" style="opacity:.08"/>
+      <line x1="120" y1="380" x2="50" y2="250" style="opacity:.08"/>
+      <line x1="50" y1="250" x2="350" y2="60" style="opacity:.08"/>
+    </svg>
+
+    <div class="hive-node hive-center">
+      <div class="icon">🧠</div>
+      <div class="name">Swarm<br>Core</div>
+    </div>
+    <div class="hive-node hive-agent n1"><div class="icon">🎯</div><div class="name">Coach</div></div>
+    <div class="hive-node hive-agent n2"><div class="icon">📋</div><div class="name">Documenter</div></div>
+    <div class="hive-node hive-agent n3"><div class="icon">🔍</div><div class="name">Scout</div></div>
+    <div class="hive-node hive-agent n4"><div class="icon">🎓</div><div class="name">Onboarding</div></div>
+    <div class="hive-node hive-agent n5"><div class="icon">📚</div><div class="name">Knowledge</div></div>
+    <div class="hive-node hive-agent n6"><div class="icon">🎙️</div><div class="name">Meetings</div></div>
+    <div class="hive-node hive-agent n7"><div class="icon">⚡</div><div class="name">Workflow</div></div>
+  </div>
+</section>
+
+<!-- ─── AGENT DEEP DIVES ─── -->
+<section class="agent-dives">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:2rem">
+      <div class="section-label">Agent profiles</div>
+      <h2 class="section-title">Each agent, in depth</h2>
+    </div>
+
+    <div class="dive d-coach fade-up">
+      <div class="dive-visual">
+        <div class="agent-num">01</div>
+        <div class="emoji">🎯</div>
+        <h3>AI Coach</h3>
+        <ul class="powers">
+          <li class="color-coach">Personalized productivity tips via Slack/Teams</li>
+          <li class="color-coach">Learns individual work rhythms and patterns</li>
+          <li class="color-coach">Adapts coaching style to each person</li>
+          <li class="color-coach">Focus time protection and deep work scheduling</li>
+        </ul>
+      </div>
+      <div class="dive-content">
+        <h4>Agent 01</h4>
+        <div class="headline">Your personal productivity partner</div>
+        <p>The Coach studies how each person works — when they are most focused, what derails them, which habits cost time. Then it delivers precisely-timed nudges that actually help, not generic advice.</p>
+        <p>It coordinates with the Meeting Analyst to protect focus time and with the Workflow Optimizer to route tasks to people when they are in the right mode to handle them.</p>
+        <div class="stat-highlight"><span class="num">23%</span> average productivity gain per person</div>
+      </div>
+    </div>
+
+    <div class="dive d-docs fade-up">
+      <div class="dive-visual">
+        <div class="agent-num">02</div>
+        <div class="emoji">📋</div>
+        <h3>Process Documenter</h3>
+        <ul class="powers">
+          <li class="color-docs">Auto-generates SOPs from observed behavior</li>
+          <li class="color-docs">Detects process drift and version conflicts</li>
+          <li class="color-docs">Keeps documentation perpetually current</li>
+          <li class="color-docs">Identifies undocumented tribal processes</li>
+        </ul>
+      </div>
+      <div class="dive-content">
+        <h4>Agent 02</h4>
+        <div class="headline">Documentation that writes itself</div>
+        <p>Most companies have outdated wikis that nobody trusts. The Documenter watches actual workflows and generates accurate, current SOPs — then updates them as processes evolve.</p>
+        <p>When the Knowledge Keeper detects tribal knowledge leaving the company, the Documenter captures it as formal process docs before it is lost.</p>
+        <div class="stat-highlight"><span class="num">85%</span> reduction in "how do I do this?" questions</div>
+      </div>
+    </div>
+
+    <div class="dive d-scout fade-up">
+      <div class="dive-visual">
+        <div class="agent-num">03</div>
+        <div class="emoji">🔍</div>
+        <h3>Automation Scout</h3>
+        <ul class="powers">
+          <li class="color-scout">Identifies repetitive task patterns</li>
+          <li class="color-scout">Estimates automation ROI per task</li>
+          <li class="color-scout">Suggests or builds automations</li>
+          <li class="color-scout">Monitors automation health post-deploy</li>
+        </ul>
+      </div>
+      <div class="dive-content">
+        <h4>Agent 03</h4>
+        <div class="headline">Finds the work that machines should do</div>
+        <p>The Scout continuously scans for repetitive patterns — copy-paste between tools, manual data entry, recurring report generation. It ranks automation opportunities by effort-to-impact ratio.</p>
+        <p>When the Workflow Optimizer finds a bottleneck caused by manual work, the Scout automatically evaluates whether it can be automated away.</p>
+        <div class="stat-highlight"><span class="num">12hrs</span> saved per week per team (avg)</div>
+      </div>
+    </div>
+
+    <div class="dive d-onboard fade-up">
+      <div class="dive-visual">
+        <div class="agent-num">04</div>
+        <div class="emoji">🎓</div>
+        <h3>AI Onboarding</h3>
+        <ul class="powers">
+          <li class="color-onboard">Role-specific training from real data</li>
+          <li class="color-onboard">Adaptive pacing based on new hire speed</li>
+          <li class="color-onboard">Contextual answers to new hire questions</li>
+          <li class="color-onboard">Integrates tribal knowledge into training</li>
+        </ul>
+      </div>
+      <div class="dive-content">
+        <h4>Agent 04</h4>
+        <div class="headline">New hires ramp in half the time</div>
+        <p>Onboarding pulls from the Knowledge Keeper's indexed docs, the Documenter's SOPs, and the Coach's understanding of role-specific patterns to create training that is specific, current, and personalized.</p>
+        <p>No more "here's a 50-page wiki, good luck." New hires get exactly what they need, when they need it.</p>
+        <div class="stat-highlight"><span class="num">60%</span> faster time to full productivity</div>
+      </div>
+    </div>
+
+    <div class="dive d-knowledge fade-up">
+      <div class="dive-visual">
+        <div class="agent-num">05</div>
+        <div class="emoji">📚</div>
+        <h3>Knowledge Keeper</h3>
+        <ul class="powers">
+          <li class="color-knowledge">Indexes conversations, docs, and meetings</li>
+          <li class="color-knowledge">Makes institutional knowledge searchable</li>
+          <li class="color-knowledge">Detects knowledge silos and single points of failure</li>
+          <li class="color-knowledge">Preserves context when people leave</li>
+        </ul>
+      </div>
+      <div class="dive-content">
+        <h4>Agent 05</h4>
+        <div class="headline">Your company's memory, made permanent</div>
+        <p>Every decision rationale, every workaround, every "the reason we do it this way" — captured, indexed, and made searchable. When someone leaves, their knowledge stays.</p>
+        <p>The Keeper feeds the Onboarding agent, informs the Documenter, and gives the Coach historical context for better advice.</p>
+        <div class="stat-highlight"><span class="num">200+</span> docs indexed in first hour</div>
+      </div>
+    </div>
+
+    <div class="dive d-meeting fade-up">
+      <div class="dive-visual">
+        <div class="agent-num">06</div>
+        <div class="emoji">🎙️</div>
+        <h3>Meeting Analyst</h3>
+        <ul class="powers">
+          <li class="color-meeting">Auto-summaries and action item extraction</li>
+          <li class="color-meeting">"Should be an email" detection</li>
+          <li class="color-meeting">Decision tracking across meetings</li>
+          <li class="color-meeting">Pre-meeting briefs with relevant context</li>
+        </ul>
+      </div>
+      <div class="dive-content">
+        <h4>Agent 06</h4>
+        <div class="headline">Meetings that actually matter</div>
+        <p>The Analyst attends every meeting (virtually), captures every decision, tracks every action item, and flags meetings that are wasting everyone's time.</p>
+        <p>It feeds decisions to the Knowledge Keeper, action items to the Workflow Optimizer, and focus-time data to the Coach. The swarm learns from every meeting.</p>
+        <div class="stat-highlight"><span class="num">8hrs</span> of meetings cut per team per week</div>
+      </div>
+    </div>
+
+    <div class="dive d-workflow fade-up">
+      <div class="dive-visual">
+        <div class="agent-num">07</div>
+        <div class="emoji">⚡</div>
+        <h3>Workflow Optimizer</h3>
+        <ul class="powers">
+          <li class="color-workflow">Bottleneck detection in real time</li>
+          <li class="color-workflow">Delay prediction before deadlines slip</li>
+          <li class="color-workflow">Task re-routing suggestions</li>
+          <li class="color-workflow">Cross-team dependency mapping</li>
+        </ul>
+      </div>
+      <div class="dive-content">
+        <h4>Agent 07</h4>
+        <div class="headline">The conductor of your entire operation</div>
+        <p>The Optimizer has the widest view: it sees every workflow, every dependency, every bottleneck. When something is about to slip, it predicts the delay and suggests re-routing before anyone notices.</p>
+        <p>It coordinates with the Scout to automate bottlenecks, with the Coach to re-balance workloads, and with the Meeting Analyst to flag process decisions needed.</p>
+        <div class="stat-highlight"><span class="num">34%</span> reduction in project delays</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── SWARM INTELLIGENCE ─── -->
+<section class="intelligence fade-up">
+  <div class="container" style="text-align:center">
+    <div class="section-label">Why a swarm</div>
+    <h2 class="section-title">The whole is greater<br>than the sum of its parts</h2>
+    <p class="section-sub" style="margin:0 auto 3rem">In nature, swarm intelligence lets simple agents produce complex, adaptive behavior. In Go2, seven specialized agents produce insights no single AI tool can match.</p>
+
+    <div class="intel-grid">
+      <div class="intel-card">
+        <div class="icon">🔗</div>
+        <h3>Shared Context</h3>
+        <p>Every agent sees what the others see. The Coach knows what the Meeting Analyst found. The Documenter knows what the Knowledge Keeper indexed. No information silos.</p>
+      </div>
+      <div class="intel-card">
+        <div class="icon">🔄</div>
+        <h3>Cross-Pollination</h3>
+        <p>When one agent discovers something, it becomes fuel for all the others. A workflow bottleneck triggers an automation suggestion, which updates the SOP, which improves onboarding.</p>
+      </div>
+      <div class="intel-card">
+        <div class="icon">🌊</div>
+        <h3>Emergent Intelligence</h3>
+        <p>Patterns emerge from the collective that no individual agent would find: culture shifts, organizational drift, competitive blind spots. The swarm sees what humans miss.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── EXAMPLES ─── -->
+<section class="examples fade-up">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:1rem">
+      <div class="section-label">The swarm in action</div>
+      <h2 class="section-title">Real scenarios, real coordination</h2>
+    </div>
+
+    <div class="example-list">
+      <div class="example">
+        <div class="scenario">Scenario: Key employee gives notice</div>
+        <h3>The VP of Engineering resigns. The swarm activates.</h3>
+        <div class="agent-chain">
+          <span class="agent-tag tag-knowledge">📚 Knowledge Keeper</span>
+          <span style="color:var(--muted)">&#8594;</span>
+          <span class="agent-tag tag-docs">📋 Documenter</span>
+          <span style="color:var(--muted)">&#8594;</span>
+          <span class="agent-tag tag-onboard">🎓 Onboarding</span>
+          <span style="color:var(--muted)">&#8594;</span>
+          <span class="agent-tag tag-workflow">⚡ Workflow</span>
+        </div>
+        <p>Knowledge Keeper immediately indexes all their undocumented knowledge. Documenter generates SOPs for their unique processes. Onboarding prepares training materials for their replacement. Workflow Optimizer re-routes their pending approvals and dependencies.</p>
+        <div class="result">Result: Zero knowledge loss. Replacement ramps in 3 weeks instead of 3 months.</div>
+      </div>
+
+      <div class="example">
+        <div class="scenario">Scenario: Scaling from 50 to 150 people</div>
+        <h3>The company triples. Old processes break. The swarm adapts.</h3>
+        <div class="agent-chain">
+          <span class="agent-tag tag-workflow">⚡ Workflow</span>
+          <span style="color:var(--muted)">&#8594;</span>
+          <span class="agent-tag tag-scout">🔍 Scout</span>
+          <span style="color:var(--muted)">&#8594;</span>
+          <span class="agent-tag tag-docs">📋 Documenter</span>
+          <span style="color:var(--muted)">&#8594;</span>
+          <span class="agent-tag tag-coach">🎯 Coach</span>
+        </div>
+        <p>Workflow detects processes that worked at 50 but break at 150. Scout identifies which should be automated vs. restructured. Documenter updates all SOPs. Coach helps each person adapt to new workflows with personalized guidance.</p>
+        <div class="result">Result: Growth without growing pains. Processes scale before they break.</div>
+      </div>
+
+      <div class="example">
+        <div class="scenario">Scenario: Product launch coordination</div>
+        <h3>Marketing, Sales, Engineering, and Support need perfect sync.</h3>
+        <div class="agent-chain">
+          <span class="agent-tag tag-meeting">🎙️ Meeting</span>
+          <span style="color:var(--muted)">&#8594;</span>
+          <span class="agent-tag tag-workflow">⚡ Workflow</span>
+          <span style="color:var(--muted)">&#8594;</span>
+          <span class="agent-tag tag-knowledge">📚 Knowledge</span>
+          <span style="color:var(--muted)">&#8594;</span>
+          <span class="agent-tag tag-coach">🎯 Coach</span>
+        </div>
+        <p>Meeting Analyst captures commitments from every launch meeting. Workflow Optimizer maps cross-team dependencies and predicts delays. Knowledge Keeper makes launch docs searchable for support. Coach nudges individuals on their specific deliverables.</p>
+        <div class="result">Result: Launch goes out on time. Nothing falls through the cracks.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── STATS ─── -->
+<section class="stats fade-up">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-card"><div class="num">47K</div><div class="desc">Workers powered by the swarm</div></div>
+      <div class="stat-card"><div class="num">23%</div><div class="desc">Average productivity gain</div></div>
+      <div class="stat-card"><div class="num">89%</div><div class="desc">Team satisfaction rating</div></div>
+      <div class="stat-card"><div class="num">$4.2K</div><div class="desc">Annual ROI per employee</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FINAL CTA ─── -->
+<section class="final-cta">
+  <div class="section-label">Join the swarm</div>
+  <h2>Deploy 7 AI agents <span class="gradient">as one team</span></h2>
+  <p>One platform. Seven specialized agents. Collective intelligence that gets smarter every day. Deploys in one afternoon.</p>
+  <div class="cta-group">
+    <button class="btn btn-primary">Deploy Your AI Team</button>
+    <button class="btn btn-ghost">See It In Action</button>
+  </div>
+  <div class="fine">Free for teams up to 25 · No credit card · 40+ integrations</div>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2. Swarm intelligence for the modern company. <a href="mailto:s@go2.io">s@go2.io</a></p>
+</footer>
+
+<script>
+// Particles
+const field = document.getElementById('particles');
+for (let i = 0; i < 40; i++) {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  const colors = ['#06b6d4','#8b5cf6','#10b981','#f59e0b','#f43f5e','#3b82f6','#ec4899'];
+  p.style.background = colors[Math.floor(Math.random() * colors.length)];
+  p.style.left = Math.random() * 100 + '%';
+  p.style.animationDuration = (8 + Math.random() * 12) + 's';
+  p.style.animationDelay = Math.random() * 10 + 's';
+  field.appendChild(p);
+}
+
+// Scroll animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

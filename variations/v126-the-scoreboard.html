@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The Scoreboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --card: rgba(255,255,255,0.03);
+    --border: rgba(255,255,255,0.07);
+    --orange: #ff6b35;
+    --orange-light: #ff8f5e;
+    --electric-blue: #3b82f6;
+    --neon-green: #22c55e;
+    --yellow: #eab308;
+    --text: #f0f6fc;
+    --text-secondary: rgba(240,246,252,0.55);
+    --text-muted: rgba(240,246,252,0.3);
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Outfit', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 20px 60px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(13,17,23,0.88);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .logo {
+    font-size: 28px; font-weight: 800; letter-spacing: -1px;
+    color: var(--text);
+  }
+  .logo span { color: var(--orange); }
+  .nav-links { display: flex; gap: 36px; align-items: center; }
+  .nav-links a {
+    color: var(--text-secondary); text-decoration: none; font-size: 14px;
+    font-weight: 500; transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); }
+  .nav-cta {
+    background: var(--orange) !important; color: white !important;
+    padding: 10px 24px; border-radius: 8px; font-weight: 600;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(255,107,53,0.3); }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    text-align: center; position: relative; padding: 120px 40px 80px;
+  }
+  .hero-bg {
+    position: absolute; inset: 0; overflow: hidden;
+    background:
+      radial-gradient(circle at 30% 40%, rgba(255,107,53,0.06) 0%, transparent 50%),
+      radial-gradient(circle at 70% 60%, rgba(59,130,246,0.05) 0%, transparent 50%);
+  }
+  /* Stadium lights effect */
+  .stadium-light {
+    position: absolute; width: 200px; height: 400px;
+    background: linear-gradient(180deg, rgba(255,107,53,0.04), transparent);
+    filter: blur(40px);
+  }
+  .stadium-light:nth-child(1) { top: 0; left: 15%; transform: rotate(-15deg); }
+  .stadium-light:nth-child(2) { top: 0; right: 15%; transform: rotate(15deg); }
+  .stadium-light:nth-child(3) { top: 0; left: 45%; }
+
+  .hero-content { position: relative; z-index: 2; max-width: 850px; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: rgba(255,107,53,0.1); border: 1px solid rgba(255,107,53,0.2);
+    padding: 10px 24px; border-radius: 100px; font-size: 14px;
+    color: var(--orange-light); font-weight: 600; margin-bottom: 32px;
+    text-transform: uppercase; letter-spacing: 2px;
+  }
+  .hero h1 {
+    font-size: 78px; font-weight: 900; line-height: 1.0;
+    letter-spacing: -3px; margin-bottom: 28px;
+    text-transform: uppercase;
+  }
+  .hero h1 em {
+    font-style: normal;
+    background: linear-gradient(135deg, var(--orange), var(--orange-light));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero-sub {
+    font-size: 22px; color: var(--text-secondary); max-width: 600px;
+    margin: 0 auto 52px; line-height: 1.7; font-weight: 300;
+  }
+  .hero-cta {
+    display: inline-flex; align-items: center; gap: 14px;
+    background: linear-gradient(135deg, var(--orange), #e55a2b);
+    color: white; padding: 20px 44px; border-radius: 12px;
+    font-size: 18px; font-weight: 700; text-decoration: none;
+    text-transform: uppercase; letter-spacing: 1px;
+    transition: transform 0.2s, box-shadow 0.2s; border: none; cursor: pointer;
+    font-family: inherit;
+  }
+  .hero-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 48px rgba(255,107,53,0.35);
+  }
+  .hero-cta svg { width: 22px; height: 22px; }
+
+  /* SCOREBOARD */
+  .scoreboard-section {
+    padding: 20px 60px 120px;
+    max-width: 1200px; margin: 0 auto;
+  }
+  .scoreboard {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 24px;
+    overflow: hidden;
+  }
+  .sb-header {
+    background: rgba(255,107,53,0.06);
+    border-bottom: 2px solid var(--border);
+    padding: 20px 40px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .sb-header h3 {
+    font-size: 14px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 3px; color: var(--orange);
+  }
+  .sb-live {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 600; color: var(--neon-green);
+    text-transform: uppercase; letter-spacing: 2px;
+  }
+  .sb-live::before {
+    content: ''; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--neon-green);
+    animation: livePulse 2s ease-in-out infinite;
+  }
+  @keyframes livePulse {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
+  }
+  .sb-body { padding: 0; }
+  .sb-row {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+  }
+  .sb-row:last-child { border-bottom: none; }
+  .sb-row.header {
+    background: rgba(255,255,255,0.02);
+  }
+  .sb-cell {
+    padding: 20px 24px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .sb-row.header .sb-cell {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 2px; color: var(--text-muted); padding: 14px 24px;
+  }
+  .sb-team {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .sb-rank {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 14px;
+  }
+  .sb-rank.gold { background: rgba(234,179,8,0.15); color: var(--yellow); }
+  .sb-rank.silver { background: rgba(148,163,184,0.12); color: #94a3b8; }
+  .sb-rank.bronze { background: rgba(180,83,9,0.12); color: #d97706; }
+  .sb-rank.normal { background: rgba(255,255,255,0.05); color: var(--text-muted); }
+  .sb-name { font-weight: 600; }
+  .sb-score {
+    font-weight: 800; font-size: 18px;
+    font-variant-numeric: tabular-nums;
+  }
+  .sb-score.top { color: var(--neon-green); }
+  .sb-change {
+    font-size: 13px; font-weight: 600;
+  }
+  .sb-change.up { color: var(--neon-green); }
+  .sb-change.down { color: #ef4444; }
+  .sb-bar {
+    width: 100%; height: 6px; background: rgba(255,255,255,0.05);
+    border-radius: 3px; overflow: hidden;
+  }
+  .sb-bar-fill {
+    height: 100%; border-radius: 3px;
+    transition: width 1s ease;
+  }
+
+  /* GAME PLAN SECTION */
+  .gameplan {
+    padding: 120px 60px; max-width: 1200px; margin: 0 auto;
+  }
+  .section-label {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 4px;
+    color: var(--orange); font-weight: 700; margin-bottom: 16px;
+  }
+  .section-title {
+    font-size: 52px; font-weight: 800; letter-spacing: -2px;
+    line-height: 1.1; margin-bottom: 20px;
+  }
+  .section-desc {
+    font-size: 17px; color: var(--text-secondary); max-width: 540px;
+    line-height: 1.7; margin-bottom: 72px;
+  }
+
+  .plays-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+  }
+  .play-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 44px 36px;
+    transition: border-color 0.3s, transform 0.3s;
+    position: relative; overflow: hidden;
+  }
+  .play-card:hover {
+    border-color: rgba(255,107,53,0.3);
+    transform: translateY(-4px);
+  }
+  .play-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--orange), var(--orange-light));
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .play-card:hover::before { opacity: 1; }
+  .play-number {
+    font-size: 56px; font-weight: 900; color: rgba(255,107,53,0.08);
+    position: absolute; top: 16px; right: 20px; line-height: 1;
+  }
+  .play-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 24px; font-size: 24px;
+  }
+  .play-icon.orange { background: rgba(255,107,53,0.1); }
+  .play-icon.blue { background: rgba(59,130,246,0.1); }
+  .play-icon.green { background: rgba(34,197,94,0.1); }
+  .play-card h3 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+  .play-card p { color: var(--text-secondary); font-size: 14px; line-height: 1.7; }
+
+  /* HALFTIME STATS */
+  .halftime {
+    padding: 120px 60px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .halftime-inner {
+    max-width: 1200px; margin: 0 auto;
+  }
+  .halftime-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px;
+    margin-top: 72px;
+  }
+  .halftime-stat {
+    text-align: center; padding: 40px 24px;
+    border: 1px solid var(--border); border-radius: 20px;
+    background: rgba(255,255,255,0.02);
+    transition: border-color 0.3s;
+  }
+  .halftime-stat:hover { border-color: rgba(255,107,53,0.3); }
+  .ht-value {
+    font-size: 52px; font-weight: 900; letter-spacing: -2px;
+    margin-bottom: 8px;
+  }
+  .ht-value.orange { color: var(--orange); }
+  .ht-value.green { color: var(--neon-green); }
+  .ht-value.blue { color: var(--electric-blue); }
+  .ht-value.yellow { color: var(--yellow); }
+  .ht-label { font-size: 14px; color: var(--text-muted); font-weight: 500; }
+
+  /* COACHING (PLAYBOOK) */
+  .playbook {
+    padding: 120px 60px; max-width: 1200px; margin: 0 auto;
+  }
+  .playbook-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 80px;
+    align-items: center; margin-top: 72px;
+  }
+  .playbook-visual {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 24px; overflow: hidden;
+  }
+  .pv-header {
+    padding: 16px 24px;
+    background: rgba(255,107,53,0.06);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .pv-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .pv-dot.r { background: #ef4444; }
+  .pv-dot.y { background: #eab308; }
+  .pv-dot.g { background: #22c55e; }
+  .pv-body { padding: 32px; }
+  .pv-msg {
+    padding: 20px; margin-bottom: 16px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 12px; border-left: 3px solid var(--orange);
+  }
+  .pv-msg:last-child { margin-bottom: 0; }
+  .pv-msg-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 8px;
+  }
+  .pv-msg-from {
+    font-size: 12px; font-weight: 700; color: var(--orange);
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .pv-msg-time { font-size: 11px; color: var(--text-muted); }
+  .pv-msg-text { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+
+  .playbook-content h3 {
+    font-size: 36px; font-weight: 800; letter-spacing: -1px;
+    margin-bottom: 20px; line-height: 1.15;
+  }
+  .playbook-content p {
+    color: var(--text-secondary); font-size: 16px; line-height: 1.8;
+    margin-bottom: 32px;
+  }
+  .playbook-features { list-style: none; }
+  .playbook-features li {
+    padding: 14px 0; font-size: 15px; color: var(--text-secondary);
+    display: flex; align-items: center; gap: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .playbook-features li::before {
+    content: ''; width: 24px; height: 24px; border-radius: 7px;
+    background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2);
+    flex-shrink: 0;
+  }
+
+  /* LEAGUE TABLE (TESTIMONIALS) */
+  .league {
+    padding: 120px 60px; max-width: 1200px; margin: 0 auto;
+  }
+  .league-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px;
+    margin-top: 72px;
+  }
+  .league-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 40px;
+    position: relative;
+  }
+  .league-card::before {
+    content: '"'; position: absolute; top: 20px; left: 24px;
+    font-size: 72px; font-weight: 900; color: rgba(255,107,53,0.08);
+    line-height: 1;
+  }
+  .league-quote {
+    font-size: 15px; color: var(--text-secondary); line-height: 1.7;
+    margin-bottom: 28px; position: relative;
+  }
+  .league-result {
+    display: inline-block; padding: 6px 14px; border-radius: 8px;
+    background: rgba(34,197,94,0.1); color: var(--neon-green);
+    font-size: 13px; font-weight: 700; margin-bottom: 20px;
+  }
+  .league-author { font-size: 14px; font-weight: 700; }
+  .league-role { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+  /* INTEGRATIONS */
+  .integrations {
+    padding: 100px 60px; text-align: center;
+    border-top: 1px solid var(--border);
+  }
+  .integ-row {
+    display: flex; justify-content: center; gap: 24px;
+    margin-top: 48px; flex-wrap: wrap;
+  }
+  .integ-badge {
+    padding: 18px 32px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 14px;
+    font-size: 15px; font-weight: 500; color: var(--text-secondary);
+    display: flex; align-items: center; gap: 10px;
+    transition: border-color 0.3s;
+  }
+  .integ-badge:hover { border-color: rgba(255,107,53,0.3); }
+  .integ-badge span { font-size: 22px; }
+
+  /* CTA */
+  .cta-section {
+    text-align: center; padding: 140px 60px; position: relative;
+  }
+  .cta-section::before {
+    content: ''; position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 700px; height: 700px;
+    background: radial-gradient(circle, rgba(255,107,53,0.06) 0%, transparent 60%);
+    border-radius: 50%;
+  }
+  .cta-section h2 {
+    font-size: 60px; font-weight: 900; letter-spacing: -2px;
+    margin-bottom: 20px; position: relative; line-height: 1.05;
+    text-transform: uppercase;
+  }
+  .cta-section h2 em {
+    font-style: normal; color: var(--orange);
+  }
+  .cta-section p {
+    font-size: 19px; color: var(--text-secondary); margin-bottom: 48px;
+    position: relative; max-width: 520px; margin-left: auto; margin-right: auto;
+    line-height: 1.7;
+  }
+
+  /* FOOTER */
+  footer {
+    padding: 48px 60px; border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    max-width: 1200px; margin: 0 auto;
+  }
+  footer p { font-size: 13px; color: var(--text-muted); }
+  .footer-links { display: flex; gap: 24px; }
+  .footer-links a { font-size: 13px; color: var(--text-muted); text-decoration: none; }
+  .footer-links a:hover { color: var(--text-secondary); }
+
+  @media (max-width: 768px) {
+    nav { padding: 16px 24px; }
+    .nav-links { display: none; }
+    .hero h1 { font-size: 44px; letter-spacing: -1.5px; }
+    .scoreboard-section { padding: 20px 16px 80px; }
+    .sb-row { grid-template-columns: 2fr 1fr 1fr; }
+    .sb-row .sb-cell:nth-child(4),
+    .sb-row .sb-cell:nth-child(5) { display: none; }
+    .gameplan, .playbook, .league { padding: 80px 24px; }
+    .section-title { font-size: 36px; }
+    .plays-grid { grid-template-columns: 1fr; }
+    .halftime { padding: 80px 24px; }
+    .halftime-grid { grid-template-columns: 1fr 1fr; }
+    .playbook-grid { grid-template-columns: 1fr; gap: 40px; }
+    .league-grid { grid-template-columns: 1fr; }
+    .cta-section { padding: 80px 24px; }
+    .cta-section h2 { font-size: 38px; }
+    footer { flex-direction: column; gap: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Go2<span>.</span></div>
+  <div class="nav-links">
+    <a href="#scoreboard">Scoreboard</a>
+    <a href="#gameplan">Game Plan</a>
+    <a href="#playbook">Playbook</a>
+    <a href="#league">League</a>
+    <a href="#cta" class="nav-cta">Book a Demo</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-bg">
+    <div class="stadium-light"></div>
+    <div class="stadium-light"></div>
+    <div class="stadium-light"></div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-badge">Game Time</div>
+    <h1>You can't <em>win</em><br>if you can't<br>see the <em>score</em></h1>
+    <p class="hero-sub">Go2 gives your company a real-time scoreboard for productivity. See where you're winning, where you're losing, and get AI coaching to change the game.</p>
+    <a href="#cta" class="hero-cta">
+      See It In Action
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+  </div>
+</section>
+
+<section class="scoreboard-section" id="scoreboard">
+  <div class="scoreboard">
+    <div class="sb-header">
+      <h3>Team Productivity Scoreboard</h3>
+      <div class="sb-live">Live</div>
+    </div>
+    <div class="sb-body">
+      <div class="sb-row header">
+        <div class="sb-cell">Team</div>
+        <div class="sb-cell">Score</div>
+        <div class="sb-cell">Trend</div>
+        <div class="sb-cell">Focus Time</div>
+        <div class="sb-cell">Meeting Load</div>
+      </div>
+      <div class="sb-row">
+        <div class="sb-cell"><div class="sb-team"><div class="sb-rank gold">1</div><div class="sb-name">Design</div></div></div>
+        <div class="sb-cell"><div class="sb-score top">94</div></div>
+        <div class="sb-cell"><div class="sb-change up">+7</div></div>
+        <div class="sb-cell"><div class="sb-bar"><div class="sb-bar-fill" style="width:92%;background:var(--neon-green);"></div></div></div>
+        <div class="sb-cell"><div class="sb-bar"><div class="sb-bar-fill" style="width:22%;background:var(--neon-green);"></div></div></div>
+      </div>
+      <div class="sb-row">
+        <div class="sb-cell"><div class="sb-team"><div class="sb-rank silver">2</div><div class="sb-name">Engineering</div></div></div>
+        <div class="sb-cell"><div class="sb-score top">89</div></div>
+        <div class="sb-cell"><div class="sb-change up">+3</div></div>
+        <div class="sb-cell"><div class="sb-bar"><div class="sb-bar-fill" style="width:85%;background:var(--neon-green);"></div></div></div>
+        <div class="sb-cell"><div class="sb-bar"><div class="sb-bar-fill" style="width:31%;background:var(--yellow);"></div></div></div>
+      </div>
+      <div class="sb-row">
+        <div class="sb-cell"><div class="sb-team"><div class="sb-rank bronze">3</div><div class="sb-name">Product</div></div></div>
+        <div class="sb-cell"><div class="sb-score">82</div></div>
+        <div class="sb-cell"><div class="sb-change up">+12</div></div>
+        <div class="sb-cell"><div class="sb-bar"><div class="sb-bar-fill" style="width:78%;background:var(--electric-blue);"></div></div></div>
+        <div class="sb-cell"><div class="sb-bar"><div class="sb-bar-fill" style="width:38%;background:var(--yellow);"></div></div></div>
+      </div>
+      <div class="sb-row">
+        <div class="sb-cell"><div class="sb-team"><div class="sb-rank normal">4</div><div class="sb-name">Marketing</div></div></div>
+        <div class="sb-cell"><div class="sb-score">76</div></div>
+        <div class="sb-cell"><div class="sb-change down">-2</div></div>
+        <div class="sb-cell"><div class="sb-bar"><div class="sb-bar-fill" style="width:68%;background:var(--yellow);"></div></div></div>
+        <div class="sb-cell"><div class="sb-bar"><div class="sb-bar-fill" style="width:47%;background:var(--orange);"></div></div></div>
+      </div>
+      <div class="sb-row">
+        <div class="sb-cell"><div class="sb-team"><div class="sb-rank normal">5</div><div class="sb-name">Sales</div></div></div>
+        <div class="sb-cell"><div class="sb-score">71</div></div>
+        <div class="sb-cell"><div class="sb-change up">+5</div></div>
+        <div class="sb-cell"><div class="sb-bar"><div class="sb-bar-fill" style="width:61%;background:var(--orange);"></div></div></div>
+        <div class="sb-cell"><div class="sb-bar"><div class="sb-bar-fill" style="width:52%;background:#ef4444;"></div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="gameplan" id="gameplan">
+  <div class="section-label">The Game Plan</div>
+  <div class="section-title">Three plays that<br>change everything</div>
+  <div class="section-desc">Every championship team follows a system. Go2 gives your organization the plays to win consistently.</div>
+
+  <div class="plays-grid">
+    <div class="play-card">
+      <div class="play-number">01</div>
+      <div class="play-icon orange">&#127942;</div>
+      <h3>See the Score</h3>
+      <p>Real-time visibility into how every team is performing. Focus time, meeting load, collaboration health, burnout risk — all on one scoreboard. You can't manage what you can't measure.</p>
+    </div>
+    <div class="play-card">
+      <div class="play-number">02</div>
+      <div class="play-icon blue">&#128227;</div>
+      <h3>Call the Plays</h3>
+      <p>AI-powered coaching recommendations delivered through Slack and Teams. Like a coach on the sideline, Go2 reads the game and calls the right play at the right time.</p>
+    </div>
+    <div class="play-card">
+      <div class="play-number">03</div>
+      <div class="play-icon green">&#128640;</div>
+      <h3>Win the Game</h3>
+      <p>Watch your team's scores climb week over week. Celebrate wins, identify areas for improvement, and build a culture of continuous performance improvement.</p>
+    </div>
+  </div>
+</section>
+
+<section class="halftime">
+  <div class="halftime-inner">
+    <div class="section-label" style="text-align:center;">Halftime Stats</div>
+    <div class="section-title" style="text-align:center;">The numbers don't lie</div>
+
+    <div class="halftime-grid">
+      <div class="halftime-stat">
+        <div class="ht-value orange">47K+</div>
+        <div class="ht-label">Players Coached</div>
+      </div>
+      <div class="halftime-stat">
+        <div class="ht-value green">23%</div>
+        <div class="ht-label">Avg. Performance Gain</div>
+      </div>
+      <div class="halftime-stat">
+        <div class="ht-value blue">6.2 hrs</div>
+        <div class="ht-label">Saved Per Player / Week</div>
+      </div>
+      <div class="halftime-stat">
+        <div class="ht-value yellow">2.4x</div>
+        <div class="ht-label">ROI in First Quarter</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="playbook" id="playbook">
+  <div class="section-label">The Playbook</div>
+  <div class="section-title">Coaching that wins<br>games, not enemies</div>
+  <div class="section-desc">Go2 is the coach every team wants — insightful, supportive, and never surveillance.</div>
+
+  <div class="playbook-grid">
+    <div class="playbook-visual">
+      <div class="pv-header">
+        <div class="pv-dot r"></div>
+        <div class="pv-dot y"></div>
+        <div class="pv-dot g"></div>
+      </div>
+      <div class="pv-body">
+        <div class="pv-msg">
+          <div class="pv-msg-head">
+            <div class="pv-msg-from">Go2 Coach</div>
+            <div class="pv-msg-time">2 min ago</div>
+          </div>
+          <div class="pv-msg-text">Marketing's meeting load hit 52% this week — that's red zone. Three recurring meetings overlap with their best focus hours. Quick win: shift the 10am Wednesday sync to async.</div>
+        </div>
+        <div class="pv-msg">
+          <div class="pv-msg-head">
+            <div class="pv-msg-from">Go2 Coach</div>
+            <div class="pv-msg-time">Yesterday</div>
+          </div>
+          <div class="pv-msg-text">Product team jumped 12 points this week after implementing No-Meeting Tuesdays. That's the biggest single-week gain in your org. Consider sharing the playbook with Sales.</div>
+        </div>
+        <div class="pv-msg">
+          <div class="pv-msg-head">
+            <div class="pv-msg-from">Go2 Coach</div>
+            <div class="pv-msg-time">3 days ago</div>
+          </div>
+          <div class="pv-msg-text">Two Sales team members are showing sustained after-hours work patterns. Recommend a manager check-in before it becomes burnout. Early intervention works 3x better.</div>
+        </div>
+      </div>
+    </div>
+    <div class="playbook-content">
+      <h3>A coach, not a referee</h3>
+      <p>Great coaches don't blow whistles at every turn. They study the game, understand each player, and deliver the right guidance at the right moment. That's Go2.</p>
+      <p>No screenshots. No keylogging. No individual surveillance. Just aggregate team insights and coaching that players actually trust.</p>
+      <ul class="playbook-features">
+        <li>Real-time coaching via Slack and Teams</li>
+        <li>Manager-level strategic recommendations</li>
+        <li>Team habit formation programs</li>
+        <li>Burnout early warning system</li>
+        <li>Cross-team best practice sharing</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="league" id="league">
+  <div class="section-label">The League</div>
+  <div class="section-title">What winning teams say</div>
+  <div class="section-desc">Real results from real organizations.</div>
+
+  <div class="league-grid">
+    <div class="league-card">
+      <div class="league-result">+31% Focus Time</div>
+      <div class="league-quote">"We were flying blind before Go2. Now every standup starts with the scoreboard. Teams compete to improve their scores — it's turned productivity into a sport."</div>
+      <div class="league-author">Mike Torres</div>
+      <div class="league-role">CTO, RapidScale (72 employees)</div>
+    </div>
+    <div class="league-card">
+      <div class="league-result">-40% Meeting Overload</div>
+      <div class="league-quote">"The coaching nudges are genius. Nobody wants to be the team dragging down the scoreboard. It created a healthy competitive energy we never had before."</div>
+      <div class="league-author">Amanda Liu</div>
+      <div class="league-role">VP Ops, DataBridge (55 employees)</div>
+    </div>
+    <div class="league-card">
+      <div class="league-result">89% Approval Rate</div>
+      <div class="league-quote">"Our employees actually love this tool. That never happens. The privacy-first approach means they trust the coaching instead of resenting it."</div>
+      <div class="league-author">Jordan Hayes</div>
+      <div class="league-role">CHRO, Pinnacle Group (88 employees)</div>
+    </div>
+  </div>
+</section>
+
+<section class="integrations">
+  <div class="section-label">The Roster</div>
+  <div class="section-title" style="max-width: 500px; margin: 16px auto 0;">Plays with your<br>existing lineup</div>
+  <div class="integ-row">
+    <div class="integ-badge"><span>&#128172;</span> Slack</div>
+    <div class="integ-badge"><span>&#128101;</span> Teams</div>
+    <div class="integ-badge"><span>&#127909;</span> Zoom</div>
+    <div class="integ-badge"><span>&#9993;</span> Google Workspace</div>
+    <div class="integ-badge"><span>&#128197;</span> Calendar</div>
+  </div>
+</section>
+
+<section class="cta-section" id="cta">
+  <h2>Ready to see<br>your <em>score</em>?</h2>
+  <p>Get a personalized demo and see what your team's scoreboard looks like. Setup takes 12 minutes.</p>
+  <a href="#" class="hero-cta" style="position: relative;">
+    Book a Demo
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:22px;height:22px;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+  </a>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2.io. All rights reserved.</p>
+  <div class="footer-links">
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+    <a href="#">Security</a>
+    <a href="#">Contact</a>
+  </div>
+</footer>
+
+</body>
+</html>

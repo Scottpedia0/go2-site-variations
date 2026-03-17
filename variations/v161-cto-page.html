@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 for Technical Leaders — Architecture, Security, API</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--bg:#0c0c14;--card:#13131f;--card2:#181828;--border:#1f1f35;--accent:#3b82f6;--accent2:#60a5fa;--accent3:#93c5fd;--green:#22c55e;--green2:#4ade80;--amber:#eab308;--rose:#ef4444;--text:#e2e8f0;--muted:#64748b;--white:#fff;--code-bg:#0d1117;--code-border:#21262d}
+  body{font-family:'SF Mono','Fira Code','Cascadia Code',monospace;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.7}
+  a{color:var(--accent2);text-decoration:none}
+
+  /* Mono nav */
+  nav{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 2rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(12,12,20,.9);backdrop-filter:blur(12px);z-index:100}
+  .nav-logo{font-weight:800;font-size:1.1rem;color:var(--white);font-family:-apple-system,sans-serif;letter-spacing:-.03em}
+  .nav-links{display:flex;gap:2rem;font-size:.8rem;color:var(--muted)}
+  .nav-links a{color:var(--muted);transition:color .2s}
+  .nav-links a:hover{color:var(--accent2)}
+  .nav-links a.active{color:var(--accent2)}
+
+  .hero{padding:6rem 2rem 4rem;text-align:center;max-width:900px;margin:0 auto}
+  .hero-badge{display:inline-block;font-size:.7rem;text-transform:uppercase;letter-spacing:.15em;color:var(--green);background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);padding:.4rem 1rem;border-radius:4px;margin-bottom:2rem;font-weight:700}
+  .hero h1{font-size:clamp(2rem,4.5vw,3.5rem);font-weight:800;font-family:-apple-system,sans-serif;letter-spacing:-.03em;line-height:1.1;margin-bottom:1.5rem}
+  .hero h1 code{background:linear-gradient(135deg,var(--accent),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-family:inherit}
+  .hero p{font-family:-apple-system,sans-serif;color:var(--muted);font-size:1.1rem;max-width:600px;margin:0 auto 2rem;line-height:1.6}
+
+  .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.75rem 1.5rem;border-radius:6px;font-weight:600;font-size:.85rem;transition:all .2s;cursor:pointer;border:none}
+  .btn-primary{background:var(--accent);color:var(--white)}
+  .btn-primary:hover{background:var(--accent2);box-shadow:0 4px 20px rgba(59,130,246,.3)}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+  .btn-ghost:hover{border-color:var(--accent)}
+  .btn-group{display:flex;gap:.75rem;flex-wrap:wrap;justify-content:center}
+
+  section{padding:5rem 2rem;max-width:1100px;margin:0 auto}
+  .section-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.2em;color:var(--accent2);font-weight:700;margin-bottom:.5rem}
+  .section-title{font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;font-family:-apple-system,sans-serif;letter-spacing:-.02em;margin-bottom:.75rem}
+  .section-sub{color:var(--muted);font-family:-apple-system,sans-serif;font-size:.95rem;max-width:600px;margin-bottom:2rem}
+
+  /* Code blocks */
+  .code-block{background:var(--code-bg);border:1px solid var(--code-border);border-radius:8px;overflow:hidden;margin:1.5rem 0}
+  .code-header{display:flex;align-items:center;gap:.75rem;padding:.75rem 1.25rem;border-bottom:1px solid var(--code-border);font-size:.75rem;color:var(--muted)}
+  .code-dot{width:10px;height:10px;border-radius:50%;background:var(--border)}
+  .code-dot.r{background:#ef4444}
+  .code-dot.y{background:#eab308}
+  .code-dot.g{background:#22c55e}
+  .code-lang{margin-left:auto;font-weight:600;color:var(--accent2)}
+  .code-body{padding:1.25rem;font-size:.8rem;line-height:1.8;overflow-x:auto}
+  .code-body .kw{color:#ff7b72}
+  .code-body .str{color:#a5d6ff}
+  .code-body .fn{color:#d2a8ff}
+  .code-body .cm{color:#8b949e}
+  .code-body .num{color:#79c0ff}
+  .code-body .op{color:#ff7b72}
+
+  /* Architecture diagram in CSS */
+  .arch-container{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:3rem;margin:2rem 0}
+  .arch-row{display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap}
+  .arch-row:last-child{margin-bottom:0}
+  .arch-box{flex:1;min-width:120px;padding:1rem;border-radius:8px;text-align:center;font-size:.75rem;font-weight:600;position:relative;border:1px solid}
+  .arch-connector{width:100%;height:20px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.8rem;margin:-.25rem 0}
+  .arch-connector::before,.arch-connector::after{content:'';flex:1;height:1px;background:var(--border)}
+  .arch-connector span{padding:0 .75rem;font-size:.65rem;text-transform:uppercase;letter-spacing:.1em}
+
+  .ab-client{background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.25);color:var(--accent2)}
+  .ab-api{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.25);color:var(--green2)}
+  .ab-ai{background:rgba(168,85,247,.08);border-color:rgba(168,85,247,.25);color:#c084fc}
+  .ab-data{background:rgba(234,179,8,.08);border-color:rgba(234,179,8,.25);color:var(--amber)}
+  .ab-infra{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.25);color:#f87171}
+
+  /* Security grid */
+  .sec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.25rem;margin:2rem 0}
+  .sec-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.75rem;transition:all .2s}
+  .sec-card:hover{border-color:var(--green);box-shadow:0 0 20px rgba(34,197,94,.08)}
+  .sec-badge{display:inline-block;background:rgba(34,197,94,.1);color:var(--green);font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:.25rem .6rem;border-radius:4px;margin-bottom:.75rem}
+  .sec-card h3{font-family:-apple-system,sans-serif;font-size:1rem;font-weight:700;margin-bottom:.5rem}
+  .sec-card p{color:var(--muted);font-size:.85rem;font-family:-apple-system,sans-serif;line-height:1.6}
+
+  /* API reference table */
+  .api-table{width:100%;border-collapse:separate;border-spacing:0;margin:2rem 0;font-size:.8rem;border:1px solid var(--code-border);border-radius:8px;overflow:hidden}
+  .api-table th,.api-table td{padding:.75rem 1rem;text-align:left;border-bottom:1px solid var(--code-border)}
+  .api-table thead th{background:var(--code-bg);color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+  .api-table tbody td{background:var(--card)}
+  .api-method{display:inline-block;padding:.15rem .5rem;border-radius:4px;font-weight:700;font-size:.7rem;min-width:55px;text-align:center}
+  .m-get{background:rgba(59,130,246,.15);color:var(--accent2)}
+  .m-post{background:rgba(34,197,94,.15);color:var(--green)}
+  .m-put{background:rgba(234,179,8,.15);color:var(--amber)}
+  .m-del{background:rgba(239,68,68,.15);color:#f87171}
+  .api-path{color:var(--accent3)}
+
+  /* Performance stats */
+  .perf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.25rem;margin:2rem 0}
+  .perf-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.5rem;text-align:center}
+  .perf-val{font-size:2rem;font-weight:800;font-family:-apple-system,sans-serif;margin-bottom:.25rem}
+  .perf-lbl{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+
+  /* Integration list */
+  .int-list{columns:3;column-gap:2rem;margin:2rem 0}
+  .int-item{display:flex;align-items:center;gap:.5rem;padding:.4rem 0;font-size:.8rem;font-family:-apple-system,sans-serif;break-inside:avoid}
+  .int-dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
+  @media(max-width:768px){.int-list{columns:1}}
+
+  /* Compliance badges */
+  .comp-badges{display:flex;gap:1.5rem;flex-wrap:wrap;margin:2rem 0}
+  .comp-badge{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.25rem 1.75rem;text-align:center;min-width:120px}
+  .comp-badge .cb-icon{font-size:1.5rem;margin-bottom:.5rem}
+  .comp-badge .cb-name{font-family:-apple-system,sans-serif;font-size:.85rem;font-weight:700}
+  .comp-badge .cb-detail{font-size:.7rem;color:var(--muted)}
+
+  /* CTA */
+  .cta{text-align:center;padding:6rem 2rem;position:relative}
+  .cta::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(59,130,246,.08) 0%,transparent 70%)}
+  .cta h2{font-size:clamp(1.5rem,3vw,2.5rem);font-family:-apple-system,sans-serif;font-weight:800;margin-bottom:1rem;position:relative;z-index:1}
+  .cta p{color:var(--muted);font-family:-apple-system,sans-serif;font-size:1rem;margin-bottom:2rem;position:relative;z-index:1}
+
+  footer{border-top:1px solid var(--border);padding:2rem;text-align:center;color:var(--muted);font-size:.75rem}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Go2</div>
+  <div class="nav-links">
+    <a href="#arch">Architecture</a>
+    <a href="#api">API</a>
+    <a href="#security">Security</a>
+    <a href="#integrations">Integrations</a>
+    <a href="#" class="active">Docs &rarr;</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-badge">// for technical leaders</div>
+  <h1>Workforce intelligence you can <code>deploy</code>, <code>extend</code>, and <code>trust</code></h1>
+  <p>SOC 2 Type II. REST API. Webhook-driven. Sub-100ms agent footprint. Built by engineers who have managed 47K+ concurrent workers.</p>
+  <div class="btn-group">
+    <a href="#" class="btn btn-primary">View API Docs</a>
+    <a href="#" class="btn btn-ghost">Request Architecture Review</a>
+  </div>
+</div>
+
+<!-- Architecture -->
+<section id="arch">
+  <div class="section-label">// architecture</div>
+  <div class="section-title">System Architecture</div>
+  <div class="section-sub">Multi-tenant, event-driven, horizontally scalable. Here is how Go2 processes workforce intelligence at scale.</div>
+
+  <div class="arch-container">
+    <div class="arch-row">
+      <div class="arch-box ab-client">Desktop Agent<br><span style="font-weight:400;font-size:.65rem;opacity:.7">macOS / Windows / Linux</span></div>
+      <div class="arch-box ab-client">Browser Extension<br><span style="font-weight:400;font-size:.65rem;opacity:.7">Chrome / Edge / Firefox</span></div>
+      <div class="arch-box ab-client">Mobile SDK<br><span style="font-weight:400;font-size:.65rem;opacity:.7">iOS / Android</span></div>
+      <div class="arch-box ab-client">Slack/Teams Bot<br><span style="font-weight:400;font-size:.65rem;opacity:.7">Real-time events</span></div>
+    </div>
+    <div class="arch-connector"><span>TLS 1.3 / mTLS</span></div>
+    <div class="arch-row">
+      <div class="arch-box ab-api">API Gateway<br><span style="font-weight:400;font-size:.65rem;opacity:.7">Rate limiting, auth</span></div>
+      <div class="arch-box ab-api">Event Ingestion<br><span style="font-weight:400;font-size:.65rem;opacity:.7">Kafka streams</span></div>
+      <div class="arch-box ab-api">Webhook Dispatch<br><span style="font-weight:400;font-size:.65rem;opacity:.7">At-least-once</span></div>
+    </div>
+    <div class="arch-connector"><span>Service Mesh</span></div>
+    <div class="arch-row">
+      <div class="arch-box ab-ai">Coaching Engine<br><span style="font-weight:400;font-size:.65rem;opacity:.7">LLM orchestration</span></div>
+      <div class="arch-box ab-ai">Pattern Analyzer<br><span style="font-weight:400;font-size:.65rem;opacity:.7">Graph ML</span></div>
+      <div class="arch-box ab-ai">Doc Generator<br><span style="font-weight:400;font-size:.65rem;opacity:.7">RAG pipeline</span></div>
+      <div class="arch-box ab-ai">Automation Builder<br><span style="font-weight:400;font-size:.65rem;opacity:.7">Rule engine</span></div>
+    </div>
+    <div class="arch-connector"><span>Data Access Layer</span></div>
+    <div class="arch-row">
+      <div class="arch-box ab-data">PostgreSQL<br><span style="font-weight:400;font-size:.65rem;opacity:.7">Core state</span></div>
+      <div class="arch-box ab-data">ClickHouse<br><span style="font-weight:400;font-size:.65rem;opacity:.7">Analytics OLAP</span></div>
+      <div class="arch-box ab-data">Redis Cluster<br><span style="font-weight:400;font-size:.65rem;opacity:.7">Cache / sessions</span></div>
+      <div class="arch-box ab-data">Pinecone<br><span style="font-weight:400;font-size:.65rem;opacity:.7">Vector embeddings</span></div>
+    </div>
+    <div class="arch-connector"><span>Infrastructure</span></div>
+    <div class="arch-row">
+      <div class="arch-box ab-infra">AWS / GCP<br><span style="font-weight:400;font-size:.65rem;opacity:.7">Multi-region</span></div>
+      <div class="arch-box ab-infra">Kubernetes<br><span style="font-weight:400;font-size:.65rem;opacity:.7">Auto-scaling</span></div>
+      <div class="arch-box ab-infra">CloudFlare<br><span style="font-weight:400;font-size:.65rem;opacity:.7">Edge / WAF</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- API Preview -->
+<section id="api">
+  <div class="section-label">// api</div>
+  <div class="section-title">RESTful API with full CRUD</div>
+  <div class="section-sub">Everything in the Go2 dashboard is available via API. Build custom integrations, export data, trigger automations programmatically.</div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
+      <span style="flex:1;text-align:center">Quick Start</span>
+      <span class="code-lang">bash</span>
+    </div>
+    <div class="code-body">
+<span class="cm"># Authenticate and fetch team insights</span>
+curl -X GET https://api.go2.io/v2/teams/insights \
+  -H <span class="str">"Authorization: Bearer $GO2_API_KEY"</span> \
+  -H <span class="str">"Content-Type: application/json"</span>
+
+<span class="cm"># Response</span>
+{
+  <span class="str">"team_id"</span>: <span class="str">"tm_8x7k2m"</span>,
+  <span class="str">"period"</span>: <span class="str">"2026-03-10/2026-03-17"</span>,
+  <span class="str">"productivity_gain"</span>: <span class="num">0.23</span>,
+  <span class="str">"automations_triggered"</span>: <span class="num">1847</span>,
+  <span class="str">"docs_generated"</span>: <span class="num">34</span>,
+  <span class="str">"coaching_sessions"</span>: <span class="num">892</span>,
+  <span class="str">"avg_satisfaction"</span>: <span class="num">0.89</span>
+}
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
+      <span style="flex:1;text-align:center">Webhook Configuration</span>
+      <span class="code-lang">javascript</span>
+    </div>
+    <div class="code-body">
+<span class="cm">// Register a webhook for automation events</span>
+<span class="kw">const</span> webhook = <span class="kw">await</span> go2.<span class="fn">webhooks</span>.<span class="fn">create</span>({
+  <span class="str">url</span>: <span class="str">"https://your-app.com/go2/events"</span>,
+  <span class="str">events</span>: [
+    <span class="str">"automation.suggested"</span>,
+    <span class="str">"automation.deployed"</span>,
+    <span class="str">"doc.generated"</span>,
+    <span class="str">"insight.critical"</span>
+  ],
+  <span class="str">secret</span>: process.env.<span class="fn">WEBHOOK_SECRET</span>
+});
+
+<span class="cm">// Webhook payload example</span>
+{
+  <span class="str">"event"</span>: <span class="str">"automation.suggested"</span>,
+  <span class="str">"timestamp"</span>: <span class="str">"2026-03-17T14:23:00Z"</span>,
+  <span class="str">"data"</span>: {
+    <span class="str">"automation_id"</span>: <span class="str">"auto_9f3x"</span>,
+    <span class="str">"description"</span>: <span class="str">"Auto-sync Jira status to Slack channel"</span>,
+    <span class="str">"estimated_savings_hrs"</span>: <span class="num">12.5</span>,
+    <span class="str">"confidence"</span>: <span class="num">0.94</span>
+  }
+}
+    </div>
+  </div>
+
+  <div class="section-title" style="font-size:1.2rem;margin-top:3rem">API Endpoints</div>
+  <table class="api-table">
+    <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><span class="api-method m-get">GET</span></td><td class="api-path">/v2/teams/{id}/insights</td><td>Team productivity insights</td></tr>
+      <tr><td><span class="api-method m-get">GET</span></td><td class="api-path">/v2/workflows</td><td>List discovered workflows</td></tr>
+      <tr><td><span class="api-method m-get">GET</span></td><td class="api-path">/v2/automations</td><td>List suggested automations</td></tr>
+      <tr><td><span class="api-method m-post">POST</span></td><td class="api-path">/v2/automations/{id}/deploy</td><td>Deploy an automation</td></tr>
+      <tr><td><span class="api-method m-get">GET</span></td><td class="api-path">/v2/docs</td><td>List generated SOPs</td></tr>
+      <tr><td><span class="api-method m-post">POST</span></td><td class="api-path">/v2/docs/generate</td><td>Trigger doc generation</td></tr>
+      <tr><td><span class="api-method m-get">GET</span></td><td class="api-path">/v2/coaching/sessions</td><td>Coaching session history</td></tr>
+      <tr><td><span class="api-method m-post">POST</span></td><td class="api-path">/v2/webhooks</td><td>Register webhook endpoint</td></tr>
+      <tr><td><span class="api-method m-put">PUT</span></td><td class="api-path">/v2/settings/org</td><td>Update org configuration</td></tr>
+      <tr><td><span class="api-method m-del">DEL</span></td><td class="api-path">/v2/data/user/{id}</td><td>GDPR data deletion</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- Performance -->
+<section>
+  <div class="section-label">// performance</div>
+  <div class="section-title">Numbers that matter to engineering</div>
+  <div class="perf-grid">
+    <div class="perf-card"><div class="perf-val" style="color:var(--green)">99.97%</div><div class="perf-lbl">Uptime SLA</div></div>
+    <div class="perf-card"><div class="perf-val" style="color:var(--accent2)">42ms</div><div class="perf-lbl">API P95 Latency</div></div>
+    <div class="perf-card"><div class="perf-val" style="color:var(--amber)">&lt;50MB</div><div class="perf-lbl">Agent RAM Usage</div></div>
+    <div class="perf-card"><div class="perf-val" style="color:#c084fc">47K</div><div class="perf-lbl">Concurrent Workers</div></div>
+    <div class="perf-card"><div class="perf-val" style="color:var(--green)">2.1B</div><div class="perf-lbl">Events / Day</div></div>
+    <div class="perf-card"><div class="perf-val" style="color:var(--accent2)">3</div><div class="perf-lbl">Cloud Regions</div></div>
+  </div>
+</section>
+
+<!-- Security -->
+<section id="security">
+  <div class="section-label">// security &amp; compliance</div>
+  <div class="section-title">Enterprise-grade security by default</div>
+  <div class="section-sub">We do not just check boxes. Our security posture is designed for companies that handle sensitive data.</div>
+
+  <div class="comp-badges">
+    <div class="comp-badge"><div class="cb-icon">&#x1F6E1;</div><div class="cb-name">SOC 2 Type II</div><div class="cb-detail">Annually audited</div></div>
+    <div class="comp-badge"><div class="cb-icon">&#x1F310;</div><div class="cb-name">GDPR</div><div class="cb-detail">Full compliance</div></div>
+    <div class="comp-badge"><div class="cb-icon">&#x1F512;</div><div class="cb-name">HIPAA</div><div class="cb-detail">BAA available</div></div>
+    <div class="comp-badge"><div class="cb-icon">&#x2705;</div><div class="cb-name">ISO 27001</div><div class="cb-detail">Certified</div></div>
+    <div class="comp-badge"><div class="cb-icon">&#x1F50D;</div><div class="cb-name">Pen Tested</div><div class="cb-detail">Quarterly</div></div>
+  </div>
+
+  <div class="sec-grid">
+    <div class="sec-card">
+      <div class="sec-badge">Encryption</div>
+      <h3>AES-256 at rest, TLS 1.3 in transit</h3>
+      <p>All data encrypted with customer-managed keys (BYOK) available for enterprise. mTLS for agent-to-API communication.</p>
+    </div>
+    <div class="sec-card">
+      <div class="sec-badge">Access Control</div>
+      <h3>RBAC + SCIM provisioning</h3>
+      <p>SAML 2.0 / OIDC SSO. SCIM auto-provisioning from Okta, Azure AD, OneLogin. Granular role-based permissions per team.</p>
+    </div>
+    <div class="sec-card">
+      <div class="sec-badge">Data Residency</div>
+      <h3>Multi-region deployment</h3>
+      <p>Choose US, EU, or APAC data residency. No data leaves your selected region. On-premise deployment available for enterprise.</p>
+    </div>
+    <div class="sec-card">
+      <div class="sec-badge">Privacy</div>
+      <h3>Privacy-first architecture</h3>
+      <p>No screenshots, no keystroke logging, no screen recording. Workflow patterns only. Individual data isolated; managers see aggregates. Full GDPR right-to-delete via API.</p>
+    </div>
+    <div class="sec-card">
+      <div class="sec-badge">Audit</div>
+      <h3>Complete audit trail</h3>
+      <p>Every API call, every admin action, every data access logged and immutable. Export audit logs to your SIEM (Splunk, Datadog, etc).</p>
+    </div>
+    <div class="sec-card">
+      <div class="sec-badge">Network</div>
+      <h3>IP allowlisting + VPN peering</h3>
+      <p>Restrict API access to known IPs. VPC peering available. Agent communicates through configurable proxy. No inbound ports required.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Integrations -->
+<section id="integrations">
+  <div class="section-label">// integrations</div>
+  <div class="section-title">40+ pre-built connectors</div>
+  <div class="section-sub">OAuth-based, read-only by default. Each integration follows least-privilege access and can be toggled per-team.</div>
+  <div class="int-list">
+    <div class="int-item"><span class="int-dot"></span>Slack (Events API)</div>
+    <div class="int-item"><span class="int-dot"></span>Microsoft Teams</div>
+    <div class="int-item"><span class="int-dot"></span>Google Workspace</div>
+    <div class="int-item"><span class="int-dot"></span>Microsoft 365</div>
+    <div class="int-item"><span class="int-dot"></span>Jira Cloud + Server</div>
+    <div class="int-item"><span class="int-dot"></span>Linear</div>
+    <div class="int-item"><span class="int-dot"></span>Asana</div>
+    <div class="int-item"><span class="int-dot"></span>Monday.com</div>
+    <div class="int-item"><span class="int-dot"></span>GitHub + GitHub Enterprise</div>
+    <div class="int-item"><span class="int-dot"></span>GitLab</div>
+    <div class="int-item"><span class="int-dot"></span>Bitbucket</div>
+    <div class="int-item"><span class="int-dot"></span>Notion</div>
+    <div class="int-item"><span class="int-dot"></span>Confluence</div>
+    <div class="int-item"><span class="int-dot"></span>Salesforce</div>
+    <div class="int-item"><span class="int-dot"></span>HubSpot</div>
+    <div class="int-item"><span class="int-dot"></span>Zendesk</div>
+    <div class="int-item"><span class="int-dot"></span>Intercom</div>
+    <div class="int-item"><span class="int-dot"></span>Figma</div>
+    <div class="int-item"><span class="int-dot"></span>Zoom</div>
+    <div class="int-item"><span class="int-dot"></span>Loom</div>
+    <div class="int-item"><span class="int-dot"></span>Datadog</div>
+    <div class="int-item"><span class="int-dot"></span>PagerDuty</div>
+    <div class="int-item"><span class="int-dot"></span>Okta (SCIM)</div>
+    <div class="int-item"><span class="int-dot"></span>Azure AD</div>
+    <div class="int-item"><span class="int-dot"></span>Workday</div>
+    <div class="int-item"><span class="int-dot"></span>BambooHR</div>
+    <div class="int-item"><span class="int-dot"></span>Rippling</div>
+    <div class="int-item"><span class="int-dot"></span>Stripe</div>
+    <div class="int-item"><span class="int-dot"></span>Snowflake (export)</div>
+    <div class="int-item"><span class="int-dot"></span>BigQuery (export)</div>
+    <div class="int-item"><span class="int-dot"></span>REST API (custom)</div>
+    <div class="int-item"><span class="int-dot"></span>Webhooks (inbound)</div>
+  </div>
+
+  <div class="code-block" style="margin-top:2rem">
+    <div class="code-header">
+      <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
+      <span style="flex:1;text-align:center">Custom Integration SDK</span>
+      <span class="code-lang">typescript</span>
+    </div>
+    <div class="code-body">
+<span class="kw">import</span> { Go2Client, EventType } <span class="kw">from</span> <span class="str">'@go2/sdk'</span>;
+
+<span class="kw">const</span> client = <span class="kw">new</span> <span class="fn">Go2Client</span>({
+  apiKey: process.env.<span class="fn">GO2_API_KEY</span>,
+  region: <span class="str">'us-east-1'</span>
+});
+
+<span class="cm">// Stream real-time workflow events</span>
+client.<span class="fn">events</span>.<span class="fn">subscribe</span>([
+  EventType.<span class="fn">AUTOMATION_SUGGESTED</span>,
+  EventType.<span class="fn">DOC_GENERATED</span>,
+], <span class="kw">async</span> (event) <span class="op">=></span> {
+  console.<span class="fn">log</span>(<span class="str">`New event: ${event.type}`</span>);
+  <span class="cm">// Push to your internal tools</span>
+  <span class="kw">await</span> <span class="fn">notifyTeam</span>(event);
+});
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta">
+  <div class="section-label">// get started</div>
+  <h2>Ready to evaluate?</h2>
+  <p style="font-family:-apple-system,sans-serif">Sandbox environment available. Full API access. No sales call required for teams under 50.</p>
+  <div class="btn-group">
+    <a href="#" class="btn btn-primary">Get API Key</a>
+    <a href="#" class="btn btn-ghost">Schedule Architecture Review</a>
+  </div>
+</div>
+
+<footer>
+  <p>&copy; 2026 Go2 &nbsp;|&nbsp; <a href="#">API Docs</a> &nbsp;|&nbsp; <a href="#">Status Page</a> &nbsp;|&nbsp; <a href="#">Security Whitepaper</a> &nbsp;|&nbsp; <a href="#">GitHub SDK</a></p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go2 — Your AI Is Only As Smart As Your Data</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-card: #12121a;
+            --bg-elevated: #1a1a2e;
+            --accent: #6c5ce7;
+            --accent-bright: #a29bfe;
+            --accent-glow: rgba(108, 92, 231, 0.3);
+            --green: #00d2d3;
+            --green-dim: rgba(0, 210, 211, 0.15);
+            --orange: #ff9f43;
+            --red: #ff6b6b;
+            --text: #e8e8f0;
+            --text-dim: #8888a0;
+            --text-muted: #555570;
+            --border: rgba(255,255,255,0.06);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* NAV */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: rgba(10,10,15,0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 40px;
+            display: flex; align-items: center; justify-content: space-between;
+            height: 64px;
+        }
+        .logo { font-weight: 800; font-size: 1.4em; letter-spacing: -0.5px; }
+        .logo span { color: var(--accent-bright); }
+        .nav-links { display: flex; gap: 32px; align-items: center; }
+        .nav-links a { color: var(--text-dim); text-decoration: none; font-size: 0.9em; font-weight: 500; transition: color 0.2s; }
+        .nav-links a:hover { color: var(--text); }
+        .nav-cta {
+            background: var(--accent);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85em;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .nav-cta:hover { background: var(--accent-bright); transform: translateY(-1px); }
+
+        /* HERO */
+        .hero {
+            min-height: 100vh;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            text-align: center;
+            padding: 120px 24px 80px;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute; top: -200px; left: 50%; transform: translateX(-50%);
+            width: 800px; height: 800px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            padding: 6px 16px 6px 8px;
+            font-size: 0.8em;
+            color: var(--text-dim);
+            margin-bottom: 32px;
+        }
+        .hero-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .hero h1 {
+            font-size: clamp(2.8em, 6vw, 5.5em);
+            font-weight: 900;
+            line-height: 1.05;
+            letter-spacing: -2px;
+            max-width: 900px;
+            margin-bottom: 24px;
+        }
+        .hero h1 .gradient {
+            background: linear-gradient(135deg, var(--accent-bright), var(--green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero p {
+            font-size: 1.25em;
+            color: var(--text-dim);
+            max-width: 640px;
+            margin-bottom: 40px;
+            line-height: 1.7;
+        }
+        .hero-ctas { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s;
+            text-decoration: none;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-primary:hover { background: var(--accent-bright); transform: translateY(-2px); box-shadow: 0 8px 30px var(--accent-glow); }
+        .btn-secondary {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s;
+            text-decoration: none;
+        }
+        .btn-secondary:hover { border-color: var(--text-muted); background: var(--bg-elevated); }
+
+        /* LOGOS BAR */
+        .logos-bar {
+            padding: 60px 24px;
+            text-align: center;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+        .logos-bar p { color: var(--text-muted); font-size: 0.85em; text-transform: uppercase; letter-spacing: 2px; font-weight: 500; margin-bottom: 32px; }
+        .logos-row {
+            display: flex; justify-content: center; gap: 48px; flex-wrap: wrap; align-items: center;
+            opacity: 0.5;
+            font-size: 1.5em; font-weight: 700; color: var(--text-muted);
+        }
+        .logos-row span { white-space: nowrap; }
+
+        /* SECTION */
+        section { padding: 100px 24px; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        .section-label {
+            color: var(--accent-bright);
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+        }
+        .section-title {
+            font-size: clamp(2em, 4vw, 3em);
+            font-weight: 800;
+            letter-spacing: -1px;
+            line-height: 1.15;
+            margin-bottom: 20px;
+        }
+        .section-desc {
+            font-size: 1.1em;
+            color: var(--text-dim);
+            max-width: 600px;
+            margin-bottom: 48px;
+        }
+
+        /* PROBLEM */
+        .problem-section { background: var(--bg-card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        .problem-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 48px;
+            align-items: center;
+        }
+        .problem-visual {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 40px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            position: relative;
+            overflow: hidden;
+        }
+        .problem-visual::before {
+            content: 'AI SESSION';
+            position: absolute; top: 12px; right: 16px;
+            font-size: 0.65em;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+        }
+        .chat-line { margin-bottom: 16px; padding: 12px 16px; border-radius: 10px; }
+        .chat-user { background: var(--bg-elevated); border-left: 3px solid var(--accent); }
+        .chat-ai { background: rgba(255,107,107,0.08); border-left: 3px solid var(--red); }
+        .chat-ai-good { background: rgba(0,210,211,0.08); border-left: 3px solid var(--green); }
+        .chat-label { font-size: 0.7em; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 4px; }
+
+        /* HOW IT WORKS */
+        .flow-steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-top: 48px;
+        }
+        .flow-step {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px 24px;
+            position: relative;
+            transition: all 0.3s;
+        }
+        .flow-step:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+        .flow-num {
+            font-size: 3em;
+            font-weight: 900;
+            color: var(--bg-elevated);
+            line-height: 1;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--accent), transparent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .flow-step h3 { font-size: 1.1em; font-weight: 700; margin-bottom: 8px; }
+        .flow-step p { font-size: 0.9em; color: var(--text-dim); line-height: 1.6; }
+        .flow-connector { display: none; }
+
+        /* BEFORE/AFTER */
+        .ba-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 48px; }
+        .ba-card {
+            border-radius: 16px;
+            padding: 40px;
+            border: 1px solid var(--border);
+        }
+        .ba-before { background: rgba(255,107,107,0.05); border-color: rgba(255,107,107,0.2); }
+        .ba-after { background: rgba(0,210,211,0.05); border-color: rgba(0,210,211,0.2); }
+        .ba-card h3 { font-size: 1.2em; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .ba-before h3 { color: var(--red); }
+        .ba-after h3 { color: var(--green); }
+        .ba-card ul { list-style: none; }
+        .ba-card li { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.95em; color: var(--text-dim); display: flex; gap: 10px; }
+        .ba-card li:last-child { border-bottom: none; }
+
+        /* INTEGRATIONS */
+        .integrations-section { background: var(--bg-card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        .int-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 48px; }
+        .int-card {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .int-card:hover { border-color: var(--accent); }
+        .int-icon { font-size: 2em; margin-bottom: 8px; }
+        .int-card h4 { font-size: 0.9em; font-weight: 600; margin-bottom: 4px; }
+        .int-card p { font-size: 0.75em; color: var(--text-muted); }
+
+        /* STATS */
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin: 48px 0; }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            text-align: center;
+        }
+        .stat-num { font-size: 2.5em; font-weight: 900; letter-spacing: -1px; margin-bottom: 4px; }
+        .stat-num.purple { color: var(--accent-bright); }
+        .stat-num.green { color: var(--green); }
+        .stat-num.orange { color: var(--orange); }
+        .stat-label { font-size: 0.85em; color: var(--text-dim); }
+
+        /* CTA */
+        .cta-section {
+            text-align: center;
+            padding: 120px 24px;
+            position: relative;
+        }
+        .cta-section::before {
+            content: '';
+            position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .cta-section h2 {
+            font-size: clamp(2.2em, 4.5vw, 3.5em);
+            font-weight: 900;
+            letter-spacing: -1.5px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .cta-section p {
+            color: var(--text-dim);
+            font-size: 1.15em;
+            max-width: 550px;
+            margin: 0 auto 40px;
+            position: relative;
+        }
+
+        /* FOOTER */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 48px 24px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85em;
+        }
+        footer a { color: var(--text-dim); text-decoration: none; }
+
+        /* CODE BLOCK */
+        .code-block {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8em;
+            line-height: 1.8;
+            overflow-x: auto;
+            margin-top: 24px;
+        }
+        .code-block .comment { color: var(--text-muted); }
+        .code-block .keyword { color: var(--accent-bright); }
+        .code-block .string { color: var(--green); }
+        .code-block .func { color: var(--orange); }
+
+        /* RESPONSIVE */
+        @media (max-width: 900px) {
+            .problem-grid, .ba-grid { grid-template-columns: 1fr; }
+            .flow-steps { grid-template-columns: 1fr 1fr; }
+            .int-grid { grid-template-columns: 1fr 1fr; }
+            .stats-row { grid-template-columns: 1fr 1fr; }
+            nav { padding: 0 16px; }
+            .nav-links { gap: 16px; }
+        }
+        @media (max-width: 600px) {
+            .flow-steps, .stats-row { grid-template-columns: 1fr; }
+            .int-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="logo">go<span>2</span></div>
+    <div class="nav-links">
+        <a href="#problem">Problem</a>
+        <a href="#how">How It Works</a>
+        <a href="#integrations">Integrations</a>
+        <a href="#results">Results</a>
+        <a href="#cta" class="nav-cta">Get AI-Ready</a>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-badge">
+        <span class="dot"></span>
+        Works inside Claude, ChatGPT, Gemini & more
+    </div>
+    <h1>Your AI is only as smart as your data.<br><span class="gradient">Go2 makes it a genius.</span></h1>
+    <p>Go2 is the sidecar that gives any AI tool deep context about your company — your workflows, your people, your processes. Stop getting generic answers. Start getting answers that actually work.</p>
+    <div class="hero-ctas">
+        <a href="#cta" class="btn-primary">Make AI Actually Work &rarr;</a>
+        <a href="#how" class="btn-secondary">See How It Works</a>
+    </div>
+</section>
+
+<!-- LOGOS -->
+<div class="logos-bar">
+    <p>Supercharges the AI tools you already use</p>
+    <div class="logos-row">
+        <span>Claude</span>
+        <span>ChatGPT</span>
+        <span>Gemini</span>
+        <span>OpenAI API</span>
+        <span>Copilot</span>
+    </div>
+</div>
+
+<!-- PROBLEM -->
+<section id="problem" class="problem-section">
+    <div class="container">
+        <div class="problem-grid">
+            <div>
+                <div class="section-label">The Problem</div>
+                <h2 class="section-title">Every AI tool you use is flying blind.</h2>
+                <div class="section-desc">
+                    Claude doesn't know your SOPs. ChatGPT doesn't know your tech stack. Gemini has no idea who does what on your team. You keep pasting context, re-explaining workflows, and getting generic answers that miss the mark.
+                </div>
+                <p style="color: var(--text-dim); font-size: 0.95em; line-height: 1.8;">
+                    <strong style="color: var(--red);">95% of enterprise AI pilots fail</strong> (MIT Sloan). Not because the AI is bad — because it has no context about how your company actually works. The intelligence is there. The knowledge isn't.
+                </p>
+            </div>
+            <div class="problem-visual">
+                <div class="chat-line chat-user">
+                    <div class="chat-label">You</div>
+                    Write a proposal for the Henderson account using our standard template
+                </div>
+                <div class="chat-line chat-ai">
+                    <div class="chat-label">AI Without Go2</div>
+                    I don't have access to your templates or client details. Could you paste your standard template and any relevant information about Henderson?
+                </div>
+                <div style="text-align: center; padding: 12px 0; color: var(--text-muted); font-size: 0.75em; letter-spacing: 1px;">AFTER GO2</div>
+                <div class="chat-line chat-ai-good">
+                    <div class="chat-label">AI With Go2</div>
+                    Done. I used Template B (enterprise tier), pulled Henderson's Q3 metrics from the CRM, and matched the tone from Sarah's last 3 proposals. Flagged the renewal discount per your pricing SOP. Draft ready for review.
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+    <div class="container">
+        <div class="section-label">How It Works</div>
+        <h2 class="section-title">From zero context to total clarity in 4 steps</h2>
+        <div class="section-desc">Go2's desktop agent quietly observes how work happens, structures it, and makes it available to any AI tool you use.</div>
+
+        <div class="flow-steps">
+            <div class="flow-step">
+                <div class="flow-num">01</div>
+                <h3>Install the Sidecar</h3>
+                <p>Lightweight desktop agent. Runs silently. Workers see their own data — full transparency, zero surveillance vibes.</p>
+            </div>
+            <div class="flow-step">
+                <div class="flow-num">02</div>
+                <h3>Capture Workflows</h3>
+                <p>Go2 observes how your team actually works — apps, patterns, handoffs, processes. Not keystrokes. Workflows.</p>
+            </div>
+            <div class="flow-step">
+                <div class="flow-num">03</div>
+                <h3>Structure as Skills</h3>
+                <p>Raw observations become structured skills, SOPs, and context files that any AI agent can consume.</p>
+            </div>
+            <div class="flow-step">
+                <div class="flow-num">04</div>
+                <h3>Plug Into Any AI</h3>
+                <p>Your Claude, ChatGPT, or custom AI agent instantly knows your company. Skills work like plugins — open-source, portable.</p>
+            </div>
+        </div>
+
+        <div class="code-block">
+            <span class="comment"># Example: Go2 skill definition your AI agents consume</span><br>
+            <span class="keyword">skill</span>: <span class="string">"proposal-generation"</span><br>
+            <span class="keyword">context</span>:<br>
+            &nbsp;&nbsp;<span class="keyword">templates</span>: <span class="string">"./company/templates/proposals/"</span><br>
+            &nbsp;&nbsp;<span class="keyword">pricing_sop</span>: <span class="string">"./company/sops/pricing-v3.md"</span><br>
+            &nbsp;&nbsp;<span class="keyword">crm_integration</span>: <span class="string">"hubspot"</span><br>
+            &nbsp;&nbsp;<span class="keyword">tone_reference</span>: <span class="string">"./team/sarah/writing-samples/"</span><br>
+            <span class="keyword">triggers</span>: [<span class="string">"proposal"</span>, <span class="string">"quote"</span>, <span class="string">"pitch deck"</span>]<br>
+            <span class="keyword">platforms</span>: [<span class="string">"claude"</span>, <span class="string">"chatgpt"</span>, <span class="string">"openai-api"</span>]<br>
+            <span class="comment"># Your AI now knows HOW your company writes proposals</span>
+        </div>
+    </div>
+</section>
+
+<!-- BEFORE/AFTER -->
+<section style="background: var(--bg-card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+    <div class="container">
+        <div class="section-label">The Difference</div>
+        <h2 class="section-title">AI without context vs. AI with Go2</h2>
+        <div class="ba-grid">
+            <div class="ba-card ba-before">
+                <h3><span style="font-size: 1.3em;">&#x2717;</span> AI Without Go2</h3>
+                <ul>
+                    <li><span>&#x2022;</span> Generic answers that need heavy editing</li>
+                    <li><span>&#x2022;</span> Constant re-explaining of company processes</li>
+                    <li><span>&#x2022;</span> Copy-pasting context into every session</li>
+                    <li><span>&#x2022;</span> AI outputs that miss your brand voice</li>
+                    <li><span>&#x2022;</span> "I don't have access to that information"</li>
+                    <li><span>&#x2022;</span> Each employee trains AI differently (or not at all)</li>
+                    <li><span>&#x2022;</span> No institutional memory across AI sessions</li>
+                </ul>
+            </div>
+            <div class="ba-card ba-after">
+                <h3><span style="font-size: 1.3em;">&#x2713;</span> AI With Go2</h3>
+                <ul>
+                    <li><span>&#x2022;</span> Outputs that reference your actual SOPs and templates</li>
+                    <li><span>&#x2022;</span> AI knows your team, roles, and handoff patterns</li>
+                    <li><span>&#x2022;</span> Context loaded automatically via skills</li>
+                    <li><span>&#x2022;</span> Brand-consistent tone from real writing samples</li>
+                    <li><span>&#x2022;</span> Direct integration with your tools and data</li>
+                    <li><span>&#x2022;</span> Shared company skills = consistent AI across the org</li>
+                    <li><span>&#x2022;</span> Knowledge compounds over time — AI gets smarter daily</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- INTEGRATIONS -->
+<section id="integrations" class="integrations-section">
+    <div class="container">
+        <div class="section-label">Integrations</div>
+        <h2 class="section-title">Works inside the tools you already pay for</h2>
+        <div class="section-desc">Go2 isn't another AI tool to manage. It makes every AI tool you use dramatically better.</div>
+
+        <div class="int-grid">
+            <div class="int-card">
+                <div class="int-icon">&#x1F4AC;</div>
+                <h4>Claude / Anthropic</h4>
+                <p>Skills, MCP tools, project knowledge</p>
+            </div>
+            <div class="int-card">
+                <div class="int-icon">&#x1F916;</div>
+                <h4>ChatGPT / OpenAI</h4>
+                <p>Custom GPTs, API context injection</p>
+            </div>
+            <div class="int-card">
+                <div class="int-icon">&#x2728;</div>
+                <h4>Gemini / Google</h4>
+                <p>Workspace integration, context files</p>
+            </div>
+            <div class="int-card">
+                <div class="int-icon">&#x1F4BB;</div>
+                <h4>GitHub Copilot</h4>
+                <p>Codebase skills, team patterns</p>
+            </div>
+            <div class="int-card">
+                <div class="int-icon">&#x1F4CA;</div>
+                <h4>Slack</h4>
+                <p>Communication patterns, context</p>
+            </div>
+            <div class="int-card">
+                <div class="int-icon">&#x1F4C8;</div>
+                <h4>HubSpot / CRM</h4>
+                <p>Client data, pipeline context</p>
+            </div>
+            <div class="int-card">
+                <div class="int-icon">&#x1F4DD;</div>
+                <h4>Notion / Docs</h4>
+                <p>Knowledge base, documentation</p>
+            </div>
+            <div class="int-card">
+                <div class="int-icon">&#x2699;&#xFE0F;</div>
+                <h4>40+ More</h4>
+                <p>Jira, Linear, Figma, Asana...</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- STATS -->
+<section id="results">
+    <div class="container">
+        <div class="section-label">Results</div>
+        <h2 class="section-title">The numbers behind the hype</h2>
+        <div class="section-desc">Proven across 47,000+ workers. These aren't projections — they're measured outcomes.</div>
+
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-num purple">47K+</div>
+                <div class="stat-label">Workers using Go2</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num green">23%</div>
+                <div class="stat-label">Average productivity gain</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num orange">89%</div>
+                <div class="stat-label">Worker satisfaction rate</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num purple">$4,200</div>
+                <div class="stat-label">Annual ROI per worker</div>
+            </div>
+        </div>
+
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 40px; margin-top: 16px;">
+            <p style="font-size: 1.15em; font-style: italic; color: var(--text-dim); margin-bottom: 16px;">
+                "We were pasting the same context into ChatGPT fifty times a day. Go2 captured our workflows once and now every AI tool we use just... knows us. It's like the AI finally works here."
+            </p>
+            <p style="font-size: 0.9em; color: var(--text-muted);">
+                <strong style="color: var(--text);">Director of Operations</strong> &mdash; 45-person remote agency
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- THE TROJAN HORSE -->
+<section style="background: var(--bg-card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+    <div class="container" style="text-align: center; max-width: 700px;">
+        <div class="section-label">The Bigger Picture</div>
+        <h2 class="section-title">It starts as a sidecar. It becomes your AI operating system.</h2>
+        <p style="color: var(--text-dim); font-size: 1.05em; line-height: 1.8; margin-bottom: 32px;">
+            Day one, Go2 makes your existing AI tools smarter. Week two, it's coaching your team in real-time. Month two, it's found 30 processes ripe for automation. Month six, it's training custom AI agents that run entire workflows end-to-end.
+        </p>
+        <p style="color: var(--text-dim); font-size: 1.05em; line-height: 1.8;">
+            Go2 isn't replacing your AI stack. It's the context layer that makes your entire AI investment actually pay off. The companies that capture their work data now will own the AI advantage for the next decade.
+        </p>
+    </div>
+</section>
+
+<!-- CTA -->
+<section id="cta" class="cta-section">
+    <h2>Stop feeding AI<br>the same context<br><span class="gradient">over and over.</span></h2>
+    <p>Give your AI tools the knowledge they need to actually deliver. Go2 sets up in minutes and works inside the platforms you already use.</p>
+    <div class="hero-ctas" style="position: relative;">
+        <a href="#" class="btn-primary" style="font-size: 1.1em; padding: 16px 40px;">Get AI-Ready &rarr;</a>
+        <a href="#" class="btn-secondary" style="font-size: 1.1em; padding: 16px 40px;">Book a Demo</a>
+    </div>
+    <p style="color: var(--text-muted); font-size: 0.8em; margin-top: 24px; position: relative;">Free pilot for teams under 50. No credit card required.</p>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <div style="margin-bottom: 16px;">
+        <span class="logo" style="font-size: 1.1em;">go<span style="color: var(--accent-bright);">2</span></span>
+    </div>
+    <p>&copy; 2026 Go2. The AI sidecar for companies that actually want AI to work.</p>
+    <div style="margin-top: 12px;">
+        <a href="#" style="margin: 0 12px;">Privacy</a>
+        <a href="#" style="margin: 0 12px;">Terms</a>
+        <a href="#" style="margin: 0 12px;">Contact</a>
+    </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Scale Without Hiring</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafbfc;
+  --white: #ffffff;
+  --dark: #0f172a;
+  --text: #334155;
+  --muted: #64748b;
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --primary-light: rgba(37, 99, 235, 0.08);
+  --success: #059669;
+  --success-bg: rgba(5, 150, 105, 0.08);
+  --accent: #7c3aed;
+  --border: #e2e8f0;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-lg: 0 10px 40px rgba(0,0,0,0.08);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* --- NAV --- */
+nav {
+  position: fixed; top: 0; width: 100%; z-index: 100;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px;
+}
+.logo { font-size: 1.6rem; font-weight: 800; color: var(--dark); letter-spacing: -0.5px; }
+.logo span { color: var(--primary); }
+.nav-links { display: flex; gap: 2rem; list-style: none; }
+.nav-links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color 0.3s; }
+.nav-links a:hover { color: var(--dark); }
+.nav-cta {
+  background: var(--primary); color: #fff; padding: 0.5rem 1.4rem;
+  border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem;
+  transition: background 0.3s, transform 0.2s;
+}
+.nav-cta:hover { background: var(--primary-dark); transform: translateY(-1px); }
+
+/* --- HERO --- */
+.hero {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  padding: 6rem 2rem 4rem; text-align: center; position: relative;
+  background: linear-gradient(180deg, #fff 0%, var(--bg) 100%);
+}
+.hero-content { max-width: 800px; }
+.hero-badge {
+  display: inline-block; padding: 0.4rem 1.2rem; border-radius: 50px;
+  background: var(--success-bg); border: 1px solid rgba(5, 150, 105, 0.2);
+  font-size: 0.85rem; color: var(--success); margin-bottom: 2rem; font-weight: 600;
+}
+.hero h1 {
+  font-size: clamp(2.5rem, 5.5vw, 4.2rem); font-weight: 800;
+  color: var(--dark); line-height: 1.15; margin-bottom: 1.5rem; letter-spacing: -2px;
+}
+.hero h1 .blue { color: var(--primary); }
+.hero h1 .green { color: var(--success); }
+.hero p {
+  font-size: 1.2rem; color: var(--muted); max-width: 580px;
+  margin: 0 auto 2.5rem;
+}
+.hero-cta {
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  background: var(--primary); color: #fff; padding: 1rem 2.5rem;
+  border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 1.1rem;
+  transition: background 0.3s, transform 0.2s, box-shadow 0.3s;
+}
+.hero-cta:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 12px 40px rgba(37, 99, 235, 0.25); }
+.hero-cta svg { width: 20px; height: 20px; }
+
+/* --- THE MATH --- */
+.math-hero {
+  padding: 5rem 2rem; background: var(--white);
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+}
+.math-inner {
+  max-width: 900px; margin: 0 auto; text-align: center;
+}
+.section-label {
+  font-size: 0.8rem; text-transform: uppercase; letter-spacing: 3px;
+  color: var(--primary); margin-bottom: 1rem; font-weight: 600;
+}
+.section-title {
+  font-size: clamp(1.8rem, 3.5vw, 2.8rem); font-weight: 800;
+  color: var(--dark); margin-bottom: 1.5rem; letter-spacing: -1px; line-height: 1.2;
+}
+.section-sub {
+  color: var(--muted); font-size: 1.05rem; max-width: 580px;
+  margin: 0 auto 3rem;
+}
+
+/* Equation Visual */
+.equation {
+  display: flex; align-items: center; justify-content: center;
+  gap: 1.5rem; flex-wrap: wrap; margin-bottom: 3rem;
+}
+.eq-box {
+  padding: 1.5rem 2rem; border-radius: 16px;
+  text-align: center; min-width: 180px;
+}
+.eq-box.current {
+  background: var(--bg); border: 2px solid var(--border);
+}
+.eq-box.go2 {
+  background: var(--primary-light); border: 2px solid rgba(37, 99, 235, 0.2);
+}
+.eq-box.result {
+  background: var(--success-bg); border: 2px solid rgba(5, 150, 105, 0.2);
+}
+.eq-box .number {
+  font-size: 2.5rem; font-weight: 800; line-height: 1;
+}
+.eq-box.current .number { color: var(--muted); }
+.eq-box.go2 .number { color: var(--primary); }
+.eq-box.result .number { color: var(--success); }
+.eq-box .label { font-size: 0.85rem; color: var(--muted); margin-top: 0.4rem; }
+.eq-sign { font-size: 2rem; font-weight: 800; color: var(--muted); }
+
+/* --- CAPACITY CARDS --- */
+.capacity-section {
+  padding: 6rem 2rem; max-width: 1100px; margin: 0 auto;
+}
+.capacity-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem; margin-top: 3rem;
+}
+.capacity-card {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: 16px; padding: 2rem; transition: transform 0.3s, box-shadow 0.3s;
+}
+.capacity-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+.cap-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 1.2rem; font-size: 1.4rem;
+}
+.cap-icon.blue { background: var(--primary-light); }
+.cap-icon.green { background: var(--success-bg); }
+.cap-icon.purple { background: rgba(124, 58, 237, 0.08); }
+.capacity-card h3 { font-size: 1.15rem; font-weight: 700; color: var(--dark); margin-bottom: 0.8rem; }
+.capacity-card p { color: var(--muted); font-size: 0.95rem; }
+.cap-stat {
+  margin-top: 1.2rem; padding-top: 1.2rem;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: baseline; gap: 0.5rem;
+}
+.cap-stat .value { font-size: 1.6rem; font-weight: 800; color: var(--success); }
+.cap-stat .desc { font-size: 0.85rem; color: var(--muted); }
+
+/* --- HEADCOUNT COMPARISON --- */
+.headcount {
+  padding: 5rem 2rem; background: var(--white);
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+}
+.headcount-inner { max-width: 900px; margin: 0 auto; }
+.hc-comparison {
+  display: grid; grid-template-columns: 1fr 60px 1fr;
+  gap: 1rem; align-items: start; margin-top: 3rem;
+}
+.hc-option {
+  padding: 2.5rem; border-radius: 20px;
+}
+.hc-option.old {
+  background: #fff5f5; border: 2px solid #fecaca;
+}
+.hc-option.new {
+  background: #f0fdf4; border: 2px solid #bbf7d0;
+}
+.hc-option .tag {
+  font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px;
+  font-weight: 700; margin-bottom: 1rem;
+}
+.hc-option.old .tag { color: #dc2626; }
+.hc-option.new .tag { color: var(--success); }
+.hc-option h3 { font-size: 1.3rem; font-weight: 700; color: var(--dark); margin-bottom: 1rem; }
+.hc-list { list-style: none; }
+.hc-list li {
+  padding: 0.6rem 0; font-size: 0.95rem; color: var(--text);
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.hc-list li .icon-x { color: #dc2626; font-weight: 700; }
+.hc-list li .icon-check { color: var(--success); font-weight: 700; }
+.hc-vs {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; font-weight: 800; color: var(--muted);
+  align-self: center;
+}
+
+/* --- REAL SCENARIOS --- */
+.scenarios {
+  padding: 6rem 2rem; max-width: 1000px; margin: 0 auto;
+}
+.scenario-list { margin-top: 3rem; }
+.scenario {
+  display: grid; grid-template-columns: 80px 1fr;
+  gap: 1.5rem; padding: 2rem; margin-bottom: 1rem;
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: 16px; align-items: center;
+  transition: transform 0.2s, box-shadow 0.3s;
+}
+.scenario:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.scenario-icon {
+  width: 64px; height: 64px; border-radius: 16px;
+  background: var(--primary-light); display: flex;
+  align-items: center; justify-content: center;
+  font-size: 1.6rem;
+}
+.scenario h3 { font-size: 1.1rem; font-weight: 700; color: var(--dark); margin-bottom: 0.4rem; }
+.scenario p { color: var(--muted); font-size: 0.9rem; margin-bottom: 0.5rem; }
+.scenario .result-tag {
+  display: inline-block; padding: 0.25rem 0.7rem; border-radius: 6px;
+  background: var(--success-bg); color: var(--success);
+  font-size: 0.8rem; font-weight: 600;
+}
+
+/* --- HOW IT WORKS --- */
+.how-section {
+  padding: 6rem 2rem; background: var(--dark); color: #fff;
+}
+.how-inner { max-width: 1000px; margin: 0 auto; text-align: center; }
+.how-inner .section-label { color: rgba(255,255,255,0.5); }
+.how-inner .section-title { color: #fff; }
+.how-inner .section-sub { color: rgba(255,255,255,0.6); }
+.how-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem; margin-top: 3rem; text-align: center;
+}
+.how-step {
+  padding: 2rem 1.5rem;
+}
+.how-num {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; margin: 0 auto 1rem; font-size: 1rem;
+}
+.how-step h3 { font-size: 1rem; margin-bottom: 0.6rem; }
+.how-step p { color: rgba(255,255,255,0.5); font-size: 0.9rem; }
+
+/* --- STATS BAR --- */
+.stats-bar {
+  padding: 4rem 2rem; background: var(--white);
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+}
+.stats-inner {
+  max-width: 1000px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem;
+  text-align: center;
+}
+.stat-item .value {
+  font-size: 2.5rem; font-weight: 800; color: var(--primary);
+  line-height: 1;
+}
+.stat-item .label { font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem; }
+
+/* --- TESTIMONIALS --- */
+.testimonials {
+  padding: 6rem 2rem; max-width: 1100px; margin: 0 auto;
+}
+.test-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem; margin-top: 3rem;
+}
+.test-card {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: 16px; padding: 2rem;
+}
+.test-card .growth-tag {
+  display: inline-block; padding: 0.3rem 0.8rem; border-radius: 6px;
+  background: var(--success-bg); color: var(--success);
+  font-size: 0.8rem; font-weight: 600; margin-bottom: 1rem;
+}
+.test-card blockquote {
+  font-size: 1rem; line-height: 1.7; margin-bottom: 1.2rem; color: var(--text);
+}
+.test-card .author { color: var(--muted); font-size: 0.85rem; }
+.test-card .author strong { color: var(--dark); }
+
+/* --- FINAL CTA --- */
+.final-cta {
+  padding: 6rem 2rem; text-align: center;
+  background: linear-gradient(180deg, var(--bg), #fff);
+}
+.final-cta-inner {
+  max-width: 600px; margin: 0 auto; padding: 3.5rem;
+  background: var(--white); border-radius: 24px;
+  border: 1px solid var(--border); box-shadow: var(--shadow-lg);
+}
+.final-cta h2 {
+  font-size: clamp(1.8rem, 3.5vw, 2.5rem); font-weight: 800;
+  color: var(--dark); margin-bottom: 1rem; letter-spacing: -1px;
+}
+.final-cta p { color: var(--muted); margin-bottom: 2rem; font-size: 1.05rem; }
+.cta-btn {
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  background: var(--primary); color: #fff; padding: 1rem 2.5rem;
+  border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 1.1rem;
+  transition: background 0.3s, transform 0.2s, box-shadow 0.3s;
+  border: none; cursor: pointer;
+}
+.cta-btn:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 12px 40px rgba(37, 99, 235, 0.25); }
+.cta-sub { margin-top: 1rem; color: var(--muted); font-size: 0.85rem; }
+
+/* --- FOOTER --- */
+footer {
+  padding: 3rem 2rem; text-align: center;
+  border-top: 1px solid var(--border);
+}
+footer p { color: var(--muted); font-size: 0.85rem; }
+footer a { color: var(--primary); text-decoration: none; }
+
+/* --- RESPONSIVE --- */
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .equation { flex-direction: column; gap: 1rem; }
+  .eq-sign { transform: rotate(90deg); }
+  .hc-comparison { grid-template-columns: 1fr; }
+  .hc-vs { padding: 1rem 0; }
+  .stats-inner { grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+  .scenario { grid-template-columns: 1fr; }
+  .scenario-icon { display: none; }
+}
+
+/* --- ANIMATIONS --- */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(25px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate { opacity: 0; }
+.animate.visible { animation: fadeUp 0.6s ease forwards; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Go<span>2</span></div>
+  <ul class="nav-links">
+    <li><a href="#math">The Math</a></li>
+    <li><a href="#capacity">Unlock Capacity</a></li>
+    <li><a href="#scenarios">Real Scenarios</a></li>
+    <li><a href="#how">How It Works</a></li>
+  </ul>
+  <a href="#cta" class="nav-cta">Scale Now</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">For Growing SMBs</div>
+    <h1>
+      You need <span class="blue">50% more output.</span><br>
+      You don't need <span class="green">50% more people.</span>
+    </h1>
+    <p>
+      Go2 unlocks hidden capacity in your existing team. Same headcount. Dramatically more output. Growth without the hiring headache.
+    </p>
+    <a href="#cta" class="hero-cta">
+      Unlock Your Team's Capacity
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+  </div>
+</section>
+
+<!-- THE MATH -->
+<section class="math-hero" id="math">
+  <div class="math-inner">
+    <div class="section-label">The Growth Equation</div>
+    <div class="section-title">Same team. More output. Do the math.</div>
+    <div class="section-sub">
+      Hiring is slow, expensive, and risky. Go2 gives you the output of a bigger team without expanding headcount.
+    </div>
+    <div class="equation">
+      <div class="eq-box current">
+        <div class="number">25</div>
+        <div class="label">Current team size</div>
+      </div>
+      <div class="eq-sign">+</div>
+      <div class="eq-box go2">
+        <div class="number">Go2</div>
+        <div class="label">AI-powered optimization</div>
+      </div>
+      <div class="eq-sign">=</div>
+      <div class="eq-box result">
+        <div class="number">33</div>
+        <div class="label">Effective team output</div>
+      </div>
+    </div>
+    <p style="color:var(--muted); font-size:0.9rem; max-width:500px; margin:0 auto;">
+      Average Go2 customer sees 31% more effective output within 6 months. That's 8 extra people worth of work from the same 25.
+    </p>
+  </div>
+</section>
+
+<!-- CAPACITY CARDS -->
+<section class="capacity-section" id="capacity">
+  <div class="section-label" style="text-align:center;">Where Capacity Hides</div>
+  <div class="section-title" style="text-align:center;">Your team has untapped potential everywhere</div>
+  <div class="section-sub" style="text-align:center; max-width:580px; margin:0 auto;">
+    Go2's desktop agent captures everything. Frontier AI (Claude, GPT, Gemini) finds the hidden capacity. Here's where it typically lives.
+  </div>
+  <div class="capacity-grid">
+    <div class="capacity-card animate">
+      <div class="cap-icon blue">&#9881;</div>
+      <h3>Automatable Tasks</h3>
+      <p>Your team spends 28% of their time on tasks machines should do. Data entry, copy-paste workflows, manual reporting. Go2 maps every automation opportunity.</p>
+      <div class="cap-stat">
+        <span class="value">11.2h</span>
+        <span class="desc">freed per person per week from automation</span>
+      </div>
+    </div>
+    <div class="capacity-card animate">
+      <div class="cap-icon green">&#128161;</div>
+      <h3>Workflow Inefficiencies</h3>
+      <p>Your best performer does a task in 12 minutes. Your average does it in 22. Go2's AI coaching closes that gap by spreading top-performer techniques.</p>
+      <div class="cap-stat">
+        <span class="value">23%</span>
+        <span class="desc">efficiency gap closed across teams</span>
+      </div>
+    </div>
+    <div class="capacity-card animate">
+      <div class="cap-icon purple">&#128337;</div>
+      <h3>Focus Time Waste</h3>
+      <p>Context switching costs your team 2.1 hours per person per day. Go2 coaches better focus habits and helps protect deep work blocks.</p>
+      <div class="cap-stat">
+        <span class="value">41min</span>
+        <span class="desc">extra deep focus time recovered daily</span>
+      </div>
+    </div>
+    <div class="capacity-card animate">
+      <div class="cap-icon blue">&#128200;</div>
+      <h3>Process Redundancy</h3>
+      <p>Multiple people doing the same task multiple different ways. Go2 identifies the best method, standardizes it, and coaches the whole team to adopt it.</p>
+      <div class="cap-stat">
+        <span class="value">3x</span>
+        <span class="desc">faster best-practice adoption</span>
+      </div>
+    </div>
+    <div class="capacity-card animate">
+      <div class="cap-icon green">&#127919;</div>
+      <h3>Tool Underutilization</h3>
+      <p>Your team uses 15% of their software's capabilities. Go2 spots unused features that would save time, and coaches people to use what they're already paying for.</p>
+      <div class="cap-stat">
+        <span class="value">34%</span>
+        <span class="desc">more features utilized after Go2 coaching</span>
+      </div>
+    </div>
+    <div class="capacity-card animate">
+      <div class="cap-icon purple">&#9889;</div>
+      <h3>Knowledge Silos</h3>
+      <p>One person knows the fast way. Everyone else doesn't. Go2 breaks down knowledge silos by identifying and propagating best practices automatically.</p>
+      <div class="cap-stat">
+        <span class="value">12h</span>
+        <span class="desc">saved per week from shared best practices</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HEADCOUNT COMPARISON -->
+<section class="headcount">
+  <div class="headcount-inner">
+    <div class="section-label" style="text-align:center;">The Choice</div>
+    <div class="section-title" style="text-align:center;">Two paths to 50% more output</div>
+    <div class="hc-comparison">
+      <div class="hc-option old">
+        <div class="tag">Option A: Hire More</div>
+        <h3>Add 12 people to your team of 25</h3>
+        <ul class="hc-list">
+          <li><span class="icon-x">&#10005;</span> 3-6 months to hire and onboard</li>
+          <li><span class="icon-x">&#10005;</span> $720K+ additional annual payroll</li>
+          <li><span class="icon-x">&#10005;</span> More management overhead</li>
+          <li><span class="icon-x">&#10005;</span> Culture dilution risk</li>
+          <li><span class="icon-x">&#10005;</span> Benefits, equipment, office space</li>
+          <li><span class="icon-x">&#10005;</span> Hiring mistakes cost 2x salary</li>
+        </ul>
+      </div>
+      <div class="hc-vs">vs</div>
+      <div class="hc-option new">
+        <div class="tag">Option B: Go2</div>
+        <h3>Unlock 50% more from the same 25</h3>
+        <ul class="hc-list">
+          <li><span class="icon-check">&#10003;</span> Deployed in days, results in weeks</li>
+          <li><span class="icon-check">&#10003;</span> Fraction of hiring cost</li>
+          <li><span class="icon-check">&#10003;</span> No new management burden</li>
+          <li><span class="icon-check">&#10003;</span> Strengthens existing culture</li>
+          <li><span class="icon-check">&#10003;</span> AI coaching improves morale</li>
+          <li><span class="icon-check">&#10003;</span> 92% worker satisfaction rate</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- REAL SCENARIOS -->
+<section class="scenarios" id="scenarios">
+  <div class="section-label" style="text-align:center;">Real Scenarios</div>
+  <div class="section-title" style="text-align:center;">How teams scale without hiring</div>
+  <div class="scenario-list">
+    <div class="scenario animate">
+      <div class="scenario-icon">&#128187;</div>
+      <div>
+        <h3>Dev team needs to ship faster</h3>
+        <p>Go2 identified that developers spent 31% of their time on non-coding tasks: environment setup, manual testing, documentation. AI coaching and automation mapping freed up 12 hours per developer per week.</p>
+        <span class="result-tag">Equivalent of hiring 4 more developers</span>
+      </div>
+    </div>
+    <div class="scenario animate">
+      <div class="scenario-icon">&#128222;</div>
+      <div>
+        <h3>Support team drowning in tickets</h3>
+        <p>Go2 found that 40% of support workflows had redundant steps and inconsistent processes. Best practices from top agents were spread to the whole team. Resolution time dropped by 35%.</p>
+        <span class="result-tag">Handled 50% more tickets, same team size</span>
+      </div>
+    </div>
+    <div class="scenario animate">
+      <div class="scenario-icon">&#128202;</div>
+      <div>
+        <h3>Marketing team scaling campaigns</h3>
+        <p>Go2 mapped the campaign creation workflow and identified 6 automatable steps. Reduced campaign launch time from 2 weeks to 5 days. The team went from 4 campaigns/month to 10.</p>
+        <span class="result-tag">2.5x campaign output, zero new hires</span>
+      </div>
+    </div>
+    <div class="scenario animate">
+      <div class="scenario-icon">&#128176;</div>
+      <div>
+        <h3>Finance team during growth phase</h3>
+        <p>Revenue doubled but the 8-person finance team couldn't keep up. Go2 identified 14 hours/week of manual reconciliation that could be automated, and standardized reporting workflows.</p>
+        <span class="result-tag">Supported 2x revenue growth without new hires</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-section" id="how">
+  <div class="how-inner">
+    <div class="section-label">How It Works</div>
+    <div class="section-title">From deploy to scale in weeks</div>
+    <div class="section-sub">Go2's desktop agent captures workflows. Frontier AI unlocks capacity.</div>
+    <div class="how-grid">
+      <div class="how-step">
+        <div class="how-num">1</div>
+        <h3>Deploy Agent</h3>
+        <p>Lightweight desktop agent installs in minutes across your team.</p>
+      </div>
+      <div class="how-step">
+        <div class="how-num">2</div>
+        <h3>Map Capacity</h3>
+        <p>AI analyzes every workflow. Finds automation opportunities, inefficiencies, best practices.</p>
+      </div>
+      <div class="how-step">
+        <div class="how-num">3</div>
+        <h3>Coach Workers</h3>
+        <p>Each person gets personalized optimization tips. Better methods, shortcuts, focus habits.</p>
+      </div>
+      <div class="how-step">
+        <div class="how-num">4</div>
+        <h3>Scale Output</h3>
+        <p>Managers see aggregated insights. Team output grows without growing headcount.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<section class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item">
+      <div class="value">~1M</div>
+      <div class="label">workers' data analyzed</div>
+    </div>
+    <div class="stat-item">
+      <div class="value">31%</div>
+      <div class="label">average output increase</div>
+    </div>
+    <div class="stat-item">
+      <div class="value">92%</div>
+      <div class="label">worker satisfaction</div>
+    </div>
+    <div class="stat-item">
+      <div class="value">6.4h</div>
+      <div class="label">saved per person/month</div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials">
+  <div class="section-label" style="text-align:center;">Growth Stories</div>
+  <div class="section-title" style="text-align:center;">They scaled. They didn't hire.</div>
+  <div class="test-grid">
+    <div class="test-card">
+      <div class="growth-tag">+45% output</div>
+      <blockquote>"We were about to post 8 job listings. Then we tried Go2. Three months later, our existing team was producing more than we expected the expanded team would. Saved us over $500K in hiring costs."</blockquote>
+      <div class="author"><strong>CEO</strong>, E-commerce Company (35 employees)</div>
+    </div>
+    <div class="test-card">
+      <div class="growth-tag">+62% capacity</div>
+      <blockquote>"Our client base grew 70% in a year. Everyone assumed we'd need to hire proportionally. Go2 found so much hidden capacity that we handled the growth with just 2 new hires instead of 15."</blockquote>
+      <div class="author"><strong>COO</strong>, Professional Services (42 employees)</div>
+    </div>
+    <div class="test-card">
+      <div class="growth-tag">Zero new hires needed</div>
+      <blockquote>"The coaching is what sold my team on it. They don't feel surveilled. They feel supported. And the fact that they're producing 40% more makes them feel great about their own capabilities."</blockquote>
+      <div class="author"><strong>VP People</strong>, Tech Startup (28 employees)</div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta" id="cta">
+  <div class="final-cta-inner">
+    <h2>Scale your output, not your headcount.</h2>
+    <p>Your team has more capacity than you think. Go2 finds it, unlocks it, and helps you grow without the hiring treadmill.</p>
+    <a href="https://go2.io" class="cta-btn">
+      Unlock Hidden Capacity
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <p class="cta-sub">Not surveillance. Not monitoring. Capacity intelligence.</p>
+  </div>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2. <a href="https://go2.io">go2.io</a> &mdash; Scale without hiring.</p>
+</footer>
+
+<script>
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('visible');
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.animate').forEach(el => observer.observe(el));
+
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function(e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+</script>
+</body>
+</html>

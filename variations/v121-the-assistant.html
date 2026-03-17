@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Your AI Work Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #fafbfe;
+    --card: #ffffff;
+    --text: #1e2432;
+    --muted: #7c8497;
+    --violet: #6c5ce7;
+    --violet-light: #a29bfe;
+    --violet-bg: #f0eeff;
+    --mint: #00cec9;
+    --mint-bg: #e8fffe;
+    --pink: #fd79a8;
+    --pink-bg: #fff0f5;
+    --orange: #fdcb6e;
+    --orange-bg: #fff8e7;
+    --border: #eef0f6;
+  }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; width: 100%; z-index: 100;
+    padding: 1rem 2.5rem;
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(250,251,254,0.9);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+  }
+  .logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.5rem; font-weight: 700;
+    color: var(--text); text-decoration: none;
+  }
+  .logo span { color: var(--violet); }
+  .nav-cta {
+    padding: 0.55rem 1.4rem;
+    background: var(--violet); color: #fff;
+    font-size: 0.85rem; font-weight: 600;
+    border-radius: 8px; text-decoration: none;
+    transition: all 0.2s;
+  }
+  .nav-cta:hover { background: #5b4bd6; transform: translateY(-1px); }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    text-align: center;
+    padding: 8rem 2rem 4rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(108,92,231,0.08), transparent 70%);
+    top: -100px; left: 50%; transform: translateX(-50%);
+  }
+  .hero-pill {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.45rem 1rem;
+    background: var(--violet-bg);
+    border-radius: 100px;
+    font-size: 0.78rem; font-weight: 600;
+    color: var(--violet);
+    margin-bottom: 2rem;
+    position: relative;
+  }
+  .hero-pill::before {
+    content: ''; width: 8px; height: 8px;
+    background: var(--violet); border-radius: 50%;
+    animation: blink 2s infinite;
+  }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .hero h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(2.6rem, 6vw, 4.8rem);
+    line-height: 1.08;
+    max-width: 780px;
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    position: relative;
+  }
+  .gradient-text {
+    background: linear-gradient(135deg, var(--violet), var(--mint));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero p {
+    font-size: 1.15rem; line-height: 1.7;
+    color: var(--muted);
+    max-width: 520px;
+    margin-bottom: 2.5rem;
+    position: relative;
+  }
+  .hero-cta {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 1rem 2.4rem;
+    background: var(--violet); color: #fff;
+    font-size: 1rem; font-weight: 600;
+    border-radius: 12px; text-decoration: none;
+    transition: all 0.3s;
+    box-shadow: 0 4px 20px rgba(108,92,231,0.25);
+  }
+  .hero-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(108,92,231,0.35); }
+  .hero-sub { font-size: 0.82rem; color: var(--muted); margin-top: 1rem; position: relative; }
+
+  /* ── CONVERSATION DEMO ── */
+  .convo-section {
+    padding: 5rem 2rem;
+    max-width: 700px; margin: 0 auto;
+  }
+  .convo-section h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.6rem; font-weight: 700;
+    text-align: center; margin-bottom: 2.5rem;
+    letter-spacing: -0.02em;
+  }
+  .convo {
+    display: flex; flex-direction: column; gap: 1rem;
+  }
+  .msg {
+    max-width: 80%;
+    padding: 1rem 1.4rem;
+    border-radius: 16px;
+    font-size: 0.92rem;
+    line-height: 1.6;
+  }
+  .msg-user {
+    align-self: flex-end;
+    background: var(--violet);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+  .msg-ai {
+    align-self: flex-start;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+    color: var(--text);
+  }
+  .msg-ai .ai-label {
+    font-size: 0.7rem; font-weight: 700;
+    color: var(--violet);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.4rem;
+    display: block;
+  }
+
+  /* ── USE CASES ── */
+  .use-cases {
+    padding: 7rem 2rem;
+  }
+  .use-cases-inner { max-width: 1100px; margin: 0 auto; }
+  .use-cases h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    text-align: center; margin-bottom: 0.8rem;
+    font-weight: 700; letter-spacing: -0.02em;
+  }
+  .use-cases .subtitle { text-align: center; color: var(--muted); font-size: 1.05rem; margin-bottom: 3.5rem; }
+  .uc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+  .uc-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .uc-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.06); }
+  .uc-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .uc-card:nth-child(1)::before { background: var(--violet); }
+  .uc-card:nth-child(2)::before { background: var(--mint); }
+  .uc-card:nth-child(3)::before { background: var(--pink); }
+  .uc-card:nth-child(4)::before { background: var(--orange); }
+  .uc-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1.2rem;
+  }
+  .uc-card:nth-child(1) .uc-icon { background: var(--violet-bg); }
+  .uc-card:nth-child(2) .uc-icon { background: var(--mint-bg); }
+  .uc-card:nth-child(3) .uc-icon { background: var(--pink-bg); }
+  .uc-card:nth-child(4) .uc-icon { background: var(--orange-bg); }
+  .uc-card h3 { font-size: 1.08rem; font-weight: 700; margin-bottom: 0.6rem; }
+  .uc-card p { font-size: 0.9rem; color: var(--muted); line-height: 1.7; margin-bottom: 1rem; }
+  .uc-example {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    font-size: 0.8rem;
+    color: var(--text);
+    font-style: italic;
+  }
+  .uc-example strong { color: var(--violet); font-style: normal; }
+
+  /* ── NOT SURVEILLANCE ── */
+  .not-surveillance {
+    padding: 6rem 2rem;
+    background: var(--text);
+    color: #fff;
+  }
+  .ns-inner { max-width: 900px; margin: 0 auto; text-align: center; }
+  .not-surveillance h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(2rem, 4vw, 2.6rem);
+    margin-bottom: 1.5rem;
+    font-weight: 700; letter-spacing: -0.02em;
+  }
+  .not-surveillance p { color: rgba(255,255,255,0.6); font-size: 1.05rem; line-height: 1.8; margin-bottom: 3rem; max-width: 600px; margin-left: auto; margin-right: auto; }
+  .ns-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  .ns-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 2rem;
+    text-align: left;
+  }
+  .ns-icon { font-size: 2rem; margin-bottom: 1rem; display: block; }
+  .ns-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .ns-card p { color: rgba(255,255,255,0.5); font-size: 0.88rem; line-height: 1.6; }
+
+  /* ── EMPLOYEE LOVE ── */
+  .testimonials {
+    padding: 7rem 2rem;
+    max-width: 900px; margin: 0 auto;
+  }
+  .testimonials h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(1.8rem, 3.5vw, 2.4rem);
+    text-align: center; margin-bottom: 3rem;
+    font-weight: 700;
+  }
+  .test-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+  .test-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.8rem;
+  }
+  .test-stars { color: var(--orange); font-size: 0.9rem; margin-bottom: 0.8rem; }
+  .test-card blockquote { font-size: 0.92rem; line-height: 1.7; color: var(--text); margin-bottom: 1rem; }
+  .test-author { font-size: 0.8rem; color: var(--muted); }
+  .test-author strong { color: var(--text); }
+
+  /* ── FINAL CTA ── */
+  .final-cta {
+    padding: 8rem 2rem;
+    text-align: center;
+    background: linear-gradient(180deg, var(--bg), #f0eeff);
+    position: relative;
+  }
+  .final-cta h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    max-width: 600px; margin: 0 auto 1rem;
+    font-weight: 700; letter-spacing: -0.02em;
+    line-height: 1.12;
+  }
+  .final-cta p {
+    color: var(--muted); font-size: 1.05rem;
+    max-width: 480px; margin: 0 auto 2.5rem;
+    line-height: 1.7;
+  }
+  .final-cta a {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 1.1rem 2.6rem;
+    background: var(--violet); color: #fff;
+    font-size: 1.05rem; font-weight: 600;
+    border-radius: 12px; text-decoration: none;
+    box-shadow: 0 4px 20px rgba(108,92,231,0.25);
+    transition: all 0.3s;
+  }
+  .final-cta a:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(108,92,231,0.35); }
+
+  footer {
+    padding: 3rem 2rem; text-align: center;
+    border-top: 1px solid var(--border);
+    color: var(--muted); font-size: 0.82rem;
+  }
+
+  @media (max-width: 768px) {
+    .uc-grid, .ns-grid, .test-grid { grid-template-columns: 1fr; }
+    nav { padding: 1rem 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="logo">go<span>2</span></a>
+  <a href="#book" class="nav-cta">See It In Action</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <span class="hero-pill">AI-Powered Work Assistant</span>
+  <h1>Meet the assistant that <span class="gradient-text">actually knows how your company works</span></h1>
+  <p>Go2 is a personal AI assistant for every employee. It learns your processes, remembers your context, and coaches you to work smarter — without anyone watching over your shoulder.</p>
+  <a href="#book" class="hero-cta">See It In Action</a>
+  <p class="hero-sub">Used by 47,000+ workers at companies with 10-100 employees</p>
+</section>
+
+<!-- CONVERSATION DEMO -->
+<section class="convo-section">
+  <h2>Imagine having this conversation at work</h2>
+  <div class="convo">
+    <div class="msg msg-user">How do we handle refund requests over $500?</div>
+    <div class="msg msg-ai">
+      <span class="ai-label">Go2 Assistant</span>
+      Based on how your team handles these, the process is: 1) Check if customer is on an annual plan (85% are approved). 2) Refunds over $500 need manager approval in the #approvals Slack channel. 3) Sarah usually processes these in Stripe within 24 hours. Want me to start the process?
+    </div>
+    <div class="msg msg-user">What did we decide about the API migration timeline?</div>
+    <div class="msg msg-ai">
+      <span class="ai-label">Go2 Assistant</span>
+      In last Tuesday's engineering sync, the team decided to push v2 migration to March 15. Marcus is leading, and the blocker was the auth service dependency. I can pull up the full context from that meeting if you need it.
+    </div>
+    <div class="msg msg-user">I'm doing this report for the third time this month. Is there a better way?</div>
+    <div class="msg msg-ai">
+      <span class="ai-label">Go2 Assistant</span>
+      I noticed that pattern too. You spend about 2.5 hours each time pulling data from 3 different sources. I can help you set up an automated report that pulls the same data — want me to walk you through it? Estimated time savings: 7+ hours/month.
+    </div>
+  </div>
+</section>
+
+<!-- USE CASES -->
+<section class="use-cases">
+  <div class="use-cases-inner">
+    <h2>An assistant that gets better every day</h2>
+    <p class="subtitle">The more your team works, the smarter Go2 becomes</p>
+    <div class="uc-grid">
+      <div class="uc-card">
+        <div class="uc-icon">&#128269;</div>
+        <h3>Instant answers, zero searching</h3>
+        <p>Stop digging through Slack threads, old docs, and email chains. Ask Go2 and get the answer with full context.</p>
+        <div class="uc-example"><strong>Example:</strong> "What's the login for our staging environment?" — Go2 knows because your team discussed it last week.</div>
+      </div>
+      <div class="uc-card">
+        <div class="uc-icon">&#128161;</div>
+        <h3>Proactive suggestions</h3>
+        <p>Go2 notices when you're doing something the hard way and suggests better approaches — based on how your best performers work.</p>
+        <div class="uc-example"><strong>Example:</strong> "Hey, I noticed you're manually updating that spreadsheet. Three other teams use an automated pipeline — want to see how?"</div>
+      </div>
+      <div class="uc-card">
+        <div class="uc-icon">&#127891;</div>
+        <h3>Onboarding on autopilot</h3>
+        <p>New hires get a personal guide that knows every process, shortcut, and unwritten rule. Like having a senior colleague who's never too busy.</p>
+        <div class="uc-example"><strong>Example:</strong> "I'm new to the support team — how do we handle enterprise tickets?" — Go2 walks them through it step by step.</div>
+      </div>
+      <div class="uc-card">
+        <div class="uc-icon">&#9201;</div>
+        <h3>Time-saver spotter</h3>
+        <p>Go2 tracks repetitive patterns and surfaces automation opportunities. It doesn't just tell you what to automate — it helps you do it.</p>
+        <div class="uc-example"><strong>Example:</strong> "You've copied data between these two tools 14 times this month. Here's a Zapier workflow that does it automatically."</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NOT SURVEILLANCE -->
+<section class="not-surveillance">
+  <div class="ns-inner">
+    <h2>Built for employees, not against them</h2>
+    <p>Go2 is the anti-surveillance tool. It exists to help your people work better, not to spy on them. That's why employees actually like using it.</p>
+    <div class="ns-grid">
+      <div class="ns-card">
+        <span class="ns-icon">&#128274;</span>
+        <h3>No screenshots</h3>
+        <p>We never capture your screen. Ever. That's not a setting — it's architecture.</p>
+      </div>
+      <div class="ns-card">
+        <span class="ns-icon">&#128587;</span>
+        <h3>Employee-controlled</h3>
+        <p>Workers see everything Go2 knows about their work. Full transparency, always.</p>
+      </div>
+      <div class="ns-card">
+        <span class="ns-icon">&#127942;</span>
+        <h3>Coaching, not scoring</h3>
+        <p>Go2 helps people improve. It doesn't rank them or report to managers.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials">
+  <h2>What employees actually say</h2>
+  <div class="test-grid">
+    <div class="test-card">
+      <div class="test-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+      <blockquote>"I was skeptical when management introduced another tool. But Go2 is genuinely useful. It's like having a coworker who remembers everything."</blockquote>
+      <p class="test-author"><strong>Product Designer</strong> at a 35-person startup</p>
+    </div>
+    <div class="test-card">
+      <div class="test-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+      <blockquote>"I saved 6 hours my first week using Go2. It showed me that I was doing a manual process that three other people had already automated."</blockquote>
+      <p class="test-author"><strong>Operations Manager</strong> at a 68-person agency</p>
+    </div>
+    <div class="test-card">
+      <div class="test-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+      <blockquote>"As a new hire, Go2 was a lifesaver. Instead of bugging my teammates with basic questions, I just asked Go2. It knew everything."</blockquote>
+      <p class="test-author"><strong>Software Engineer</strong> at a 52-person SaaS company</p>
+    </div>
+    <div class="test-card">
+      <div class="test-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+      <blockquote>"Most 'productivity tools' are just surveillance with a pretty UI. Go2 is the first one that actually helps me do my job better."</blockquote>
+      <p class="test-author"><strong>Customer Success Lead</strong> at a 44-person platform</p>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta" id="book">
+  <h2>Give every employee a brilliant assistant</h2>
+  <p>Not a manager. Not a monitor. An assistant that knows your company inside and out — and actually helps people do their best work.</p>
+  <a href="#">
+    See It In Action
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+  </a>
+</section>
+
+<footer>&copy; 2026 Go2. An AI assistant for the way work actually happens.</footer>
+
+</body>
+</html>

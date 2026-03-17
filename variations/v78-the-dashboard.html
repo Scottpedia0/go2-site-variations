@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Your Dashboard</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0c0e14;
+  --surface: #141720;
+  --surface-2: #1a1e2e;
+  --surface-3: #222738;
+  --text: #e2e4ea;
+  --text-muted: #6b7194;
+  --text-dim: #3d4260;
+  --accent: #3b82f6;
+  --accent-glow: rgba(59, 130, 246, 0.15);
+  --green: #22c55e;
+  --green-dim: rgba(34, 197, 94, 0.15);
+  --yellow: #eab308;
+  --yellow-dim: rgba(234, 179, 8, 0.15);
+  --red: #ef4444;
+  --red-dim: rgba(239, 68, 68, 0.12);
+  --purple: #a78bfa;
+  --purple-dim: rgba(167, 139, 250, 0.15);
+  --cyan: #06b6d4;
+  --cyan-dim: rgba(6, 182, 212, 0.15);
+  --border: #1f2337;
+  --border-light: #2a2f45;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* TOP BAR */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.logo {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -0.3px;
+}
+.logo span { color: var(--text); }
+.company-name {
+  font-size: 13px;
+  color: var(--text-muted);
+  padding-left: 16px;
+  border-left: 1px solid var(--border);
+}
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+}
+.topbar-right .time {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.topbar-right .badge {
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+/* SECONDARY NAV */
+.subnav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  gap: 0;
+}
+.subnav a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 13px;
+  padding: 12px 16px;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s;
+}
+.subnav a:hover { color: var(--text); }
+.subnav a.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* DASHBOARD LAYOUT */
+.dashboard {
+  padding: 20px 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.dash-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.dash-header h1 {
+  font-size: 20px;
+  font-weight: 700;
+}
+.dash-header .period {
+  font-size: 13px;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+/* KPI ROW */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px;
+}
+.kpi .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.kpi .value {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.kpi .change {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.kpi .change.up { color: var(--green); }
+.kpi .change.down { color: var(--red); }
+.kpi .change.neutral { color: var(--text-muted); }
+
+.kpi.highlight { border-color: var(--accent); background: linear-gradient(135deg, var(--surface), rgba(59,130,246,0.05)); }
+.kpi.highlight .value { color: var(--accent); }
+
+/* TWO-COL LAYOUT */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* PANELS */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.panel-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.panel-header h2 {
+  font-size: 14px;
+  font-weight: 600;
+}
+.panel-header .view-all {
+  font-size: 11px;
+  color: var(--accent);
+  text-decoration: none;
+}
+.panel-body {
+  padding: 0;
+}
+
+/* TEAM TABLE */
+.team-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.team-table th {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+}
+.team-table td {
+  font-size: 13px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+.team-table tr:last-child td { border-bottom: none; }
+.team-table .name { font-weight: 600; }
+.team-table .dept { color: var(--text-muted); font-size: 12px; }
+
+/* EFFICIENCY BAR */
+.eff-bar {
+  width: 80px;
+  height: 6px;
+  background: var(--surface-3);
+  border-radius: 3px;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+.eff-bar .fill {
+  height: 100%;
+  border-radius: 3px;
+}
+.eff-bar .fill.high { background: var(--green); }
+.eff-bar .fill.mid { background: var(--yellow); }
+.eff-bar .fill.low { background: var(--red); }
+
+.eff-val { font-variant-numeric: tabular-nums; font-size: 12px; }
+
+/* STATUS BADGE */
+.status-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 12px;
+  display: inline-block;
+}
+.status-badge.active { background: var(--green-dim); color: var(--green); }
+.status-badge.pending { background: var(--yellow-dim); color: var(--yellow); }
+.status-badge.new-hire { background: var(--purple-dim); color: var(--purple); }
+
+/* COACHING PANEL */
+.coaching-list {
+  list-style: none;
+}
+.coaching-item {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.coaching-item:last-child { border-bottom: none; }
+.coaching-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.coaching-icon.tip { background: var(--green-dim); }
+.coaching-icon.alert { background: var(--yellow-dim); }
+.coaching-icon.auto { background: var(--cyan-dim); }
+.coaching-text .title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.coaching-text .desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.coaching-text .meta {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+/* AUTOMATION PANEL */
+.auto-list { list-style: none; }
+.auto-item {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.auto-item:last-child { border-bottom: none; }
+.auto-item .auto-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.auto-item .auto-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+.auto-item .auto-savings {
+  font-size: 12px;
+  color: var(--green);
+  font-weight: 600;
+}
+.auto-item .auto-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.auto-item .auto-bar {
+  height: 4px;
+  background: var(--surface-3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.auto-item .auto-bar .progress {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.auto-item .auto-status {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+/* THREE-COL ROW */
+.three-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* CHART PLACEHOLDER */
+.chart-area {
+  padding: 18px;
+  min-height: 200px;
+  position: relative;
+}
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 140px;
+  padding-top: 20px;
+}
+.bar-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.bar {
+  width: 100%;
+  max-width: 32px;
+  border-radius: 4px 4px 0 0;
+  min-height: 4px;
+  transition: height 0.3s;
+}
+.bar.primary { background: var(--accent); }
+.bar.secondary { background: var(--surface-3); }
+.bar-label {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+/* RING CHART */
+.ring-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  gap: 24px;
+}
+.ring {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ring-val {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text);
+}
+.ring-sub {
+  font-size: 10px;
+  color: var(--text-muted);
+  position: absolute;
+  bottom: 16px;
+}
+.ring-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ACTIVITY FEED */
+.feed-list { list-style: none; }
+.feed-item {
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.feed-item:last-child { border-bottom: none; }
+.feed-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+.feed-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.feed-text strong { color: var(--text); font-weight: 600; }
+.feed-time {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* CTA BANNER */
+.cta-banner {
+  background: linear-gradient(135deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  padding: 48px;
+  text-align: center;
+  margin: 32px 0 40px;
+  position: relative;
+  overflow: hidden;
+}
+.cta-banner::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(circle at 50% 50%, var(--accent-glow) 0%, transparent 50%);
+  pointer-events: none;
+}
+.cta-banner h2 {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  position: relative;
+}
+.cta-banner p {
+  color: var(--text-muted);
+  font-size: 16px;
+  margin-bottom: 24px;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+}
+.btn-glow {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  padding: 14px 36px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  position: relative;
+  transition: transform 0.15s;
+  box-shadow: 0 0 30px var(--accent-glow);
+}
+.btn-glow:hover { transform: translateY(-2px); }
+.cta-sub {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 12px;
+  position: relative;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 24px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* RESPONSIVE */
+@media (max-width: 1024px) {
+  .kpi-row { grid-template-columns: repeat(3, 1fr); }
+  .three-col { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .two-col { grid-template-columns: 1fr; }
+  .subnav { overflow-x: auto; }
+  .team-table .hide-mobile { display: none; }
+  .dash-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+}
+@media (max-width: 480px) {
+  .kpi-row { grid-template-columns: 1fr; }
+  .topbar { padding: 0 12px; }
+  .dashboard { padding: 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo">Go2<span>.io</span></div>
+    <div class="company-name">Apex Digital Solutions &mdash; Dashboard</div>
+  </div>
+  <div class="topbar-right">
+    <span class="status-dot"></span>
+    <span class="time">Live &mdash; Mar 17, 2026 2:34 PM</span>
+    <span class="badge">3 new</span>
+  </div>
+</div>
+
+<!-- SUB NAV -->
+<div class="subnav">
+  <a href="#" class="active">Overview</a>
+  <a href="#">Team</a>
+  <a href="#">Coaching</a>
+  <a href="#">Automations</a>
+  <a href="#">Workflows</a>
+  <a href="#">Settings</a>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dashboard">
+
+  <div class="dash-header">
+    <h1>Company Overview</h1>
+    <div class="period">Last 30 days</div>
+  </div>
+
+  <!-- KPI ROW -->
+  <div class="kpi-row">
+    <div class="kpi highlight">
+      <div class="label">Hours Recovered</div>
+      <div class="value">342</div>
+      <div class="change up">&#9650; 18% vs last month</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Team Efficiency</div>
+      <div class="value">87%</div>
+      <div class="change up">&#9650; 4.2% vs last month</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Coaching Adoption</div>
+      <div class="value">78%</div>
+      <div class="change up">&#9650; 12% vs last month</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Errors Prevented</div>
+      <div class="value">47</div>
+      <div class="change up">&#9650; 23 vs last month</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Active Automations</div>
+      <div class="value">12</div>
+      <div class="change neutral">+3 this month</div>
+    </div>
+  </div>
+
+  <!-- TWO COL: Team + Coaching -->
+  <div class="two-col">
+
+    <!-- TEAM TABLE -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Team Performance</h2>
+        <a href="#" class="view-all">View all 32 &rarr;</a>
+      </div>
+      <div class="panel-body">
+        <table class="team-table">
+          <thead>
+            <tr>
+              <th>Department</th>
+              <th>Members</th>
+              <th>Efficiency</th>
+              <th class="hide-mobile">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="name">Sales</span></td>
+              <td>8</td>
+              <td>
+                <span class="eff-bar"><span class="fill high" style="width:92%"></span></span>
+                <span class="eff-val">92%</span>
+              </td>
+              <td class="hide-mobile"><span class="status-badge active">On Track</span></td>
+            </tr>
+            <tr>
+              <td><span class="name">Operations</span></td>
+              <td>10</td>
+              <td>
+                <span class="eff-bar"><span class="fill high" style="width:88%"></span></span>
+                <span class="eff-val">88%</span>
+              </td>
+              <td class="hide-mobile"><span class="status-badge active">On Track</span></td>
+            </tr>
+            <tr>
+              <td><span class="name">Customer Support</span></td>
+              <td>6</td>
+              <td>
+                <span class="eff-bar"><span class="fill mid" style="width:76%"></span></span>
+                <span class="eff-val">76%</span>
+              </td>
+              <td class="hide-mobile"><span class="status-badge pending">Coaching</span></td>
+            </tr>
+            <tr>
+              <td><span class="name">Finance</span></td>
+              <td>4</td>
+              <td>
+                <span class="eff-bar"><span class="fill high" style="width:94%"></span></span>
+                <span class="eff-val">94%</span>
+              </td>
+              <td class="hide-mobile"><span class="status-badge active">On Track</span></td>
+            </tr>
+            <tr>
+              <td><span class="name">Marketing</span></td>
+              <td>4</td>
+              <td>
+                <span class="eff-bar"><span class="fill high" style="width:85%"></span></span>
+                <span class="eff-val">85%</span>
+              </td>
+              <td class="hide-mobile"><span class="status-badge new-hire">New Hires</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- COACHING FEED -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Latest AI Coaching Actions</h2>
+        <a href="#" class="view-all">View all &rarr;</a>
+      </div>
+      <div class="panel-body">
+        <ul class="coaching-list">
+          <li class="coaching-item">
+            <div class="coaching-icon tip">&#128161;</div>
+            <div class="coaching-text">
+              <div class="title">Shortcut Suggestion Delivered</div>
+              <div class="desc">3 support reps shown batch-reply technique used by top performer. Projected savings: 45 min/day across team.</div>
+              <div class="meta">Today 1:22 PM &middot; Customer Support</div>
+            </div>
+          </li>
+          <li class="coaching-item">
+            <div class="coaching-icon alert">&#9888;</div>
+            <div class="coaching-text">
+              <div class="title">Error Prevented: Invoice Tax Rate</div>
+              <div class="desc">Flagged outdated tax rate on invoice #4892 before send. Team member updated and sent correct version.</div>
+              <div class="meta">Today 11:47 AM &middot; Finance</div>
+            </div>
+          </li>
+          <li class="coaching-item">
+            <div class="coaching-icon auto">&#9881;</div>
+            <div class="coaching-text">
+              <div class="title">New Automation Proposed</div>
+              <div class="desc">Weekly client report generation identified as fully automatable. Current time: 35 min/report. Proposed: 0 min.</div>
+              <div class="meta">Today 9:15 AM &middot; Operations</div>
+            </div>
+          </li>
+          <li class="coaching-item">
+            <div class="coaching-icon tip">&#128161;</div>
+            <div class="coaching-text">
+              <div class="title">Onboarding Guide Updated</div>
+              <div class="desc">CRM entry guide auto-updated to reflect new required fields added last week. 2 new hires received updated version.</div>
+              <div class="meta">Yesterday 4:30 PM &middot; Sales</div>
+            </div>
+          </li>
+          <li class="coaching-item">
+            <div class="coaching-icon alert">&#9888;</div>
+            <div class="coaching-text">
+              <div class="title">Workflow Bottleneck Detected</div>
+              <div class="desc">Purchase order approval averaging 2.3 days (benchmark: 0.5 days). Bottleneck: single approver for all POs under $5K.</div>
+              <div class="meta">Yesterday 2:10 PM &middot; Operations</div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- THREE COL ROW -->
+  <div class="three-col">
+
+    <!-- HOURS RECOVERED CHART -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Hours Recovered (Weekly)</h2>
+      </div>
+      <div class="chart-area">
+        <div class="bar-chart">
+          <div class="bar-group">
+            <div class="bar primary" style="height: 45%"></div>
+            <div class="bar-label">W1</div>
+          </div>
+          <div class="bar-group">
+            <div class="bar primary" style="height: 52%"></div>
+            <div class="bar-label">W2</div>
+          </div>
+          <div class="bar-group">
+            <div class="bar primary" style="height: 68%"></div>
+            <div class="bar-label">W3</div>
+          </div>
+          <div class="bar-group">
+            <div class="bar primary" style="height: 74%"></div>
+            <div class="bar-label">W4</div>
+          </div>
+          <div class="bar-group">
+            <div class="bar primary" style="height: 80%"></div>
+            <div class="bar-label">W5</div>
+          </div>
+          <div class="bar-group">
+            <div class="bar primary" style="height: 72%"></div>
+            <div class="bar-label">W6</div>
+          </div>
+          <div class="bar-group">
+            <div class="bar primary" style="height: 88%"></div>
+            <div class="bar-label">W7</div>
+          </div>
+          <div class="bar-group">
+            <div class="bar primary" style="height: 95%"></div>
+            <div class="bar-label">W8</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COACHING ADOPTION RING -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Coaching Adoption</h2>
+      </div>
+      <div class="ring-container">
+        <div class="ring" style="background: conic-gradient(var(--green) 0deg, var(--green) 216deg, var(--yellow) 216deg, var(--yellow) 280deg, var(--surface-3) 280deg, var(--surface-3) 360deg);">
+          <div style="width:80px;height:80px;background:var(--surface);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+            <div class="ring-val">78%</div>
+          </div>
+        </div>
+        <div class="ring-legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--green)"></div>
+            Adopted (60%)
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--yellow)"></div>
+            In Progress (18%)
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--surface-3)"></div>
+            Not Started (22%)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIVE ACTIVITY -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Live Activity</h2>
+        <span style="font-size:11px;color:var(--green);">&#9679; Live</span>
+      </div>
+      <div class="panel-body">
+        <ul class="feed-list">
+          <li class="feed-item">
+            <div class="feed-dot" style="background:var(--green)"></div>
+            <div>
+              <div class="feed-text"><strong>Sales team</strong> adopted CRM shortcut tip &mdash; 4 of 8 members</div>
+              <div class="feed-time">2 min ago</div>
+            </div>
+          </li>
+          <li class="feed-item">
+            <div class="feed-dot" style="background:var(--accent)"></div>
+            <div>
+              <div class="feed-text"><strong>Automation #9</strong> triggered: client report auto-generated and sent</div>
+              <div class="feed-time">14 min ago</div>
+            </div>
+          </li>
+          <li class="feed-item">
+            <div class="feed-dot" style="background:var(--yellow)"></div>
+            <div>
+              <div class="feed-text"><strong>New workflow</strong> detected in Operations &mdash; reviewing for optimization</div>
+              <div class="feed-time">28 min ago</div>
+            </div>
+          </li>
+          <li class="feed-item">
+            <div class="feed-dot" style="background:var(--green)"></div>
+            <div>
+              <div class="feed-text"><strong>New hire</strong> in Marketing completed onboarding guide in 1.2 days (avg: 4.5)</div>
+              <div class="feed-time">1 hr ago</div>
+            </div>
+          </li>
+          <li class="feed-item">
+            <div class="feed-dot" style="background:var(--purple)"></div>
+            <div>
+              <div class="feed-text"><strong>Process map</strong> updated: 847 workflows across 5 departments</div>
+              <div class="feed-time">2 hrs ago</div>
+            </div>
+          </li>
+          <li class="feed-item">
+            <div class="feed-dot" style="background:var(--cyan)"></div>
+            <div>
+              <div class="feed-text"><strong>Error prevention</strong> saved Finance team from duplicate vendor payment</div>
+              <div class="feed-time">3 hrs ago</div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTOMATION SUGGESTIONS -->
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Automation Opportunities</h2>
+        <a href="#" class="view-all">View all 7 &rarr;</a>
+      </div>
+      <div class="panel-body">
+        <ul class="auto-list">
+          <li class="auto-item">
+            <div class="auto-header">
+              <span class="auto-name">Tracking Number Entry</span>
+              <span class="auto-savings">Saves 5.2 hrs/day</span>
+            </div>
+            <div class="auto-desc">Copy-paste tracking numbers from shipping platform to order records, 35x/day. Zapier integration ready.</div>
+            <div class="auto-bar"><div class="progress" style="width:100%"></div></div>
+            <div class="auto-status"><span>Deployed</span><span>Active since Mar 3</span></div>
+          </li>
+          <li class="auto-item">
+            <div class="auto-header">
+              <span class="auto-name">Weekly Client Report</span>
+              <span class="auto-savings">Saves 2.3 hrs/week</span>
+            </div>
+            <div class="auto-desc">Aggregates data from Harvest + Asana into formatted Google Doc. 4 team members affected.</div>
+            <div class="auto-bar"><div class="progress" style="width:75%"></div></div>
+            <div class="auto-status"><span>Testing</span><span>75% complete</span></div>
+          </li>
+          <li class="auto-item">
+            <div class="auto-header">
+              <span class="auto-name">Invoice Follow-up Emails</span>
+              <span class="auto-savings">Saves 1.8 hrs/week</span>
+            </div>
+            <div class="auto-desc">Automated reminder emails for invoices 30+ days overdue. Template detected from existing pattern.</div>
+            <div class="auto-bar"><div class="progress" style="width:40%"></div></div>
+            <div class="auto-status"><span>Proposed</span><span>Awaiting approval</span></div>
+          </li>
+          <li class="auto-item">
+            <div class="auto-header">
+              <span class="auto-name">New Lead Routing</span>
+              <span class="auto-savings">Saves 45 min/day</span>
+            </div>
+            <div class="auto-desc">Route inbound leads to correct rep based on geography + deal size. Currently done manually by team lead.</div>
+            <div class="auto-bar"><div class="progress" style="width:20%"></div></div>
+            <div class="auto-status"><span>Analyzing</span><span>20% mapped</span></div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- TOP INSIGHTS -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Key Insights This Month</h2>
+      </div>
+      <div class="panel-body" style="padding: 18px;">
+        <div style="background:var(--surface-2);border-radius:8px;padding:16px;margin-bottom:12px;border-left:3px solid var(--green);">
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Best Practice Identified</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.5;">Top sales rep uses 6 keyboard shortcuts in CRM that save an avg of 4.2 sec per record. Coaching card generated and distributed to team. 4 of 8 reps adopted within first week.</div>
+        </div>
+        <div style="background:var(--surface-2);border-radius:8px;padding:16px;margin-bottom:12px;border-left:3px solid var(--yellow);">
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Attention: Support Queue</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.5;">Average ticket resolution time increased 18% over last 2 weeks. Root cause: 2 new hires not using canned response library. Coaching activated &mdash; resolution time trending back down.</div>
+        </div>
+        <div style="background:var(--surface-2);border-radius:8px;padding:16px;margin-bottom:12px;border-left:3px solid var(--accent);">
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Process Variance Detected</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.5;">Operations team uses 4 different methods for purchase order processing. Standardization opportunity could save 12 hrs/month. Recommendation generated.</div>
+        </div>
+        <div style="background:var(--surface-2);border-radius:8px;padding:16px;border-left:3px solid var(--purple);">
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Onboarding Win</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.5;">2 new Marketing hires reached productivity benchmarks in 1.2 and 1.4 days respectively. Previous avg without Go2: 4.5 days. AI-generated guides cited as primary resource.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA BANNER -->
+  <div class="cta-banner">
+    <h2>This could be YOUR dashboard.</h2>
+    <p>Real data. Real coaching. Real hours recovered. Everything you just saw is what Go2 looks like after 30 days with a 32-person team.</p>
+    <a href="#" class="btn-glow">Get Your Dashboard</a>
+    <div class="cta-sub">No credit card required. See real results in 30 days.</div>
+  </div>
+
+</div>
+
+<footer>
+  <div>&copy; 2026 Go2. All rights reserved. &nbsp;|&nbsp; go2.io &nbsp;|&nbsp; This is a simulated dashboard for demonstration purposes.</div>
+</footer>
+
+</body>
+</html>

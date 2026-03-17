@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Make the Invisible Visible</title>
+<style>
+  :root {
+    --bg: #fafaf9;
+    --bg-dark: #1a1a2e;
+    --bg-card: #ffffff;
+    --accent: #e63946;
+    --accent-warm: #f4845f;
+    --accent-gold: #f1a208;
+    --teal: #118ab2;
+    --green: #06d6a0;
+    --text-primary: #1a1a2e;
+    --text-secondary: #6b7280;
+    --text-dim: #9ca3af;
+    --border: #e5e7eb;
+    --reveal-gradient: linear-gradient(135deg, var(--accent) 0%, var(--accent-warm) 50%, var(--accent-gold) 100%);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+
+  /* Nav */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(250,250,249,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem; height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-logo { font-size: 1.4rem; font-weight: 800; color: var(--text-primary); }
+  .nav-logo span { color: var(--accent); }
+  .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+  .nav-links a {
+    text-decoration: none; color: var(--text-secondary);
+    font-size: 0.88rem; font-weight: 500; transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text-primary); }
+  .nav-cta {
+    background: var(--accent) !important; color: white !important;
+    padding: 0.45rem 1.1rem; border-radius: 8px; font-weight: 600 !important;
+  }
+
+  /* Hero */
+  .hero {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 6rem 2rem 4rem; position: relative; overflow: hidden;
+    background: var(--bg-dark);
+  }
+  .hero::before {
+    content: ''; position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 30% 30%, rgba(230,57,70,0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 70% 70%, rgba(244,132,95,0.08) 0%, transparent 50%);
+  }
+  /* Animated reveal stripes */
+  .reveal-stripe {
+    position: absolute; height: 100%; width: 120px;
+    background: linear-gradient(90deg, transparent, rgba(230,57,70,0.04), transparent);
+    animation: sweep 8s ease-in-out infinite;
+    top: 0;
+  }
+  .reveal-stripe:nth-child(2) { animation-delay: -3s; width: 80px; }
+  .reveal-stripe:nth-child(3) { animation-delay: -6s; width: 160px; }
+  @keyframes sweep { 0% { left: -200px; } 100% { left: calc(100% + 200px); } }
+
+  .hero-content {
+    max-width: 800px; text-align: center; position: relative; z-index: 2;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(230,57,70,0.1); border: 1px solid rgba(230,57,70,0.2);
+    border-radius: 100px; padding: 0.35rem 1rem;
+    font-size: 0.78rem; color: var(--accent-warm); font-weight: 600;
+    margin-bottom: 2rem;
+  }
+  .hero h1 {
+    font-size: clamp(2.4rem, 5.5vw, 4rem);
+    font-weight: 800; color: white; line-height: 1.08;
+    margin-bottom: 1.5rem; letter-spacing: -1.5px;
+  }
+  .hero h1 em {
+    font-style: normal;
+    background: var(--reveal-gradient);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero p {
+    font-size: 1.15rem; color: rgba(255,255,255,0.6);
+    max-width: 580px; margin: 0 auto 2.5rem; line-height: 1.7;
+  }
+  .hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: var(--accent); color: white;
+    padding: 0.85rem 1.8rem; border-radius: 10px;
+    font-size: 0.95rem; font-weight: 700; text-decoration: none;
+    transition: all 0.3s; border: none; cursor: pointer;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(230,57,70,0.35); }
+  .btn-secondary {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7);
+    padding: 0.85rem 1.8rem; border-radius: 10px;
+    font-size: 0.95rem; font-weight: 600; text-decoration: none;
+    border: 1px solid rgba(255,255,255,0.12); transition: all 0.3s;
+  }
+  .btn-secondary:hover { background: rgba(255,255,255,0.1); color: white; }
+
+  /* Waste Counter */
+  .waste-counter {
+    margin-top: 3rem; padding: 1.5rem 2rem;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; display: inline-flex; align-items: center; gap: 2rem;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .counter-item { text-align: center; }
+  .counter-value {
+    font-size: 2rem; font-weight: 800; line-height: 1;
+    background: var(--reveal-gradient);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .counter-label { font-size: 0.7rem; color: rgba(255,255,255,0.4); margin-top: 0.3rem; }
+
+  /* Sections */
+  .section { padding: 6rem 2rem; }
+  .section-dark { background: var(--bg-dark); color: white; }
+  .container { max-width: 1100px; margin: 0 auto; }
+  .section-label {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 0.75rem;
+  }
+  .section-title {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 800; line-height: 1.15; letter-spacing: -1px;
+    margin-bottom: 1rem;
+  }
+  .section-subtitle {
+    font-size: 1rem; color: var(--text-secondary); max-width: 560px;
+    line-height: 1.7; margin-bottom: 3rem;
+  }
+  .section-dark .section-subtitle { color: rgba(255,255,255,0.5); }
+
+  /* Hidden Costs */
+  .waste-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem; margin-top: 3rem;
+  }
+  .waste-card {
+    background: white; border-radius: 16px; padding: 2rem;
+    border: 1px solid var(--border); position: relative;
+    overflow: hidden; transition: all 0.3s;
+  }
+  .waste-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.06);
+    border-color: var(--accent);
+  }
+  .waste-card::after {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 3px; background: var(--reveal-gradient);
+    transform: scaleX(0); transition: transform 0.3s;
+    transform-origin: left;
+  }
+  .waste-card:hover::after { transform: scaleX(1); }
+  .waste-amount {
+    font-size: 2.2rem; font-weight: 800; line-height: 1; margin-bottom: 0.5rem;
+    background: var(--reveal-gradient);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .waste-type {
+    font-size: 0.75rem; font-weight: 600; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem;
+  }
+  .waste-card h3 {
+    font-size: 1.1rem; font-weight: 700; margin-bottom: 0.75rem;
+  }
+  .waste-card p {
+    font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;
+  }
+
+  /* Reveal Section */
+  .reveal-section { padding: 6rem 2rem; background: white; }
+  .reveal-comparison {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 2rem; margin-top: 3rem;
+  }
+  .reveal-panel {
+    border-radius: 16px; padding: 2.5rem;
+    position: relative;
+  }
+  .reveal-panel.hidden-view {
+    background: #f3f4f6; border: 2px dashed var(--border);
+  }
+  .reveal-panel.revealed-view {
+    background: linear-gradient(135deg, #fef2f2, #fff7ed);
+    border: 2px solid rgba(230,57,70,0.2);
+  }
+  .panel-tag {
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; margin-bottom: 1.25rem;
+  }
+  .panel-tag.hidden-tag { color: var(--text-dim); }
+  .panel-tag.revealed-tag { color: var(--accent); }
+  .reveal-panel h3 {
+    font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem;
+  }
+  .reveal-item {
+    display: flex; gap: 0.75rem; align-items: flex-start;
+    margin-bottom: 0.75rem; padding: 0.6rem 0.75rem;
+    border-radius: 8px; transition: background 0.2s;
+  }
+  .reveal-item:hover { background: rgba(0,0,0,0.03); }
+  .reveal-icon { font-size: 1rem; flex-shrink: 0; margin-top: 2px; }
+  .reveal-text { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5; }
+  .reveal-text strong { color: var(--text-primary); }
+
+  /* How It Works */
+  .how-section {
+    padding: 6rem 2rem;
+    background: var(--bg-dark); color: white;
+  }
+  .how-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem; margin-top: 3rem;
+  }
+  .how-step {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px; padding: 2rem 1.5rem;
+    text-align: center; transition: all 0.3s;
+  }
+  .how-step:hover {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(230,57,70,0.3);
+    transform: translateY(-3px);
+  }
+  .how-number {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(230,57,70,0.15); color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: 800; margin: 0 auto 1rem;
+  }
+  .how-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+  .how-step h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem; }
+  .how-step p { font-size: 0.82rem; color: rgba(255,255,255,0.5); line-height: 1.6; }
+
+  /* Real Examples */
+  .examples-section { padding: 6rem 2rem; }
+  .examples-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem; margin-top: 3rem;
+  }
+  .example-card {
+    background: white; border-radius: 16px; padding: 2rem;
+    border: 1px solid var(--border); transition: all 0.3s;
+  }
+  .example-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+  }
+  .example-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 1.25rem;
+  }
+  .example-label {
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--accent);
+    background: rgba(230,57,70,0.08); padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+  }
+  .example-savings {
+    font-size: 0.85rem; font-weight: 700; color: var(--green);
+  }
+  .example-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.75rem; }
+  .example-card p { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; }
+  .example-bar {
+    margin-top: 1.25rem; height: 6px; background: #f3f4f6;
+    border-radius: 6px; overflow: hidden;
+  }
+  .example-bar-fill {
+    height: 100%; border-radius: 6px;
+    background: var(--reveal-gradient);
+    transition: width 1.5s ease;
+  }
+
+  /* Waste Ticker */
+  .ticker-section {
+    padding: 3rem 2rem; background: white;
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .ticker-track {
+    display: flex; gap: 3rem; animation: scroll 30s linear infinite;
+    width: max-content;
+  }
+  @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+  .ticker-item {
+    white-space: nowrap; font-size: 0.85rem; color: var(--text-dim);
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .ticker-highlight { color: var(--accent); font-weight: 700; }
+
+  /* Stats */
+  .stats-bar {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 2rem; padding: 4rem 2rem; max-width: 1100px; margin: 0 auto;
+  }
+  .stat-item { text-align: center; }
+  .stat-number {
+    font-size: 2.8rem; font-weight: 800; line-height: 1;
+    background: var(--reveal-gradient);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 0.5rem;
+  }
+  .stat-text { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4; }
+
+  /* Testimonials */
+  .testimonials { padding: 6rem 2rem; background: #f9fafb; }
+  .testimonial-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem; margin-top: 3rem;
+  }
+  .testimonial {
+    background: white; border-radius: 16px; padding: 2rem;
+    border: 1px solid var(--border);
+  }
+  .testimonial blockquote {
+    font-size: 0.95rem; color: var(--text-primary); line-height: 1.7;
+    font-style: italic; margin-bottom: 1.5rem;
+  }
+  .testimonial-source {
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .source-dot {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--reveal-gradient);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 700; color: white;
+  }
+  .source-meta strong { display: block; font-size: 0.82rem; }
+  .source-meta span { font-size: 0.72rem; color: var(--text-dim); }
+
+  /* Not Surveillance */
+  .trust-section { padding: 6rem 2rem; }
+  .trust-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem; margin-top: 3rem;
+  }
+  .trust-card {
+    background: white; border-radius: 14px; padding: 2rem;
+    border: 1px solid var(--border); text-align: center;
+    transition: all 0.3s;
+  }
+  .trust-card:hover { border-color: var(--green); transform: translateY(-3px); }
+  .trust-icon { font-size: 2rem; margin-bottom: 1rem; }
+  .trust-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem; }
+  .trust-card p { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; }
+
+  /* CTA */
+  .cta-section {
+    padding: 6rem 2rem; text-align: center;
+    background: var(--bg-dark); position: relative; overflow: hidden;
+  }
+  .cta-section::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(230,57,70,0.1) 0%, transparent 50%);
+  }
+  .cta-content { position: relative; z-index: 2; max-width: 620px; margin: 0 auto; }
+  .cta-section h2 {
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    font-weight: 800; color: white; line-height: 1.15; margin-bottom: 1rem;
+  }
+  .cta-section p {
+    font-size: 1rem; color: rgba(255,255,255,0.5); margin-bottom: 2.5rem; line-height: 1.7;
+  }
+  .cta-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+  /* Footer */
+  footer {
+    padding: 2.5rem 2rem; border-top: 1px solid rgba(255,255,255,0.05);
+    background: #0f0f1f; color: rgba(255,255,255,0.35); font-size: 0.82rem;
+  }
+  .footer-inner {
+    max-width: 1100px; margin: 0 auto;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 1rem;
+  }
+  .footer-links { display: flex; gap: 1.5rem; }
+  .footer-links a { color: rgba(255,255,255,0.35); text-decoration: none; }
+  .footer-links a:hover { color: var(--accent); }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .reveal-comparison { grid-template-columns: 1fr; }
+    .how-grid { grid-template-columns: repeat(2, 1fr); }
+    .trust-grid { grid-template-columns: 1fr; }
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 600px) {
+    .nav-links a:not(.nav-cta) { display: none; }
+    .hero { padding: 7rem 1.5rem 4rem; }
+    .hero-actions { flex-direction: column; align-items: center; }
+    .how-grid { grid-template-columns: 1fr; }
+    .waste-grid { grid-template-columns: 1fr; }
+    .waste-counter { flex-direction: column; gap: 1.25rem; }
+  }
+
+  .fade-up {
+    opacity: 0; transform: translateY(30px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">go<span>2</span></div>
+  <div class="nav-links">
+    <a href="#waste">Hidden Costs</a>
+    <a href="#how">How It Works</a>
+    <a href="#examples">Examples</a>
+    <a href="#how" class="nav-cta">Reveal Your Waste</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="reveal-stripe"></div>
+  <div class="reveal-stripe"></div>
+  <div class="reveal-stripe"></div>
+  <div class="hero-content">
+    <div class="hero-badge">Operational Intelligence for Growing Teams</div>
+    <h1>The most expensive problems are the ones <em>nobody can see</em></h1>
+    <p>Every company has invisible waste. Manual tasks done 200 times a week. Wrong tools for the right job. Processes that should have been automated a year ago. Go2 makes the invisible visible.</p>
+    <div class="hero-actions">
+      <a href="#how" class="btn-primary">Uncover Your Hidden Waste</a>
+      <a href="#waste" class="btn-secondary">See What Others Found</a>
+    </div>
+    <div class="waste-counter">
+      <div class="counter-item">
+        <div class="counter-value" data-target="31">0%</div>
+        <div class="counter-label">Avg. time wasted on automatable tasks</div>
+      </div>
+      <div class="counter-item">
+        <div class="counter-value" data-target="47">0</div>
+        <div class="counter-label">Hours/week recovered (30-person team)</div>
+      </div>
+      <div class="counter-item">
+        <div class="counter-value" data-target="200">$0K</div>
+        <div class="counter-label">Avg. annual savings from waste elimination</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="waste">
+  <div class="container fade-up">
+    <div class="section-label">The Hidden Costs</div>
+    <div class="section-title">What's silently draining your company</div>
+    <div class="section-subtitle">These costs don't show up on any report. They hide in daily routines, in tool sprawl, in processes nobody questions because "that's how we've always done it."</div>
+    <div class="waste-grid">
+      <div class="waste-card">
+        <div class="waste-amount">23 hrs/wk</div>
+        <div class="waste-type">Process Waste</div>
+        <h3>Manual tasks nobody questions</h3>
+        <p>Copy-pasting between systems. Reformatting reports. Updating three tools with the same data. Your team does these tasks reflexively, never questioning if they should exist at all.</p>
+      </div>
+      <div class="waste-card">
+        <div class="waste-amount">$4,200/mo</div>
+        <div class="waste-type">Tool Waste</div>
+        <h3>Software nobody uses (but everyone pays for)</h3>
+        <p>The average SMB pays for 12 SaaS tools per employee. Usage data shows 4 of them are barely touched. That's thousands per month on digital shelfware.</p>
+      </div>
+      <div class="waste-card">
+        <div class="waste-amount">6.5 hrs/wk</div>
+        <div class="waste-type">Context Waste</div>
+        <h3>Switching between 8+ apps daily</h3>
+        <p>Every tool switch costs cognitive load. Studies show it takes 23 minutes to refocus after a context switch. Your team switches contexts dozens of times per day.</p>
+      </div>
+      <div class="waste-card">
+        <div class="waste-amount">41 days</div>
+        <div class="waste-type">Knowledge Waste</div>
+        <h3>Onboarding that takes forever</h3>
+        <p>New hires spend weeks figuring out how things "actually work" because processes live in people's heads, not in systems. Every departure takes institutional knowledge with it.</p>
+      </div>
+      <div class="waste-card">
+        <div class="waste-amount">3.2x</div>
+        <div class="waste-type">Decision Waste</div>
+        <h3>Managing by gut feeling, not data</h3>
+        <p>Without visibility into how work actually flows, managers make decisions based on who's loudest in standups, not who's most productive. This compounds at scale.</p>
+      </div>
+      <div class="waste-card">
+        <div class="waste-amount">$62K/yr</div>
+        <div class="waste-type">Hiring Waste</div>
+        <h3>Hiring people you don't need yet</h3>
+        <p>When everything feels slow, the instinct is to hire. But often the bottleneck is process, not people. One automation can replace the output of an unnecessary hire.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ticker-section">
+  <div class="ticker-track">
+    <div class="ticker-item"><span class="ticker-highlight">31%</span> of work time spent on tasks that could be automated</div>
+    <div class="ticker-item"><span class="ticker-highlight">4.2 hours</span> per person per week lost to tool switching</div>
+    <div class="ticker-item"><span class="ticker-highlight">$127K</span> average annual cost of undiscovered process waste per team</div>
+    <div class="ticker-item"><span class="ticker-highlight">89%</span> of managers can't identify their team's biggest time sink</div>
+    <div class="ticker-item"><span class="ticker-highlight">23 min</span> average refocus time after each context switch</div>
+    <div class="ticker-item"><span class="ticker-highlight">~1M</span> workers generating behavioral intelligence through Go2</div>
+    <div class="ticker-item"><span class="ticker-highlight">31%</span> of work time spent on tasks that could be automated</div>
+    <div class="ticker-item"><span class="ticker-highlight">4.2 hours</span> per person per week lost to tool switching</div>
+    <div class="ticker-item"><span class="ticker-highlight">$127K</span> average annual cost of undiscovered process waste per team</div>
+    <div class="ticker-item"><span class="ticker-highlight">89%</span> of managers can't identify their team's biggest time sink</div>
+    <div class="ticker-item"><span class="ticker-highlight">23 min</span> average refocus time after each context switch</div>
+    <div class="ticker-item"><span class="ticker-highlight">~1M</span> workers generating behavioral intelligence through Go2</div>
+  </div>
+</section>
+
+<section class="reveal-section">
+  <div class="container fade-up">
+    <div class="section-label">The Reveal</div>
+    <div class="section-title">What you see vs. what's actually there</div>
+    <div class="section-subtitle">The surface looks fine. Underneath, invisible waste is eating your margins.</div>
+    <div class="reveal-comparison">
+      <div class="reveal-panel hidden-view">
+        <div class="panel-tag hidden-tag">What You See Today</div>
+        <h3>Everything Looks Normal</h3>
+        <div class="reveal-item">
+          <div class="reveal-icon">&#x1F4CB;</div>
+          <div class="reveal-text"><strong>"Team utilization is 85%"</strong> according to self-reported timesheets</div>
+        </div>
+        <div class="reveal-item">
+          <div class="reveal-icon">&#x1F4CB;</div>
+          <div class="reveal-text"><strong>"Projects are on track"</strong> based on status update meetings</div>
+        </div>
+        <div class="reveal-item">
+          <div class="reveal-icon">&#x1F4CB;</div>
+          <div class="reveal-text"><strong>"We need more headcount"</strong> because everyone says they're swamped</div>
+        </div>
+        <div class="reveal-item">
+          <div class="reveal-icon">&#x1F4CB;</div>
+          <div class="reveal-text"><strong>"Our tools work well"</strong> since nobody has complained recently</div>
+        </div>
+        <div class="reveal-item">
+          <div class="reveal-icon">&#x1F4CB;</div>
+          <div class="reveal-text"><strong>"Processes are efficient"</strong> because we optimized them last year</div>
+        </div>
+      </div>
+      <div class="reveal-panel revealed-view">
+        <div class="panel-tag revealed-tag">What Go2 Reveals</div>
+        <h3>The Hidden Reality</h3>
+        <div class="reveal-item">
+          <div class="reveal-icon">&#x1F6A8;</div>
+          <div class="reveal-text"><strong>Actual productive time is 54%</strong>. The rest is tool switching, waiting, and repetitive manual tasks</div>
+        </div>
+        <div class="reveal-item">
+          <div class="reveal-icon">&#x1F6A8;</div>
+          <div class="reveal-text"><strong>3 critical bottlenecks</strong> cause 60% of all project delays. None were discussed in standups</div>
+        </div>
+        <div class="reveal-item">
+          <div class="reveal-icon">&#x1F6A8;</div>
+          <div class="reveal-text"><strong>2 automations would free 40 hrs/week</strong>, equal to a full-time hire, at zero recurring cost</div>
+        </div>
+        <div class="reveal-item">
+          <div class="reveal-icon">&#x1F6A8;</div>
+          <div class="reveal-text"><strong>4 paid tools have less than 10% usage</strong>. Team built workarounds in spreadsheets instead</div>
+        </div>
+        <div class="reveal-item">
+          <div class="reveal-icon">&#x1F6A8;</div>
+          <div class="reveal-text"><strong>The "optimized" process has 7 unnecessary steps</strong> that accumulated as patches over 18 months</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="how-section" id="how">
+  <div class="container fade-up">
+    <div class="section-label" style="color:var(--accent-warm)">How It Works</div>
+    <div class="section-title" style="color:white">From invisible to actionable in 30 days</div>
+    <div class="section-subtitle">Go2 uses a lightweight desktop agent and frontier AI (Claude, GPT, Gemini) to reveal what's hidden, then helps you fix it.</div>
+    <div class="how-grid">
+      <div class="how-step">
+        <div class="how-icon">&#x1F50D;</div>
+        <div class="how-number">1</div>
+        <h3>Deploy Silently</h3>
+        <p>A lightweight agent installs on team machines. No training. No workflow changes. It begins observing how work actually happens.</p>
+      </div>
+      <div class="how-step">
+        <div class="how-icon">&#x1F4A1;</div>
+        <div class="how-number">2</div>
+        <h3>Reveal the Waste</h3>
+        <p>AI analyzes patterns across your org. Data from ~1M workers makes even subtle inefficiencies obvious. You see your first waste map in weeks.</p>
+      </div>
+      <div class="how-step">
+        <div class="how-icon">&#x1F9D1;&#x200D;&#x1F3EB;</div>
+        <div class="how-number">3</div>
+        <h3>Coach in Real-Time</h3>
+        <p>Workers receive AI coaching that shows them faster paths. Not surveillance. Personalized help that makes their jobs easier and more productive.</p>
+      </div>
+      <div class="how-step">
+        <div class="how-icon">&#x2699;</div>
+        <div class="how-number">4</div>
+        <h3>Automate the Rest</h3>
+        <p>Go2 identifies tasks that should be automated, scores them by ROI, and often builds the automation. Invisible waste becomes visible savings.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="stats-bar fade-up">
+  <div class="stat-item">
+    <div class="stat-number">~1M</div>
+    <div class="stat-text">Workers generating behavioral intelligence</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-number">31%</div>
+    <div class="stat-text">Average automatable work discovered</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-number">23%</div>
+    <div class="stat-text">Productivity gain in first 90 days</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-number">30</div>
+    <div class="stat-text">Days to full operational visibility</div>
+  </div>
+</div>
+
+<section class="examples-section" id="examples">
+  <div class="container fade-up">
+    <div class="section-label">Real Discoveries</div>
+    <div class="section-title">Waste that was hiding in plain sight</div>
+    <div class="section-subtitle">These are actual categories of waste uncovered by Go2 across SMBs. Every company has versions of these.</div>
+    <div class="examples-grid">
+      <div class="example-card">
+        <div class="example-header">
+          <div class="example-label">Process Waste</div>
+          <div class="example-savings">Saved 23 hrs/wk</div>
+        </div>
+        <h3>The Report Nobody Reads</h3>
+        <p>An operations team spent 6 hours every Monday compiling a report that Go2 revealed was opened by exactly 2 people, neither of whom read past page 1. Eliminated and replaced with a 5-minute AI summary.</p>
+        <div class="example-bar"><div class="example-bar-fill" style="width: 0%;" data-width="85%"></div></div>
+      </div>
+      <div class="example-card">
+        <div class="example-header">
+          <div class="example-label">Tool Waste</div>
+          <div class="example-savings">Saved $51K/yr</div>
+        </div>
+        <h3>The CRM Nobody Uses Correctly</h3>
+        <p>Sales team had a CRM that cost $1,200/month. Go2 showed 80% of data entry was duplicated in spreadsheets because the CRM's workflow didn't match how reps actually work. Restructured in 2 days.</p>
+        <div class="example-bar"><div class="example-bar-fill" style="width: 0%;" data-width="70%"></div></div>
+      </div>
+      <div class="example-card">
+        <div class="example-header">
+          <div class="example-label">Automation Gap</div>
+          <div class="example-savings">Saved 31 hrs/wk</div>
+        </div>
+        <h3>The Copy-Paste Chain</h3>
+        <p>Customer data was being manually copied across 4 systems, 200+ times per week, by 3 different people. A single integration eliminated all of it. Nobody had realized the full scope until Go2 mapped it.</p>
+        <div class="example-bar"><div class="example-bar-fill" style="width: 0%;" data-width="95%"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="testimonials">
+  <div class="container fade-up">
+    <div class="section-label">What Leaders Found</div>
+    <div class="section-title">After the waste was revealed</div>
+    <div class="testimonial-grid">
+      <div class="testimonial">
+        <blockquote>"It was like turning on the lights in a room we'd been fumbling through for years. Go2 showed us waste we literally couldn't see. Not because we're bad operators, but because the waste was distributed across 30 people and 12 tools."</blockquote>
+        <div class="testimonial-source">
+          <div class="source-dot">CEO</div>
+          <div class="source-meta">
+            <strong>CEO</strong>
+            <span>36-person professional services firm</span>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial">
+        <blockquote>"We found $200K in annual savings in the first month. Not from cutting people. From cutting invisible waste. Tasks that shouldn't exist. Tools that didn't get used. Reports nobody needed. It was all just... there."</blockquote>
+        <div class="testimonial-source">
+          <div class="source-dot">VP</div>
+          <div class="source-meta">
+            <strong>VP of Operations</strong>
+            <span>48-person logistics company</span>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial">
+        <blockquote>"My team actually thanked me for installing Go2. They'd been frustrated by the same inefficiencies for months but didn't have the data to justify fixing them. Now the AI coaching helps them work smarter every day."</blockquote>
+        <div class="testimonial-source">
+          <div class="source-dot">Dir</div>
+          <div class="source-meta">
+            <strong>Director of Engineering</strong>
+            <span>22-person SaaS startup</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="trust-section">
+  <div class="container fade-up">
+    <div class="section-label">Built on Trust</div>
+    <div class="section-title">Revealing waste, not monitoring people</div>
+    <div class="section-subtitle">Go2 is designed to find process problems, not personnel problems. The architecture ensures this by design.</div>
+    <div class="trust-grid">
+      <div class="trust-card">
+        <div class="trust-icon">&#x1F6E1;</div>
+        <h3>Aggregated, Not Individual</h3>
+        <p>Managers see team-level patterns and process bottlenecks. Not individual browsing history. Not keystroke counts. System visibility, not surveillance.</p>
+      </div>
+      <div class="trust-card">
+        <div class="trust-icon">&#x1F9D1;&#x200D;&#x1F3EB;</div>
+        <h3>Workers Get the Coaching</h3>
+        <p>The AI helps each worker do their job better with real-time suggestions. It's like having a personal efficiency expert. Workers love it because it reduces frustration.</p>
+      </div>
+      <div class="trust-card">
+        <div class="trust-icon">&#x1F512;</div>
+        <h3>Privacy by Architecture</h3>
+        <p>Sensitive content is never stored. The AI analyzes workflow patterns, not content. Your data stays yours. We see how work flows, not what it says.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <div class="cta-content fade-up">
+    <h2>Stop paying for problems<br>you can't see</h2>
+    <p>Every day without visibility is another day of invisible waste compounding. Go2 reveals what's hidden in 30 days or less.</p>
+    <div class="cta-actions">
+      <a href="#" class="btn-primary">Start Revealing Waste</a>
+      <a href="#" class="btn-secondary">Talk to Our Team</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div>&copy; 2026 Go2. Making the invisible visible.</div>
+    <div class="footer-links">
+      <a href="#">Privacy</a>
+      <a href="#">Security</a>
+      <a href="#">Terms</a>
+      <a href="#">Contact</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  // Animate stat numbers
+  const statObs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const el = entry.target;
+        const text = el.textContent;
+        const match = text.match(/(~?|\$?)(\d+\.?\d*)/);
+        if (match) {
+          const prefix = match[1] || '';
+          const target = parseFloat(match[2]);
+          const suffix = text.replace(match[0], '');
+          const duration = 1500;
+          const start = performance.now();
+          const isFloat = text.includes('.');
+          const animate = (now) => {
+            const p = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - p, 3);
+            const val = isFloat ? (target * eased).toFixed(1) : Math.round(target * eased);
+            el.textContent = prefix + val + suffix;
+            if (p < 1) requestAnimationFrame(animate);
+          };
+          requestAnimationFrame(animate);
+        }
+        statObs.unobserve(el);
+      }
+    });
+  }, { threshold: 0.5 });
+  document.querySelectorAll('.stat-number, .counter-value').forEach(el => statObs.observe(el));
+
+  // Animate example bars
+  const barObs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const fill = entry.target;
+        const width = fill.dataset.width;
+        setTimeout(() => { fill.style.width = width; }, 300);
+        barObs.unobserve(fill);
+      }
+    });
+  }, { threshold: 0.5 });
+  document.querySelectorAll('.example-bar-fill').forEach(el => barObs.observe(el));
+</script>
+</body>
+</html>

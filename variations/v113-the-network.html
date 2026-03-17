@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The Network Effect</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0c0c1d;
+  --surface: #12122a;
+  --surface-light: #1a1a3a;
+  --text: #e4e4f0;
+  --text-dim: #6b6b8d;
+  --purple: #7c5cfc;
+  --purple-light: #a78bfa;
+  --purple-glow: rgba(124, 92, 252, 0.15);
+  --cyan: #06d6a0;
+  --cyan-glow: rgba(6, 214, 160, 0.15);
+  --border: #1e1e3f;
+  --node: #7c5cfc;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Sora', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* Animated network background */
+.network-bg {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+.network-bg svg { width: 100%; height: 100%; }
+
+.node-dot {
+  fill: var(--purple);
+  animation: node-pulse 4s ease-in-out infinite;
+}
+
+.node-dot:nth-child(even) { animation-delay: 2s; }
+.node-dot:nth-child(3n) { animation-delay: 1s; fill: var(--cyan); }
+
+@keyframes node-pulse {
+  0%, 100% { opacity: 0.3; r: 2; }
+  50% { opacity: 0.8; r: 3.5; }
+}
+
+.edge-line {
+  stroke: var(--purple);
+  stroke-width: 0.5;
+  opacity: 0.1;
+  animation: edge-glow 6s ease-in-out infinite;
+}
+
+.edge-line:nth-child(even) { animation-delay: 3s; stroke: var(--cyan); }
+
+@keyframes edge-glow {
+  0%, 100% { opacity: 0.05; }
+  50% { opacity: 0.15; }
+}
+
+/* Content layer */
+.content { position: relative; z-index: 1; }
+
+/* Nav */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  padding: 20px 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+  background: rgba(12, 12, 29, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--purple), var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.nav-links { display: flex; gap: 32px; align-items: center; }
+.nav-links a {
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+.nav-links a:hover { color: var(--text); }
+
+.nav-cta {
+  padding: 10px 24px !important;
+  background: var(--purple) !important;
+  color: white !important;
+  border-radius: 8px;
+  font-weight: 600 !important;
+  transition: all 0.3s !important;
+}
+.nav-cta:hover {
+  box-shadow: 0 4px 20px var(--purple-glow) !important;
+  transform: translateY(-1px);
+}
+
+/* Hero */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 120px 48px 80px;
+}
+
+.hero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: var(--purple-glow);
+  border: 1px solid rgba(124, 92, 252, 0.2);
+  border-radius: 100px;
+  font-size: 13px;
+  color: var(--purple-light);
+  font-weight: 500;
+  margin-bottom: 40px;
+}
+
+.hero h1 {
+  font-size: clamp(40px, 6vw, 72px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -2px;
+  max-width: 850px;
+  margin-bottom: 24px;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--purple-light), var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-sub {
+  font-size: 18px;
+  color: var(--text-dim);
+  max-width: 540px;
+  margin-bottom: 48px;
+  font-weight: 400;
+}
+
+.hero-btns { display: flex; gap: 16px; }
+
+.btn-glow {
+  padding: 16px 40px;
+  background: var(--purple);
+  color: white;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 10px;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-glow:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px var(--purple-glow);
+}
+
+.btn-outline {
+  padding: 16px 40px;
+  background: transparent;
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 10px;
+  transition: all 0.3s;
+}
+
+.btn-outline:hover { border-color: var(--text-dim); }
+
+/* Network Effect Explanation */
+.effect-section {
+  padding: 120px 48px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.section-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  color: var(--purple-light);
+  text-align: center;
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+
+.section-title {
+  font-size: 40px;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: -1px;
+  margin-bottom: 16px;
+}
+
+.section-sub {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 16px;
+  max-width: 520px;
+  margin: 0 auto 64px;
+}
+
+/* Network visualization cards */
+.network-stages {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 80px;
+}
+
+.stage-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px 32px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s;
+}
+
+.stage-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--purple), var(--cyan));
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.stage-card:hover::before { opacity: 1; }
+.stage-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(124, 92, 252, 0.3);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
+}
+
+/* Node visualization in cards */
+.node-vis {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 24px;
+  position: relative;
+}
+
+.node-vis svg { width: 100%; height: 100%; }
+
+.vis-node {
+  fill: var(--purple);
+  transition: all 0.4s;
+}
+
+.vis-node.active { fill: var(--cyan); }
+
+.vis-edge {
+  stroke: var(--purple);
+  stroke-width: 1;
+  opacity: 0.3;
+}
+
+.vis-edge.active {
+  stroke: var(--cyan);
+  opacity: 0.6;
+  stroke-width: 1.5;
+}
+
+.stage-week {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--purple-light);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+}
+
+.stage-card h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.stage-card p {
+  font-size: 14px;
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+
+.stage-stat {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.stage-stat .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--cyan);
+}
+
+.stage-stat .lbl {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Multiplier section */
+.multiplier {
+  padding: 100px 48px;
+  text-align: center;
+  position: relative;
+}
+
+.multiplier::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, var(--purple-glow), transparent 70%);
+  border-radius: 50%;
+}
+
+.multi-number {
+  font-size: 140px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--purple), var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.multi-label {
+  font-size: 20px;
+  font-weight: 500;
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.multi-desc {
+  font-size: 16px;
+  color: var(--text-dim);
+  max-width: 520px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* How it works */
+.how-section {
+  padding: 120px 48px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.how-step {
+  display: flex;
+  gap: 32px;
+  margin-bottom: 48px;
+  align-items: flex-start;
+}
+
+.how-icon {
+  width: 56px; height: 56px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 24px;
+}
+
+.how-content h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.how-content p {
+  font-size: 15px;
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+
+/* Testimonial */
+.testimonial {
+  padding: 100px 48px;
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.test-quote {
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.6;
+  margin-bottom: 32px;
+  position: relative;
+}
+
+.test-quote::before {
+  content: '"';
+  font-size: 80px;
+  color: var(--purple);
+  opacity: 0.4;
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: serif;
+}
+
+.test-author {
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.test-author strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Integration */
+.integrations {
+  padding: 80px 48px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.integrations .label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  color: var(--text-dim);
+  margin-bottom: 28px;
+}
+
+.int-row {
+  display: flex;
+  justify-content: center;
+  gap: 48px;
+  flex-wrap: wrap;
+}
+
+.int-item {
+  padding: 12px 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-dim);
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.int-item:hover {
+  border-color: var(--purple);
+  color: var(--text);
+}
+
+/* CTA */
+.final-cta {
+  padding: 140px 48px;
+  text-align: center;
+}
+
+.final-cta h2 {
+  font-size: clamp(32px, 4vw, 48px);
+  font-weight: 700;
+  letter-spacing: -1px;
+  margin-bottom: 20px;
+}
+
+.final-cta p {
+  font-size: 17px;
+  color: var(--text-dim);
+  max-width: 480px;
+  margin: 0 auto 40px;
+}
+
+/* Footer */
+footer {
+  padding: 40px 48px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+}
+
+footer p { font-size: 13px; color: var(--text-dim); }
+
+@media (max-width: 768px) {
+  nav { padding: 16px 24px; }
+  .nav-links { display: none; }
+  .hero { padding: 100px 24px 60px; }
+  .network-stages { grid-template-columns: 1fr; }
+  .hero-btns { flex-direction: column; }
+  .how-step { flex-direction: column; gap: 16px; }
+  .effect-section, .how-section, .multiplier, .final-cta { padding-left: 24px; padding-right: 24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Animated network background -->
+<div class="network-bg">
+  <svg viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice">
+    <!-- Edges -->
+    <line class="edge-line" x1="120" y1="80" x2="280" y2="150"/>
+    <line class="edge-line" x1="280" y1="150" x2="450" y2="100"/>
+    <line class="edge-line" x1="450" y1="100" x2="600" y2="200"/>
+    <line class="edge-line" x1="600" y1="200" x2="780" y2="120"/>
+    <line class="edge-line" x1="780" y1="120" x2="900" y2="250"/>
+    <line class="edge-line" x1="120" y1="80" x2="200" y2="300"/>
+    <line class="edge-line" x1="200" y1="300" x2="400" y2="350"/>
+    <line class="edge-line" x1="400" y1="350" x2="600" y2="200"/>
+    <line class="edge-line" x1="600" y1="200" x2="500" y2="420"/>
+    <line class="edge-line" x1="500" y1="420" x2="700" y2="480"/>
+    <line class="edge-line" x1="700" y1="480" x2="900" y2="400"/>
+    <line class="edge-line" x1="900" y1="250" x2="900" y2="400"/>
+    <line class="edge-line" x1="280" y1="150" x2="400" y2="350"/>
+    <line class="edge-line" x1="450" y1="100" x2="500" y2="420"/>
+    <line class="edge-line" x1="100" y1="500" x2="300" y2="480"/>
+    <line class="edge-line" x1="300" y1="480" x2="500" y2="420"/>
+    <!-- Nodes -->
+    <circle class="node-dot" cx="120" cy="80" r="2.5"/>
+    <circle class="node-dot" cx="280" cy="150" r="3"/>
+    <circle class="node-dot" cx="450" cy="100" r="2"/>
+    <circle class="node-dot" cx="600" cy="200" r="3.5"/>
+    <circle class="node-dot" cx="780" cy="120" r="2"/>
+    <circle class="node-dot" cx="900" cy="250" r="2.5"/>
+    <circle class="node-dot" cx="200" cy="300" r="2"/>
+    <circle class="node-dot" cx="400" cy="350" r="3"/>
+    <circle class="node-dot" cx="500" cy="420" r="2.5"/>
+    <circle class="node-dot" cx="700" cy="480" r="2"/>
+    <circle class="node-dot" cx="900" cy="400" r="3"/>
+    <circle class="node-dot" cx="100" cy="500" r="2"/>
+    <circle class="node-dot" cx="300" cy="480" r="2.5"/>
+  </svg>
+</div>
+
+<div class="content">
+
+<nav>
+  <div class="logo">Go2</div>
+  <div class="nav-links">
+    <a href="#effect">The Effect</a>
+    <a href="#how">How It Works</a>
+    <a href="#cta" class="nav-cta">See It In Action</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-chip">47,000+ workers in the network</div>
+  <h1>Every person coached makes <span class="gradient-text">everyone else better</span></h1>
+  <p class="hero-sub">Go2 creates a network effect inside your company. As each employee improves, they reduce friction for everyone around them. The gains compound exponentially.</p>
+  <div class="hero-btns">
+    <a href="#cta" class="btn-glow">See It In Action &rarr;</a>
+    <a href="#effect" class="btn-outline">See the effect</a>
+  </div>
+</section>
+
+<section class="effect-section" id="effect">
+  <div class="section-label">The Network Effect</div>
+  <h2 class="section-title">Productivity is contagious</h2>
+  <p class="section-sub">Traditional tools optimize individuals in isolation. Go2 optimizes the connections between people — where the real waste hides.</p>
+
+  <div class="network-stages">
+    <div class="stage-card">
+      <div class="node-vis">
+        <svg viewBox="0 0 120 120">
+          <line class="vis-edge" x1="60" y1="30" x2="30" y2="80"/>
+          <line class="vis-edge" x1="60" y1="30" x2="90" y2="80"/>
+          <line class="vis-edge" x1="30" y1="80" x2="90" y2="80"/>
+          <circle class="vis-node active" cx="60" cy="30" r="8"/>
+          <circle class="vis-node" cx="30" cy="80" r="6"/>
+          <circle class="vis-node" cx="90" cy="80" r="6"/>
+        </svg>
+      </div>
+      <div class="stage-week">Week 1</div>
+      <h3>First nodes activate</h3>
+      <p>Early adopters see their own work patterns for the first time. AI coaching begins with personal habits.</p>
+      <div class="stage-stat">
+        <div class="num">+8%</div>
+        <div class="lbl">Individual gain</div>
+      </div>
+    </div>
+
+    <div class="stage-card">
+      <div class="node-vis">
+        <svg viewBox="0 0 120 120">
+          <line class="vis-edge active" x1="60" y1="20" x2="25" y2="60"/>
+          <line class="vis-edge active" x1="60" y1="20" x2="95" y2="60"/>
+          <line class="vis-edge active" x1="25" y1="60" x2="95" y2="60"/>
+          <line class="vis-edge" x1="25" y1="60" x2="40" y2="100"/>
+          <line class="vis-edge" x1="95" y1="60" x2="80" y2="100"/>
+          <line class="vis-edge" x1="40" y1="100" x2="80" y2="100"/>
+          <circle class="vis-node active" cx="60" cy="20" r="7"/>
+          <circle class="vis-node active" cx="25" cy="60" r="7"/>
+          <circle class="vis-node active" cx="95" cy="60" r="7"/>
+          <circle class="vis-node" cx="40" cy="100" r="5"/>
+          <circle class="vis-node" cx="80" cy="100" r="5"/>
+        </svg>
+      </div>
+      <div class="stage-week">Week 4</div>
+      <h3>Connections strengthen</h3>
+      <p>Teams optimize meetings, handoffs, and communication patterns. Friction between people starts dissolving.</p>
+      <div class="stage-stat">
+        <div class="num">+17%</div>
+        <div class="lbl">Team-wide gain</div>
+      </div>
+    </div>
+
+    <div class="stage-card">
+      <div class="node-vis">
+        <svg viewBox="0 0 120 120">
+          <line class="vis-edge active" x1="60" y1="15" x2="20" y2="45"/>
+          <line class="vis-edge active" x1="60" y1="15" x2="100" y2="45"/>
+          <line class="vis-edge active" x1="20" y1="45" x2="100" y2="45"/>
+          <line class="vis-edge active" x1="20" y1="45" x2="15" y2="85"/>
+          <line class="vis-edge active" x1="100" y1="45" x2="105" y2="85"/>
+          <line class="vis-edge active" x1="15" y1="85" x2="45" y2="105"/>
+          <line class="vis-edge active" x1="105" y1="85" x2="75" y2="105"/>
+          <line class="vis-edge active" x1="45" y1="105" x2="75" y2="105"/>
+          <line class="vis-edge active" x1="60" y1="15" x2="60" y2="65"/>
+          <line class="vis-edge active" x1="60" y1="65" x2="45" y2="105"/>
+          <line class="vis-edge active" x1="60" y1="65" x2="75" y2="105"/>
+          <circle class="vis-node active" cx="60" cy="15" r="6"/>
+          <circle class="vis-node active" cx="20" cy="45" r="6"/>
+          <circle class="vis-node active" cx="100" cy="45" r="6"/>
+          <circle class="vis-node active" cx="15" cy="85" r="6"/>
+          <circle class="vis-node active" cx="105" cy="85" r="6"/>
+          <circle class="vis-node active" cx="45" cy="105" r="6"/>
+          <circle class="vis-node active" cx="75" cy="105" r="6"/>
+          <circle class="vis-node active" cx="60" cy="65" r="7"/>
+        </svg>
+      </div>
+      <div class="stage-week">Month 3</div>
+      <h3>Full network effect</h3>
+      <p>The entire org operates as a connected system. Processes auto-document. Bottlenecks surface before they hurt.</p>
+      <div class="stage-stat">
+        <div class="num">+23%</div>
+        <div class="lbl">Company-wide gain</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="multiplier">
+  <div class="multi-number">N&sup2;</div>
+  <div class="multi-label">The value grows with the square of your team</div>
+  <p class="multi-desc">Like Metcalfe's Law for networks, every person Go2 coaches multiplies the value for everyone else. A 50-person team doesn't get 50x value — it gets 2,500x the connection improvements.</p>
+</section>
+
+<section class="how-section" id="how">
+  <div class="section-label">How It Works</div>
+  <h2 class="section-title">Three layers of intelligence</h2>
+  <p class="section-sub">Go2 doesn't just coach individuals — it optimizes the space between them.</p>
+
+  <div class="how-step">
+    <div class="how-icon">1</div>
+    <div class="how-content">
+      <h3>Individual coaching</h3>
+      <p>Each person gets AI-powered suggestions based on their work patterns. Focus time protection, meeting optimization, tool recommendations. Private and personalized.</p>
+    </div>
+  </div>
+
+  <div class="how-step">
+    <div class="how-icon">2</div>
+    <div class="how-content">
+      <h3>Team dynamics</h3>
+      <p>Go2 analyzes how people work together — handoff delays, meeting overlap, communication bottlenecks. It coaches the team on better collaboration patterns without surveillance.</p>
+    </div>
+  </div>
+
+  <div class="how-step">
+    <div class="how-icon">3</div>
+    <div class="how-content">
+      <h3>Organizational intelligence</h3>
+      <p>As the network grows, Go2 identifies company-wide patterns: processes that need documenting, automations waiting to happen, structural inefficiencies no one person can see.</p>
+    </div>
+  </div>
+
+  <div class="how-step">
+    <div class="how-icon">&infin;</div>
+    <div class="how-content">
+      <h3>Continuous compounding</h3>
+      <p>Every improvement feeds into the next. Better handoffs mean fewer meetings. Fewer meetings mean more focus time. More focus time means higher output. The cycle never stops.</p>
+    </div>
+  </div>
+</section>
+
+<section class="testimonial">
+  <div class="test-quote">We started with 5 people on Go2 as a pilot. Within a month, the other 40 were asking to join. They could see the difference in how the coached team communicated and shipped.</div>
+  <div class="test-author"><strong>Marcus Rivera</strong> &middot; VP Engineering, Lattice Systems (45 employees)</div>
+</section>
+
+<section class="integrations">
+  <div class="label">Connects to your existing network</div>
+  <div class="int-row">
+    <div class="int-item">Slack</div>
+    <div class="int-item">Microsoft Teams</div>
+    <div class="int-item">Zoom</div>
+    <div class="int-item">Google Workspace</div>
+    <div class="int-item">Asana</div>
+    <div class="int-item">Jira</div>
+    <div class="int-item">Notion</div>
+  </div>
+</section>
+
+<section class="final-cta" id="cta">
+  <h2>Start the <span class="gradient-text">network effect</span></h2>
+  <p>The first node is the hardest. After that, the value compounds on its own. See how it works for your team.</p>
+  <a href="#" class="btn-glow">Book a Demo &rarr;</a>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2. AI productivity coaching with compounding returns.</p>
+</footer>
+
+</div>
+</body>
+</html>

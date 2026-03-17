@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The Productivity Flywheel</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Inter', sans-serif; background: #0a0a0f; color: #e8e8ed; overflow-x: hidden; }
+
+/* Flywheel animated background */
+.bg-flywheel {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;
+}
+.bg-flywheel::before {
+  content: ''; position: absolute; top: 50%; left: 50%; width: 900px; height: 900px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, #6366f1 0%, #8b5cf6 25%, #a78bfa 50%, #6366f1 75%, #4f46e5 100%);
+  opacity: 0.06;
+  animation: spinSlow 30s linear infinite;
+}
+.bg-flywheel::after {
+  content: ''; position: absolute; top: 50%; left: 50%; width: 600px; height: 600px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: conic-gradient(from 180deg, #06b6d4 0%, #6366f1 50%, #06b6d4 100%);
+  opacity: 0.04;
+  animation: spinSlow 20s linear infinite reverse;
+}
+@keyframes spinSlow { to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+/* Nav */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  padding: 20px 0;
+  background: rgba(10, 10, 15, 0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+}
+nav .container { display: flex; justify-content: space-between; align-items: center; }
+.logo { font-size: 24px; font-weight: 800; color: #fff; text-decoration: none; letter-spacing: -0.5px; }
+.logo span { color: #6366f1; }
+nav a.cta-nav {
+  padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600;
+  background: #6366f1; color: #fff; text-decoration: none;
+  transition: all 0.3s;
+}
+nav a.cta-nav:hover { background: #4f46e5; transform: translateY(-1px); }
+
+/* Hero */
+.hero {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  text-align: center; padding: 120px 24px 80px;
+}
+.hero-inner { max-width: 800px; }
+.badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 100px;
+  background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.25);
+  font-size: 13px; font-weight: 500; color: #a5b4fc; margin-bottom: 32px;
+}
+.badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #6366f1; animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+h1 {
+  font-size: clamp(42px, 6vw, 72px); font-weight: 900; line-height: 1.05;
+  letter-spacing: -2px; margin-bottom: 24px;
+}
+h1 .gradient {
+  background: linear-gradient(135deg, #6366f1, #a78bfa, #06b6d4);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.hero p {
+  font-size: 20px; line-height: 1.6; color: #9ca3af; max-width: 600px; margin: 0 auto 40px;
+}
+.cta-group { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.cta-primary {
+  padding: 16px 36px; border-radius: 12px; font-size: 16px; font-weight: 600;
+  background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff;
+  text-decoration: none; border: none; cursor: pointer;
+  transition: all 0.3s; box-shadow: 0 4px 24px rgba(99, 102, 241, 0.3);
+}
+.cta-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4); }
+.cta-secondary {
+  padding: 16px 36px; border-radius: 12px; font-size: 16px; font-weight: 600;
+  background: transparent; color: #a5b4fc; text-decoration: none;
+  border: 1px solid rgba(99, 102, 241, 0.3); cursor: pointer;
+  transition: all 0.3s;
+}
+.cta-secondary:hover { background: rgba(99, 102, 241, 0.08); border-color: rgba(99, 102, 241, 0.5); }
+
+/* Stats bar */
+.stats-bar {
+  padding: 60px 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.stats-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; text-align: center;
+}
+.stat-num { font-size: 42px; font-weight: 800; color: #6366f1; letter-spacing: -1px; }
+.stat-label { font-size: 14px; color: #6b7280; margin-top: 4px; }
+@media (max-width: 640px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+
+/* Flywheel Section */
+.flywheel-section { padding: 120px 0; }
+.section-label {
+  font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;
+  color: #6366f1; margin-bottom: 16px;
+}
+.section-title {
+  font-size: clamp(32px, 4vw, 48px); font-weight: 800; letter-spacing: -1px;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.section-desc { font-size: 18px; color: #9ca3af; line-height: 1.6; max-width: 600px; margin-bottom: 64px; }
+
+.flywheel-visual {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;
+}
+.flywheel-ring {
+  position: relative; width: 420px; height: 420px; margin: 0 auto;
+}
+.flywheel-ring .ring {
+  position: absolute; top: 50%; left: 50%; border-radius: 50%;
+  border: 2px solid rgba(99, 102, 241, 0.15);
+  transform: translate(-50%, -50%);
+}
+.flywheel-ring .ring-1 { width: 420px; height: 420px; animation: spinSlow 25s linear infinite; }
+.flywheel-ring .ring-2 { width: 300px; height: 300px; border-color: rgba(139, 92, 246, 0.2); animation: spinSlow 18s linear infinite reverse; }
+.flywheel-ring .ring-3 { width: 180px; height: 180px; border-color: rgba(6, 182, 212, 0.25); animation: spinSlow 12s linear infinite; }
+.flywheel-center {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 80px; height: 80px; border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #06b6d4);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 900; color: #fff;
+  box-shadow: 0 0 40px rgba(99, 102, 241, 0.4);
+}
+.fw-node {
+  position: absolute; width: 56px; height: 56px; border-radius: 50%;
+  background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3);
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+  transform: translate(-50%, -50%);
+}
+.fw-node:nth-child(5) { top: 0; left: 50%; }
+.fw-node:nth-child(6) { top: 50%; right: -28px; left: auto; transform: translateY(-50%); }
+.fw-node:nth-child(7) { bottom: 0; left: 50%; top: auto; transform: translateX(-50%); }
+.fw-node:nth-child(8) { top: 50%; left: 0; transform: translateY(-50%); }
+
+.flywheel-steps { list-style: none; }
+.flywheel-steps li {
+  padding: 24px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex; gap: 20px; align-items: flex-start;
+}
+.step-num {
+  width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.05));
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: #a5b4fc;
+}
+.step-content h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.step-content p { font-size: 14px; color: #6b7280; line-height: 1.5; }
+.step-arrow { font-size: 12px; color: #4f46e5; padding: 8px 0; text-align: center; }
+
+@media (max-width: 900px) {
+  .flywheel-visual { grid-template-columns: 1fr; }
+  .flywheel-ring { width: 300px; height: 300px; }
+  .flywheel-ring .ring-1 { width: 300px; height: 300px; }
+  .flywheel-ring .ring-2 { width: 220px; height: 220px; }
+  .flywheel-ring .ring-3 { width: 140px; height: 140px; }
+}
+
+/* Why it compounds */
+.compound-section { padding: 80px 0 120px; }
+.compound-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 48px; }
+.compound-card {
+  padding: 40px 32px; border-radius: 16px;
+  background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+  transition: all 0.4s;
+}
+.compound-card:hover { background: rgba(99, 102, 241, 0.05); border-color: rgba(99, 102, 241, 0.2); transform: translateY(-4px); }
+.card-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(99, 102, 241, 0.05));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; margin-bottom: 20px;
+}
+.compound-card h3 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+.compound-card p { font-size: 15px; color: #6b7280; line-height: 1.6; }
+@media (max-width: 768px) { .compound-grid { grid-template-columns: 1fr; } }
+
+/* Momentum section */
+.momentum { padding: 80px 0; }
+.momentum-bar {
+  display: flex; align-items: center; gap: 4px; height: 56px;
+  border-radius: 16px; overflow: hidden; margin-top: 40px; margin-bottom: 16px;
+}
+.momentum-bar .seg {
+  height: 100%; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 600; color: #fff; transition: all 0.3s;
+}
+.seg-1 { background: #312e81; flex: 1; }
+.seg-2 { background: #4338ca; flex: 1.5; }
+.seg-3 { background: #6366f1; flex: 2; }
+.seg-4 { background: #818cf8; flex: 3; }
+.seg-5 { background: #a78bfa; flex: 4; }
+.momentum-labels { display: flex; justify-content: space-between; font-size: 13px; color: #6b7280; }
+
+/* CTA Section */
+.final-cta {
+  padding: 120px 0; text-align: center;
+}
+.final-cta h2 {
+  font-size: clamp(36px, 5vw, 56px); font-weight: 900; letter-spacing: -1.5px;
+  margin-bottom: 20px; line-height: 1.1;
+}
+.final-cta p { font-size: 18px; color: #9ca3af; max-width: 500px; margin: 0 auto 40px; }
+
+/* Footer */
+footer {
+  padding: 40px 0; border-top: 1px solid rgba(255,255,255,0.06);
+  text-align: center; font-size: 13px; color: #4b5563;
+}
+</style>
+</head>
+<body>
+<div class="bg-flywheel"></div>
+
+<nav>
+  <div class="container">
+    <a href="#" class="logo">go<span>2</span></a>
+    <a href="#cta" class="cta-nav">Book a Demo</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div class="badge">The Productivity Flywheel</div>
+    <h1>Once it starts spinning,<br><span class="gradient">it never stops.</span></h1>
+    <p>Amazon built a flywheel for growth. We built one for team productivity. Every cycle makes your team faster, smarter, and harder to compete with.</p>
+    <div class="cta-group">
+      <a href="#cta" class="cta-primary">See It In Action</a>
+      <a href="#flywheel" class="cta-secondary">How It Works</a>
+    </div>
+  </div>
+</section>
+
+<section class="stats-bar">
+  <div class="container">
+    <div class="stats-grid">
+      <div><div class="stat-num">47K+</div><div class="stat-label">Workers coached</div></div>
+      <div><div class="stat-num">23%</div><div class="stat-label">Avg productivity gain</div></div>
+      <div><div class="stat-num">4.2x</div><div class="stat-label">ROI in 90 days</div></div>
+      <div><div class="stat-num">92%</div><div class="stat-label">Team adoption rate</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="flywheel-section" id="flywheel">
+  <div class="container">
+    <div class="section-label">The Flywheel Effect</div>
+    <div class="section-title">Four stages. Infinite momentum.</div>
+    <div class="section-desc">Each revolution feeds the next. The more your team uses Go2, the smarter it gets, the more value it delivers, the more your team uses it.</div>
+
+    <div class="flywheel-visual">
+      <div class="flywheel-ring">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="flywheel-center">G2</div>
+        <div class="fw-node">&#128270;</div>
+        <div class="fw-node">&#9889;</div>
+        <div class="fw-node">&#128200;</div>
+        <div class="fw-node">&#128202;</div>
+      </div>
+
+      <div>
+        <ul class="flywheel-steps">
+          <li>
+            <div class="step-num">01</div>
+            <div class="step-content">
+              <h3>Insight</h3>
+              <p>AI observes work patterns and surfaces blind spots no manager could catch across 10, 50, or 100 people.</p>
+            </div>
+          </li>
+          <li>
+            <div class="step-num">02</div>
+            <div class="step-content">
+              <h3>Action</h3>
+              <p>Personalized coaching nudges each worker toward better habits, focus blocks, and collaboration patterns.</p>
+            </div>
+          </li>
+          <li>
+            <div class="step-num">03</div>
+            <div class="step-content">
+              <h3>Improvement</h3>
+              <p>Productivity climbs. Not through surveillance or pressure, but through genuine skill development and awareness.</p>
+            </div>
+          </li>
+          <li>
+            <div class="step-num">04</div>
+            <div class="step-content">
+              <h3>More Data</h3>
+              <p>Better work creates richer patterns. The AI learns what works for each person, each role, each team structure.</p>
+            </div>
+          </li>
+        </ul>
+        <div class="step-arrow">&#x21BB; CYCLE REPEATS &mdash; EACH REVOLUTION STRONGER THAN THE LAST</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="compound-section">
+  <div class="container">
+    <div class="section-label">Compounding Returns</div>
+    <div class="section-title">Why the flywheel beats one-time fixes</div>
+    <div class="compound-grid">
+      <div class="compound-card">
+        <div class="card-icon">&#128736;</div>
+        <h3>Training fades. Flywheels compound.</h3>
+        <p>A workshop gives a 2-week bump. Go2 delivers continuous, adaptive coaching that builds on itself month over month.</p>
+      </div>
+      <div class="compound-card">
+        <div class="card-icon">&#127919;</div>
+        <h3>Generic vs. personal</h3>
+        <p>Every worker gets coaching tuned to their patterns. The night owl isn't told to wake up at 5am. The deep worker isn't told to check Slack more.</p>
+      </div>
+      <div class="compound-card">
+        <div class="card-icon">&#128640;</div>
+        <h3>Month 1 is the weakest month</h3>
+        <p>Most tools peak on day one. Go2 gets better every week as it learns your team's rhythms, blockers, and strengths.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="momentum">
+  <div class="container">
+    <div class="section-label">Momentum Over Time</div>
+    <div class="section-title">Each month adds velocity</div>
+    <div class="momentum-bar">
+      <div class="seg seg-1">M1</div>
+      <div class="seg seg-2">M2</div>
+      <div class="seg seg-3">M3</div>
+      <div class="seg seg-4">M6</div>
+      <div class="seg seg-5">M12</div>
+    </div>
+    <div class="momentum-labels">
+      <span>+8% avg gain</span>
+      <span>+12%</span>
+      <span>+17%</span>
+      <span>+23%</span>
+      <span>+31% avg gain</span>
+    </div>
+  </div>
+</section>
+
+<section class="final-cta" id="cta">
+  <div class="container">
+    <h2>Start spinning<br><span class="gradient">your flywheel.</span></h2>
+    <p>The best time to start was six months ago. The second best time is a 15-minute demo today.</p>
+    <div class="cta-group">
+      <a href="#" class="cta-primary">Book a Demo</a>
+      <a href="#" class="cta-secondary">See It In Action</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">&copy; 2026 Go2. AI productivity coaching for teams of 10&ndash;100.</div>
+</footer>
+
+</body>
+</html>

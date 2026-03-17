@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Operations Briefing</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0C1117;
+    --surface: #131A22;
+    --surface2: #1A2332;
+    --border: #243044;
+    --accent: #00E5A0;
+    --accent-dim: rgba(0,229,160,0.1);
+    --red: #FF3B5C;
+    --red-dim: rgba(255,59,92,0.1);
+    --amber: #FFB020;
+    --amber-dim: rgba(255,176,32,0.1);
+    --text: #C8D6E5;
+    --text-bright: #F0F4F8;
+    --muted: #5A6E82;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+
+  /* Scanline effect */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* Nav */
+  nav {
+    position: fixed;
+    top: 0; width: 100%; z-index: 100;
+    padding: 0.75rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(12,17,23,0.95);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+  }
+
+  .nav-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .logo {
+    font-family: var(--mono);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+    text-decoration: none;
+    letter-spacing: 2px;
+  }
+
+  .classification {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--red);
+    background: var(--red-dim);
+    padding: 0.25rem 0.75rem;
+    border-radius: 3px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border: 1px solid rgba(255,59,92,0.2);
+    animation: blink-border 3s ease-in-out infinite;
+  }
+
+  @keyframes blink-border {
+    0%, 100% { border-color: rgba(255,59,92,0.2); }
+    50% { border-color: rgba(255,59,92,0.6); }
+  }
+
+  .nav-cta {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: var(--accent);
+    color: var(--bg);
+    padding: 0.5rem 1.25rem;
+    border-radius: 4px;
+    text-decoration: none;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+  }
+
+  .nav-cta:hover {
+    box-shadow: 0 0 20px rgba(0,229,160,0.3);
+  }
+
+  /* Hero Briefing */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 7rem 2rem 4rem;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .briefing-header {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    animation: slideUp 0.8s ease;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .briefing-top-bar {
+    background: var(--surface);
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .briefing-meta {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .briefing-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0,229,160,0.4); }
+    50% { box-shadow: 0 0 0 6px rgba(0,229,160,0); }
+  }
+
+  .briefing-body {
+    padding: 3rem 2.5rem;
+    background: var(--surface);
+  }
+
+  .briefing-title {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 1rem;
+  }
+
+  .briefing-body h1 {
+    font-size: clamp(2rem, 4.5vw, 3.5rem);
+    font-weight: 700;
+    color: var(--text-bright);
+    line-height: 1.15;
+    margin-bottom: 2rem;
+    letter-spacing: -1px;
+  }
+
+  .briefing-body h1 .hl { color: var(--accent); }
+
+  .briefing-summary {
+    font-size: 1.05rem;
+    color: var(--text);
+    max-width: 650px;
+    line-height: 1.8;
+    margin-bottom: 2.5rem;
+  }
+
+  .briefing-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-brief {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.85rem 2rem;
+    border-radius: 6px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: none;
+  }
+
+  .btn-brief.primary {
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  .btn-brief.primary:hover {
+    box-shadow: 0 4px 25px rgba(0,229,160,0.25);
+    transform: translateY(-1px);
+  }
+
+  .btn-brief.secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-brief.secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Intelligence Cards */
+  .intel-section {
+    padding: 4rem 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 2rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .intel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .intel-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2rem;
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .intel-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 30px rgba(0,229,160,0.05);
+  }
+
+  .intel-card .severity {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    padding: 0.2rem 0.6rem;
+    border-radius: 3px;
+    display: inline-block;
+    margin-bottom: 1rem;
+  }
+
+  .severity.critical { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,59,92,0.2); }
+  .severity.warning { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,176,32,0.2); }
+  .severity.info { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(0,229,160,0.2); }
+
+  .intel-card h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-bright);
+    margin-bottom: 0.75rem;
+  }
+
+  .intel-card p {
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .intel-stat {
+    font-family: var(--mono);
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 1rem 0 0.25rem;
+  }
+
+  .intel-stat-label {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* Ops Report */
+  .ops-section {
+    padding: 4rem 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .ops-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .ops-table thead {
+    background: var(--surface2);
+  }
+
+  .ops-table th {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    padding: 1rem 1.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ops-table td {
+    padding: 1rem 1.5rem;
+    font-size: 0.9rem;
+    color: var(--text);
+    border-bottom: 1px solid rgba(36,48,68,0.5);
+  }
+
+  .ops-table tr:last-child td { border-bottom: none; }
+
+  .ops-table tr:hover td {
+    background: rgba(0,229,160,0.02);
+  }
+
+  .tag {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .tag-active { background: var(--accent-dim); color: var(--accent); }
+  .tag-risk { background: var(--red-dim); color: var(--red); }
+  .tag-monitoring { background: var(--amber-dim); color: var(--amber); }
+
+  /* How It Deploys */
+  .deploy-section {
+    padding: 4rem 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .deploy-steps {
+    display: grid;
+    gap: 1px;
+    background: var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .deploy-step {
+    background: var(--surface);
+    padding: 2rem 2.5rem;
+    display: grid;
+    grid-template-columns: 60px 1fr auto;
+    align-items: center;
+    gap: 2rem;
+    transition: background 0.3s ease;
+  }
+
+  .deploy-step:hover {
+    background: var(--surface2);
+  }
+
+  .step-num {
+    font-family: var(--mono);
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--accent);
+    opacity: 0.5;
+  }
+
+  .step-content h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-bright);
+    margin-bottom: 0.25rem;
+  }
+
+  .step-content p {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .step-time {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* Integration Matrix */
+  .matrix-section {
+    padding: 4rem 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .matrix-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .matrix-item {
+    background: var(--surface);
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.3s ease;
+  }
+
+  .matrix-item:hover {
+    background: var(--surface2);
+  }
+
+  .matrix-dot {
+    width: 10px; height: 10px;
+    background: var(--accent);
+    border-radius: 50%;
+    min-width: 10px;
+  }
+
+  .matrix-item span {
+    font-size: 0.9rem;
+    color: var(--text);
+  }
+
+  /* Pricing */
+  .pricing-section {
+    padding: 4rem 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .pricing-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
+
+  .price-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2.5rem 2rem;
+    transition: all 0.4s ease;
+  }
+
+  .price-card.hl {
+    border-color: var(--accent);
+    box-shadow: 0 0 40px rgba(0,229,160,0.08);
+  }
+
+  .price-tier {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  .price-val {
+    font-family: var(--mono);
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-bright);
+    margin-bottom: 0.25rem;
+  }
+
+  .price-unit {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+  }
+
+  .price-features {
+    list-style: none;
+    margin-bottom: 2rem;
+  }
+
+  .price-features li {
+    padding: 0.4rem 0;
+    font-size: 0.85rem;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .price-features li::before {
+    content: '>';
+    font-family: var(--mono);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.8rem;
+  }
+
+  /* Final CTA */
+  .final-section {
+    padding: 6rem 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .final-card {
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 4rem 3rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .final-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+
+  .final-card h2 {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: var(--text-bright);
+    margin-bottom: 1rem;
+    letter-spacing: -0.5px;
+  }
+
+  .final-card p {
+    font-size: 1rem;
+    color: var(--muted);
+    max-width: 500px;
+    margin: 0 auto 2.5rem;
+    line-height: 1.8;
+  }
+
+  .terminal-prompt {
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-top: 2rem;
+  }
+
+  .terminal-prompt .cmd { color: var(--accent); }
+
+  /* Footer */
+  footer {
+    padding: 2.5rem 2rem;
+    border-top: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .footer-text {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .pricing-row { grid-template-columns: 1fr; }
+    .deploy-step { grid-template-columns: 40px 1fr; }
+    .step-time { display: none; }
+    .ops-table { font-size: 0.8rem; }
+    .ops-table th, .ops-table td { padding: 0.75rem; }
+    .briefing-body { padding: 2rem 1.5rem; }
+    nav { padding: 0.75rem 1rem; }
+  }
+
+  /* Animations */
+  .anim {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .anim.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Typing effect for hero */
+  .typing::after {
+    content: '_';
+    animation: cursor-blink 1s step-end infinite;
+    color: var(--accent);
+  }
+
+  @keyframes cursor-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+    <a href="#" class="logo">GO2</a>
+    <span class="classification">Operations Intelligence</span>
+  </div>
+  <a href="#cta" class="nav-cta">REQUEST BRIEFING</a>
+</nav>
+
+<section class="hero">
+  <div class="briefing-header">
+    <div class="briefing-top-bar">
+      <span class="briefing-meta">Briefing ID: GO2-2026-0317 &bull; Generated: 2026-03-17</span>
+      <div class="briefing-status">
+        <span class="status-dot"></span>
+        LIVE ANALYSIS
+      </div>
+    </div>
+    <div class="briefing-body">
+      <div class="briefing-title">Subject: Operational Intelligence Assessment</div>
+      <h1>Your company is leaking <span class="hl">23% of its productivity</span> through invisible friction<span class="typing"></span></h1>
+      <p class="briefing-summary">This briefing contains intelligence gathered from analyzing 47,000+ knowledge workers across industries. The patterns are consistent. The waste is measurable. And most companies don't know it's happening.</p>
+      <div class="briefing-actions">
+        <a href="#cta" class="btn-brief primary">See It In Action &rarr;</a>
+        <a href="#intel" class="btn-brief secondary">Read Full Briefing</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="intel-section" id="intel">
+  <div class="section-label anim">Intelligence Summary</div>
+  <div class="intel-grid">
+    <div class="intel-card anim">
+      <span class="severity critical">Critical Finding</span>
+      <h3>Meeting Overload</h3>
+      <p>Average knowledge worker spends 31 hours/month in meetings that could be async. Go2 identifies which ones and suggests alternatives.</p>
+      <div class="intel-stat">31h</div>
+      <div class="intel-stat-label">Wasted per month per worker</div>
+    </div>
+    <div class="intel-card anim">
+      <span class="severity critical">Critical Finding</span>
+      <h3>Process Black Holes</h3>
+      <p>67% of operational processes exist only in employees' heads. When they leave, the knowledge walks out the door.</p>
+      <div class="intel-stat">67%</div>
+      <div class="intel-stat-label">Undocumented processes</div>
+    </div>
+    <div class="intel-card anim">
+      <span class="severity warning">Warning</span>
+      <h3>Manual Task Debt</h3>
+      <p>Teams repeat the same manual tasks 40+ times before anyone considers automating them. Go2 flags these after the third occurrence.</p>
+      <div class="intel-stat">6h</div>
+      <div class="intel-stat-label">Saved weekly per person</div>
+    </div>
+    <div class="intel-card anim">
+      <span class="severity info">Opportunity</span>
+      <h3>Collaboration Gaps</h3>
+      <p>Communication between departments drops 80% after Q1 planning. Go2 maintains cross-functional visibility year-round.</p>
+      <div class="intel-stat">80%</div>
+      <div class="intel-stat-label">Inter-dept comms drop</div>
+    </div>
+    <div class="intel-card anim">
+      <span class="severity info">Opportunity</span>
+      <h3>Onboarding Drag</h3>
+      <p>New hires take 4.2 months to reach full productivity. Go2's auto-documentation cuts this to under 6 weeks.</p>
+      <div class="intel-stat">4.2mo</div>
+      <div class="intel-stat-label">Avg ramp-up time</div>
+    </div>
+    <div class="intel-card anim">
+      <span class="severity warning">Warning</span>
+      <h3>Context Switching</h3>
+      <p>Engineers lose 23 minutes refocusing after each interruption. Average of 6.3 context switches per day. That's 2.4 hours lost daily.</p>
+      <div class="intel-stat">2.4h</div>
+      <div class="intel-stat-label">Lost daily to switching</div>
+    </div>
+  </div>
+</section>
+
+<section class="ops-section anim">
+  <div class="section-label">Threat Assessment: Competitors Using Surveillance</div>
+  <table class="ops-table">
+    <thead>
+      <tr>
+        <th>Platform</th>
+        <th>Method</th>
+        <th>Employee Trust</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Hubstaff</td>
+        <td>Time tracking, screenshots, GPS</td>
+        <td>Low &mdash; perceived as surveillance</td>
+        <td><span class="tag tag-risk">ADVERSARIAL</span></td>
+      </tr>
+      <tr>
+        <td>Time Doctor</td>
+        <td>Screenshots, webcam, keystroke monitoring</td>
+        <td>Very Low &mdash; drives attrition</td>
+        <td><span class="tag tag-risk">ADVERSARIAL</span></td>
+      </tr>
+      <tr>
+        <td>Teramind</td>
+        <td>Full screen recording, email scanning</td>
+        <td>Hostile &mdash; legal liability</td>
+        <td><span class="tag tag-risk">ADVERSARIAL</span></td>
+      </tr>
+      <tr>
+        <td><strong>Go2</strong></td>
+        <td>Workflow analysis, AI coaching</td>
+        <td>High &mdash; employees request expansion</td>
+        <td><span class="tag tag-active">COLLABORATIVE</span></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="deploy-section anim">
+  <div class="section-label">Deployment Protocol</div>
+  <div class="deploy-steps">
+    <div class="deploy-step">
+      <div class="step-num">01</div>
+      <div class="step-content">
+        <h3>Integration Authorization</h3>
+        <p>Connect Slack, Teams, Google Workspace, Zoom via OAuth. Read-only access to workflow patterns.</p>
+      </div>
+      <div class="step-time">T+0h</div>
+    </div>
+    <div class="deploy-step">
+      <div class="step-num">02</div>
+      <div class="step-content">
+        <h3>Baseline Scan</h3>
+        <p>Go2 AI analyzes current workflows, communication patterns, and process documentation gaps.</p>
+      </div>
+      <div class="step-time">T+4h</div>
+    </div>
+    <div class="deploy-step">
+      <div class="step-num">03</div>
+      <div class="step-content">
+        <h3>Initial Briefing Delivered</h3>
+        <p>First operations intelligence report: bottlenecks identified, automation candidates flagged, coaching begun.</p>
+      </div>
+      <div class="step-time">T+24h</div>
+    </div>
+    <div class="deploy-step">
+      <div class="step-num">04</div>
+      <div class="step-content">
+        <h3>Continuous Coaching Active</h3>
+        <p>AI coaching nudges deployed in-flow via Slack/Teams. Process documentation auto-generated.</p>
+      </div>
+      <div class="step-time">T+48h</div>
+    </div>
+    <div class="deploy-step">
+      <div class="step-num">05</div>
+      <div class="step-content">
+        <h3>Impact Assessment</h3>
+        <p>Day 30 review: measured productivity gains, documented processes, automation savings quantified.</p>
+      </div>
+      <div class="step-time">T+30d</div>
+    </div>
+  </div>
+</section>
+
+<section class="matrix-section anim">
+  <div class="section-label">Integration Matrix</div>
+  <div class="matrix-grid">
+    <div class="matrix-item"><div class="matrix-dot"></div><span>Slack</span></div>
+    <div class="matrix-item"><div class="matrix-dot"></div><span>Microsoft Teams</span></div>
+    <div class="matrix-item"><div class="matrix-dot"></div><span>Google Workspace</span></div>
+    <div class="matrix-item"><div class="matrix-dot"></div><span>Zoom</span></div>
+    <div class="matrix-item"><div class="matrix-dot"></div><span>Jira</span></div>
+    <div class="matrix-item"><div class="matrix-dot"></div><span>Asana</span></div>
+    <div class="matrix-item"><div class="matrix-dot"></div><span>Linear</span></div>
+    <div class="matrix-item"><div class="matrix-dot"></div><span>Notion</span></div>
+    <div class="matrix-item"><div class="matrix-dot"></div><span>GitHub</span></div>
+    <div class="matrix-item"><div class="matrix-dot"></div><span>Salesforce</span></div>
+    <div class="matrix-item"><div class="matrix-dot"></div><span>HubSpot</span></div>
+    <div class="matrix-item"><div class="matrix-dot"></div><span>Confluence</span></div>
+  </div>
+</section>
+
+<section class="pricing-section anim">
+  <div class="section-label">Resource Allocation (Pricing)</div>
+  <div class="pricing-row">
+    <div class="price-card">
+      <div class="price-tier">Recon</div>
+      <div class="price-val">$8</div>
+      <div class="price-unit">/user/month</div>
+      <ul class="price-features">
+        <li>Workflow analysis</li>
+        <li>Basic coaching</li>
+        <li>2 integrations</li>
+        <li>Team dashboard</li>
+      </ul>
+      <a href="#cta" class="btn-brief secondary" style="width:100%;justify-content:center;">Deploy</a>
+    </div>
+    <div class="price-card hl">
+      <div class="price-tier" style="color:var(--accent);">Full Ops</div>
+      <div class="price-val">$18</div>
+      <div class="price-unit">/user/month</div>
+      <ul class="price-features">
+        <li>Everything in Recon</li>
+        <li>Automation discovery</li>
+        <li>Process documentation</li>
+        <li>Unlimited integrations</li>
+        <li>Priority intelligence</li>
+      </ul>
+      <a href="#cta" class="btn-brief primary" style="width:100%;justify-content:center;">Deploy</a>
+    </div>
+    <div class="price-card">
+      <div class="price-tier">Command</div>
+      <div class="price-val">$29</div>
+      <div class="price-unit">/user/month</div>
+      <ul class="price-features">
+        <li>Everything in Full Ops</li>
+        <li>Custom integrations</li>
+        <li>SSO / SAML</li>
+        <li>Dedicated analyst</li>
+        <li>SLA guarantee</li>
+      </ul>
+      <a href="#cta" class="btn-brief secondary" style="width:100%;justify-content:center;">Contact Command</a>
+    </div>
+  </div>
+</section>
+
+<section class="final-section" id="cta">
+  <div class="final-card anim">
+    <h2>Request your operations briefing.</h2>
+    <p>Every day without intelligence is a day your competitors know more about their operations than you do. 47,000+ workers are already being coached.</p>
+    <a href="#" class="btn-brief primary" style="font-size:1rem;padding:1rem 3rem;">Book a Demo &rarr;</a>
+    <div class="terminal-prompt">
+      <span class="cmd">$</span> go2 deploy --team-size 50 --guarantee 30d
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p class="footer-text">&copy; 2026 GO2 OPERATIONS INTELLIGENCE &bull; CLASSIFIED: FOR AUTHORIZED LEADERSHIP ONLY</p>
+</footer>
+
+<script>
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('show'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.anim').forEach(el => obs.observe(el));
+</script>
+
+</body>
+</html>

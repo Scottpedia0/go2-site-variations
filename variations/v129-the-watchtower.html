@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The Watchtower</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Inter', sans-serif; background: #09090b; color: #e4e4e7; overflow-x: hidden; }
+
+/* Grid overlay */
+.grid-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(39, 39, 42, 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(39, 39, 42, 0.3) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black, transparent);
+}
+/* Glow */
+.glow-top {
+  position: fixed; top: -200px; left: 50%; transform: translateX(-50%);
+  width: 1000px; height: 600px; border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(234, 179, 8, 0.06), transparent 70%);
+  z-index: 0; pointer-events: none;
+}
+
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  padding: 16px 0;
+  background: rgba(9, 9, 11, 0.85); backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+nav .container { display: flex; justify-content: space-between; align-items: center; }
+.logo { font-size: 22px; font-weight: 800; color: #fff; text-decoration: none; letter-spacing: -0.5px; }
+.logo span { color: #eab308; }
+.nav-right { display: flex; align-items: center; gap: 24px; }
+.nav-right a.link { font-size: 13px; color: #71717a; text-decoration: none; font-weight: 500; transition: color 0.2s; }
+.nav-right a.link:hover { color: #fff; }
+.btn-gold {
+  padding: 10px 24px; border-radius: 6px; font-size: 13px; font-weight: 600;
+  background: #eab308; color: #09090b; text-decoration: none; transition: all 0.3s;
+  letter-spacing: -0.2px;
+}
+.btn-gold:hover { background: #facc15; }
+
+/* Hero */
+.hero {
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 140px 24px 100px; position: relative;
+}
+.hero-overline {
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 500;
+  color: #eab308; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 28px;
+  display: flex; align-items: center; gap: 12px;
+}
+.hero-overline::before, .hero-overline::after {
+  content: ''; width: 40px; height: 1px; background: rgba(234, 179, 8, 0.3);
+}
+h1 {
+  font-size: clamp(48px, 7vw, 88px); font-weight: 900; line-height: 0.95;
+  letter-spacing: -3px; margin-bottom: 28px; color: #fff;
+}
+.hero-sub {
+  font-size: 19px; color: #71717a; line-height: 1.6; max-width: 560px; margin: 0 auto 48px;
+}
+.hero-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn-primary-lg {
+  padding: 18px 40px; border-radius: 8px; font-size: 15px; font-weight: 700;
+  background: #eab308; color: #09090b; text-decoration: none; border: none; cursor: pointer;
+  transition: all 0.3s; letter-spacing: -0.3px;
+}
+.btn-primary-lg:hover { background: #facc15; transform: translateY(-2px); box-shadow: 0 8px 32px rgba(234, 179, 8, 0.2); }
+.btn-ghost {
+  padding: 18px 40px; border-radius: 8px; font-size: 15px; font-weight: 600;
+  background: transparent; color: #a1a1aa; text-decoration: none;
+  border: 1px solid rgba(255,255,255,0.08); transition: all 0.3s;
+}
+.btn-ghost:hover { border-color: rgba(255,255,255,0.2); color: #fff; }
+
+/* Dashboard preview */
+.dashboard-preview {
+  margin-top: 80px; width: 100%; max-width: 1000px;
+  background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px; overflow: hidden;
+}
+.dash-header {
+  padding: 16px 24px; display: flex; align-items: center; gap: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.04); background: rgba(255,255,255,0.02);
+}
+.dot { width: 10px; height: 10px; border-radius: 50%; }
+.dot-r { background: #ef4444; } .dot-y { background: #eab308; } .dot-g { background: #22c55e; }
+.dash-body { padding: 32px; }
+.dash-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.dash-metric {
+  padding: 20px; border-radius: 10px; background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.dm-label { font-size: 11px; color: #52525b; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 8px; }
+.dm-value { font-size: 28px; font-weight: 800; color: #fff; letter-spacing: -1px; }
+.dm-change { font-size: 12px; margin-top: 4px; font-weight: 600; }
+.dm-up { color: #22c55e; } .dm-neutral { color: #71717a; }
+
+/* Activity bars */
+.activity-section { margin-top: 8px; }
+.act-label { font-size: 11px; color: #52525b; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 12px; }
+.act-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.act-name { width: 100px; font-size: 12px; color: #71717a; font-family: 'JetBrains Mono', monospace; text-align: right; }
+.act-bar-track { flex: 1; height: 24px; background: rgba(255,255,255,0.03); border-radius: 4px; overflow: hidden; }
+.act-bar-fill { height: 100%; border-radius: 4px; }
+.act-val { width: 40px; font-size: 12px; color: #a1a1aa; font-family: 'JetBrains Mono', monospace; }
+
+@media (max-width: 768px) { .dash-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .dash-grid { grid-template-columns: 1fr; } }
+
+/* Command section */
+.command-section { padding: 120px 0; }
+.cmd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+.cmd-text .overline {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500;
+  color: #eab308; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px;
+}
+.cmd-text h2 { font-size: clamp(28px, 4vw, 44px); font-weight: 800; letter-spacing: -1.5px; margin-bottom: 20px; color: #fff; line-height: 1.1; }
+.cmd-text p { font-size: 16px; color: #71717a; line-height: 1.7; margin-bottom: 16px; }
+
+/* Feature list */
+.feat-list { list-style: none; margin-top: 32px; }
+.feat-list li {
+  padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+  display: flex; gap: 16px; align-items: flex-start;
+}
+.feat-icon {
+  width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+  background: rgba(234, 179, 8, 0.08); border: 1px solid rgba(234, 179, 8, 0.15);
+  display: flex; align-items: center; justify-content: center; font-size: 16px;
+}
+.feat-list h4 { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+.feat-list p { font-size: 13px; color: #52525b; line-height: 1.5; }
+
+/* Terminal card */
+.terminal {
+  background: #18181b; border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px; overflow: hidden; font-family: 'JetBrains Mono', monospace;
+}
+.terminal-bar {
+  padding: 12px 16px; background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  display: flex; align-items: center; gap: 8px;
+}
+.terminal-bar .dots { display: flex; gap: 6px; }
+.terminal-bar .title { font-size: 11px; color: #52525b; margin-left: 12px; }
+.terminal-body { padding: 20px; font-size: 13px; line-height: 2; }
+.terminal-body .prompt { color: #eab308; }
+.terminal-body .cmd { color: #e4e4e7; }
+.terminal-body .output { color: #52525b; }
+.terminal-body .success { color: #22c55e; }
+.terminal-body .highlight { color: #eab308; }
+
+@media (max-width: 900px) { .cmd-grid { grid-template-columns: 1fr; } }
+
+/* Capabilities */
+.cap-section { padding: 80px 0 120px; }
+.cap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; margin-top: 56px; }
+.cap-card {
+  padding: 48px 36px; background: rgba(255,255,255,0.015);
+  border: 1px solid rgba(255,255,255,0.04);
+  transition: all 0.4s;
+}
+.cap-card:hover { background: rgba(234, 179, 8, 0.03); border-color: rgba(234, 179, 8, 0.1); }
+.cap-card .num {
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #eab308;
+  margin-bottom: 20px; font-weight: 600;
+}
+.cap-card h3 { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 12px; }
+.cap-card p { font-size: 14px; color: #52525b; line-height: 1.6; }
+@media (max-width: 768px) { .cap-grid { grid-template-columns: 1fr; } }
+
+/* Stats section */
+.stats-section {
+  padding: 80px 0; border-top: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; text-align: center; }
+.stat-big {
+  font-size: 56px; font-weight: 900; letter-spacing: -2px;
+  background: linear-gradient(135deg, #eab308, #fbbf24);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.stat-sub { font-size: 13px; color: #52525b; margin-top: 4px; font-weight: 500; }
+@media (max-width: 640px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+
+/* Final CTA */
+.final-cta { padding: 140px 0; text-align: center; }
+.final-cta h2 {
+  font-size: clamp(36px, 5vw, 60px); font-weight: 900; letter-spacing: -2px;
+  color: #fff; margin-bottom: 20px; line-height: 1.05;
+}
+.final-cta .gold { color: #eab308; }
+.final-cta p { font-size: 17px; color: #52525b; max-width: 480px; margin: 0 auto 40px; }
+
+footer {
+  padding: 40px 0; border-top: 1px solid rgba(255,255,255,0.04);
+  text-align: center; font-size: 12px; color: #3f3f46;
+  font-family: 'JetBrains Mono', monospace;
+}
+</style>
+</head>
+<body>
+
+<div class="grid-overlay"></div>
+<div class="glow-top"></div>
+
+<nav>
+  <div class="container">
+    <a href="#" class="logo">go<span>2</span></a>
+    <div class="nav-right">
+      <a href="#capabilities" class="link">Capabilities</a>
+      <a href="#cta" class="btn-gold">Book a Demo</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-overline">Strategic Operations Intelligence</div>
+  <h1>The<br>Watchtower.</h1>
+  <p class="hero-sub">See your entire operation from above. Go2 gives leaders a commanding view of team productivity, patterns, and opportunities &mdash; powered by AI that coaches, not surveils.</p>
+  <div class="hero-cta">
+    <a href="#cta" class="btn-primary-lg">See It In Action</a>
+    <a href="#capabilities" class="btn-ghost">Explore</a>
+  </div>
+
+  <div class="dashboard-preview">
+    <div class="dash-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <span style="font-size:12px;color:#3f3f46;font-family:'JetBrains Mono',monospace;margin-left:12px;">go2 &mdash; operations overview</span>
+    </div>
+    <div class="dash-body">
+      <div class="dash-grid">
+        <div class="dash-metric">
+          <div class="dm-label">Active Workers</div>
+          <div class="dm-value">47</div>
+          <div class="dm-change dm-up">&#9650; all online</div>
+        </div>
+        <div class="dash-metric">
+          <div class="dm-label">Productivity Index</div>
+          <div class="dm-value">87.3</div>
+          <div class="dm-change dm-up">&#9650; +4.2 this week</div>
+        </div>
+        <div class="dash-metric">
+          <div class="dm-label">Focus Hours Today</div>
+          <div class="dm-value">182</div>
+          <div class="dm-change dm-up">&#9650; +23% vs avg</div>
+        </div>
+        <div class="dash-metric">
+          <div class="dm-label">Coaching Sessions</div>
+          <div class="dm-value">34</div>
+          <div class="dm-change dm-neutral">today</div>
+        </div>
+      </div>
+      <div class="activity-section">
+        <div class="act-label">Team Performance Distribution</div>
+        <div class="act-row">
+          <div class="act-name">Engineering</div>
+          <div class="act-bar-track"><div class="act-bar-fill" style="width:92%;background:linear-gradient(90deg,#eab308,#facc15);"></div></div>
+          <div class="act-val">92%</div>
+        </div>
+        <div class="act-row">
+          <div class="act-name">Sales</div>
+          <div class="act-bar-track"><div class="act-bar-fill" style="width:84%;background:linear-gradient(90deg,#eab308,#facc15);opacity:0.85;"></div></div>
+          <div class="act-val">84%</div>
+        </div>
+        <div class="act-row">
+          <div class="act-name">Marketing</div>
+          <div class="act-bar-track"><div class="act-bar-fill" style="width:78%;background:linear-gradient(90deg,#eab308,#facc15);opacity:0.7;"></div></div>
+          <div class="act-val">78%</div>
+        </div>
+        <div class="act-row">
+          <div class="act-name">Operations</div>
+          <div class="act-bar-track"><div class="act-bar-fill" style="width:88%;background:linear-gradient(90deg,#eab308,#facc15);opacity:0.9;"></div></div>
+          <div class="act-val">88%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stats-section">
+  <div class="container">
+    <div class="stats-row">
+      <div><div class="stat-big">47K+</div><div class="stat-sub">workers coached</div></div>
+      <div><div class="stat-big">23%</div><div class="stat-sub">avg productivity gain</div></div>
+      <div><div class="stat-big">92%</div><div class="stat-sub">team adoption</div></div>
+      <div><div class="stat-big">4.2x</div><div class="stat-sub">ROI in 90 days</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="command-section">
+  <div class="container">
+    <div class="cmd-grid">
+      <div class="cmd-text">
+        <div class="overline">Strategic Visibility</div>
+        <h2>Command your operation without micromanaging it.</h2>
+        <p>The Watchtower gives you the altitude to see patterns no one else can. Which teams are thriving? Where are the bottlenecks? What's about to become a problem?</p>
+        <p>Go2 answers these before you ask.</p>
+        <ul class="feat-list">
+          <li>
+            <div class="feat-icon">&#128065;</div>
+            <div><h4>Pattern Recognition</h4><p>AI surfaces trends across your entire org in real time.</p></div>
+          </li>
+          <li>
+            <div class="feat-icon">&#9889;</div>
+            <div><h4>Proactive Alerts</h4><p>Know about friction before it becomes a fire.</p></div>
+          </li>
+          <li>
+            <div class="feat-icon">&#127919;</div>
+            <div><h4>Team Coaching</h4><p>Every worker gets a personal AI coach. You get the overview.</p></div>
+          </li>
+        </ul>
+      </div>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+          <div class="title">go2 intelligence feed</div>
+        </div>
+        <div class="terminal-body">
+          <div><span class="prompt">go2</span> <span class="cmd">analyze --team=engineering --period=7d</span></div>
+          <div><span class="output">Scanning 18 engineers across 4 squads...</span></div>
+          <div>&nbsp;</div>
+          <div><span class="success">&#10003;</span> <span class="highlight">Focus time up 31%</span> <span class="output">after meeting audit</span></div>
+          <div><span class="success">&#10003;</span> <span class="highlight">3 burnout risks</span> <span class="output">flagged &amp; coaching deployed</span></div>
+          <div><span class="success">&#10003;</span> <span class="highlight">Squad B</span> <span class="output">context-switching 2.4x more than avg</span></div>
+          <div><span class="success">&#10003;</span> <span class="highlight">Recommendation:</span> <span class="output">reduce standup frequency for Squad A</span></div>
+          <div>&nbsp;</div>
+          <div><span class="prompt">go2</span> <span class="cmd">deploy --coaching=squad-b --focus=context-switching</span></div>
+          <div><span class="success">&#10003; Coaching deployed to 5 engineers</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cap-section" id="capabilities">
+  <div class="container">
+    <div style="text-align:center;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#eab308;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;">Capabilities</div>
+      <h2 style="font-size:clamp(28px,4vw,44px);font-weight:800;letter-spacing:-1.5px;color:#fff;">Six pillars of operational intelligence</h2>
+    </div>
+    <div class="cap-grid">
+      <div class="cap-card">
+        <div class="num">01</div>
+        <h3>Real-Time Pulse</h3>
+        <p>Live view of team energy, focus, and output. Not surveillance &mdash; intelligence.</p>
+      </div>
+      <div class="cap-card">
+        <div class="num">02</div>
+        <h3>AI Coaching Engine</h3>
+        <p>Personalized nudges for every worker based on their unique patterns and strengths.</p>
+      </div>
+      <div class="cap-card">
+        <div class="num">03</div>
+        <h3>Burnout Radar</h3>
+        <p>Detect early warning signs before your best people quietly disengage.</p>
+      </div>
+      <div class="cap-card">
+        <div class="num">04</div>
+        <h3>Focus Analytics</h3>
+        <p>Understand where deep work happens and what interrupts it.</p>
+      </div>
+      <div class="cap-card">
+        <div class="num">05</div>
+        <h3>Team Dynamics</h3>
+        <p>Map collaboration patterns. Find the connectors, the silos, the bottlenecks.</p>
+      </div>
+      <div class="cap-card">
+        <div class="num">06</div>
+        <h3>Trend Forecasting</h3>
+        <p>Predictive insights on productivity trajectories for the quarter ahead.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="final-cta" id="cta">
+  <div class="container">
+    <h2>Rise above the noise.<br>See <span class="gold">everything.</span></h2>
+    <p>Get the strategic vantage point your operation deserves. 15-minute demo, zero obligation.</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <a href="#" class="btn-primary-lg">Book a Demo</a>
+      <a href="#" class="btn-ghost">See It In Action</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">&copy; 2026 go2 // ai productivity coaching // 47,000+ workers coached</div>
+</footer>
+
+</body>
+</html>

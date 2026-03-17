@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Scale Without Losing Your Soul</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0b0e11;
+    --surface: #141820;
+    --surface-2: #1c222d;
+    --text: #f0f2f5;
+    --muted: #8892a4;
+    --electric: #00d4aa;
+    --electric-dim: rgba(0,212,170,0.1);
+    --blue: #4d7cfe;
+    --blue-dim: rgba(77,124,254,0.1);
+    --warn: #ff6b6b;
+    --warn-dim: rgba(255,107,107,0.1);
+    --yellow: #feca57;
+    --yellow-dim: rgba(254,202,87,0.1);
+    --border: rgba(255,255,255,0.06);
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; width: 100%; z-index: 100;
+    padding: 1rem 2.5rem;
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(11,14,17,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .logo {
+    font-family: 'Sora', sans-serif;
+    font-size: 1.4rem; font-weight: 700;
+    color: var(--text); text-decoration: none;
+  }
+  .logo span { color: var(--electric); }
+  .nav-cta {
+    padding: 0.55rem 1.4rem;
+    background: var(--electric); color: var(--bg);
+    font-size: 0.82rem; font-weight: 700;
+    border-radius: 6px; text-decoration: none;
+    transition: all 0.2s;
+  }
+  .nav-cta:hover { box-shadow: 0 0 20px rgba(0,212,170,0.3); }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    text-align: center;
+    padding: 8rem 2rem 4rem;
+    position: relative;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    width: 800px; height: 800px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,212,170,0.04), transparent 60%);
+    top: -200px; left: 50%; transform: translateX(-50%);
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(77,124,254,0.03), transparent 60%);
+    bottom: -100px; right: -100px;
+  }
+  .stage-badge {
+    display: inline-flex; align-items: center; gap: 0.6rem;
+    padding: 0.5rem 1.2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    font-size: 0.75rem; font-weight: 600;
+    color: var(--electric);
+    margin-bottom: 2.5rem;
+    letter-spacing: 0.05em;
+    position: relative;
+  }
+  .stage-badge .dot { width: 6px; height: 6px; background: var(--electric); border-radius: 50%; }
+  .hero h1 {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(2.6rem, 6vw, 5rem);
+    line-height: 1.06;
+    max-width: 800px;
+    margin-bottom: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    position: relative;
+  }
+  .hero h1 em {
+    font-style: normal;
+    color: var(--electric);
+  }
+  .hero > p {
+    font-size: 1.15rem; line-height: 1.7;
+    color: var(--muted);
+    max-width: 540px;
+    margin-bottom: 3rem;
+    position: relative;
+  }
+  .hero-cta {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 1rem 2.4rem;
+    background: var(--electric); color: var(--bg);
+    font-size: 1rem; font-weight: 700;
+    border-radius: 8px; text-decoration: none;
+    transition: all 0.3s;
+    position: relative;
+  }
+  .hero-cta:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(0,212,170,0.2); }
+
+  /* ── GROWTH WALL ── */
+  .growth-wall {
+    padding: 7rem 2rem;
+    position: relative;
+  }
+  .growth-wall-inner { max-width: 1100px; margin: 0 auto; }
+  .section-label {
+    font-size: 0.72rem; font-weight: 700;
+    color: var(--electric); letter-spacing: 0.15em;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+  .growth-wall h2 {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    text-align: center;
+    margin-bottom: 1rem;
+    font-weight: 700; letter-spacing: -0.02em;
+  }
+  .growth-wall .subtitle {
+    text-align: center;
+    color: var(--muted); font-size: 1.05rem;
+    max-width: 600px; margin: 0 auto 4rem;
+  }
+
+  .wall-timeline {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+    position: relative;
+  }
+  .wall-timeline::before {
+    content: '';
+    position: absolute; top: 40px; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--electric), var(--blue), var(--yellow), var(--warn));
+  }
+  .wall-stage {
+    text-align: center;
+    padding: 0 1rem;
+  }
+  .ws-dot {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    margin: 30px auto 1.5rem;
+    position: relative;
+    z-index: 2;
+  }
+  .wall-stage:nth-child(1) .ws-dot { background: var(--electric); box-shadow: 0 0 16px rgba(0,212,170,0.4); }
+  .wall-stage:nth-child(2) .ws-dot { background: var(--blue); box-shadow: 0 0 16px rgba(77,124,254,0.4); }
+  .wall-stage:nth-child(3) .ws-dot { background: var(--yellow); box-shadow: 0 0 16px rgba(254,202,87,0.4); }
+  .wall-stage:nth-child(4) .ws-dot { background: var(--warn); box-shadow: 0 0 16px rgba(255,107,107,0.4); }
+  .ws-count {
+    font-family: 'Sora', sans-serif;
+    font-size: 1.4rem; font-weight: 700;
+    margin-bottom: 0.3rem;
+  }
+  .ws-label { font-size: 0.78rem; color: var(--muted); margin-bottom: 1rem; }
+  .ws-pain {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    font-size: 0.82rem; color: var(--muted); line-height: 1.6;
+  }
+
+  /* ── WHAT BREAKS ── */
+  .what-breaks {
+    padding: 7rem 2rem;
+    background: var(--surface);
+  }
+  .wb-inner { max-width: 1000px; margin: 0 auto; }
+  .what-breaks h2 {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(2rem, 4vw, 2.6rem);
+    text-align: center; margin-bottom: 3.5rem;
+    font-weight: 700;
+  }
+  .wb-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  .wb-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 2rem;
+    transition: border-color 0.3s;
+  }
+  .wb-card:hover { border-color: rgba(0,212,170,0.2); }
+  .wb-num {
+    font-family: 'Sora', sans-serif;
+    font-size: 3rem; font-weight: 800;
+    color: var(--electric);
+    opacity: 0.15;
+    margin-bottom: 0.5rem;
+  }
+  .wb-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.6rem; }
+  .wb-card p { font-size: 0.88rem; color: var(--muted); line-height: 1.7; }
+
+  /* ── HOW GO2 SCALES ── */
+  .how-scales {
+    padding: 7rem 2rem;
+  }
+  .hs-inner { max-width: 1000px; margin: 0 auto; }
+  .how-scales h2 {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(2rem, 4vw, 2.6rem);
+    text-align: center; margin-bottom: 1rem;
+    font-weight: 700;
+  }
+  .how-scales .subtitle { text-align: center; color: var(--muted); font-size: 1rem; margin-bottom: 4rem; }
+  .hs-features {
+    display: flex; flex-direction: column; gap: 1.5rem;
+  }
+  .hs-feature {
+    display: grid; grid-template-columns: 56px 1fr auto; gap: 1.5rem;
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.8rem 2rem;
+    transition: border-color 0.3s;
+  }
+  .hs-feature:hover { border-color: rgba(0,212,170,0.15); }
+  .hs-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+  }
+  .hs-feature:nth-child(1) .hs-icon { background: var(--electric-dim); }
+  .hs-feature:nth-child(2) .hs-icon { background: var(--blue-dim); }
+  .hs-feature:nth-child(3) .hs-icon { background: var(--yellow-dim); }
+  .hs-feature:nth-child(4) .hs-icon { background: var(--warn-dim); }
+  .hs-feature:nth-child(5) .hs-icon { background: var(--electric-dim); }
+  .hs-text h3 { font-size: 1.02rem; font-weight: 700; margin-bottom: 0.3rem; }
+  .hs-text p { font-size: 0.88rem; color: var(--muted); }
+  .hs-stat {
+    font-family: 'Sora', sans-serif;
+    font-size: 1.6rem; font-weight: 700;
+    color: var(--electric);
+    white-space: nowrap;
+  }
+
+  /* ── BEFORE / AFTER ── */
+  .ba-section {
+    padding: 7rem 2rem;
+    background: var(--surface);
+  }
+  .ba-inner { max-width: 900px; margin: 0 auto; }
+  .ba-section h2 {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(2rem, 4vw, 2.6rem);
+    text-align: center; margin-bottom: 3.5rem;
+    font-weight: 700;
+  }
+  .ba-compare {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;
+  }
+  .ba-col {
+    border-radius: 16px;
+    padding: 2.5rem;
+  }
+  .ba-col.before {
+    background: var(--bg);
+    border: 1px solid var(--border);
+  }
+  .ba-col.after {
+    background: var(--electric-dim);
+    border: 1px solid rgba(0,212,170,0.15);
+  }
+  .ba-col h3 {
+    font-family: 'Sora', sans-serif;
+    font-size: 1rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 1.5rem;
+  }
+  .ba-col.before h3 { color: var(--warn); }
+  .ba-col.after h3 { color: var(--electric); }
+  .ba-list { list-style: none; display: flex; flex-direction: column; gap: 1rem; }
+  .ba-list li {
+    font-size: 0.9rem; color: var(--muted); line-height: 1.6;
+    padding-left: 1.5rem; position: relative;
+  }
+  .ba-col.before .ba-list li::before { content: '\2716'; position: absolute; left: 0; color: var(--warn); font-size: 0.8rem; }
+  .ba-col.after .ba-list li::before { content: '\2714'; position: absolute; left: 0; color: var(--electric); font-size: 0.8rem; }
+
+  /* ── SOCIAL PROOF ── */
+  .proof {
+    padding: 6rem 2rem;
+    text-align: center;
+  }
+  .proof-inner { max-width: 800px; margin: 0 auto; }
+  .proof blockquote {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(1.3rem, 2.5vw, 1.8rem);
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+  }
+  .proof cite { font-style: normal; font-size: 0.9rem; color: var(--muted); }
+  .proof cite strong { color: var(--electric); }
+
+  .proof-stats {
+    display: flex; justify-content: center; gap: 4rem;
+    margin-top: 4rem; flex-wrap: wrap;
+  }
+  .ps-item .ps-num {
+    font-family: 'Sora', sans-serif;
+    font-size: 2.4rem; font-weight: 800;
+    color: var(--electric);
+    display: block;
+  }
+  .ps-item .ps-label { font-size: 0.78rem; color: var(--muted); }
+
+  /* ── FINAL CTA ── */
+  .final-cta {
+    padding: 8rem 2rem;
+    text-align: center;
+    position: relative;
+  }
+  .final-cta::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 50% 60% at 50% 50%, rgba(0,212,170,0.04), transparent);
+  }
+  .final-cta h2 {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.4rem);
+    max-width: 700px; margin: 0 auto 1rem;
+    font-weight: 800; letter-spacing: -0.03em;
+    line-height: 1.1;
+    position: relative;
+  }
+  .final-cta p {
+    color: var(--muted); font-size: 1.1rem;
+    max-width: 480px; margin: 0 auto 2.5rem;
+    line-height: 1.7; position: relative;
+  }
+  .final-cta a {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 1.1rem 2.8rem;
+    background: var(--electric); color: var(--bg);
+    font-size: 1.05rem; font-weight: 700;
+    border-radius: 8px; text-decoration: none;
+    transition: all 0.3s;
+    position: relative;
+  }
+  .final-cta a:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(0,212,170,0.2); }
+
+  footer {
+    padding: 3rem 2rem; text-align: center;
+    border-top: 1px solid var(--border);
+    color: var(--muted); font-size: 0.8rem;
+  }
+
+  @media (max-width: 768px) {
+    nav { padding: 1rem 1.5rem; }
+    .wall-timeline { grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .wall-timeline::before { display: none; }
+    .wb-grid { grid-template-columns: 1fr; }
+    .hs-feature { grid-template-columns: 48px 1fr; }
+    .hs-stat { display: none; }
+    .ba-compare { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="logo">go<span>2</span></a>
+  <a href="#book" class="nav-cta">Book a Demo</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <span class="stage-badge"><span class="dot"></span> For Growth-Stage Companies</span>
+  <h1>Scale from 20 to 200 without losing <em>what made you special</em></h1>
+  <p>Growth breaks things. Processes that worked at 20 collapse at 50. Culture that felt natural at 30 evaporates at 80. Go2 makes sure your best practices scale as fast as your headcount.</p>
+  <a href="#book" class="hero-cta">Book a Demo</a>
+</section>
+
+<!-- GROWTH WALL -->
+<section class="growth-wall">
+  <div class="growth-wall-inner">
+    <div class="section-label">The Growth Wall</div>
+    <h2>Every company hits these walls</h2>
+    <p class="subtitle">The question isn't if — it's whether you're prepared when you do</p>
+    <div class="wall-timeline">
+      <div class="wall-stage">
+        <div class="ws-dot"></div>
+        <div class="ws-count">10-20</div>
+        <div class="ws-label">The Family</div>
+        <div class="ws-pain">Everyone knows everything. Processes live in people's heads. It works — for now.</div>
+      </div>
+      <div class="wall-stage">
+        <div class="ws-dot"></div>
+        <div class="ws-count">20-50</div>
+        <div class="ws-label">The Scramble</div>
+        <div class="ws-pain">New hires can't absorb fast enough. Tribal knowledge creates bottlenecks. Things start slipping.</div>
+      </div>
+      <div class="wall-stage">
+        <div class="ws-dot"></div>
+        <div class="ws-count">50-100</div>
+        <div class="ws-label">The Wall</div>
+        <div class="ws-pain">Departments silo. Process documentation is always outdated. The culture you built starts to dilute.</div>
+      </div>
+      <div class="wall-stage">
+        <div class="ws-dot"></div>
+        <div class="ws-count">100-200</div>
+        <div class="ws-label">The Rebuild</div>
+        <div class="ws-pain">You're rebuilding from scratch. Senior people leave because "it's not the same." Productivity craters.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT BREAKS -->
+<section class="what-breaks">
+  <div class="wb-inner">
+    <h2>What actually breaks when you scale</h2>
+    <div class="wb-grid">
+      <div class="wb-card">
+        <div class="wb-num">01</div>
+        <h3>Knowledge stays locked in heads</h3>
+        <p>Your first 10 employees know how everything works. Employee #50 has no idea why anything is done a certain way.</p>
+      </div>
+      <div class="wb-card">
+        <div class="wb-num">02</div>
+        <h3>Onboarding becomes a bottleneck</h3>
+        <p>Every new hire needs weeks of hand-holding. Your best people spend more time teaching than producing.</p>
+      </div>
+      <div class="wb-card">
+        <div class="wb-num">03</div>
+        <h3>Process quality degrades</h3>
+        <p>The careful way things were done at 20 people becomes the chaotic way at 80. Standards slip because nobody wrote them down.</p>
+      </div>
+      <div class="wb-card">
+        <div class="wb-num">04</div>
+        <h3>Communication overhead explodes</h3>
+        <p>Meetings multiply. Slack channels proliferate. More time is spent coordinating work than doing work.</p>
+      </div>
+      <div class="wb-card">
+        <div class="wb-num">05</div>
+        <h3>Culture becomes a rumor</h3>
+        <p>"The way we do things here" used to be felt. Now it needs to be taught — and nobody's teaching it.</p>
+      </div>
+      <div class="wb-card">
+        <div class="wb-num">06</div>
+        <h3>Founders become bottlenecks</h3>
+        <p>Decisions still flow through 2-3 people. They become the constraint on the company's growth.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW GO2 SCALES -->
+<section class="how-scales">
+  <div class="hs-inner">
+    <div class="section-label">The Growth Engine</div>
+    <h2>Go2 makes your company scale-ready</h2>
+    <p class="subtitle">AI that captures, coaches, and compounds your team's knowledge</p>
+    <div class="hs-features">
+      <div class="hs-feature">
+        <div class="hs-icon">&#128209;</div>
+        <div class="hs-text">
+          <h3>Auto-documenting processes</h3>
+          <p>Go2 watches how work flows and generates living documentation. Always current, never stale.</p>
+        </div>
+        <div class="hs-stat">94%</div>
+      </div>
+      <div class="hs-feature">
+        <div class="hs-icon">&#127891;</div>
+        <div class="hs-text">
+          <h3>Instant onboarding</h3>
+          <p>New hires get AI-powered onboarding that knows every process, shortcut, and decision — from day one.</p>
+        </div>
+        <div class="hs-stat">62%</div>
+      </div>
+      <div class="hs-feature">
+        <div class="hs-icon">&#9889;</div>
+        <div class="hs-text">
+          <h3>Coaching at scale</h3>
+          <p>Every employee gets personalized AI coaching based on how your best performers work. 47,000+ coached.</p>
+        </div>
+        <div class="hs-stat">23%</div>
+      </div>
+      <div class="hs-feature">
+        <div class="hs-icon">&#128640;</div>
+        <div class="hs-text">
+          <h3>Automation discovery</h3>
+          <p>Go2 spots repetitive work and surfaces automation opportunities — with ROI already calculated.</p>
+        </div>
+        <div class="hs-stat">$127K</div>
+      </div>
+      <div class="hs-feature">
+        <div class="hs-icon">&#128202;</div>
+        <div class="hs-text">
+          <h3>Operational health scoring</h3>
+          <p>Real-time visibility into how your organization runs. Know where to invest before problems emerge.</p>
+        </div>
+        <div class="hs-stat">Live</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BEFORE / AFTER -->
+<section class="ba-section">
+  <div class="ba-inner">
+    <h2>Growing without Go2 vs. growing with Go2</h2>
+    <div class="ba-compare">
+      <div class="ba-col before">
+        <h3>Scaling the hard way</h3>
+        <ul class="ba-list">
+          <li>6-month ramp time for new hires</li>
+          <li>Key person leaves, team panics</li>
+          <li>Wiki pages last updated 2 years ago</li>
+          <li>Same mistakes repeated by every cohort</li>
+          <li>"How does X work?" asked 50 times</li>
+          <li>Founders still in every decision</li>
+          <li>Culture dilutes with every batch hire</li>
+        </ul>
+      </div>
+      <div class="ba-col after">
+        <h3>Scaling with Go2</h3>
+        <ul class="ba-list">
+          <li>New hires productive in 2-3 weeks</li>
+          <li>Knowledge preserved regardless of turnover</li>
+          <li>Living documentation that updates itself</li>
+          <li>AI coaches new hires on proven practices</li>
+          <li>Go2 answers instantly, every time</li>
+          <li>Decisions flow through documented processes</li>
+          <li>Best practices encoded and scaled</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROOF -->
+<section class="proof">
+  <div class="proof-inner">
+    <blockquote>"We grew from 28 to 110 people in 18 months. Go2 is the reason we didn't lose our minds — or our culture — in the process."</blockquote>
+    <cite>— COO, <strong>Series B SaaS company</strong></cite>
+    <div class="proof-stats">
+      <div class="ps-item"><span class="ps-num">47K+</span><span class="ps-label">Workers Coached</span></div>
+      <div class="ps-item"><span class="ps-num">23%</span><span class="ps-label">Avg Productivity Gain</span></div>
+      <div class="ps-item"><span class="ps-num">62%</span><span class="ps-label">Faster Onboarding</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta" id="book">
+  <h2>Don't let growth break what you built</h2>
+  <p>The companies that scale well don't just hire fast. They capture what works, encode it in systems, and make sure every new person gets the benefit of everyone who came before.</p>
+  <a href="#">
+    Book a Demo
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+  </a>
+</section>
+
+<footer>&copy; 2026 Go2. The growth engine for companies that refuse to break at scale.</footer>
+
+</body>
+</html>

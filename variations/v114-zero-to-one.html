@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Zero to One</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #ffffff;
+  --bg-warm: #fdf8f3;
+  --text: #111;
+  --text-mid: #444;
+  --text-dim: #888;
+  --orange: #e85d26;
+  --orange-light: #ff8a5c;
+  --orange-bg: #fff0ea;
+  --dark: #111;
+  --dark-surface: #1a1a1a;
+  --border: #eee;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* Nav */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  padding: 20px 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--orange);
+  letter-spacing: -0.5px;
+}
+
+.nav-links { display: flex; gap: 32px; align-items: center; }
+.nav-links a {
+  color: var(--text-mid);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text); }
+
+.nav-cta {
+  padding: 10px 24px !important;
+  background: var(--orange) !important;
+  color: white !important;
+  border-radius: 8px;
+  font-weight: 600 !important;
+}
+
+/* Hero — dramatic split */
+.hero {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  position: relative;
+}
+
+.hero-dark {
+  background: var(--dark);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 120px 64px 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-dark::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 80px;
+  background: linear-gradient(90deg, transparent, rgba(232, 93, 38, 0.1));
+}
+
+.hero-light {
+  background: var(--bg-warm);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 120px 64px 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-light::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 80px;
+  background: linear-gradient(270deg, transparent, rgba(232, 93, 38, 0.05));
+}
+
+.phase-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  margin-bottom: 24px;
+  font-weight: 500;
+}
+
+.hero-dark .phase-label { color: #666; }
+.hero-light .phase-label { color: var(--orange); }
+
+.hero-dark h2 {
+  font-size: clamp(36px, 4vw, 56px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -1.5px;
+  margin-bottom: 24px;
+  color: #555;
+}
+
+.hero-light h2 {
+  font-size: clamp(36px, 4vw, 56px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -1.5px;
+  margin-bottom: 24px;
+  color: var(--text);
+}
+
+.hero-light h2 .accent { color: var(--orange); }
+
+.hero-dark p { color: #555; font-size: 16px; max-width: 400px; }
+.hero-light p { color: var(--text-mid); font-size: 16px; max-width: 400px; margin-bottom: 40px; }
+
+.hero-dark .blind-list {
+  margin-top: 32px;
+  list-style: none;
+}
+
+.blind-list li {
+  padding: 10px 0;
+  font-size: 15px;
+  color: #444;
+  border-bottom: 1px solid #222;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.blind-list .x {
+  color: #661a1a;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.clarity-list {
+  list-style: none;
+  margin-bottom: 40px;
+}
+
+.clarity-list li {
+  padding: 10px 0;
+  font-size: 15px;
+  color: var(--text-mid);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.clarity-list .check {
+  color: var(--orange);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.btn-orange {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 40px;
+  background: var(--orange);
+  color: white;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 10px;
+  transition: all 0.3s;
+}
+
+.btn-orange:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(232, 93, 38, 0.3);
+}
+
+/* Center divider */
+.hero-divider {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  width: 80px;
+  height: 80px;
+  background: var(--orange);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 32px rgba(232, 93, 38, 0.4);
+  animation: arrow-pulse 3s ease-in-out infinite;
+}
+
+@keyframes arrow-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.08); }
+}
+
+.hero-divider svg {
+  width: 28px;
+  height: 28px;
+  fill: white;
+}
+
+/* Timeline section */
+.timeline-section {
+  padding: 120px 48px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.timeline-header {
+  text-align: center;
+  margin-bottom: 80px;
+}
+
+.timeline-header h2 {
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  margin-bottom: 16px;
+}
+
+.timeline-header p {
+  font-size: 17px;
+  color: var(--text-mid);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.timeline {
+  position: relative;
+  padding-left: 60px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 24px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, var(--orange), var(--border));
+}
+
+.tl-item {
+  position: relative;
+  margin-bottom: 56px;
+  padding-bottom: 56px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tl-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+.tl-dot {
+  position: absolute;
+  left: -48px;
+  top: 4px;
+  width: 14px;
+  height: 14px;
+  background: var(--orange);
+  border-radius: 50%;
+  border: 3px solid var(--bg);
+  box-shadow: 0 0 0 2px var(--orange);
+}
+
+.tl-time {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--orange);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.tl-item h3 {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+
+.tl-item p {
+  font-size: 15px;
+  color: var(--text-mid);
+  line-height: 1.7;
+  max-width: 560px;
+}
+
+.tl-result {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 6px 16px;
+  background: var(--orange-bg);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--orange);
+}
+
+/* Before/After visual */
+.transform-section {
+  padding: 100px 0;
+  background: var(--dark);
+  color: white;
+  overflow: hidden;
+}
+
+.transform-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 48px;
+}
+
+.transform-header {
+  text-align: center;
+  margin-bottom: 64px;
+}
+
+.transform-header h2 {
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  margin-bottom: 12px;
+}
+
+.transform-header p { color: #888; font-size: 16px; }
+
+.transform-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0;
+  align-items: stretch;
+}
+
+.transform-col {
+  padding: 48px;
+}
+
+.transform-col.before {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid #222;
+  border-radius: 16px 0 0 16px;
+}
+
+.transform-col.after {
+  background: rgba(232, 93, 38, 0.05);
+  border: 1px solid rgba(232, 93, 38, 0.2);
+  border-radius: 0 16px 16px 0;
+}
+
+.transform-arrow {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 32px;
+  color: var(--orange);
+}
+
+.col-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-bottom: 32px;
+  font-weight: 500;
+}
+
+.before .col-label { color: #555; }
+.after .col-label { color: var(--orange); }
+
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid #222;
+  font-size: 14px;
+}
+
+.after .metric-row { border-color: rgba(232, 93, 38, 0.15); }
+
+.metric-row:last-child { border-bottom: none; }
+
+.metric-name { color: #888; }
+.after .metric-name { color: #aaa; }
+
+.metric-val {
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.before .metric-val { color: #555; }
+.after .metric-val { color: var(--orange); }
+
+/* Social proof */
+.proof {
+  padding: 100px 48px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.proof-header {
+  text-align: center;
+  margin-bottom: 56px;
+}
+
+.proof-header h2 {
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  margin-bottom: 8px;
+}
+
+.proof-header p { color: var(--text-dim); font-size: 16px; }
+
+.proof-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.proof-card {
+  background: var(--bg-warm);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px;
+  transition: all 0.3s;
+}
+
+.proof-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.06);
+}
+
+.proof-card .week-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: var(--orange-bg);
+  color: var(--orange);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+
+.proof-card .quote {
+  font-size: 16px;
+  line-height: 1.7;
+  margin-bottom: 20px;
+  color: var(--text-mid);
+  font-style: italic;
+}
+
+.proof-card .author {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.proof-card .author strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Integration bar */
+.integrations {
+  padding: 64px 48px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.integrations .label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  color: var(--text-dim);
+  margin-bottom: 24px;
+}
+
+.int-list {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.int-list span {
+  font-size: 15px;
+  color: #bbb;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.int-list span:hover { color: var(--orange); }
+
+/* Final CTA */
+.final-cta {
+  padding: 140px 48px;
+  text-align: center;
+  background: var(--bg-warm);
+}
+
+.final-cta .eyebrow {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  color: var(--orange);
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.final-cta h2 {
+  font-size: clamp(32px, 4.5vw, 52px);
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  margin-bottom: 16px;
+  line-height: 1.15;
+}
+
+.final-cta h2 .accent { color: var(--orange); }
+
+.final-cta p {
+  font-size: 17px;
+  color: var(--text-mid);
+  max-width: 480px;
+  margin: 0 auto 40px;
+}
+
+.final-cta .sub-note {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 16px;
+}
+
+footer {
+  padding: 40px 48px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+}
+
+footer p { font-size: 13px; color: var(--text-dim); }
+
+@media (max-width: 900px) {
+  .hero { grid-template-columns: 1fr; }
+  .hero-dark, .hero-light { padding: 80px 24px; }
+  .hero-divider { display: none; }
+  .transform-grid { grid-template-columns: 1fr; }
+  .transform-arrow { justify-content: center; padding: 16px; }
+  .transform-col.before { border-radius: 16px 16px 0 0; }
+  .transform-col.after { border-radius: 0 0 16px 16px; }
+  .proof-cards { grid-template-columns: 1fr; }
+  .timeline { padding-left: 48px; }
+  .nav-links { display: none; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Go2</div>
+  <div class="nav-links">
+    <a href="#timeline">The Timeline</a>
+    <a href="#transform">The Transformation</a>
+    <a href="#cta" class="nav-cta">See It In Action</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-dark">
+    <div class="phase-label">Today</div>
+    <h2>Zero visibility into how your team works</h2>
+    <p>You know what gets shipped. You have no idea how it gets made, what slows it down, or where the hours go.</p>
+    <ul class="blind-list">
+      <li><span class="x">&times;</span> No idea where time actually goes</li>
+      <li><span class="x">&times;</span> Meetings multiply without accountability</li>
+      <li><span class="x">&times;</span> Processes live in people's heads</li>
+      <li><span class="x">&times;</span> New hires take months to ramp</li>
+      <li><span class="x">&times;</span> Gut feel is your best management tool</li>
+    </ul>
+  </div>
+
+  <div class="hero-divider">
+    <svg viewBox="0 0 24 24"><path d="M5 12h14m-7-7l7 7-7 7"/></svg>
+  </div>
+
+  <div class="hero-light">
+    <div class="phase-label">One week later</div>
+    <h2>Total <span class="accent">clarity</span></h2>
+    <p>Go2 shows you exactly how work happens and coaches your team to do it better. Setup takes 5 minutes. Insights start in days.</p>
+    <ul class="clarity-list">
+      <li><span class="check">&check;</span> Real-time visibility into work patterns</li>
+      <li><span class="check">&check;</span> AI coaching for every team member</li>
+      <li><span class="check">&check;</span> Automatic process documentation</li>
+      <li><span class="check">&check;</span> Meeting optimization, not elimination</li>
+      <li><span class="check">&check;</span> Data-driven decisions, not gut feel</li>
+    </ul>
+    <a href="#cta" class="btn-orange">See It In Action &rarr;</a>
+  </div>
+</section>
+
+<section class="timeline-section" id="timeline">
+  <div class="timeline-header">
+    <h2>One week. That's all it takes.</h2>
+    <p>From zero visibility to total clarity in seven days. Here's the timeline our 47,000+ coached workers have lived through.</p>
+  </div>
+
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-time">Day 1 — Monday</div>
+      <h3>Five-minute setup</h3>
+      <p>Connect Slack, Google Workspace, or whatever your team uses. No software to install on anyone's machine. No IT tickets. No change management meetings about the change management tool.</p>
+      <div class="tl-result">5 min to connect &middot; 0 disruption</div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-time">Day 2-3 — Tuesday/Wednesday</div>
+      <h3>The picture forms</h3>
+      <p>Go2's AI starts mapping how your team actually works. Communication patterns, meeting density, focus time distribution, tool switching. No surveys, no time tracking — just intelligent observation.</p>
+      <div class="tl-result">Baseline established automatically</div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-time">Day 4-5 — Thursday/Friday</div>
+      <h3>First coaching arrives</h3>
+      <p>Team members receive their first personalized insights. "You average 3.2 hours in meetings daily — here's which ones deliver value." "Your best focus window is 9-11am — let's protect it." Specific, actionable, private.</p>
+      <div class="tl-result">Personalized AI coaching begins</div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-time">Day 6-7 — The Weekend</div>
+      <h3>Leaders see the dashboard</h3>
+      <p>You get the company-level view: where time goes, which processes are bottlenecked, what automations would save the most hours. Not individual surveillance — aggregate intelligence.</p>
+      <div class="tl-result">Full organizational clarity</div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-time">Week 2+</div>
+      <h3>The compound begins</h3>
+      <p>Coaching refines. Patterns sharpen. Your team starts operating with the clarity of a company 10x your size. Average productivity gain: 23% within 90 days. The transformation is permanent.</p>
+      <div class="tl-result">23% avg productivity gain by month 3</div>
+    </div>
+  </div>
+</section>
+
+<section class="transform-section" id="transform">
+  <div class="transform-inner">
+    <div class="transform-header">
+      <h2>The transformation in numbers</h2>
+      <p>Average results from our 47,000+ coached workers</p>
+    </div>
+
+    <div class="transform-grid">
+      <div class="transform-col before">
+        <div class="col-label">Before Go2</div>
+        <div class="metric-row">
+          <span class="metric-name">Productive hours / day</span>
+          <span class="metric-val">4.4</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-name">Meeting hours / week</span>
+          <span class="metric-val">18.3</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-name">Process documentation</span>
+          <span class="metric-val">~15%</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-name">New hire ramp time</span>
+          <span class="metric-val">6.2 wk</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-name">Visibility into work</span>
+          <span class="metric-val">None</span>
+        </div>
+      </div>
+
+      <div class="transform-arrow">&rarr;</div>
+
+      <div class="transform-col after">
+        <div class="col-label">After Go2</div>
+        <div class="metric-row">
+          <span class="metric-name">Productive hours / day</span>
+          <span class="metric-val">5.8</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-name">Meeting hours / week</span>
+          <span class="metric-val">12.1</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-name">Process documentation</span>
+          <span class="metric-val">~80%</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-name">New hire ramp time</span>
+          <span class="metric-val">3.8 wk</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-name">Visibility into work</span>
+          <span class="metric-val">Total</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="proof">
+  <div class="proof-header">
+    <h2>Week one reactions</h2>
+    <p>What leaders say after their first seven days with Go2</p>
+  </div>
+
+  <div class="proof-cards">
+    <div class="proof-card">
+      <div class="week-badge">Day 3</div>
+      <p class="quote">"I always suspected we had a meeting problem. Go2 showed me that 40% of our recurring meetings have zero action items. We cut 6 hours per person per week — in the first week."</p>
+      <div class="author"><strong>David Park</strong> &middot; CEO, Nomad Commerce (28 employees)</div>
+    </div>
+    <div class="proof-card">
+      <div class="week-badge">Day 5</div>
+      <p class="quote">"My team was skeptical. Then they got their first coaching insights. Three people messaged me independently saying it was the most useful feedback they'd ever gotten about how they work."</p>
+      <div class="author"><strong>Priya Sharma</strong> &middot; VP Ops, CloudBridge (61 employees)</div>
+    </div>
+    <div class="proof-card">
+      <div class="week-badge">Day 7</div>
+      <p class="quote">"We went from 'I think the team is productive' to 'I can see exactly where our 240 collective daily hours go.' That visibility alone is worth 10x what we pay."</p>
+      <div class="author"><strong>James Okafor</strong> &middot; Founder, Helix Studios (19 employees)</div>
+    </div>
+    <div class="proof-card">
+      <div class="week-badge">Month 1</div>
+      <p class="quote">"Go2 identified 3 processes that took 12 hours per week combined and could be automated. We built the automations in a week. That's 600 hours a year returned to the team."</p>
+      <div class="author"><strong>Lisa Tran</strong> &middot; COO, Basecamp Digital (44 employees)</div>
+    </div>
+  </div>
+</section>
+
+<section class="integrations">
+  <div class="label">Works with the tools you already use</div>
+  <div class="int-list">
+    <span>Slack</span>
+    <span>Microsoft Teams</span>
+    <span>Zoom</span>
+    <span>Google Workspace</span>
+    <span>Asana</span>
+    <span>Jira</span>
+    <span>Notion</span>
+  </div>
+</section>
+
+<section class="final-cta" id="cta">
+  <div class="eyebrow">The transformation starts now</div>
+  <h2>From zero to <span class="accent">total clarity</span><br>in one week</h2>
+  <p>47,000+ workers coached. 23% average productivity gain. And it all starts with a 15-minute demo.</p>
+  <a href="#" class="btn-orange">Book a Demo &rarr;</a>
+  <p class="sub-note">No credit card. No commitment. Just clarity.</p>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2. AI productivity coaching — from zero to clarity in seven days.</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The Data Layer (v171)</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#06080d;--surface:#0c1018;--surface2:#121824;--accent:#3b82f6;--accent-light:#60a5fa;
+--accent-glow:rgba(59,130,246,.12);--data-green:#10b981;--data-purple:#8b5cf6;
+--data-orange:#f59e0b;--data-pink:#ec4899;--white:#f1f5f9;--muted:#64748b;--platinum:#cbd5e1;
+}
+body{font-family:'Inter','Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--white);overflow-x:hidden;line-height:1.7}
+a{color:var(--accent);text-decoration:none}
+
+/* ─── ANIMATED GRID BG ─── */
+.grid-bg{position:fixed;inset:0;background:
+  linear-gradient(rgba(59,130,246,.03) 1px, transparent 1px),
+  linear-gradient(90deg, rgba(59,130,246,.03) 1px, transparent 1px);
+background-size:60px 60px;pointer-events:none;z-index:0}
+
+/* ─── NAV ─── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:1.25rem 2rem;display:flex;justify-content:space-between;align-items:center;background:rgba(6,8,13,.85);backdrop-filter:blur(20px);border-bottom:1px solid rgba(59,130,246,.08)}
+.logo{font-size:1.4rem;font-weight:700;letter-spacing:-.02em}
+.logo span{color:var(--accent)}
+.nav-tag{font-size:.65rem;text-transform:uppercase;letter-spacing:.15em;color:var(--accent);background:rgba(59,130,246,.1);padding:.25rem .75rem;border-radius:20px;border:1px solid rgba(59,130,246,.2)}
+.nav-cta{padding:.6rem 1.5rem;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .3s}
+.nav-cta:hover{background:var(--accent-light);box-shadow:0 0 30px rgba(59,130,246,.4)}
+
+/* ─── HERO ─── */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:8rem 2rem 6rem;position:relative;z-index:1}
+.hero::before{content:'';position:absolute;top:20%;left:50%;transform:translateX(-50%);width:800px;height:800px;background:radial-gradient(circle,rgba(59,130,246,.06),transparent 70%);pointer-events:none}
+
+.starving-badge{display:inline-flex;align-items:center;gap:.5rem;padding:.5rem 1.25rem;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:30px;margin-bottom:2rem;font-size:.8rem;color:#f87171}
+.starving-badge .pulse{width:8px;height:8px;border-radius:50%;background:#ef4444;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+
+.hero h1{font-size:clamp(2.2rem,5.5vw,4.2rem);font-weight:800;line-height:1.15;max-width:900px;margin-bottom:1.5rem;letter-spacing:-.03em}
+.hero h1 .gradient{background:linear-gradient(135deg,var(--accent),var(--data-purple),var(--data-pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:clamp(1.05rem,2vw,1.3rem);color:var(--platinum);max-width:640px;margin-bottom:3rem;font-weight:300;line-height:1.8}
+.hero-sub strong{color:var(--white);font-weight:600}
+
+.hero-cta-group{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.9rem 2rem;border-radius:8px;font-size:.95rem;font-weight:600;cursor:pointer;border:none;transition:all .3s;letter-spacing:.01em}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-light);box-shadow:0 8px 40px rgba(59,130,246,.35);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--platinum);border:1px solid rgba(255,255,255,.12)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ─── CRISIS SECTION ─── */
+.crisis{padding:6rem 2rem;position:relative;z-index:1}
+.crisis .container{max-width:1100px;margin:0 auto}
+.section-label{text-transform:uppercase;letter-spacing:.2em;font-size:.7rem;color:var(--accent);margin-bottom:.75rem;font-weight:600}
+.crisis h2{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:700;margin-bottom:1rem;letter-spacing:-.02em}
+.crisis .lead{color:var(--platinum);font-size:1.1rem;max-width:600px;margin-bottom:3rem}
+
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-bottom:3rem}
+@media(max-width:768px){.stat-grid{grid-template-columns:1fr}}
+.stat-card{background:var(--surface);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:2rem;position:relative;overflow:hidden;transition:all .4s}
+.stat-card:hover{border-color:rgba(59,130,246,.2);transform:translateY(-2px)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.stat-card:nth-child(1)::before{background:linear-gradient(90deg,#ef4444,transparent)}
+.stat-card:nth-child(2)::before{background:linear-gradient(90deg,var(--data-orange),transparent)}
+.stat-card:nth-child(3)::before{background:linear-gradient(90deg,var(--data-purple),transparent)}
+.stat-num{font-size:3rem;font-weight:800;line-height:1;margin-bottom:.5rem}
+.stat-card:nth-child(1) .stat-num{color:#ef4444}
+.stat-card:nth-child(2) .stat-num{color:var(--data-orange)}
+.stat-card:nth-child(3) .stat-num{color:var(--data-purple)}
+.stat-source{font-size:.7rem;color:var(--muted);margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.1em}
+.stat-text{color:var(--platinum);font-size:.95rem;line-height:1.6}
+
+/* ─── THE PROBLEM VISUAL ─── */
+.problem-visual{padding:4rem 2rem 6rem;position:relative;z-index:1}
+.problem-visual .container{max-width:900px;margin:0 auto;text-align:center}
+.ai-tools-illustration{display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;margin:3rem 0}
+.tool-box{background:var(--surface2);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:1.25rem 1.5rem;font-size:.85rem;color:var(--platinum);position:relative;min-width:120px;transition:all .4s}
+.tool-box::after{content:'STARVING';position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);font-size:.55rem;color:#ef4444;letter-spacing:.15em;background:var(--bg);padding:0 .5rem;white-space:nowrap}
+.tool-box .icon{font-size:1.8rem;margin-bottom:.5rem}
+.arrow-down{font-size:2rem;color:var(--muted);transform:rotate(90deg)}
+.data-void{width:100%;max-width:600px;margin:2rem auto;padding:2.5rem;background:rgba(239,68,68,.03);border:2px dashed rgba(239,68,68,.15);border-radius:16px;position:relative}
+.data-void h3{color:#f87171;font-size:1.2rem;margin-bottom:.5rem}
+.data-void p{color:var(--muted);font-size:.95rem}
+
+/* ─── PIPELINE SECTION ─── */
+.pipeline{padding:6rem 2rem;background:var(--surface);position:relative;z-index:1}
+.pipeline .container{max-width:1100px;margin:0 auto}
+.pipeline h2{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:700;margin-bottom:.5rem;letter-spacing:-.02em;text-align:center}
+.pipeline .lead{color:var(--platinum);font-size:1.1rem;max-width:650px;margin:0 auto 4rem;text-align:center}
+
+.pipe-flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;margin-bottom:4rem}
+@media(max-width:900px){.pipe-flow{grid-template-columns:1fr 1fr;gap:1.5rem}}
+@media(max-width:500px){.pipe-flow{grid-template-columns:1fr}}
+
+.pipe-stage{text-align:center;padding:2rem 1.5rem;position:relative}
+.pipe-stage:not(:last-child)::after{content:'';position:absolute;top:42px;right:-1px;width:2px;height:0;background:var(--accent);animation:none;z-index:2}
+
+.pipe-icon{width:80px;height:80px;margin:0 auto 1.5rem;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative}
+.pipe-stage:nth-child(1) .pipe-icon{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2)}
+.pipe-stage:nth-child(2) .pipe-icon{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2)}
+.pipe-stage:nth-child(3) .pipe-icon{background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2)}
+.pipe-stage:nth-child(4) .pipe-icon{background:rgba(236,72,153,.08);border:1px solid rgba(236,72,153,.2)}
+.pipe-icon svg{width:32px;height:32px;fill:none;stroke-width:1.5}
+.pipe-stage:nth-child(1) svg{stroke:var(--data-green)}
+.pipe-stage:nth-child(2) svg{stroke:var(--accent)}
+.pipe-stage:nth-child(3) svg{stroke:var(--data-purple)}
+.pipe-stage:nth-child(4) svg{stroke:var(--data-pink)}
+
+.pipe-num{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.15em;margin-bottom:.5rem}
+.pipe-stage h3{font-size:1.1rem;font-weight:700;margin-bottom:.75rem}
+.pipe-stage p{color:var(--muted);font-size:.85rem;line-height:1.6}
+
+.pipe-connector{display:flex;align-items:center;justify-content:center;position:relative;margin:-1rem 0 3rem}
+.pipe-connector-line{flex:1;height:2px;background:linear-gradient(90deg,var(--data-green),var(--accent),var(--data-purple),var(--data-pink));border-radius:2px;max-width:900px;position:relative}
+.pipe-connector-line::before{content:'';position:absolute;inset:-4px;background:linear-gradient(90deg,rgba(16,185,129,.2),rgba(59,130,246,.2),rgba(139,92,246,.2),rgba(236,72,153,.2));filter:blur(8px);border-radius:4px}
+.flow-dot{position:absolute;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--white);animation:flowDot 3s linear infinite}
+@keyframes flowDot{0%{left:0;opacity:0}10%{opacity:1}90%{opacity:1}100%{left:calc(100% - 8px);opacity:0}}
+
+/* ─── DATA TYPES ─── */
+.data-types{padding:6rem 2rem;position:relative;z-index:1}
+.data-types .container{max-width:1100px;margin:0 auto}
+.data-types h2{font-size:clamp(1.6rem,3.5vw,2.4rem);font-weight:700;margin-bottom:.5rem;text-align:center;letter-spacing:-.02em}
+.data-types .lead{color:var(--platinum);font-size:1.05rem;max-width:550px;margin:0 auto 3.5rem;text-align:center}
+
+.dtype-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.25rem}
+@media(max-width:768px){.dtype-grid{grid-template-columns:1fr}}
+.dtype-card{background:var(--surface);border:1px solid rgba(255,255,255,.04);border-radius:12px;padding:1.75rem;display:flex;gap:1.25rem;align-items:flex-start;transition:all .4s}
+.dtype-card:hover{border-color:rgba(59,130,246,.15);background:var(--surface2)}
+.dtype-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.3rem}
+.dtype-card:nth-child(1) .dtype-icon{background:rgba(16,185,129,.1)}
+.dtype-card:nth-child(2) .dtype-icon{background:rgba(59,130,246,.1)}
+.dtype-card:nth-child(3) .dtype-icon{background:rgba(139,92,246,.1)}
+.dtype-card:nth-child(4) .dtype-icon{background:rgba(236,72,153,.1)}
+.dtype-card:nth-child(5) .dtype-icon{background:rgba(245,158,11,.1)}
+.dtype-card:nth-child(6) .dtype-icon{background:rgba(20,184,166,.1)}
+.dtype-card h3{font-size:1rem;font-weight:700;margin-bottom:.4rem}
+.dtype-card p{color:var(--muted);font-size:.85rem;line-height:1.6}
+
+/* ─── WHAT IT FEEDS ─── */
+.feeds{padding:6rem 2rem;background:var(--surface);position:relative;z-index:1}
+.feeds .container{max-width:1100px;margin:0 auto;text-align:center}
+.feeds h2{font-size:clamp(1.6rem,3.5vw,2.4rem);font-weight:700;margin-bottom:.5rem;letter-spacing:-.02em}
+.feeds .lead{color:var(--platinum);font-size:1.05rem;max-width:580px;margin:0 auto 3.5rem}
+
+.feed-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;text-align:left}
+@media(max-width:768px){.feed-grid{grid-template-columns:1fr}}
+.feed-card{background:var(--bg);border:1px solid rgba(255,255,255,.04);border-radius:12px;padding:2rem;transition:all .4s;position:relative;overflow:hidden}
+.feed-card:hover{border-color:rgba(59,130,246,.2);transform:translateY(-3px)}
+.feed-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.feed-card:nth-child(1)::before{background:var(--data-green)}
+.feed-card:nth-child(2)::before{background:var(--accent)}
+.feed-card:nth-child(3)::before{background:var(--data-purple)}
+.feed-card:nth-child(4)::before{background:var(--data-orange)}
+.feed-card:nth-child(5)::before{background:var(--data-pink)}
+.feed-card .feed-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);margin-bottom:1rem}
+.feed-card h3{font-size:1.15rem;font-weight:700;margin-bottom:.75rem}
+.feed-card p{color:var(--muted);font-size:.88rem;line-height:1.6}
+.feed-card .feed-output{margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.05);font-size:.8rem;color:var(--accent);font-weight:500}
+
+/* ─── PRIVACY ─── */
+.privacy{padding:6rem 2rem;position:relative;z-index:1}
+.privacy .container{max-width:800px;margin:0 auto;text-align:center}
+.privacy h2{font-size:clamp(1.5rem,3vw,2.2rem);font-weight:700;margin-bottom:1rem;letter-spacing:-.02em}
+.privacy .lead{color:var(--platinum);font-size:1.05rem;max-width:600px;margin:0 auto 3rem}
+.privacy-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;text-align:center}
+@media(max-width:600px){.privacy-grid{grid-template-columns:1fr}}
+.priv-item{padding:1.5rem}
+.priv-item .priv-icon{font-size:2rem;margin-bottom:.75rem}
+.priv-item h3{font-size:.95rem;font-weight:700;margin-bottom:.5rem}
+.priv-item p{color:var(--muted);font-size:.82rem;line-height:1.6}
+
+/* ─── RESULTS ─── */
+.results{padding:6rem 2rem;background:var(--surface);position:relative;z-index:1}
+.results .container{max-width:1100px;margin:0 auto;text-align:center}
+.results h2{font-size:clamp(1.6rem,3.5vw,2.4rem);font-weight:700;margin-bottom:.5rem;letter-spacing:-.02em}
+.results .lead{color:var(--platinum);font-size:1.05rem;max-width:550px;margin:0 auto 3rem}
+.result-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem}
+@media(max-width:768px){.result-row{grid-template-columns:repeat(2,1fr)}}
+.result-item{padding:2rem 1rem}
+.result-num{font-size:2.8rem;font-weight:800;line-height:1;margin-bottom:.5rem;background:linear-gradient(135deg,var(--accent),var(--data-purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.result-label{color:var(--muted);font-size:.85rem}
+.result-detail{color:var(--platinum);font-size:.75rem;margin-top:.25rem}
+
+/* ─── HOW IT WORKS ─── */
+.how{padding:6rem 2rem;position:relative;z-index:1}
+.how .container{max-width:900px;margin:0 auto}
+.how h2{font-size:clamp(1.6rem,3.5vw,2.4rem);font-weight:700;margin-bottom:3rem;text-align:center;letter-spacing:-.02em}
+.step-list{display:grid;gap:2rem}
+.step{display:grid;grid-template-columns:60px 1fr;gap:1.5rem;align-items:start}
+.step-num{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);color:var(--accent)}
+.step h3{font-size:1.05rem;font-weight:700;margin-bottom:.4rem}
+.step p{color:var(--muted);font-size:.9rem;line-height:1.6}
+.step .step-time{font-size:.75rem;color:var(--data-green);margin-top:.25rem;font-weight:600}
+
+/* ─── INTEGRATIONS ─── */
+.integrations{padding:4rem 2rem;background:var(--surface);position:relative;z-index:1}
+.integrations .container{max-width:900px;margin:0 auto;text-align:center}
+.integrations h2{font-size:1.4rem;font-weight:700;margin-bottom:.5rem}
+.integrations .lead{color:var(--muted);font-size:.9rem;margin-bottom:2rem}
+.int-logos{display:flex;flex-wrap:wrap;justify-content:center;gap:1rem}
+.int-logo{padding:.6rem 1.25rem;background:var(--bg);border:1px solid rgba(255,255,255,.04);border-radius:8px;font-size:.8rem;color:var(--muted);transition:all .3s}
+.int-logo:hover{border-color:rgba(59,130,246,.15);color:var(--platinum)}
+
+/* ─── FINAL CTA ─── */
+.final-cta{padding:8rem 2rem;position:relative;z-index:1;text-align:center}
+.final-cta::before{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(59,130,246,.06),transparent 70%);pointer-events:none}
+.final-cta h2{font-size:clamp(2rem,4.5vw,3.2rem);font-weight:800;margin-bottom:1rem;letter-spacing:-.03em}
+.final-cta h2 .gradient{background:linear-gradient(135deg,var(--accent),var(--data-purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.final-cta p{color:var(--platinum);font-size:1.1rem;max-width:500px;margin:0 auto 2.5rem}
+.final-cta .btn{font-size:1.05rem;padding:1rem 2.5rem}
+
+/* ─── FOOTER ─── */
+footer{padding:3rem 2rem;border-top:1px solid rgba(255,255,255,.04);text-align:center;color:var(--muted);font-size:.8rem;position:relative;z-index:1}
+footer a{color:var(--accent)}
+
+/* ─── SCROLL ANIMATIONS ─── */
+.reveal{opacity:0;transform:translateY(30px);transition:all .7s cubic-bezier(.16,1,.3,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<nav>
+  <div class="logo">Go<span>2</span></div>
+  <div class="nav-tag">The Data Layer for AI</div>
+  <button class="nav-cta">Feed Your AI</button>
+</nav>
+
+<!-- ════════ HERO ════════ -->
+<section class="hero">
+  <div class="starving-badge"><span class="pulse"></span> Your AI tools are data-starved right now</div>
+  <h1>Every AI tool you bought<br>is <span class="gradient">starving for data.</span><br>Go2 feeds them.</h1>
+  <p class="hero-sub">You deployed Copilot. You bought ChatGPT seats. You piloted agents. But <strong>95% of AI projects fail</strong> for the same reason: they don't have the data about how your company actually works.</p>
+  <div class="hero-cta-group">
+    <button class="btn btn-primary">Feed Your AI</button>
+    <button class="btn btn-ghost">See the Pipeline</button>
+  </div>
+</section>
+
+<!-- ════════ CRISIS ════════ -->
+<section class="crisis reveal">
+  <div class="container">
+    <div class="section-label">The Data Crisis</div>
+    <h2>AI without data is just expensive autocomplete</h2>
+    <p class="lead">The research is clear. The #1 reason AI fails in enterprise isn't the models, the tools, or the talent. It's the data.</p>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-num">95%</div>
+        <div class="stat-source">MIT Sloan 2025</div>
+        <p class="stat-text">of AI pilot programs fail to move to production. The primary blocker: lack of structured data about actual business processes.</p>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">60%</div>
+        <div class="stat-source">Gartner 2024</div>
+        <p class="stat-text">of generative AI projects will be abandoned by 2026, up from 50% in 2023. Root cause: insufficient AI-ready data infrastructure.</p>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">96%</div>
+        <div class="stat-source">Industry Survey 2025</div>
+        <p class="stat-text">of organizations report data quality problems when attempting to train or fine-tune AI on their internal processes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ PROBLEM VISUAL ════════ -->
+<section class="problem-visual reveal">
+  <div class="container">
+    <h2 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:700;margin-bottom:1.5rem">Your AI stack has a gap</h2>
+    <p style="color:var(--muted);margin-bottom:2.5rem;font-size:1rem">You bought the tools. You don't have the fuel.</p>
+
+    <div class="ai-tools-illustration">
+      <div class="tool-box"><div class="icon">🤖</div>ChatGPT</div>
+      <div class="tool-box"><div class="icon">✨</div>Copilot</div>
+      <div class="tool-box"><div class="icon">🧠</div>Claude</div>
+      <div class="tool-box"><div class="icon">⚡</div>Custom Agents</div>
+      <div class="tool-box"><div class="icon">🔧</div>Zapier AI</div>
+    </div>
+
+    <div class="data-void">
+      <h3>The Data Void</h3>
+      <p>None of these tools know how your team actually works. What apps they use. What steps they take. Where they get stuck. What they repeat 50 times a day.</p>
+    </div>
+
+    <p style="color:var(--accent);font-weight:600;font-size:1.1rem;margin-top:2rem">Go2 fills this void.</p>
+  </div>
+</section>
+
+<!-- ════════ PIPELINE ════════ -->
+<section class="pipeline reveal">
+  <div class="container">
+    <div class="section-label" style="text-align:center">The Go2 Data Pipeline</div>
+    <h2>From invisible work to AI-ready intelligence</h2>
+    <p class="lead">Four stages. Fully automated. Privacy-first. Your work data goes from dark to actionable.</p>
+
+    <div class="pipe-flow">
+      <div class="pipe-stage">
+        <div class="pipe-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        </div>
+        <div class="pipe-num">Stage 1</div>
+        <h3>Capture</h3>
+        <p>Desktop agent observes app usage, workflow patterns, communication flows, and process steps in real time.</p>
+      </div>
+
+      <div class="pipe-stage">
+        <div class="pipe-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>
+        </div>
+        <div class="pipe-num">Stage 2</div>
+        <h3>Structure</h3>
+        <p>Raw observations become structured data: process maps, tool graphs, time patterns, skill taxonomies.</p>
+      </div>
+
+      <div class="pipe-stage">
+        <div class="pipe-icon">
+          <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2zM22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+        </div>
+        <div class="pipe-num">Stage 3</div>
+        <h3>Insight</h3>
+        <p>AI analyzes patterns: bottlenecks, redundancies, best practices, automation opportunities, skill gaps.</p>
+      </div>
+
+      <div class="pipe-stage">
+        <div class="pipe-icon">
+          <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <div class="pipe-num">Stage 4</div>
+        <h3>Activate</h3>
+        <p>Structured data feeds your AI tools: coaching, SOPs, automations, agent training, custom skills.</p>
+      </div>
+    </div>
+
+    <div class="pipe-connector">
+      <div class="pipe-connector-line">
+        <div class="flow-dot"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ DATA TYPES ════════ -->
+<section class="data-types reveal">
+  <div class="container">
+    <div class="section-label" style="text-align:center">What Go2 Captures</div>
+    <h2>The six data streams your AI needs</h2>
+    <p class="lead">Every dimension of how work actually happens, not how you think it happens.</p>
+
+    <div class="dtype-grid">
+      <div class="dtype-card">
+        <div class="dtype-icon">📊</div>
+        <div>
+          <h3>App Usage Patterns</h3>
+          <p>Which tools, how long, in what sequence. The real tech stack utilization, not the one on your spreadsheet.</p>
+        </div>
+      </div>
+      <div class="dtype-card">
+        <div class="dtype-icon">🔄</div>
+        <div>
+          <h3>Workflow Sequences</h3>
+          <p>Step-by-step process maps built from observation. The actual workflow, including the workarounds nobody documents.</p>
+        </div>
+      </div>
+      <div class="dtype-card">
+        <div class="dtype-icon">💬</div>
+        <div>
+          <h3>Communication Flows</h3>
+          <p>Who talks to whom, when, and about what. Collaboration patterns that reveal how decisions really get made.</p>
+        </div>
+      </div>
+      <div class="dtype-card">
+        <div class="dtype-icon">⏱️</div>
+        <div>
+          <h3>Time Allocation</h3>
+          <p>Where hours actually go. Deep work vs. shallow work. Context switching costs. Meeting load analysis.</p>
+        </div>
+      </div>
+      <div class="dtype-card">
+        <div class="dtype-icon">🎯</div>
+        <div>
+          <h3>Process Bottlenecks</h3>
+          <p>Where people get stuck, wait, or redo work. Friction points that cost hours but nobody sees.</p>
+        </div>
+      </div>
+      <div class="dtype-card">
+        <div class="dtype-icon">🧩</div>
+        <div>
+          <h3>Skill & Tool Graphs</h3>
+          <p>Who knows what. Tool proficiency levels. Knowledge dependencies. The invisible org chart.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ WHAT IT FEEDS ════════ -->
+<section class="feeds reveal">
+  <div class="container">
+    <div class="section-label">Downstream Value</div>
+    <h2>One data layer. Five AI superpowers.</h2>
+    <p class="lead">Go2's structured work data unlocks capabilities that were impossible without it.</p>
+
+    <div class="feed-grid">
+      <div class="feed-card">
+        <div class="feed-label">Superpower 1</div>
+        <h3>Real-Time AI Coaching</h3>
+        <p>Personalized productivity tips delivered via Slack or Teams, based on each worker's actual patterns. Not generic advice. Your data, your context.</p>
+        <div class="feed-output">Output: Contextual nudges that improve flow by 23%</div>
+      </div>
+      <div class="feed-card">
+        <div class="feed-label">Superpower 2</div>
+        <h3>Auto-Generated SOPs</h3>
+        <p>Go2 watches your best performers, then writes the playbook automatically. Living documentation that updates as processes evolve.</p>
+        <div class="feed-output">Output: Process docs that are always current</div>
+      </div>
+      <div class="feed-card">
+        <div class="feed-label">Superpower 3</div>
+        <h3>Automation Discovery</h3>
+        <p>Finds repetitive tasks across your team and builds automations. Not theoretical. Based on observed patterns from thousands of work hours.</p>
+        <div class="feed-output">Output: Ready-to-deploy workflow automations</div>
+      </div>
+      <div class="feed-card">
+        <div class="feed-label">Superpower 4</div>
+        <h3>AI Agent Training Data</h3>
+        <p>Your processes become training data for custom AI agents. Go2 maps human workflows so agents can learn to replicate them.</p>
+        <div class="feed-output">Output: Custom agents that know YOUR processes</div>
+      </div>
+      <div class="feed-card">
+        <div class="feed-label">Superpower 5</div>
+        <h3>AI Tool Enhancement</h3>
+        <p>Skills and context that plug into Claude, ChatGPT, and Copilot. Give your existing AI tools the company knowledge they're missing.</p>
+        <div class="feed-output">Output: AI tools that understand your business</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ PRIVACY ════════ -->
+<section class="privacy reveal">
+  <div class="container">
+    <div class="section-label">Built for Trust</div>
+    <h2>Privacy-first architecture. No compromises.</h2>
+    <p class="lead">Go2 captures work intelligence without surveillance. Workers control their data. Period.</p>
+
+    <div class="privacy-grid">
+      <div class="priv-item">
+        <div class="priv-icon">🏠</div>
+        <h3>Local-First Processing</h3>
+        <p>Data is processed on-device. Raw activity never leaves the employee's machine. Only structured, anonymized insights go upstream.</p>
+      </div>
+      <div class="priv-item">
+        <div class="priv-icon">🔐</div>
+        <h3>End-to-End Encryption</h3>
+        <p>All data encrypted at rest and in transit. Enterprise-grade security that meets SOC 2, GDPR, and HIPAA requirements.</p>
+      </div>
+      <div class="priv-item">
+        <div class="priv-icon">👤</div>
+        <h3>Worker-Controlled</h3>
+        <p>Employees see exactly what's captured. They can pause, delete, or exclude any data. 89% worker satisfaction proves the model works.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ RESULTS ════════ -->
+<section class="results reveal">
+  <div class="container">
+    <div class="section-label">Proven at Scale</div>
+    <h2>The numbers speak</h2>
+    <p class="lead">47,000+ workers already feeding their AI with Go2 data.</p>
+
+    <div class="result-row">
+      <div class="result-item">
+        <div class="result-num">47K+</div>
+        <div class="result-label">Workers</div>
+        <div class="result-detail">Generating work data daily</div>
+      </div>
+      <div class="result-item">
+        <div class="result-num">23%</div>
+        <div class="result-label">Productivity Gain</div>
+        <div class="result-detail">Average across deployments</div>
+      </div>
+      <div class="result-item">
+        <div class="result-num">$4,200</div>
+        <div class="result-label">Saved Per Employee</div>
+        <div class="result-detail">Annual ROI per seat</div>
+      </div>
+      <div class="result-item">
+        <div class="result-num">40+</div>
+        <div class="result-label">Integrations</div>
+        <div class="result-detail">Feeds data everywhere</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ HOW IT WORKS ════════ -->
+<section class="how reveal">
+  <div class="container">
+    <div class="section-label" style="text-align:center">Getting Started</div>
+    <h2>Live in 15 minutes. Insights in 24 hours.</h2>
+
+    <div class="step-list">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <h3>Deploy the desktop agent</h3>
+          <p>Lightweight agent installs on Mac or Windows. No IT infrastructure changes. No network configuration. Works with your existing stack.</p>
+          <div class="step-time">5 minutes</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <h3>Data starts flowing</h3>
+          <p>Go2 begins observing work patterns immediately. Within hours, structured data about your actual workflows starts building.</p>
+          <div class="step-time">Automatic</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <h3>AI gets smart</h3>
+          <p>Your AI tools now have context. Coaching kicks in. SOPs generate. Automation opportunities surface. Agents start learning.</p>
+          <div class="step-time">24 hours to first insights</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div>
+          <h3>Network effects compound</h3>
+          <p>More data = smarter AI = more value. Every week, Go2's understanding of your organization deepens. The ROI curve steepens.</p>
+          <div class="step-time">Ongoing acceleration</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ INTEGRATIONS ════════ -->
+<section class="integrations reveal">
+  <div class="container">
+    <h2>Connects to everything you already use</h2>
+    <p class="lead">40+ integrations. Your data layer talks to your entire stack.</p>
+    <div class="int-logos">
+      <div class="int-logo">Slack</div>
+      <div class="int-logo">Teams</div>
+      <div class="int-logo">Jira</div>
+      <div class="int-logo">Asana</div>
+      <div class="int-logo">Notion</div>
+      <div class="int-logo">Salesforce</div>
+      <div class="int-logo">HubSpot</div>
+      <div class="int-logo">GitHub</div>
+      <div class="int-logo">Figma</div>
+      <div class="int-logo">Google Workspace</div>
+      <div class="int-logo">Microsoft 365</div>
+      <div class="int-logo">Zoom</div>
+      <div class="int-logo">Linear</div>
+      <div class="int-logo">Confluence</div>
+      <div class="int-logo">+ 26 more</div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ FINAL CTA ════════ -->
+<section class="final-cta reveal">
+  <h2>Stop starving your AI.<br><span class="gradient">Feed it real data.</span></h2>
+  <p>Go2 is the data layer that makes every AI investment actually pay off. Start capturing in 15 minutes.</p>
+  <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+    <button class="btn btn-primary">Make AI Actually Work</button>
+    <button class="btn btn-ghost">See a Live Demo</button>
+  </div>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2. The Data Layer for AI. <a href="#">Privacy</a> &middot; <a href="#">Security</a> &middot; <a href="#">Documentation</a></p>
+</footer>
+
+<script>
+// Scroll reveal
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }});
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+// Smooth scroll for nav
+document.querySelectorAll('.btn-ghost').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = document.querySelector('.pipeline') || document.querySelector('.crisis');
+    if (target) target.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+</script>
+
+</body>
+</html>

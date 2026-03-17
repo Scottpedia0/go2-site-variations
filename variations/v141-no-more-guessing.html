@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Stop Guessing, Start Knowing</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+  :root{--bg:#fafaf9;--surface:#fff;--surface2:#f5f5f4;--border:#e7e5e4;--text:#1c1917;--muted:#78716c;--accent:#0f766e;--accent2:#14b8a6;--dark:#292524;--red:#dc2626;--green:#16a34a;--amber:#d97706}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+  /* Hero */
+  .hero{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;position:relative;overflow:hidden}
+  .hero::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,#f0fdfa 0%,#fafaf9 40%,#fef3c7 100%);opacity:.6}
+  .hero-content{max-width:800px;text-align:center;position:relative;z-index:1}
+
+  .strike-through{text-decoration:line-through;color:var(--red);opacity:.5;font-weight:400;font-size:clamp(1.2rem,3vw,2rem);display:block;margin-bottom:.5rem}
+  .hero h1{font-size:clamp(3rem,8vw,6rem);font-weight:900;line-height:1;letter-spacing:-0.04em;color:var(--text)}
+  .hero h1 .know{color:var(--accent)}
+  .hero-sub{font-size:clamp(1.1rem,2vw,1.35rem);color:var(--muted);max-width:560px;margin:1.5rem auto 0;line-height:1.65}
+
+  .hero-cta{display:flex;gap:1rem;justify-content:center;margin-top:2.5rem;flex-wrap:wrap}
+  .btn-solid{padding:1rem 2.2rem;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;transition:all .3s;text-decoration:none;display:inline-flex;align-items:center;gap:.5rem}
+  .btn-solid:hover{background:var(--accent2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(15,118,110,.2)}
+  .btn-outline{padding:1rem 2rem;background:transparent;color:var(--text);border:2px solid var(--border);border-radius:10px;font-size:1rem;font-weight:500;cursor:pointer;transition:all .3s;text-decoration:none}
+  .btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+
+  /* Guessing game */
+  .guessing{padding:6rem 2rem;max-width:1000px;margin:0 auto}
+  .guessing h2{font-size:clamp(2rem,4vw,2.8rem);font-weight:800;text-align:center;letter-spacing:-0.02em}
+  .guess-subtitle{text-align:center;color:var(--muted);font-size:1.05rem;margin-top:.75rem;max-width:600px;margin-left:auto;margin-right:auto}
+
+  .guess-cards{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:3rem}
+  .guess-card{background:var(--surface);border:2px solid var(--border);border-radius:16px;padding:2rem;position:relative;transition:all .3s}
+  .guess-card:hover{border-color:var(--accent);box-shadow:0 4px 20px rgba(0,0,0,.06)}
+  .guess-card .icon-row{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem}
+  .guess-card .emoji{font-size:1.5rem}
+  .guess-card .status{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;padding:.3rem .6rem;border-radius:100px;font-weight:600}
+  .status-guess{background:#fef2f2;color:var(--red)}
+  .status-know{background:#f0fdf4;color:var(--green)}
+  .guess-card h3{font-size:1.1rem;font-weight:700;margin-bottom:.5rem}
+  .guess-card .guess-text{color:var(--red);font-size:.9rem;text-decoration:line-through;opacity:.6;margin-bottom:.3rem}
+  .guess-card .know-text{color:var(--green);font-size:.9rem;font-weight:600}
+  .guess-card p.detail{color:var(--muted);font-size:.85rem;margin-top:.5rem;line-height:1.5}
+
+  /* Decision dashboard */
+  .dashboard{padding:6rem 2rem;background:var(--dark);color:#fafaf9}
+  .dash-inner{max-width:1100px;margin:0 auto}
+  .dash-inner h2{font-size:clamp(2rem,4vw,2.8rem);font-weight:800;text-align:center;letter-spacing:-0.02em;color:#fafaf9}
+  .dash-sub{text-align:center;color:#a8a29e;font-size:1.05rem;margin-top:.75rem}
+
+  .dash-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3rem}
+  .dash-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1.5rem;transition:all .3s}
+  .dash-card:hover{background:rgba(255,255,255,.08);border-color:rgba(20,184,166,.3)}
+  .dash-card .dash-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:#a8a29e;margin-bottom:.5rem}
+  .dash-card .dash-value{font-size:2rem;font-weight:800;color:var(--accent2);font-family:'IBM Plex Mono',monospace}
+  .dash-card .dash-context{font-size:.8rem;color:#a8a29e;margin-top:.3rem}
+  .dash-card .dash-bar{height:6px;background:rgba(255,255,255,.08);border-radius:4px;margin-top:.75rem;overflow:hidden}
+  .dash-card .dash-fill{height:100%;border-radius:4px;background:var(--accent2)}
+
+  /* Before/After */
+  .before-after{padding:6rem 2rem;max-width:1000px;margin:0 auto}
+  .ba-header{text-align:center}
+  .ba-header h2{font-size:clamp(2rem,4vw,2.8rem);font-weight:800;letter-spacing:-0.02em}
+  .ba-timeline{margin-top:3rem;position:relative}
+  .ba-divider{display:flex;align-items:center;gap:1rem;margin:2rem 0}
+  .ba-divider .line{flex:1;height:2px;background:var(--border)}
+  .ba-divider .label{font-size:.75rem;text-transform:uppercase;letter-spacing:.15em;color:var(--accent);font-weight:700;background:var(--bg);padding:0 1rem}
+
+  .ba-row{display:grid;grid-template-columns:1fr auto 1fr;gap:1.5rem;align-items:center;padding:1rem 0}
+  .ba-before{text-align:right;padding:1rem 1.5rem;background:#fef2f2;border-radius:10px;border:1px solid #fecaca}
+  .ba-before h4{color:var(--red);font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem}
+  .ba-before p{font-size:.9rem;color:#991b1b}
+  .ba-arrow{font-size:1.5rem;color:var(--accent)}
+  .ba-after{padding:1rem 1.5rem;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0}
+  .ba-after h4{color:var(--green);font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem}
+  .ba-after p{font-size:.9rem;color:#166534}
+
+  /* Stats strip */
+  .stats-strip{padding:4rem 2rem;background:var(--surface2)}
+  .stats-inner{max-width:1000px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;text-align:center}
+  .stat-item .num{font-size:2.5rem;font-weight:900;color:var(--accent);font-family:'IBM Plex Mono',monospace}
+  .stat-item .lab{font-size:.85rem;color:var(--muted);margin-top:.3rem}
+
+  /* Not surveillance box */
+  .clarity{padding:6rem 2rem;max-width:800px;margin:0 auto}
+  .clarity-box{background:var(--surface);border:2px solid var(--border);border-radius:20px;padding:3rem;text-align:center}
+  .clarity-box h2{font-size:1.8rem;font-weight:800}
+  .clarity-box p{color:var(--muted);font-size:1rem;margin-top:.75rem;line-height:1.6;max-width:550px;margin-left:auto;margin-right:auto}
+  .clarity-pills{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center;margin-top:1.5rem}
+  .pill{padding:.5rem 1rem;border-radius:100px;font-size:.8rem;font-weight:500}
+  .pill-green{background:#f0fdf4;color:var(--green);border:1px solid #bbf7d0}
+  .pill-red{background:#fef2f2;color:var(--red);border:1px solid #fecaca;text-decoration:line-through}
+
+  /* Final CTA */
+  .final{padding:8rem 2rem;text-align:center;position:relative}
+  .final::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,#f0fdfa,#fafaf9,#f0fdfa)}
+  .final h2{font-size:clamp(2.5rem,6vw,4rem);font-weight:900;letter-spacing:-0.03em;position:relative;z-index:1;line-height:1.1}
+  .final p{color:var(--muted);font-size:1.15rem;margin:1rem auto 0;max-width:500px;position:relative;z-index:1}
+  .final .hero-cta{position:relative;z-index:1}
+
+  footer{padding:2.5rem 2rem;text-align:center;font-size:.8rem;color:var(--muted);border-top:1px solid var(--border)}
+
+  @media(max-width:768px){
+    .guess-cards,.dash-grid,.stats-inner,.ba-row{grid-template-columns:1fr}
+    .ba-before,.ba-after{text-align:left}
+    .ba-arrow{transform:rotate(90deg);justify-self:center}
+  }
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-content">
+    <span class="strike-through">I think the team is doing fine?</span>
+    <h1>Stop guessing.<br>Start <span class="know">knowing.</span></h1>
+    <p class="hero-sub">Every decision you make about your team is based on incomplete data. Meetings, gut feelings, and quarterly reviews. Go2 replaces guesswork with clarity.</p>
+    <div class="hero-cta">
+      <a href="#" class="btn-solid">See It In Action <span>&rarr;</span></a>
+      <a href="#" class="btn-outline">How It Works</a>
+    </div>
+  </div>
+</section>
+
+<!-- Guessing Game -->
+<section class="guessing">
+  <h2>The guessing game you didn't know you were playing.</h2>
+  <p class="guess-subtitle">Every day, you make decisions about your team based on assumptions. Here's what changes when assumptions become data.</p>
+  <div class="guess-cards">
+    <div class="guess-card">
+      <div class="icon-row"><span class="emoji">&#x1f3af;</span><span class="status status-guess">Guessing</span><span class="status status-know">Knowing</span></div>
+      <h3>"Is the team productive?"</h3>
+      <p class="guess-text">"Seems like it, they're in meetings all day"</p>
+      <p class="know-text">Team averages 3.2 hours of deep work daily (up from 1.8)</p>
+      <p class="detail">Go2 measures actual focus time, not calendar density.</p>
+    </div>
+    <div class="guess-card">
+      <div class="icon-row"><span class="emoji">&#x1f465;</span><span class="status status-guess">Guessing</span><span class="status status-know">Knowing</span></div>
+      <h3>"Who needs help?"</h3>
+      <p class="guess-text">"Nobody's complained, so probably everyone's fine"</p>
+      <p class="know-text">3 team members show declining focus patterns this week</p>
+      <p class="detail">Catch burnout signals 2-3 weeks before they become resignations.</p>
+    </div>
+    <div class="guess-card">
+      <div class="icon-row"><span class="emoji">&#x23f0;</span><span class="status status-guess">Guessing</span><span class="status status-know">Knowing</span></div>
+      <h3>"Should we hire?"</h3>
+      <p class="guess-text">"Team says they're swamped, maybe we need 2 more?"</p>
+      <p class="know-text">Current team runs at 61% efficiency. Fix that first, save $160K.</p>
+      <p class="detail">Don't hire to fill a gap that better workflows would close.</p>
+    </div>
+    <div class="guess-card">
+      <div class="icon-row"><span class="emoji">&#x1f4ca;</span><span class="status status-guess">Guessing</span><span class="status status-know">Knowing</span></div>
+      <h3>"Is onboarding working?"</h3>
+      <p class="guess-text">"The new hire seems happy, they said the docs were helpful"</p>
+      <p class="know-text">New hires reach full productivity at week 7 (industry avg: 12)</p>
+      <p class="detail">Measure ramp time in output, not in smiles.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Dashboard -->
+<section class="dashboard">
+  <div class="dash-inner">
+    <h2>Decisions backed by data, not hope.</h2>
+    <p class="dash-sub">A glimpse at what Go2 reveals in your first week.</p>
+    <div class="dash-grid">
+      <div class="dash-card">
+        <div class="dash-label">Team Deep Work</div>
+        <div class="dash-value">14.2h</div>
+        <div class="dash-context">avg per person per week</div>
+        <div class="dash-bar"><div class="dash-fill" style="width:71%"></div></div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-label">Context Switches</div>
+        <div class="dash-value">6.1x</div>
+        <div class="dash-context">per day (down from 14)</div>
+        <div class="dash-bar"><div class="dash-fill" style="width:44%"></div></div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-label">Knowledge Risk</div>
+        <div class="dash-value">4</div>
+        <div class="dash-context">single-point knowledge holders</div>
+        <div class="dash-bar"><div class="dash-fill" style="width:28%"></div></div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-label">Coaching Engagement</div>
+        <div class="dash-value">83%</div>
+        <div class="dash-context">of workers act on suggestions</div>
+        <div class="dash-bar"><div class="dash-fill" style="width:83%"></div></div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-label">Productivity Trend</div>
+        <div class="dash-value">+23%</div>
+        <div class="dash-context">vs. pre-Go2 baseline</div>
+        <div class="dash-bar"><div class="dash-fill" style="width:92%"></div></div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-label">Burnout Risk</div>
+        <div class="dash-value">Low</div>
+        <div class="dash-context">2 people flagged for review</div>
+        <div class="dash-bar"><div class="dash-fill" style="width:15%"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Before/After -->
+<section class="before-after">
+  <div class="ba-header">
+    <h2>Every question answered.</h2>
+  </div>
+  <div class="ba-timeline">
+    <div class="ba-row">
+      <div class="ba-before"><h4>Before Go2</h4><p>"I think the team is doing okay."</p></div>
+      <div class="ba-arrow">&rarr;</div>
+      <div class="ba-after"><h4>With Go2</h4><p>"The team improved 23% this quarter. Here's exactly why."</p></div>
+    </div>
+    <div class="ba-row">
+      <div class="ba-before"><h4>Before Go2</h4><p>"We probably need to hire 3 more people."</p></div>
+      <div class="ba-arrow">&rarr;</div>
+      <div class="ba-after"><h4>With Go2</h4><p>"Optimize current workflows first. Save $240K in salaries."</p></div>
+    </div>
+    <div class="ba-row">
+      <div class="ba-before"><h4>Before Go2</h4><p>"Onboarding takes forever but I'm not sure why."</p></div>
+      <div class="ba-arrow">&rarr;</div>
+      <div class="ba-after"><h4>With Go2</h4><p>"Week 3 is the bottleneck. Here's the fix."</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats -->
+<section class="stats-strip">
+  <div class="stats-inner">
+    <div class="stat-item"><div class="num">47K</div><div class="lab">Workers coached</div></div>
+    <div class="stat-item"><div class="num">23%</div><div class="lab">Avg. productivity gain</div></div>
+    <div class="stat-item"><div class="num">83%</div><div class="lab">Coaching adoption rate</div></div>
+    <div class="stat-item"><div class="num">4wk</div><div class="lab">To measurable ROI</div></div>
+  </div>
+</section>
+
+<!-- Clarity box -->
+<section class="clarity">
+  <div class="clarity-box">
+    <h2>Coaching, not surveillance.</h2>
+    <p>Go2 is an AI coach that helps each worker get better. It doesn't spy, score, or report on individuals. Workers love it because it helps them. Leaders love it because it works.</p>
+    <div class="clarity-pills">
+      <span class="pill pill-green">Personalized coaching</span>
+      <span class="pill pill-green">Focus protection</span>
+      <span class="pill pill-green">Team insights</span>
+      <span class="pill pill-green">Knowledge mapping</span>
+      <span class="pill pill-red">Screenshots</span>
+      <span class="pill pill-red">Keylogging</span>
+      <span class="pill pill-red">Email reading</span>
+      <span class="pill pill-red">Activity scoring</span>
+    </div>
+  </div>
+</section>
+
+<!-- Final -->
+<section class="final">
+  <h2>You deserve certainty.<br>Your team deserves <span style="color:var(--accent)">clarity.</span></h2>
+  <p>Stop making million-dollar team decisions on vibes. See what Go2 reveals in your first week.</p>
+  <div class="hero-cta">
+    <a href="#" class="btn-solid">See It In Action <span>&rarr;</span></a>
+    <a href="#" class="btn-outline">Read Case Studies</a>
+  </div>
+</section>
+
+<footer>&copy; 2026 Go2. Replace guesswork with data.</footer>
+
+</body>
+</html>

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Meet Your AI Team</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0a0a0f;color:#e0e0e8;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+::selection{background:#6c5ce7;color:#fff}
+
+/* Hero */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px 24px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:800px;background:radial-gradient(circle,rgba(108,92,231,0.15) 0%,transparent 70%);pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 20px;border-radius:100px;border:1px solid rgba(108,92,231,0.3);background:rgba(108,92,231,0.08);font-size:13px;color:#a29bfe;letter-spacing:0.5px;margin-bottom:32px;text-transform:uppercase;font-weight:600}
+.hero-badge .dot{width:6px;height:6px;border-radius:50%;background:#00b894;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.hero h1{font-size:clamp(42px,7vw,80px);font-weight:900;line-height:1.05;letter-spacing:-2px;max-width:900px;margin-bottom:24px}
+.hero h1 .gradient{background:linear-gradient(135deg,#6c5ce7,#a29bfe,#74b9ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:20px;color:#8a8a9a;max-width:600px;line-height:1.6;margin-bottom:48px}
+.hero-stats{display:flex;gap:48px;flex-wrap:wrap;justify-content:center}
+.hero-stat{text-align:center}
+.hero-stat .num{font-size:36px;font-weight:800;color:#fff}
+.hero-stat .label{font-size:13px;color:#6a6a7a;margin-top:4px;text-transform:uppercase;letter-spacing:1px}
+
+/* Section shared */
+.section{padding:120px 24px}
+.section-label{font-size:13px;text-transform:uppercase;letter-spacing:2px;color:#6c5ce7;font-weight:700;margin-bottom:16px}
+.section-title{font-size:clamp(32px,5vw,52px);font-weight:800;letter-spacing:-1.5px;line-height:1.1;margin-bottom:24px}
+.section-sub{font-size:18px;color:#8a8a9a;max-width:600px;line-height:1.6}
+
+/* Agent intro strip */
+.intro-strip{text-align:center;padding:80px 24px 0}
+.intro-strip h2{font-size:clamp(28px,4vw,44px);font-weight:800;letter-spacing:-1px}
+.intro-strip p{font-size:18px;color:#8a8a9a;margin-top:16px;max-width:560px;margin-left:auto;margin-right:auto;line-height:1.6}
+
+/* Agent cards */
+.agents-grid{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:0}
+
+.agent-row{display:grid;grid-template-columns:1fr 1fr;min-height:600px;border-bottom:1px solid rgba(255,255,255,0.04)}
+.agent-row:nth-child(even){direction:rtl}
+.agent-row:nth-child(even)>*{direction:ltr}
+
+.agent-info{padding:80px 64px;display:flex;flex-direction:column;justify-content:center}
+.agent-visual{position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
+
+.agent-avatar{width:120px;height:120px;border-radius:28px;display:flex;align-items:center;justify-content:center;font-size:48px;margin-bottom:24px;position:relative}
+.agent-avatar::after{content:'';position:absolute;inset:-2px;border-radius:30px;background:linear-gradient(135deg,var(--agent-color),transparent);opacity:0.4;z-index:-1}
+
+.agent-name{font-size:14px;text-transform:uppercase;letter-spacing:2px;font-weight:700;margin-bottom:8px}
+.agent-title{font-size:clamp(28px,3.5vw,40px);font-weight:800;letter-spacing:-1px;line-height:1.15;margin-bottom:20px}
+.agent-desc{font-size:16px;color:#9a9aaa;line-height:1.7;margin-bottom:28px}
+.agent-capabilities{list-style:none;display:flex;flex-direction:column;gap:12px;margin-bottom:32px}
+.agent-capabilities li{display:flex;align-items:flex-start;gap:12px;font-size:14px;color:#b0b0c0;line-height:1.5}
+.agent-capabilities li::before{content:'';width:20px;height:20px;min-width:20px;border-radius:6px;margin-top:1px;background:var(--agent-color);opacity:0.2;display:flex;align-items:center;justify-content:center}
+.agent-stat{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);font-size:14px;color:#ccc}
+.agent-stat strong{color:var(--agent-color);font-weight:700}
+
+/* Agent visual panels */
+.visual-panel{width:85%;max-width:440px;border-radius:16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);overflow:hidden}
+.visual-header{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:#ccc}
+.visual-header .status{width:8px;height:8px;border-radius:50%;background:#00b894;animation:pulse 2s infinite}
+.visual-body{padding:20px}
+.visual-line{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;margin-bottom:8px;background:rgba(255,255,255,0.02);font-size:13px;color:#999;transition:all 0.3s}
+.visual-line:hover{background:rgba(108,92,231,0.08);color:#ccc}
+.visual-line .icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.visual-line .text{flex:1}
+.visual-line .badge{padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600;background:rgba(0,184,148,0.12);color:#00b894}
+.visual-line .badge.warn{background:rgba(253,203,110,0.12);color:#fdcb6e}
+.visual-line .badge.info{background:rgba(108,92,231,0.12);color:#a29bfe}
+
+/* Colors per agent */
+.agent-coach{--agent-color:#6c5ce7}
+.agent-documenter{--agent-color:#00b894}
+.agent-scout{--agent-color:#fdcb6e}
+.agent-onboarding{--agent-color:#74b9ff}
+.agent-keeper{--agent-color:#fd79a8}
+.agent-meeting{--agent-color:#e17055}
+.agent-optimizer{--agent-color:#00cec9}
+
+/* Together section */
+.together{padding:120px 24px;text-align:center;position:relative}
+.together::before{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(108,92,231,0.1) 0%,transparent 70%);pointer-events:none}
+.together h2{font-size:clamp(36px,5vw,56px);font-weight:900;letter-spacing:-2px;margin-bottom:20px}
+.together h2 .gradient{background:linear-gradient(135deg,#6c5ce7,#00b894);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.together p{font-size:18px;color:#8a8a9a;max-width:560px;margin:0 auto 48px;line-height:1.6}
+
+.team-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:16px;max-width:900px;margin:0 auto 64px}
+.team-card{padding:24px 12px;border-radius:14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);text-align:center;transition:all 0.3s}
+.team-card:hover{border-color:var(--agent-color);transform:translateY(-4px);background:rgba(255,255,255,0.04)}
+.team-card .emoji{font-size:28px;margin-bottom:10px;display:block}
+.team-card .name{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--agent-color)}
+
+/* CTA */
+.cta-btn{display:inline-flex;align-items:center;gap:10px;padding:18px 40px;border-radius:14px;background:linear-gradient(135deg,#6c5ce7,#5a4bd1);color:#fff;font-size:16px;font-weight:700;text-decoration:none;transition:all 0.3s;border:none;cursor:pointer;letter-spacing:0.3px}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(108,92,231,0.3)}
+.cta-btn .arrow{transition:transform 0.3s}
+.cta-btn:hover .arrow{transform:translateX(4px)}
+.cta-secondary{background:transparent;border:1px solid rgba(255,255,255,0.12);color:#ccc;margin-left:16px}
+.cta-secondary:hover{border-color:#6c5ce7;color:#fff;box-shadow:0 12px 40px rgba(108,92,231,0.15)}
+
+/* ROI bar */
+.roi-bar{max-width:1000px;margin:0 auto;padding:48px;border-radius:20px;background:linear-gradient(135deg,rgba(108,92,231,0.08),rgba(0,184,148,0.05));border:1px solid rgba(108,92,231,0.15);display:grid;grid-template-columns:repeat(4,1fr);gap:32px;text-align:center}
+.roi-bar .val{font-size:32px;font-weight:800;color:#fff}
+.roi-bar .lbl{font-size:13px;color:#8a8a9a;margin-top:4px}
+
+/* Footer */
+footer{text-align:center;padding:64px 24px;border-top:1px solid rgba(255,255,255,0.04);font-size:13px;color:#4a4a5a}
+
+/* Responsive */
+@media(max-width:900px){
+  .agent-row{grid-template-columns:1fr;min-height:auto}
+  .agent-row:nth-child(even){direction:ltr}
+  .agent-info{padding:48px 24px}
+  .agent-visual{padding:24px;min-height:300px}
+  .team-grid{grid-template-columns:repeat(4,1fr)}
+  .roi-bar{grid-template-columns:repeat(2,1fr)}
+  .hero-stats{gap:24px}
+}
+@media(max-width:600px){
+  .team-grid{grid-template-columns:repeat(3,1fr)}
+  .cta-secondary{margin-left:0;margin-top:12px}
+}
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-badge"><span class="dot"></span> 7 AI Agents, Ready to Deploy</div>
+  <h1>Meet Your New <span class="gradient">AI Team</span></h1>
+  <p>They don't take PTO. They don't lose context. They don't forget. Seven specialized AI agents that actually do the work your team wastes hours on.</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="num">47K</div><div class="label">Workers Coached</div></div>
+    <div class="hero-stat"><div class="num">23%</div><div class="label">Productivity Gain</div></div>
+    <div class="hero-stat"><div class="num">89%</div><div class="label">Employee Satisfaction</div></div>
+    <div class="hero-stat"><div class="num">40+</div><div class="label">Integrations</div></div>
+  </div>
+</section>
+
+<!-- Intro -->
+<div class="intro-strip">
+  <h2>Seven agents. Seven superpowers.</h2>
+  <p>Each one is built for a specific job. Together, they transform how your entire organization works.</p>
+</div>
+
+<!-- Agent 1: Coach -->
+<div class="agents-grid">
+
+<div class="agent-row agent-coach">
+  <div class="agent-info">
+    <div class="agent-avatar" style="background:rgba(108,92,231,0.12)">
+      <span style="font-size:48px">&#129302;</span>
+    </div>
+    <div class="agent-name" style="color:#6c5ce7">Meet Coach</div>
+    <div class="agent-title">Your Personal Productivity Mentor</div>
+    <div class="agent-desc">Coach watches work patterns (not people) and sends personalized tips via Slack or Teams. It knows when someone's context-switching too much, when deep work windows are being interrupted, and exactly what each person can do to reclaim their day.</div>
+    <ul class="agent-capabilities">
+      <li>Personalized daily tips based on actual work patterns</li>
+      <li>Focus time protection with smart DND suggestions</li>
+      <li>Weekly progress summaries for individuals and managers</li>
+      <li>Adapts recommendations as habits change</li>
+    </ul>
+    <div class="agent-stat"><strong>23%</strong> average productivity increase per employee</div>
+  </div>
+  <div class="agent-visual">
+    <div class="visual-panel">
+      <div class="visual-header"><span class="status"></span> Coach is active</div>
+      <div class="visual-body">
+        <div class="visual-line"><div class="icon" style="background:rgba(108,92,231,0.12)">&#128172;</div><div class="text">Sarah, you had 3 uninterrupted hours yesterday. Try blocking 9-11am again today.</div></div>
+        <div class="visual-line"><div class="icon" style="background:rgba(108,92,231,0.12)">&#128200;</div><div class="text">Your deep work is up 18% this week.</div><div class="badge">+18%</div></div>
+        <div class="visual-line"><div class="icon" style="background:rgba(108,92,231,0.12)">&#128161;</div><div class="text">Consider batching your 6 daily Slack check-ins to 3 focused windows.</div></div>
+        <div class="visual-line"><div class="icon" style="background:rgba(108,92,231,0.12)">&#127942;</div><div class="text">You completed 4/4 focus goals this week!</div><div class="badge">Streak</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Agent 2: Scribe (Documenter) -->
+<div class="agent-row agent-documenter">
+  <div class="agent-info">
+    <div class="agent-avatar" style="background:rgba(0,184,148,0.12)">
+      <span style="font-size:48px">&#128221;</span>
+    </div>
+    <div class="agent-name" style="color:#00b894">Meet Scribe</div>
+    <div class="agent-title">The Process Documenter That Never Sleeps</div>
+    <div class="agent-desc">Scribe watches how your team actually works and auto-generates SOPs, runbooks, and process documentation. No more "how do we do this again?" moments. No more knowledge locked in someone's head.</div>
+    <ul class="agent-capabilities">
+      <li>Auto-generates SOPs from observed workflows</li>
+      <li>Keeps documentation updated as processes evolve</li>
+      <li>Creates visual flowcharts and decision trees</li>
+      <li>Flags process inconsistencies across teams</li>
+    </ul>
+    <div class="agent-stat"><strong>340+</strong> SOPs auto-generated per company on average</div>
+  </div>
+  <div class="agent-visual">
+    <div class="visual-panel">
+      <div class="visual-header"><span class="status"></span> Scribe is documenting</div>
+      <div class="visual-body">
+        <div class="visual-line"><div class="icon" style="background:rgba(0,184,148,0.12)">&#128196;</div><div class="text">New SOP: Client Onboarding Process (v3)</div><div class="badge">New</div></div>
+        <div class="visual-line"><div class="icon" style="background:rgba(0,184,148,0.12)">&#128260;</div><div class="text">Updated: Invoice Approval Workflow</div><div class="badge info">Updated</div></div>
+        <div class="visual-line"><div class="icon" style="background:rgba(0,184,148,0.12)">&#9888;&#65039;</div><div class="text">Inconsistency: Sales uses 2 different proposal processes</div><div class="badge warn">Review</div></div>
+        <div class="visual-line"><div class="icon" style="background:rgba(0,184,148,0.12)">&#128209;</div><div class="text">Runbook: Quarterly Reporting (12 steps documented)</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Agent 3: Scout -->
+<div class="agent-row agent-scout">
+  <div class="agent-info">
+    <div class="agent-avatar" style="background:rgba(253,203,110,0.12)">
+      <span style="font-size:48px">&#128269;</span>
+    </div>
+    <div class="agent-name" style="color:#fdcb6e">Meet Scout</div>
+    <div class="agent-title">Your Automation Finder</div>
+    <div class="agent-desc">Scout identifies repetitive tasks your team does manually and suggests (or builds) automations. It sees patterns humans miss because it watches thousands of micro-actions across your entire org.</div>
+    <ul class="agent-capabilities">
+      <li>Identifies repetitive manual tasks across all teams</li>
+      <li>Estimates time savings for each automation opportunity</li>
+      <li>Builds simple automations directly via integrations</li>
+      <li>Prioritizes by impact: biggest time-saves first</li>
+    </ul>
+    <div class="agent-stat"><strong>12 hrs/week</strong> saved per team on average</div>
+  </div>
+  <div class="agent-visual">
+    <div class="visual-panel">
+      <div class="visual-header"><span class="status"></span> Scout found 3 opportunities</div>
+      <div class="visual-body">
+        <div class="visual-line"><div class="icon" style="background:rgba(253,203,110,0.12)">&#9889;</div><div class="text">Auto-tag support tickets by category</div><div class="badge">4h/wk saved</div></div>
+        <div class="visual-line"><div class="icon" style="background:rgba(253,203,110,0.12)">&#9889;</div><div class="text">Auto-generate weekly client reports</div><div class="badge">6h/wk saved</div></div>
+        <div class="visual-line"><div class="icon" style="background:rgba(253,203,110,0.12)">&#9889;</div><div class="text">Sync CRM notes to project tracker</div><div class="badge">2h/wk saved</div></div>
+        <div class="visual-line"><div class="icon" style="background:rgba(253,203,110,0.12)">&#128640;</div><div class="text">1 automation deployed this week</div><div class="badge" style="background:rgba(108,92,231,0.12);color:#a29bfe">Live</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Agent 4: Guide (Onboarding) -->
+<div class="agent-row agent-onboarding">
+  <div class="agent-info">
+    <div class="agent-avatar" style="background:rgba(116,185,255,0.12)">
+      <span style="font-size:48px">&#127891;</span>
+    </div>
+    <div class="agent-name" style="color:#74b9ff">Meet Guide</div>
+    <div class="agent-title">Onboarding, Personalized to the Role</div>
+    <div class="agent-desc">Guide creates personalized onboarding plans for every new hire based on what the role actually requires. It connects them to the right people, the right docs, and the right tools from day one.</div>
+    <ul class="agent-capabilities">
+      <li>Custom onboarding paths based on role and team</li>
+      <li>Auto-assigns training materials and introductions</li>
+      <li>Tracks progress and flags when someone is stuck</li>
+      <li>Reduces time-to-productivity by 40%</li>
+    </ul>
+    <div class="agent-stat"><strong>40%</strong> faster time-to-productivity for new hires</div>
+  </div>
+  <div class="agent-visual">
+    <div class="visual-panel">
+      <div class="visual-header"><span class="status"></span> Guide: Onboarding Jake (Sales)</div>
+      <div class="visual-body">
+        <div class="visual-line"><div class="icon" style="background:rgba(116,185,255,0.12)">&#9989;</div><div class="text">Day 1: CRM setup + intro to sales playbook</div><div class="badge">Done</div></div>
+        <div class="visual-line"><div class="icon" style="background:rgba(116,185,255,0.12)">&#9989;</div><div class="text">Day 2: Shadow call with Maria (top closer)</div><div class="badge">Done</div></div>
+        <div class="visual-line"><div class="icon" style="background:rgba(116,185,255,0.12)">&#128994;</div><div class="text">Day 3: First solo discovery call (today)</div><div class="badge info">Active</div></div>
+        <div class="visual-line"><div class="icon" style="background:rgba(116,185,255,0.12)">&#128310;</div><div class="text">Day 4: Pipeline management training</div><div class="badge warn">Next</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Agent 5: Keeper -->
+<div class="agent-row agent-keeper">
+  <div class="agent-info">
+    <div class="agent-avatar" style="background:rgba(253,121,168,0.12)">
+      <span style="font-size:48px">&#129504;</span>
+    </div>
+    <div class="agent-name" style="color:#fd79a8">Meet Keeper</div>
+    <div class="agent-title">Tribal Knowledge, Captured Forever</div>
+    <div class="agent-desc">Keeper captures the knowledge that lives in people's heads before they leave. It identifies who knows what, indexes institutional knowledge, and makes it all searchable for the next person.</div>
+    <ul class="agent-capabilities">
+      <li>Maps expertise across the organization</li>
+      <li>Auto-captures decisions and context from conversations</li>
+      <li>Creates searchable knowledge base from real workflows</li>
+      <li>Alerts when critical knowledge is at risk (single point of failure)</li>
+    </ul>
+    <div class="agent-stat"><strong>94%</strong> knowledge retention after employee departures</div>
+  </div>
+  <div class="agent-visual">
+    <div class="visual-panel">
+      <div class="visual-header"><span class="status"></span> Keeper: Knowledge Map</div>
+      <div class="visual-body">
+        <div class="visual-line"><div class="icon" style="background:rgba(253,121,168,0.12)">&#128312;</div><div class="text">AWS deployment process — only Dave knows this</div><div class="badge warn">At risk</div></div>
+        <div class="visual-line"><div class="icon" style="background:rgba(253,121,168,0.12)">&#128994;</div><div class="text">Client escalation process — documented by 3 people</div><div class="badge">Safe</div></div>
+        <div class="visual-line"><div class="icon" style="background:rgba(253,121,168,0.12)">&#128312;</div><div class="text">Legacy API integration — Lisa is the only expert</div><div class="badge warn">At risk</div></div>
+        <div class="visual-line"><div class="icon" style="background:rgba(253,121,168,0.12)">&#128218;</div><div class="text">12 new knowledge articles auto-captured this week</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Agent 6: Analyst (Meeting) -->
+<div class="agent-row agent-meeting">
+  <div class="agent-info">
+    <div class="agent-avatar" style="background:rgba(225,112,85,0.12)">
+      <span style="font-size:48px">&#128197;</span>
+    </div>
+    <div class="agent-name" style="color:#e17055">Meet Analyst</div>
+    <div class="agent-title">Your Meeting Intelligence Layer</div>
+    <div class="agent-desc">Analyst summarizes every meeting, tracks action items, follows up on commitments, and identifies which meetings should have been emails. It makes meetings accountable.</div>
+    <ul class="agent-capabilities">
+      <li>Auto-summarizes meetings with key decisions and action items</li>
+      <li>Tracks follow-through on commitments made in meetings</li>
+      <li>Identifies recurring meetings with low engagement or output</li>
+      <li>Recommends which meetings to cancel, shorten, or restructure</li>
+    </ul>
+    <div class="agent-stat"><strong>31%</strong> reduction in unnecessary meetings</div>
+  </div>
+  <div class="agent-visual">
+    <div class="visual-panel">
+      <div class="visual-header"><span class="status"></span> Analyst: This week's meetings</div>
+      <div class="visual-body">
+        <div class="visual-line"><div class="icon" style="background:rgba(225,112,85,0.12)">&#128221;</div><div class="text">Sprint Planning — 4 action items tracked</div><div class="badge">Productive</div></div>
+        <div class="visual-line"><div class="icon" style="background:rgba(225,112,85,0.12)">&#128233;</div><div class="text">"Status Update" — could be a Slack post</div><div class="badge warn">Email it</div></div>
+        <div class="visual-line"><div class="icon" style="background:rgba(225,112,85,0.12)">&#9888;&#65039;</div><div class="text">3 overdue action items from last Tuesday</div><div class="badge warn">Overdue</div></div>
+        <div class="visual-line"><div class="icon" style="background:rgba(225,112,85,0.12)">&#128200;</div><div class="text">Team meeting time down 5.2 hrs vs. last month</div><div class="badge">-5.2h</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Agent 7: Flow (Optimizer) -->
+<div class="agent-row agent-optimizer">
+  <div class="agent-info">
+    <div class="agent-avatar" style="background:rgba(0,206,201,0.12)">
+      <span style="font-size:48px">&#9881;&#65039;</span>
+    </div>
+    <div class="agent-name" style="color:#00cec9">Meet Flow</div>
+    <div class="agent-title">The Workflow Optimizer</div>
+    <div class="agent-desc">Flow finds bottlenecks, predicts delays, and suggests re-routing before problems happen. It sees your entire operation as a system and optimizes the whole thing, not just individual tasks.</div>
+    <ul class="agent-capabilities">
+      <li>Real-time bottleneck detection across all workflows</li>
+      <li>Predicts project delays before they happen</li>
+      <li>Suggests workload rebalancing across team members</li>
+      <li>Measures and improves handoff efficiency between teams</li>
+    </ul>
+    <div class="agent-stat"><strong>$4,200</strong> ROI per employee per year</div>
+  </div>
+  <div class="agent-visual">
+    <div class="visual-panel">
+      <div class="visual-header"><span class="status"></span> Flow: System Health</div>
+      <div class="visual-body">
+        <div class="visual-line"><div class="icon" style="background:rgba(0,206,201,0.12)">&#128308;</div><div class="text">QA review queue: 14 items backed up</div><div class="badge warn">Bottleneck</div></div>
+        <div class="visual-line"><div class="icon" style="background:rgba(0,206,201,0.12)">&#128161;</div><div class="text">Suggest: Route 5 low-risk items to auto-approve</div><div class="badge info">Fix</div></div>
+        <div class="visual-line"><div class="icon" style="background:rgba(0,206,201,0.12)">&#128200;</div><div class="text">Design-to-Dev handoff time: -22% this sprint</div><div class="badge">-22%</div></div>
+        <div class="visual-line"><div class="icon" style="background:rgba(0,206,201,0.12)">&#128338;</div><div class="text">Project Alpha ETA: on track (87% confidence)</div><div class="badge">On track</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- Together CTA -->
+<section class="together">
+  <h2>Seven agents. <span class="gradient">One platform.</span></h2>
+  <p>Deploy one or deploy all. Each agent works independently, but together they create an intelligence layer across your entire organization.</p>
+
+  <div class="team-grid">
+    <div class="team-card agent-coach"><span class="emoji">&#129302;</span><span class="name">Coach</span></div>
+    <div class="team-card agent-documenter"><span class="emoji">&#128221;</span><span class="name">Scribe</span></div>
+    <div class="team-card agent-scout"><span class="emoji">&#128269;</span><span class="name">Scout</span></div>
+    <div class="team-card agent-onboarding"><span class="emoji">&#127891;</span><span class="name">Guide</span></div>
+    <div class="team-card agent-keeper"><span class="emoji">&#129504;</span><span class="name">Keeper</span></div>
+    <div class="team-card agent-meeting"><span class="emoji">&#128197;</span><span class="name">Analyst</span></div>
+    <div class="team-card agent-optimizer"><span class="emoji">&#9881;&#65039;</span><span class="name">Flow</span></div>
+  </div>
+
+  <div class="roi-bar">
+    <div><div class="val">47,000+</div><div class="lbl">Workers using Go2 agents</div></div>
+    <div><div class="val">23%</div><div class="lbl">Average productivity gain</div></div>
+    <div><div class="val">89%</div><div class="lbl">Employee satisfaction</div></div>
+    <div><div class="val">$4,200</div><div class="lbl">ROI per employee/year</div></div>
+  </div>
+
+  <div style="margin-top:64px">
+    <a href="#" class="cta-btn">Deploy Your AI Team <span class="arrow">&rarr;</span></a>
+    <a href="#" class="cta-btn cta-secondary">See It In Action</a>
+  </div>
+</section>
+
+<footer>
+  &copy; 2026 Go2. The AI workforce platform.
+</footer>
+
+</body>
+</html>

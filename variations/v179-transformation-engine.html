@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go2 — The Transformation Engine</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --deep: #0a0a1a;
+            --surface: #12122a;
+            --accent: #6366f1;
+            --accent-light: #818cf8;
+            --glow: #a78bfa;
+            --warm: #f59e0b;
+            --success: #10b981;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--deep);
+            color: var(--text);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* Ambient background */
+        .ambient {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .ambient::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(ellipse at 30% 20%, rgba(99,102,241,0.08) 0%, transparent 50%),
+                        radial-gradient(ellipse at 70% 80%, rgba(167,139,250,0.06) 0%, transparent 50%),
+                        radial-gradient(ellipse at 50% 50%, rgba(245,158,11,0.03) 0%, transparent 60%);
+            animation: drift 20s ease-in-out infinite;
+        }
+        @keyframes drift {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(2%, -1%) rotate(1deg); }
+            66% { transform: translate(-1%, 2%) rotate(-1deg); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Navigation */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 28px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .logo {
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, var(--accent-light), var(--glow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .nav-cta {
+            padding: 10px 24px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+        .nav-cta:hover { background: var(--accent-light); transform: translateY(-1px); }
+
+        /* Hero */
+        .hero {
+            padding: 120px 0 80px;
+            text-align: center;
+        }
+        .hero-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            background: rgba(99,102,241,0.15);
+            border: 1px solid rgba(99,102,241,0.3);
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--accent-light);
+            margin-bottom: 32px;
+            letter-spacing: 0.02em;
+        }
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 900;
+            line-height: 1.1;
+            letter-spacing: -0.04em;
+            margin-bottom: 28px;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .hero h1 .gradient {
+            background: linear-gradient(135deg, var(--accent-light), var(--glow), var(--warm));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-sub {
+            font-size: 1.3rem;
+            color: var(--muted);
+            max-width: 640px;
+            margin: 0 auto 48px;
+            line-height: 1.8;
+            font-weight: 300;
+        }
+        .hero-ctas {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn-primary {
+            padding: 16px 36px;
+            background: linear-gradient(135deg, var(--accent), #7c3aed);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            box-shadow: 0 4px 24px rgba(99,102,241,0.3);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(99,102,241,0.4); }
+        .btn-secondary {
+            padding: 16px 36px;
+            background: transparent;
+            color: var(--text);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 12px;
+            font-size: 1.05rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+        .btn-secondary:hover { border-color: var(--accent-light); background: rgba(99,102,241,0.08); }
+
+        /* Problem Statement */
+        .problem {
+            padding: 100px 0;
+        }
+        .problem-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+        }
+        .problem-text h2 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -0.03em;
+            margin-bottom: 24px;
+        }
+        .problem-text h2 .red { color: #ef4444; }
+        .problem-text p {
+            font-size: 1.15rem;
+            color: var(--muted);
+            line-height: 1.8;
+            margin-bottom: 16px;
+        }
+        .stat-callout {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 12px;
+            margin-top: 24px;
+            padding: 20px 28px;
+            background: rgba(239,68,68,0.08);
+            border: 1px solid rgba(239,68,68,0.2);
+            border-radius: 16px;
+        }
+        .stat-callout .number {
+            font-size: 3rem;
+            font-weight: 900;
+            color: #ef4444;
+            letter-spacing: -0.03em;
+        }
+        .stat-callout .label {
+            font-size: 1rem;
+            color: var(--muted);
+            line-height: 1.4;
+        }
+        .problem-reasons {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .reason {
+            padding: 24px 28px;
+            background: var(--surface);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            transition: all 0.3s;
+        }
+        .reason:hover { border-color: rgba(239,68,68,0.3); transform: translateX(4px); }
+        .reason-num {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #ef4444;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .reason h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .reason p {
+            font-size: 0.95rem;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        /* Transformation Arc */
+        .arc {
+            padding: 100px 0;
+        }
+        .arc-header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+        .arc-header h2 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 16px;
+        }
+        .arc-header p {
+            font-size: 1.15rem;
+            color: var(--muted);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .journey {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+        .journey::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--accent), var(--glow), var(--warm), var(--success));
+            transform: translateX(-50%);
+        }
+        .stage {
+            display: grid;
+            grid-template-columns: 1fr 80px 1fr;
+            align-items: center;
+            padding: 40px 0;
+        }
+        .stage-content {
+            padding: 32px;
+            background: var(--surface);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 20px;
+            transition: all 0.4s;
+        }
+        .stage-content:hover { border-color: var(--accent); transform: scale(1.02); }
+        .stage:nth-child(odd) .stage-content { grid-column: 1; }
+        .stage:nth-child(even) .stage-content { grid-column: 3; }
+        .stage-marker {
+            grid-column: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2;
+        }
+        .stage-dot {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 0 20px rgba(99,102,241,0.3);
+        }
+        .stage:nth-child(1) .stage-dot { background: var(--accent); }
+        .stage:nth-child(2) .stage-dot { background: var(--glow); }
+        .stage:nth-child(3) .stage-dot { background: var(--warm); }
+        .stage:nth-child(4) .stage-dot { background: var(--success); }
+        .stage-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        .stage:nth-child(1) .stage-label { color: var(--accent-light); }
+        .stage:nth-child(2) .stage-label { color: var(--glow); }
+        .stage:nth-child(3) .stage-label { color: var(--warm); }
+        .stage:nth-child(4) .stage-label { color: var(--success); }
+        .stage-content h3 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+        .stage-content p {
+            color: var(--muted);
+            line-height: 1.7;
+            font-size: 0.98rem;
+        }
+        .stage-content .detail {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            font-size: 0.9rem;
+            color: var(--muted);
+            font-style: italic;
+        }
+        .stage:nth-child(odd) .stage-spacer { grid-column: 3; }
+        .stage:nth-child(even) .stage-spacer { grid-column: 1; }
+
+        /* Waze Analogy */
+        .waze {
+            padding: 100px 0;
+            text-align: center;
+        }
+        .waze-card {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 60px;
+            background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(167,139,250,0.08));
+            border: 1px solid rgba(99,102,241,0.2);
+            border-radius: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+        .waze-card::before {
+            content: '';
+            position: absolute;
+            top: -100px; right: -100px;
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%);
+        }
+        .waze-card h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            letter-spacing: -0.03em;
+        }
+        .waze-card p {
+            font-size: 1.1rem;
+            color: var(--muted);
+            line-height: 1.8;
+            margin-bottom: 16px;
+            position: relative;
+        }
+        .waze-compare {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 24px;
+            align-items: center;
+            margin-top: 40px;
+            position: relative;
+        }
+        .waze-side {
+            padding: 24px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .waze-side h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .waze-side p { font-size: 0.95rem; margin-bottom: 0; }
+        .waze-arrow {
+            font-size: 2rem;
+            color: var(--accent-light);
+        }
+
+        /* Stats */
+        .stats {
+            padding: 80px 0;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+        }
+        .stat-card {
+            padding: 36px 28px;
+            background: var(--surface);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 20px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .stat-card:hover { border-color: var(--accent); transform: translateY(-4px); }
+        .stat-number {
+            font-size: 2.8rem;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            margin-bottom: 4px;
+            background: linear-gradient(135deg, var(--accent-light), var(--glow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        /* Worker-first */
+        .worker-first {
+            padding: 100px 0;
+        }
+        .wf-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+        .wf-text h2 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 20px;
+        }
+        .wf-text p {
+            font-size: 1.1rem;
+            color: var(--muted);
+            line-height: 1.8;
+            margin-bottom: 16px;
+        }
+        .wf-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        .wf-badge {
+            padding: 8px 16px;
+            background: rgba(16,185,129,0.1);
+            border: 1px solid rgba(16,185,129,0.25);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--success);
+        }
+        .wf-visual {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .wf-card {
+            padding: 24px;
+            background: var(--surface);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+        }
+        .wf-card.highlight {
+            grid-column: span 2;
+            border-color: rgba(16,185,129,0.3);
+            background: rgba(16,185,129,0.05);
+        }
+        .wf-card h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .wf-card p {
+            font-size: 0.9rem;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+        .wf-card .icon {
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+        }
+
+        /* Integrations */
+        .integrations {
+            padding: 80px 0;
+            text-align: center;
+        }
+        .integrations h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 12px;
+        }
+        .integrations > p {
+            color: var(--muted);
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+        }
+        .integration-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .int-tag {
+            padding: 10px 20px;
+            background: var(--surface);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .int-tag:hover { border-color: var(--accent); color: var(--accent-light); }
+
+        /* CTA */
+        .final-cta {
+            padding: 120px 0;
+            text-align: center;
+        }
+        .final-cta h2 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            margin-bottom: 20px;
+            line-height: 1.15;
+        }
+        .final-cta h2 .gradient {
+            background: linear-gradient(135deg, var(--accent-light), var(--warm));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .final-cta p {
+            font-size: 1.2rem;
+            color: var(--muted);
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+        .final-cta .btn-primary {
+            font-size: 1.15rem;
+            padding: 18px 44px;
+        }
+
+        /* Footer */
+        footer {
+            padding: 40px 0;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .problem-grid, .wf-grid { grid-template-columns: 1fr; gap: 40px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .journey::before { left: 24px; }
+            .stage { grid-template-columns: 48px 1fr; gap: 16px; }
+            .stage-content { grid-column: 2 !important; }
+            .stage-marker { grid-column: 1; }
+            .stage-spacer { display: none; }
+            .waze-compare { grid-template-columns: 1fr; }
+            .waze-arrow { transform: rotate(90deg); }
+            .wf-visual { grid-template-columns: 1fr; }
+            .wf-card.highlight { grid-column: span 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient"></div>
+
+    <div class="container">
+        <nav>
+            <div class="logo">Go2</div>
+            <a href="#start" class="nav-cta">Start Your Transformation</a>
+        </nav>
+
+        <!-- Hero -->
+        <section class="hero">
+            <div class="hero-badge">AI Transformation Platform</div>
+            <h1>AI transformation doesn't start with AI.<br><span class="gradient">It starts with understanding how work actually happens.</span></h1>
+            <p class="hero-sub">Every company wants to deploy AI agents. Almost none of them can, because they don't have the data. Go2 captures how your team works, documents it, and builds the foundation AI actually needs.</p>
+            <div class="hero-ctas">
+                <a href="#start" class="btn-primary">Start Your Transformation</a>
+                <a href="#journey" class="btn-secondary">See the Journey</a>
+            </div>
+        </section>
+
+        <!-- Problem -->
+        <section class="problem">
+            <div class="problem-grid">
+                <div class="problem-text">
+                    <h2>Why <span class="red">95% of AI transformations</span> fail</h2>
+                    <p>MIT research confirms what every executive already suspects: deploying AI without understanding your workflows is like hiring a brilliant new employee and giving them zero onboarding.</p>
+                    <p>The AI doesn't fail. The preparation fails.</p>
+                    <div class="stat-callout">
+                        <span class="number">95%</span>
+                        <span class="label">of companies fail to achieve<br>meaningful AI transformation</span>
+                    </div>
+                </div>
+                <div class="problem-reasons">
+                    <div class="reason">
+                        <div class="reason-num">Reason 01</div>
+                        <h3>No data about how work actually happens</h3>
+                        <p>Leadership thinks they know their processes. They're working from org charts and job descriptions, not reality.</p>
+                    </div>
+                    <div class="reason">
+                        <div class="reason-num">Reason 02</div>
+                        <h3>No way to document processes at scale</h3>
+                        <p>Manual SOP creation takes months, goes stale instantly, and only captures what people think they do, not what they actually do.</p>
+                    </div>
+                    <div class="reason">
+                        <div class="reason-num">Reason 03</div>
+                        <h3>No training data for AI agents</h3>
+                        <p>Your company's institutional knowledge lives in people's heads. AI agents can't access it, learn from it, or replicate it.</p>
+                    </div>
+                    <div class="reason">
+                        <div class="reason-num">Reason 04</div>
+                        <h3>Workers resist surveillance tools</h3>
+                        <p>73% of workers resist employer-owned monitoring. Top-down surveillance destroys the trust you need for transformation.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Transformation Arc -->
+        <section class="arc" id="journey">
+            <div class="arc-header">
+                <h2>The Transformation Arc</h2>
+                <p>Go2 takes your company from "we should use AI" to "AI is doing the work" in four stages.</p>
+            </div>
+
+            <div class="journey">
+                <div class="stage">
+                    <div class="stage-content">
+                        <div class="stage-label">Stage 1 — Observe</div>
+                        <h3>Map the territory</h3>
+                        <p>Go2's desktop agent quietly observes how work actually happens. Not surveillance, not screenshots, not keyloggers. Pattern recognition. Workflow fingerprints. The ground truth of how your team operates.</p>
+                        <div class="detail">Workers love it because it's theirs. 89% satisfaction rate. They see their own data first, control what's shared.</div>
+                    </div>
+                    <div class="stage-marker"><div class="stage-dot">1</div></div>
+                    <div class="stage-spacer"></div>
+                </div>
+
+                <div class="stage">
+                    <div class="stage-spacer"></div>
+                    <div class="stage-marker"><div class="stage-dot">2</div></div>
+                    <div class="stage-content">
+                        <div class="stage-label">Stage 2 — Document</div>
+                        <h3>Auto-generate the playbook</h3>
+                        <p>Go2 transforms raw workflow patterns into living documentation. SOPs, process maps, decision trees, all generated automatically from how your team actually works, not how a consultant thinks they should.</p>
+                        <div class="detail">What used to take a consulting team 6 months happens continuously, updated in real-time as processes evolve.</div>
+                    </div>
+                </div>
+
+                <div class="stage">
+                    <div class="stage-content">
+                        <div class="stage-label">Stage 3 — Train</div>
+                        <h3>Create AI-ready context</h3>
+                        <p>The documented playbook becomes training data for AI agents. Go2 sidecars into Claude, ChatGPT, and other AI tools, injecting your company's specific context, processes, and institutional knowledge.</p>
+                        <div class="detail">Your AI agents don't give generic answers. They understand how YOUR company handles things.</div>
+                    </div>
+                    <div class="stage-marker"><div class="stage-dot">3</div></div>
+                    <div class="stage-spacer"></div>
+                </div>
+
+                <div class="stage">
+                    <div class="stage-spacer"></div>
+                    <div class="stage-marker"><div class="stage-dot">4</div></div>
+                    <div class="stage-content">
+                        <div class="stage-label">Stage 4 — Transform</div>
+                        <h3>Automate with confidence</h3>
+                        <p>Repetitive work gets automated by AI agents that actually know what they're doing. Humans shift to judgment, creativity, and the work only humans should do. This is real transformation.</p>
+                        <div class="detail">23% average productivity gain. $4,200/year ROI per worker. Not projected. Measured.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Waze Analogy -->
+        <section class="waze">
+            <div class="waze-card">
+                <h2>Think of it like Waze, but for work</h2>
+                <p>Waze didn't build roads. It crowdsourced how people actually drive, then used that data to make everyone's commute smarter. Go2 does the same thing for knowledge work.</p>
+                <div class="waze-compare">
+                    <div class="waze-side">
+                        <h3>Waze</h3>
+                        <p>Crowdsourced driving data makes navigation smarter for everyone</p>
+                    </div>
+                    <div class="waze-arrow">&rarr;</div>
+                    <div class="waze-side">
+                        <h3>Go2</h3>
+                        <p>Crowdsourced work data makes AI agents smarter for every company</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats -->
+        <section class="stats">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">47K</div>
+                    <div class="stat-label">Workers using Go2 daily</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">23%</div>
+                    <div class="stat-label">Average productivity gain</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">89%</div>
+                    <div class="stat-label">Worker satisfaction rate</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">40+</div>
+                    <div class="stat-label">Integrations ready</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Worker-first -->
+        <section class="worker-first">
+            <div class="wf-grid">
+                <div class="wf-text">
+                    <h2>Worker-first. Always.</h2>
+                    <p>Traditional monitoring tools are built for managers to watch workers. Go2 is built for workers to understand and improve their own work. That's not just a philosophy; it's why it works.</p>
+                    <p>When people trust the tool, they use it honestly. When they use it honestly, you get real data. When you have real data, AI transformation actually succeeds.</p>
+                    <div class="wf-badges">
+                        <span class="wf-badge">Privacy-first architecture</span>
+                        <span class="wf-badge">Worker-owned data</span>
+                        <span class="wf-badge">No screenshots</span>
+                        <span class="wf-badge">No keylogging</span>
+                        <span class="wf-badge">Open-source agent skills</span>
+                    </div>
+                </div>
+                <div class="wf-visual">
+                    <div class="wf-card">
+                        <div class="icon">&#128274;</div>
+                        <h4>Workers see their data first</h4>
+                        <p>Before any manager, before any report, the worker controls their own insights.</p>
+                    </div>
+                    <div class="wf-card">
+                        <div class="icon">&#129309;</div>
+                        <h4>Trust = better data</h4>
+                        <p>89% satisfaction means 89% honest data. That's the foundation AI needs.</p>
+                    </div>
+                    <div class="wf-card highlight">
+                        <div class="icon">&#127793;</div>
+                        <h4>73% resist surveillance. 89% love Go2.</h4>
+                        <p>The difference isn't features, it's who the tool is built for. Go2 is built for the worker.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Integrations -->
+        <section class="integrations">
+            <h2>Slides into your entire stack</h2>
+            <p>40+ integrations, including the AI tools your team is already using.</p>
+            <div class="integration-grid">
+                <span class="int-tag">Claude</span>
+                <span class="int-tag">ChatGPT</span>
+                <span class="int-tag">Slack</span>
+                <span class="int-tag">Notion</span>
+                <span class="int-tag">Jira</span>
+                <span class="int-tag">Linear</span>
+                <span class="int-tag">GitHub</span>
+                <span class="int-tag">VS Code</span>
+                <span class="int-tag">Google Workspace</span>
+                <span class="int-tag">Microsoft 365</span>
+                <span class="int-tag">Figma</span>
+                <span class="int-tag">Asana</span>
+                <span class="int-tag">Salesforce</span>
+                <span class="int-tag">HubSpot</span>
+                <span class="int-tag">Zoom</span>
+                <span class="int-tag">+ 25 more</span>
+            </div>
+        </section>
+
+        <!-- Final CTA -->
+        <section class="final-cta" id="start">
+            <h2>Stop buying AI tools.<br><span class="gradient">Start building the foundation they need.</span></h2>
+            <p>The companies that win with AI aren't the ones with the most tools. They're the ones that understand their own work deeply enough to transform it.</p>
+            <a href="#" class="btn-primary">Start Your Transformation</a>
+        </section>
+
+        <footer>
+            <p>&copy; 2026 Go2. The transformation engine for companies serious about AI.</p>
+        </footer>
+    </div>
+</body>
+</html>

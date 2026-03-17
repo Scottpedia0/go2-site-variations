@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Finally See Inside Your Own Company</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0b0f19;--surface:#111827;--surface2:#1e293b;--surface3:#253449;--accent:#3b82f6;--accent2:#60a5fa;--accent3:#93c5fd;--green:#22c55e;--green2:#4ade80;--amber:#f59e0b;--rose:#f43f5e;--purple:#a855f7;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--border:rgba(255,255,255,.06)}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+a{color:var(--accent2);text-decoration:none}
+
+/* Nav */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(11,15,25,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 2rem;height:60px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:1.4rem;font-weight:800;color:#fff}
+.logo span{color:var(--accent2)}
+.nav-links{display:flex;gap:1.5rem;align-items:center}
+.nav-links a{color:var(--text3);font-size:.85rem;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{background:var(--accent)!important;color:#fff!important;padding:.45rem 1.1rem;border-radius:7px;font-weight:600;font-size:.85rem}
+
+/* Hero */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:7rem 2rem 4rem}
+.hero-badge{display:inline-flex;align-items:center;gap:.5rem;background:var(--surface);border:1px solid var(--border);padding:.35rem .85rem;border-radius:99px;font-size:.8rem;color:var(--accent2);margin-bottom:2rem}
+.hero h1{font-size:clamp(2.5rem,6vw,4rem);font-weight:800;line-height:1.1;max-width:800px;margin-bottom:1rem}
+.hero h1 span{color:var(--accent2)}
+.hero-sub{font-size:1.15rem;color:var(--text2);max-width:580px;margin:0 auto 2.5rem}
+.ctas{display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap}
+.btn-p{background:var(--accent);color:#fff;padding:.75rem 1.75rem;border-radius:8px;font-weight:700;font-size:.9rem;border:none;cursor:pointer;transition:all .2s}
+.btn-p:hover{background:#2563eb;transform:translateY(-1px)}
+.btn-s{background:transparent;color:var(--text);padding:.75rem 1.75rem;border-radius:8px;font-weight:600;font-size:.9rem;border:1px solid var(--border);cursor:pointer;transition:all .2s}
+.btn-s:hover{border-color:var(--accent2)}
+
+/* Dashboard Mock */
+.dash-mock{max-width:1100px;margin:3rem auto 0;background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.4)}
+.dash-topbar{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.5rem;border-bottom:1px solid var(--border);font-size:.8rem;color:var(--text3)}
+.dash-topbar-left{display:flex;align-items:center;gap:.75rem}
+.dash-dot{width:8px;height:8px;border-radius:50%}
+.dash-search{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.35rem .75rem;font-size:.75rem;color:var(--text3);width:200px}
+
+/* KPI Row */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border)}
+.kpi{background:var(--surface);padding:1.25rem 1.5rem}
+.kpi-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:.35rem}
+.kpi-value{font-size:1.75rem;font-weight:800;margin-bottom:.25rem}
+.kpi-change{font-size:.7rem;font-weight:600;display:inline-flex;align-items:center;gap:.2rem;padding:.15rem .4rem;border-radius:4px}
+.kpi-up{color:var(--green);background:rgba(34,197,94,.1)}
+.kpi-down{color:var(--rose);background:rgba(244,63,94,.1)}
+
+/* Dashboard Body */
+.dash-body{display:grid;grid-template-columns:2fr 1fr;gap:1px;background:var(--border)}
+.dash-panel{background:var(--surface);padding:1.5rem}
+.panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.panel-title{font-size:.85rem;font-weight:700;color:var(--text)}
+.panel-meta{font-size:.7rem;color:var(--text3)}
+
+/* Chart mock - CSS bars */
+.chart-bars{display:flex;align-items:flex-end;gap:6px;height:140px;padding-top:1rem}
+.chart-bar{flex:1;border-radius:4px 4px 0 0;position:relative;transition:opacity .2s;min-width:0}
+.chart-bar:hover{opacity:.8}
+.chart-bar-label{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text3);white-space:nowrap}
+
+/* Team table */
+.team-table{width:100%;font-size:.8rem}
+.team-table th{text-align:left;color:var(--text3);font-weight:600;font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;padding:.5rem 0;border-bottom:1px solid var(--border)}
+.team-table td{padding:.6rem 0;border-bottom:1px solid var(--border);vertical-align:middle}
+.team-name{display:flex;align-items:center;gap:.5rem}
+.team-avatar{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:#fff}
+.utilization-bar{width:80px;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:.5rem}
+.utilization-fill{height:100%;border-radius:3px}
+
+/* Automation opportunities */
+.auto-list{display:flex;flex-direction:column;gap:.75rem}
+.auto-item{display:flex;align-items:center;gap:.75rem;background:var(--surface2);border-radius:10px;padding:.85rem 1rem}
+.auto-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0}
+.ai-1{background:rgba(34,197,94,.1)}
+.ai-2{background:rgba(168,85,247,.1)}
+.ai-3{background:rgba(245,158,11,.1)}
+.auto-info{flex:1;min-width:0}
+.auto-info h4{font-size:.8rem;font-weight:600;margin-bottom:.15rem}
+.auto-info p{font-size:.7rem;color:var(--text3)}
+.auto-roi{font-size:.75rem;font-weight:700;color:var(--green);white-space:nowrap}
+
+/* Process scores */
+.process-list{display:flex;flex-direction:column;gap:.5rem}
+.process-item{display:flex;align-items:center;justify-content:space-between;padding:.65rem .85rem;background:var(--surface2);border-radius:8px;font-size:.8rem}
+.process-score{font-weight:700;font-size:.85rem}
+.ps-high{color:var(--green)}
+.ps-mid{color:var(--amber)}
+.ps-low{color:var(--rose)}
+
+/* Sections */
+section{padding:5rem 2rem}
+.container{max-width:1000px;margin:0 auto}
+.s-label{text-transform:uppercase;letter-spacing:.15em;font-size:.75rem;color:var(--accent2);font-weight:700;margin-bottom:.5rem}
+.s-title{font-size:clamp(1.8rem,3.5vw,2.5rem);font-weight:800;margin-bottom:.75rem;line-height:1.2}
+.s-sub{font-size:1rem;color:var(--text2);max-width:540px;margin-bottom:2.5rem}
+
+/* What You See */
+.insights-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem}
+.insight-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:2rem;transition:border-color .3s}
+.insight-card:hover{border-color:rgba(59,130,246,.3)}
+.ic-icon{font-size:1.75rem;margin-bottom:1rem}
+.insight-card h3{font-size:1rem;font-weight:700;margin-bottom:.5rem}
+.insight-card p{font-size:.9rem;color:var(--text2)}
+
+/* Before/After */
+.ba-section{background:var(--surface)}
+.ba-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+.ba-card{border-radius:14px;padding:2rem;border:1px solid var(--border)}
+.ba-before{background:var(--bg)}
+.ba-after{background:rgba(59,130,246,.05);border-color:rgba(59,130,246,.2)}
+.ba-tag{display:inline-block;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:.25rem .6rem;border-radius:4px;margin-bottom:1rem}
+.ba-tag-before{background:rgba(244,63,94,.1);color:var(--rose)}
+.ba-tag-after{background:rgba(34,197,94,.1);color:var(--green)}
+.ba-list{list-style:none;display:flex;flex-direction:column;gap:.75rem}
+.ba-list li{display:flex;align-items:flex-start;gap:.5rem;font-size:.9rem;color:var(--text2)}
+.ba-list li::before{content:'';width:6px;height:6px;border-radius:50%;margin-top:.5rem;flex-shrink:0}
+.ba-before .ba-list li::before{background:var(--rose)}
+.ba-after .ba-list li::before{background:var(--green)}
+
+/* Testimonials */
+.test-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;margin-top:2rem}
+.test-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.75rem}
+.test-quote{font-size:.95rem;line-height:1.7;margin-bottom:1.25rem;font-style:italic;color:var(--text)}
+.test-author{display:flex;align-items:center;gap:.65rem}
+.test-av{width:36px;height:36px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;color:#fff}
+.test-name{font-weight:700;font-size:.85rem}
+.test-role{font-size:.75rem;color:var(--text3)}
+
+/* CTA */
+.final-cta{text-align:center;padding:7rem 2rem;position:relative}
+.final-cta::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 50%,rgba(59,130,246,.08),transparent)}
+.final-cta h2{font-size:clamp(2rem,4vw,3rem);font-weight:800;margin-bottom:1rem;max-width:600px;margin-left:auto;margin-right:auto}
+.final-cta h2 span{color:var(--accent2)}
+.final-cta p{font-size:1.05rem;color:var(--text2);max-width:450px;margin:0 auto 2rem}
+
+/* Footer */
+footer{background:var(--surface);border-top:1px solid var(--border);padding:2.5rem 2rem}
+.footer-inner{max-width:1000px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+.footer-links{display:flex;gap:1.5rem}
+.footer-links a{color:var(--text3);font-size:.8rem}
+.footer-copy{color:var(--text3);font-size:.75rem}
+
+@media(max-width:768px){
+  .nav-links a:not(.nav-cta){display:none}
+  .kpi-row{grid-template-columns:repeat(2,1fr)}
+  .dash-body{grid-template-columns:1fr}
+  .ba-grid{grid-template-columns:1fr}
+  section{padding:3.5rem 1.5rem}
+}
+@media(max-width:480px){
+  .kpi-row{grid-template-columns:1fr}
+  .hero h1{font-size:2rem}
+  .ctas{flex-direction:column;width:100%}
+  .btn-p,.btn-s{width:100%;text-align:center}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Go2 <span>CEO View</span></div>
+  <div class="nav-links">
+    <a href="#dashboard">Dashboard</a>
+    <a href="#insights">Insights</a>
+    <a href="#before-after">Results</a>
+    <a href="#" class="nav-cta">Get Access</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge">&#128201; Built for CEOs &amp; Owners</div>
+  <h1>Finally see inside<br><span>your own company.</span></h1>
+  <p class="hero-sub">You built this business, but you can't see how it actually runs. Go2 gives you the CEO-level dashboard you've always needed &mdash; real-time visibility into team capacity, operational efficiency, and where your money goes.</p>
+  <div class="ctas">
+    <button class="btn-p">See Your Dashboard &rarr;</button>
+    <button class="btn-s">Watch 2-Min Demo</button>
+  </div>
+
+  <!-- Dashboard Mock -->
+  <div class="dash-mock" id="dashboard">
+    <div class="dash-topbar">
+      <div class="dash-topbar-left">
+        <div class="dash-dot" style="background:#ff5f57"></div>
+        <div class="dash-dot" style="background:#febc2e"></div>
+        <div class="dash-dot" style="background:#28c840"></div>
+        <span style="margin-left:.5rem;font-weight:600;color:var(--text)">Go2 Executive Dashboard</span>
+      </div>
+      <div class="dash-search">&#128269; Search metrics...</div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-label">Team Capacity Utilization</div>
+        <div class="kpi-value" style="color:var(--green)">78%</div>
+        <span class="kpi-change kpi-up">&#9650; 12% vs last month</span>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Cost Per Output Unit</div>
+        <div class="kpi-value" style="color:var(--accent2)">$23.40</div>
+        <span class="kpi-change kpi-up">&#9660; 18% (improving)</span>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Process Efficiency Score</div>
+        <div class="kpi-value" style="color:var(--amber)">72/100</div>
+        <span class="kpi-change kpi-up">&#9650; 8 pts this quarter</span>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Automation Opportunity</div>
+        <div class="kpi-value" style="color:var(--purple)">$14.2K</div>
+        <span class="kpi-change" style="color:var(--text3);background:var(--surface2)">Monthly savings available</span>
+      </div>
+    </div>
+
+    <div class="dash-body">
+      <div class="dash-panel">
+        <div class="panel-header">
+          <div class="panel-title">Weekly Output by Team</div>
+          <div class="panel-meta">Last 8 weeks</div>
+        </div>
+        <div class="chart-bars">
+          <div class="chart-bar" style="height:55%;background:var(--accent)"><span class="chart-bar-label">W1</span></div>
+          <div class="chart-bar" style="height:62%;background:var(--accent)"><span class="chart-bar-label">W2</span></div>
+          <div class="chart-bar" style="height:58%;background:var(--accent)"><span class="chart-bar-label">W3</span></div>
+          <div class="chart-bar" style="height:71%;background:var(--accent)"><span class="chart-bar-label">W4</span></div>
+          <div class="chart-bar" style="height:68%;background:var(--accent)"><span class="chart-bar-label">W5</span></div>
+          <div class="chart-bar" style="height:75%;background:var(--accent2)"><span class="chart-bar-label">W6</span></div>
+          <div class="chart-bar" style="height:82%;background:var(--accent2)"><span class="chart-bar-label">W7</span></div>
+          <div class="chart-bar" style="height:88%;background:var(--green)"><span class="chart-bar-label">W8</span></div>
+        </div>
+        <div style="margin-top:2rem">
+          <div class="panel-header">
+            <div class="panel-title">Team Utilization</div>
+            <div class="panel-meta">Current week</div>
+          </div>
+          <table class="team-table">
+            <thead><tr><th>Team</th><th>Utilization</th><th>Efficiency</th><th>Trend</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><div class="team-name"><div class="team-avatar" style="background:var(--accent)">S</div>Sales</div></td>
+                <td><div class="utilization-bar"><div class="utilization-fill" style="width:85%;background:var(--green)"></div></div>85%</td>
+                <td style="color:var(--green)">92/100</td>
+                <td><span class="kpi-change kpi-up" style="font-size:.65rem">&#9650; 5%</span></td>
+              </tr>
+              <tr>
+                <td><div class="team-name"><div class="team-avatar" style="background:var(--purple)">E</div>Engineering</div></td>
+                <td><div class="utilization-bar"><div class="utilization-fill" style="width:72%;background:var(--amber)"></div></div>72%</td>
+                <td style="color:var(--amber)">68/100</td>
+                <td><span class="kpi-change kpi-up" style="font-size:.65rem">&#9650; 3%</span></td>
+              </tr>
+              <tr>
+                <td><div class="team-name"><div class="team-avatar" style="background:var(--green)">O</div>Operations</div></td>
+                <td><div class="utilization-bar"><div class="utilization-fill" style="width:91%;background:var(--green)"></div></div>91%</td>
+                <td style="color:var(--green)">88/100</td>
+                <td><span class="kpi-change kpi-up" style="font-size:.65rem">&#9650; 8%</span></td>
+              </tr>
+              <tr>
+                <td><div class="team-name"><div class="team-avatar" style="background:var(--rose)">C</div>Support</div></td>
+                <td><div class="utilization-bar"><div class="utilization-fill" style="width:64%;background:var(--rose)"></div></div>64%</td>
+                <td style="color:var(--rose)">55/100</td>
+                <td><span class="kpi-change kpi-down" style="font-size:.65rem">&#9660; 2%</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="dash-panel">
+        <div class="panel-header">
+          <div class="panel-title">Automation Opportunities</div>
+          <div class="panel-meta">Ranked by ROI</div>
+        </div>
+        <div class="auto-list">
+          <div class="auto-item">
+            <div class="auto-icon ai-1">&#9889;</div>
+            <div class="auto-info">
+              <h4>Invoice Processing</h4>
+              <p>12 hrs/week manual &middot; 94% automatable</p>
+            </div>
+            <div class="auto-roi">$6.2K/mo</div>
+          </div>
+          <div class="auto-item">
+            <div class="auto-icon ai-2">&#128203;</div>
+            <div class="auto-info">
+              <h4>Report Generation</h4>
+              <p>8 hrs/week manual &middot; 87% automatable</p>
+            </div>
+            <div class="auto-roi">$4.1K/mo</div>
+          </div>
+          <div class="auto-item">
+            <div class="auto-icon ai-3">&#128231;</div>
+            <div class="auto-info">
+              <h4>Client Follow-ups</h4>
+              <p>6 hrs/week manual &middot; 72% automatable</p>
+            </div>
+            <div class="auto-roi">$3.9K/mo</div>
+          </div>
+        </div>
+        <div style="margin-top:1.5rem">
+          <div class="panel-header">
+            <div class="panel-title">Process Efficiency Scores</div>
+          </div>
+          <div class="process-list">
+            <div class="process-item"><span>Client Onboarding</span><span class="process-score ps-high">94</span></div>
+            <div class="process-item"><span>Sales Pipeline</span><span class="process-score ps-high">87</span></div>
+            <div class="process-item"><span>Bug Resolution</span><span class="process-score ps-mid">71</span></div>
+            <div class="process-item"><span>Expense Approvals</span><span class="process-score ps-mid">63</span></div>
+            <div class="process-item"><span>Vendor Management</span><span class="process-score ps-low">48</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="insights">
+  <div class="container">
+    <div class="s-label">Your CEO View</div>
+    <h2 class="s-title">The answers you've been guessing at.</h2>
+    <p class="s-sub">Go2 replaces gut feelings with data. See exactly where your money goes, where time is wasted, and where the biggest opportunities are.</p>
+    <div class="insights-grid">
+      <div class="insight-card">
+        <div class="ic-icon">&#128200;</div>
+        <h3>Capacity Utilization</h3>
+        <p>Are your teams at capacity or coasting? See real utilization data &mdash; not timesheets, not self-reports. Actual productive output measured against potential.</p>
+      </div>
+      <div class="insight-card">
+        <div class="ic-icon">&#128176;</div>
+        <h3>Cost Per Output</h3>
+        <p>What does it actually cost to close a deal, resolve a ticket, or ship a feature? Track true cost-per-output across every team and process.</p>
+      </div>
+      <div class="insight-card">
+        <div class="ic-icon">&#9889;</div>
+        <h3>Automation ROI Map</h3>
+        <p>See every manual process ranked by automation potential and projected savings. Know exactly where to invest for maximum return.</p>
+      </div>
+      <div class="insight-card">
+        <div class="ic-icon">&#128202;</div>
+        <h3>Process Efficiency Scores</h3>
+        <p>Every major workflow scored on efficiency. Instantly see which processes are smooth and which are hemorrhaging time and money.</p>
+      </div>
+      <div class="insight-card">
+        <div class="ic-icon">&#128680;</div>
+        <h3>Bottleneck Detection</h3>
+        <p>Where do things slow down? Go2 identifies bottlenecks before they become crises &mdash; people, tools, handoffs, and approval chains.</p>
+      </div>
+      <div class="insight-card">
+        <div class="ic-icon">&#128640;</div>
+        <h3>Trend Analysis</h3>
+        <p>Are things getting better or worse? Week-over-week, month-over-month trends that show whether your initiatives are actually working.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ba-section" id="before-after">
+  <div class="container">
+    <div class="s-label">The Transformation</div>
+    <h2 class="s-title">Running blind vs. running informed.</h2>
+    <p class="s-sub">Here's what changes when a CEO finally has real visibility into operations.</p>
+    <div class="ba-grid">
+      <div class="ba-card ba-before">
+        <div class="ba-tag ba-tag-before">Without Go2</div>
+        <ul class="ba-list">
+          <li>Asking managers "how are things going?" and getting "fine"</li>
+          <li>Guessing which processes are efficient and which aren't</li>
+          <li>Finding out about problems after they've become expensive</li>
+          <li>Making hiring decisions based on gut feeling</li>
+          <li>No idea which tools your team actually uses</li>
+          <li>Surprised by turnover and its impact</li>
+        </ul>
+      </div>
+      <div class="ba-card ba-after">
+        <div class="ba-tag ba-tag-after">With Go2</div>
+        <ul class="ba-list">
+          <li>Real-time dashboard showing team capacity and output</li>
+          <li>Every process scored with efficiency metrics</li>
+          <li>Early warnings before bottlenecks become crises</li>
+          <li>Data-driven hiring based on actual workload analysis</li>
+          <li>Complete visibility into tool usage and ROI</li>
+          <li>Knowledge preserved regardless of turnover</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="s-label">CEO Voices</div>
+    <h2 class="s-title">From owners who finally have visibility.</h2>
+    <div class="test-grid">
+      <div class="test-card">
+        <div class="test-quote">"I've run this company for 12 years and I never actually knew how we operated. Go2 showed me we had 3 people doing overlapping work and a $14K/month automation opportunity I'd been ignoring."</div>
+        <div class="test-author">
+          <div class="test-av">TH</div>
+          <div>
+            <div class="test-name">Tom H.</div>
+            <div class="test-role">CEO, 34-person services firm</div>
+          </div>
+        </div>
+      </div>
+      <div class="test-card">
+        <div class="test-quote">"The cost-per-output metric changed everything. I learned our best salesperson costs us $18/deal and our worst costs $94. That's the kind of data I needed years ago."</div>
+        <div class="test-author">
+          <div class="test-av">AJ</div>
+          <div>
+            <div class="test-name">Angela J.</div>
+            <div class="test-role">Founder, 47-person e-commerce company</div>
+          </div>
+        </div>
+      </div>
+      <div class="test-card">
+        <div class="test-quote">"My board kept asking for operational metrics and I was cobbling together spreadsheets. Now I just share the Go2 dashboard. It has everything they want and more."</div>
+        <div class="test-author">
+          <div class="test-av">NK</div>
+          <div>
+            <div class="test-name">Nathan K.</div>
+            <div class="test-role">CEO, 29-person SaaS startup</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section style="background:var(--surface);border-top:1px solid var(--border)">
+  <div class="container">
+    <div class="s-label">How It Works</div>
+    <h2 class="s-title">From install to insight in 48 hours.</h2>
+    <p class="s-sub">Go2 doesn't require months of setup, integrations, or consulting. Here's the path to your CEO dashboard.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.5rem;counter-reset:hwstep">
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:2rem;counter-increment:hwstep;position:relative">
+        <div style="position:absolute;top:1.25rem;right:1.25rem;font-size:2.5rem;font-weight:900;color:var(--accent);opacity:.1">1</div>
+        <div style="font-size:1.5rem;margin-bottom:.75rem">&#128187;</div>
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:.5rem">Deploy</h3>
+        <p style="font-size:.85rem;color:var(--text2)">Install the lightweight Go2 desktop agent across your team. Takes 5 minutes per machine. No disruption to anyone's workflow.</p>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:2rem;counter-increment:hwstep;position:relative">
+        <div style="position:absolute;top:1.25rem;right:1.25rem;font-size:2.5rem;font-weight:900;color:var(--accent);opacity:.1">2</div>
+        <div style="font-size:1.5rem;margin-bottom:.75rem">&#128064;</div>
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:.5rem">Observe</h3>
+        <p style="font-size:.85rem;color:var(--text2)">Go2's AI watches work patterns for 48 hours. No employee input needed. It learns your processes, tools, and workflows automatically.</p>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:2rem;counter-increment:hwstep;position:relative">
+        <div style="position:absolute;top:1.25rem;right:1.25rem;font-size:2.5rem;font-weight:900;color:var(--accent);opacity:.1">3</div>
+        <div style="font-size:1.5rem;margin-bottom:.75rem">&#128202;</div>
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:.5rem">Analyze</h3>
+        <p style="font-size:.85rem;color:var(--text2)">Frontier AI (Claude, GPT, Gemini) processes the data. Identifies patterns, inefficiencies, automation opportunities, and team dynamics.</p>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:2rem;counter-increment:hwstep;position:relative">
+        <div style="position:absolute;top:1.25rem;right:1.25rem;font-size:2.5rem;font-weight:900;color:var(--accent);opacity:.1">4</div>
+        <div style="font-size:1.5rem;margin-bottom:.75rem">&#127919;</div>
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:.5rem">Dashboard</h3>
+        <p style="font-size:.85rem;color:var(--text2)">Your executive dashboard goes live. Real-time KPIs, team utilization, process scores, and automation opportunities &mdash; all in one view.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Security & Privacy -->
+<section>
+  <div class="container">
+    <div class="s-label">Security &amp; Privacy</div>
+    <h2 class="s-title">Visibility without surveillance.</h2>
+    <p class="s-sub">Go2 was built to give CEOs operational insight without compromising employee trust or privacy.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.75rem;text-align:center">
+        <div style="font-size:1.5rem;margin-bottom:.5rem">&#128274;</div>
+        <h4 style="font-size:.9rem;font-weight:700;margin-bottom:.35rem">No Individual Tracking</h4>
+        <p style="font-size:.8rem;color:var(--text2)">No screenshots, no keyloggers, no activity logs. Managers see team-level patterns, never individual behavior.</p>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.75rem;text-align:center">
+        <div style="font-size:1.5rem;margin-bottom:.5rem">&#128737;&#65039;</div>
+        <h4 style="font-size:.9rem;font-weight:700;margin-bottom:.35rem">SOC 2 Type II Certified</h4>
+        <p style="font-size:.8rem;color:var(--text2)">Enterprise-grade security. Data encrypted at rest and in transit. Regular third-party audits.</p>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.75rem;text-align:center">
+        <div style="font-size:1.5rem;margin-bottom:.5rem">&#129309;</div>
+        <h4 style="font-size:.9rem;font-weight:700;margin-bottom:.35rem">Employee-Approved</h4>
+        <p style="font-size:.8rem;color:var(--text2)">92% employee satisfaction. Workers embrace Go2 because it helps them work better, not because it watches them.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="final-cta">
+  <h2>Stop guessing.<br><span>Start seeing.</span></h2>
+  <p>Your company deserves the same operational visibility that Fortune 500s have. Go2 gives it to you in days, not months.</p>
+  <div class="ctas">
+    <button class="btn-p">See Your Dashboard &rarr;</button>
+    <button class="btn-s">Book a CEO Briefing</button>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="logo">Go2</div>
+    <div class="footer-links">
+      <a href="#">Product</a>
+      <a href="#">Security</a>
+      <a href="#">Company</a>
+      <a href="#">Contact</a>
+    </div>
+    <div class="footer-copy">&copy; 2026 Go2. All rights reserved.</div>
+  </div>
+</footer>
+
+</body>
+</html>

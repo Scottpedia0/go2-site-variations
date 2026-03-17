@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go2 — Technical Deep Dive</title>
+    <style>
+        /* Reset & Base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'SF Mono', 'Segoe UI Mono', 'Roboto Mono', Menlo, Consolas, monospace;
+        }
+
+        body {
+            background: #0a0a0a;
+            color: #e2e2e2;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            font-size: 16px;
+        }
+
+        /* Typography */
+        h1, h2, h3, h4 {
+            color: #f0f0f0;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        h1 {
+            font-size: 3rem;
+            border-bottom: 3px solid #00d4aa;
+            padding-bottom: 1rem;
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            border-left: 4px solid #00d4aa;
+            padding-left: 1rem;
+        }
+
+        h3 {
+            font-size: 1.8rem;
+            color: #00d4aa;
+        }
+
+        h4 {
+            font-size: 1.4rem;
+            color: #88ddcc;
+        }
+
+        p {
+            margin-bottom: 1.5rem;
+            max-width: 800px;
+        }
+
+        a {
+            color: #00d4aa;
+            text-decoration: none;
+            border-bottom: 1px dotted;
+        }
+
+        code, pre {
+            background: #1a1a1a;
+            color: #88ddcc;
+            border-radius: 6px;
+            padding: 2px 6px;
+            font-size: 0.95rem;
+        }
+
+        pre {
+            padding: 1.5rem;
+            overflow: auto;
+            margin: 1.5rem 0;
+            border: 1px solid #333;
+        }
+
+        /* Layout */
+        .container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 3rem;
+        }
+
+        section {
+            padding: 2rem 0;
+            border-bottom: 1px solid #333;
+        }
+
+        /* Diagrams */
+        .architecture {
+            background: #151515;
+            padding: 2rem;
+            border-radius: 12px;
+            margin: 2rem 0;
+        }
+
+        .node {
+            display: inline-block;
+            background: #222;
+            border: 2px solid #00d4aa;
+            padding: 1rem;
+            margin: 0.5rem;
+            border-radius: 8px;
+            min-width: 180px;
+            vertical-align: top;
+        }
+
+        .node h4 {
+            margin-top: 0;
+        }
+
+        .flow {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 2rem 0;
+        }
+
+        .arrow {
+            color: #00d4aa;
+            font-size: 1.5rem;
+            margin: 0 1rem;
+        }
+
+        .data-pipeline {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .step {
+            background: #1e1e1e;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-top: 4px solid #444;
+        }
+
+        .step-number {
+            display: inline-block;
+            background: #00d4aa;
+            color: #000;
+            padding: 0.3rem 0.8rem;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+            font-weight: bold;
+        }
+
+        /* Privacy Model */
+        .privacy-model {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .column {
+            background: #151515;
+            padding: 1.5rem;
+            border-radius: 8px;
+        }
+
+        .column h4 {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        /* API Example */
+        .api-example {
+            background: #1a1a1a;
+            border-left: 6px solid #00d4aa;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+
+        .response {
+            background: #0f0f0f;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            border-radius: 6px;
+        }
+
+        /* Comparison Table */
+        .comparison {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+        }
+
+        th, td {
+            padding: 1rem;
+            border: 1px solid #333;
+            text-align: left;
+        }
+
+        th {
+            background: #222;
+            color: #00d4aa;
+        }
+
+        td {
+            background: #1a1a1a;
+        }
+
+        .feature-yes {
+            color: #00d4aa;
+            font-weight: bold;
+        }
+
+        .feature-no {
+            color: #ff5555;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 3rem 0;
+            border-top: 1px solid #333;
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+                font-size: 14px;
+            }
+
+            h1 {
+                font-size: 2.2rem;
+            }
+
+            h2 {
+                font-size: 1.8rem;
+            }
+
+            .flow {
+                flex-direction: column;
+            }
+
+            .arrow {
+                margin: 1rem 0;
+                transform: rotate(90deg);
+            }
+
+            .privacy-model {
+                grid-template-columns: 1fr;
+            }
+
+            .data-pipeline {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Go2 Technical Deep Dive</h1>
+            <p><strong>go2.io</strong> — How frontier AI transforms workforce productivity without surveillance. Built for technical buyers (CTO, VP Eng).</p>
+            <p>This document outlines the architecture, data pipeline, AI models, and privacy design of the Go2 system.</p>
+        </header>
+
+        <section>
+            <h2>1. Architecture Overview</h2>
+            <p>Go2 installs a lightweight desktop agent (~15MB RAM) on employee machines. The agent captures keystrokes, audio (via ambient sampling), screenshots (periodic), application usage, and workflow patterns.</p>
+
+            <div class="architecture">
+                <h3>System Architecture</h3>
+                <div class="flow">
+                    <div class="node">
+                        <h4>Local Agent</h4>
+                        <p>Electron-based, encrypted local storage, offline queue.</p>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="node">
+                        <h4>Edge Processing</h4>
+                        <p>Data anonymization, feature extraction, compression.</p>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="node">
+                        <h4>AI Pipeline</h4>
+                        <p>Claude 3, GPT-4, Gemini Pro — multi-model routing.</p>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="node">
+                        <h4>Insights Engine</h4>
+                        <p>Coaching tips, aggregated metrics, workflow maps.</p>
+                    </div>
+                </div>
+                <p><strong>Data flow:</strong> Raw capture → Local encryption → Edge processing → AI processing → Insights generation → User-facing outputs.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>2. Data Pipeline</h2>
+            <p>Every captured event undergoes a 5-step pipeline before any AI processing.</p>
+
+            <div class="data-pipeline">
+                <div class="step">
+                    <span class="step-number">1</span>
+                    <h4>Local Capture</h4>
+                    <p>Event-driven hooks capture keystrokes (as semantic sequences), audio snippets (5-sec ambient samples), screen frames (2/min), app switches.</p>
+                </div>
+                <div class="step">
+                    <span class="step-number">2</span>
+                    <h4>Encryption & Queue</h4>
+                    <p>Data encrypted with AES-256-GCM, stored locally in a FIFO queue. Only metadata (timestamps, event types) sent for routing.</p>
+                </div>
+                <div class="step">
+                    <span class="step-number">3</span>
+                    <h4>Edge Processing</h4>
+                    <p>On our edge servers: anonymization (ID stripping), feature extraction (e.g., "coding session", "meeting"), compression.</p>
+                </div>
+                <div class="step">
+                    <span class="step-number">4</span>
+                    <h4>AI Model Routing</h4>
+                    <p>Based on event type: Claude for coaching, GPT for workflow mapping, Gemini for cross-validation. Models never receive raw PII.</p>
+                </div>
+                <div class="step">
+                    <span class="step-number">5</span>
+                    <h4>Output Generation</h4>
+                    <p>AI outputs stored in user-specific buckets. Workers see full outputs; managers see aggregates (e.g., "Team spends 23% time in meetings").</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>3. Privacy Architecture</h2>
+            <p>Privacy is built into the pipeline, not added as a filter.</p>
+
+            <div class="privacy-model">
+                <div class="column">
+                    <h4>Worker Visibility</h4>
+                    <p>Every worker accesses a personal dashboard showing <strong>all their own raw data</strong>, AI coaching tips, and workflow maps. No data hidden.</p>
+                    <code>GET /api/v1/user/raw-events</code>
+                </div>
+                <div class="column">
+                    <h4>Manager Visibility</h4>
+                    <p>Managers see only aggregated metrics: percentages, trends, anonymized patterns. Never individual keystrokes, audio, or screens.</p>
+                    <code>GET /api/v1/team/aggregates</code>
+                </div>
+                <div class="column">
+                    <h4>AI Processing</h4>
+                    <p>AI models receive anonymized, feature-extracted data. They output coaching and maps, but cannot reconstruct original PII.</p>
+                    <code>POST /api/v1/ai/coaching</code>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>4. AI Coaching Example</h2>
+            <p>The AI generates personalized coaching tips based on captured patterns.</p>
+
+            <div class="api-example">
+                <h3>Example API Request/Response</h3>
+                <pre><code>POST /api/v1/coaching/generate
+{
+  "user_id": "anon_u7f3e9",
+  "events": [
+    {
+      "type": "app_switch",
+      "from": "Slack",
+      "to": "VS Code",
+      "duration": 120
+    },
+    {
+      "type": "keystroke_pattern",
+      "pattern": "high_typing_burst",
+      "context": "code_editor"
+    }
+  ],
+  "model": "claude-3-opus"
+}</code></pre>
+
+                <div class="response">
+                    <h4>AI Response</h4>
+                    <pre><code>{
+  "coaching_tips": [
+    {
+      "title": "Reduce context switching",
+      "detail": "You switched from Slack to VS Code 12 times today. Consider batching message checks every 45min.",
+      "evidence": "App switch events, avg duration 2min",
+      "impact_estimate": "Could save ~24min daily"
+    },
+    {
+      "title": "Use IDE shortcuts",
+      "detail": "Your keystroke patterns show repetitive manual edits. Try learning VS Code's multi-cursor or refactor shortcuts.",
+      "evidence": "Keystroke bursts, low shortcut usage",
+      "impact_estimate": "Reduce editing time by ~18%"
+    }
+  ],
+  "generated_at": "2024-05-15T14:30:00Z"
+}</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>5. Competitive Technical Comparison</h2>
+            <p>Go2 differs fundamentally in AI architecture.</p>
+
+            <table class="comparison">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Go2</th>
+                        <th>Hubstaff</th>
+                        <th>Time Doctor</th>
+                        <th>ActivTrak</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Generative AI Coaching</td>
+                        <td class="feature-yes">Claude/GPT/Gemini</td>
+                        <td class="feature-no">None</td>
+                        <td class="feature-no">None</td>
+                        <td class="feature-no">None</td>
+                    </tr>
+                    <tr>
+                        <td>Data Pipeline</td>
+                        <td>Local → Edge → AI</td>
+                        <td>Direct upload</td>
+                        <td>Direct upload</td>
+                        <td>Cloud storage</td>
+                    </tr>
+                    <tr>
+                        <td>Privacy Model</td>
+                        <td>Worker sees all, manager sees aggregates</td>
+                        <td>Manager sees raw</td>
+                        <td>Manager sees raw</td>
+                        <td>Manager sees raw</td>
+                    </tr>
+                    <tr>
+                        <td>Workflow Mapping</td>
+                        <td class="feature-yes">AI-generated graphs</td>
+                        <td class="feature-no">Manual tags</lod>
+                        <td class="feature-no">Basic categories</td>
+                        <td class="feature-no">Rule-based</td>
+                    </tr>
+                    <tr>
+                        <td>Audio Processing</td>
+                        <td>Ambient sampling → AI insights</td>
+                        <td>None</td>
+                        <td>None</td>
+                        <td>None</td>
+                    </tr>
+                    <tr>
+                        <td>Price (per user)</td>
+                        <td>$18–30 (AI tier)</td>
+                        <td>$5–25</td>
+                        <td>$7–20</td>
+                        <td>$10–19</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>6. Deployment & Scale</h2>
+            <p>Built on 7+ years of staffing data, ~1M workers measured.</p>
+            <ul>
+                <li><strong>Agent deployment:</strong> Silent install via Docker, MSI, or pkg.</li>
+                <li><strong>AI model fallback:</strong> If Claude fails, GPT-4 backs up.</li>
+                <li><strong>Data retention:</strong> Raw data stored locally for 30 days, anonymized aggregates kept indefinitely.</li>
+                <li><strong>Scale tested:</strong> Up to 10,000 concurrent agents.</li>
+            </ul>
+            <p>Target buyer: SMB owner with 15–50 remote employees.</p>
+        </section>
+
+        <footer>
+            <p>Go2 — Technical Deep Dive • go2.io • Built for technical transparency.</p>
+            <p>No real customer names used in this documentation. All examples anonymized.</p>
+            <p>© 2024 Go2. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>

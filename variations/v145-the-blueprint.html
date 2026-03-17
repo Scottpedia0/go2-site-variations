@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The Blueprint</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --blueprint: #0c2340;
+    --line: #1e5fa0;
+    --line-faint: rgba(30,95,160,0.2);
+    --white-line: rgba(255,255,255,0.08);
+    --cyan: #4dc9f6;
+    --cyan-dim: rgba(77,201,246,0.3);
+    --paper: #f0ede6;
+    --text: #e8edf2;
+  }
+  body { font-family: 'Outfit', sans-serif; background: var(--blueprint); color: var(--text); overflow-x: hidden; }
+
+  /* Blueprint grid background */
+  .bp-grid {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;
+    background-image:
+      linear-gradient(var(--white-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--white-line) 1px, transparent 1px),
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+  }
+
+  section { position: relative; z-index: 1; }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; width: 100%; z-index: 100;
+    padding: 20px 60px; display: flex; justify-content: space-between; align-items: center;
+    background: rgba(12,35,64,0.9); backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--line-faint);
+  }
+  .logo {
+    font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700;
+    color: var(--cyan); letter-spacing: 2px;
+  }
+  .logo::before { content: '// '; opacity: 0.4; }
+  .nav-links { display: flex; gap: 32px; align-items: center; }
+  .nav-links a {
+    color: var(--text); text-decoration: none; font-size: 13px; font-weight: 400;
+    font-family: 'JetBrains Mono', monospace; opacity: 0.5; transition: all 0.3s;
+    letter-spacing: 1px;
+  }
+  .nav-links a:hover { opacity: 1; color: var(--cyan); }
+  .nav-cta {
+    background: transparent; border: 1px solid var(--cyan); color: var(--cyan);
+    padding: 10px 24px; font-size: 12px; font-weight: 600; letter-spacing: 1px;
+    text-transform: uppercase; cursor: pointer; transition: all 0.3s;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .nav-cta:hover { background: var(--cyan); color: var(--blueprint); }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; text-align: center; padding: 140px 40px 80px;
+    position: relative;
+  }
+  .hero-annotation {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--cyan);
+    letter-spacing: 3px; text-transform: uppercase; margin-bottom: 28px; opacity: 0.7;
+  }
+  .hero-annotation::before { content: '[ '; }
+  .hero-annotation::after { content: ' ]'; }
+  .hero h1 {
+    font-size: clamp(46px, 6.5vw, 84px); font-weight: 800; line-height: 1.05;
+    margin-bottom: 28px; max-width: 900px;
+  }
+  .hero h1 .accent { color: var(--cyan); }
+  .hero p {
+    font-size: 19px; line-height: 1.8; max-width: 600px; color: rgba(232,237,242,0.5);
+    margin-bottom: 50px; font-weight: 300;
+  }
+  .hero-cta {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--cyan); color: var(--blueprint);
+    padding: 18px 44px; font-size: 14px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; text-decoration: none; border: none; cursor: pointer;
+    transition: all 0.4s; font-family: 'Outfit', sans-serif;
+    box-shadow: 0 0 40px rgba(77,201,246,0.2);
+  }
+  .hero-cta:hover { transform: translateY(-2px); box-shadow: 0 0 60px rgba(77,201,246,0.4); }
+
+  /* Dimension lines (decorative) */
+  .dim-line {
+    position: absolute; display: flex; align-items: center; gap: 8px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan-dim);
+  }
+  .dim-line::before, .dim-line::after { content: ''; flex: 1; height: 1px; background: var(--cyan-dim); }
+  .dim-h1 { bottom: 120px; left: 10%; right: 10%; }
+  .dim-v1 { top: 20%; right: 80px; writing-mode: vertical-rl; height: 200px; flex-direction: column; }
+
+  /* BLUEPRINT LAYERS */
+  .layers {
+    padding: 120px 60px; max-width: 1200px; margin: 0 auto;
+  }
+  .layers-header { margin-bottom: 70px; }
+  .layers-header .annotation {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan);
+    letter-spacing: 3px; text-transform: uppercase; margin-bottom: 12px; opacity: 0.6;
+  }
+  .layers-header h2 { font-size: 42px; font-weight: 700; margin-bottom: 16px; }
+  .layers-header p { font-size: 17px; color: rgba(232,237,242,0.5); max-width: 550px; line-height: 1.7; }
+
+  .layer-stack { display: flex; flex-direction: column; gap: 2px; }
+  .layer {
+    display: grid; grid-template-columns: 80px 1fr 200px; align-items: center;
+    border: 1px solid var(--line-faint); padding: 36px 40px;
+    background: rgba(12,35,64,0.6); backdrop-filter: blur(10px);
+    transition: all 0.3s; position: relative; overflow: hidden;
+  }
+  .layer:hover { border-color: var(--cyan-dim); background: rgba(30,95,160,0.1); }
+  .layer::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--cyan); opacity: 0; transition: opacity 0.3s;
+  }
+  .layer:hover::before { opacity: 1; }
+  .layer-num {
+    font-family: 'JetBrains Mono', monospace; font-size: 32px; font-weight: 700;
+    color: var(--cyan-dim);
+  }
+  .layer-content h3 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+  .layer-content p { font-size: 15px; color: rgba(232,237,242,0.5); line-height: 1.6; }
+  .layer-tag {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan);
+    letter-spacing: 1px; text-align: right; opacity: 0.5;
+  }
+
+  /* SPECS */
+  .specs {
+    padding: 120px 60px;
+    background: linear-gradient(180deg, transparent, rgba(30,95,160,0.05), transparent);
+  }
+  .specs-inner {
+    max-width: 1100px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start;
+  }
+  .specs-text h2 { font-size: 40px; font-weight: 700; margin-bottom: 20px; }
+  .specs-text h2 .accent { color: var(--cyan); }
+  .specs-text p { font-size: 17px; line-height: 1.8; color: rgba(232,237,242,0.5); margin-bottom: 20px; }
+  .spec-sheet {
+    background: rgba(12,35,64,0.8); border: 1px solid var(--line-faint);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .spec-title {
+    padding: 20px 28px; border-bottom: 1px solid var(--line-faint);
+    font-size: 12px; color: var(--cyan); letter-spacing: 2px; text-transform: uppercase;
+  }
+  .spec-row {
+    display: flex; justify-content: space-between; padding: 16px 28px;
+    border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 13px;
+  }
+  .spec-row:last-child { border-bottom: none; }
+  .spec-key { color: rgba(232,237,242,0.4); }
+  .spec-val { color: var(--cyan); font-weight: 500; }
+  .spec-val.highlight { color: #4df67a; }
+
+  /* TESTIMONIALS */
+  .testimonials { padding: 120px 60px; }
+  .testimonials-inner { max-width: 1100px; margin: 0 auto; }
+  .test-header { text-align: center; margin-bottom: 60px; }
+  .test-header h2 { font-size: 40px; font-weight: 700; margin-bottom: 12px; }
+  .test-header p { font-size: 16px; color: rgba(232,237,242,0.4); }
+  .test-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .test-card {
+    border: 1px solid var(--line-faint); padding: 40px 28px;
+    background: rgba(12,35,64,0.5); position: relative;
+  }
+  .test-card::before {
+    content: '"'; font-size: 60px; color: var(--cyan-dim); position: absolute;
+    top: 12px; left: 20px; line-height: 1; font-family: 'Outfit', sans-serif;
+  }
+  .test-quote { font-size: 15px; line-height: 1.7; color: rgba(232,237,242,0.6); margin-bottom: 24px; padding-top: 20px; }
+  .test-author { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--cyan); letter-spacing: 1px; }
+
+  /* METRICS */
+  .metrics {
+    padding: 80px 60px;
+    display: flex; justify-content: center; gap: 60px; flex-wrap: wrap;
+  }
+  .metric { text-align: center; min-width: 160px; }
+  .metric-val { font-size: 56px; font-weight: 800; color: var(--cyan); }
+  .metric-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    letter-spacing: 2px; text-transform: uppercase; color: rgba(232,237,242,0.3); margin-top: 8px;
+  }
+
+  /* FINAL CTA */
+  .final-cta {
+    padding: 140px 60px; text-align: center;
+    background: radial-gradient(ellipse at center, rgba(30,95,160,0.1), transparent);
+  }
+  .final-cta h2 {
+    font-size: clamp(36px, 5vw, 56px); font-weight: 800; margin-bottom: 20px;
+  }
+  .final-cta h2 .accent { color: var(--cyan); }
+  .final-cta p {
+    font-size: 18px; line-height: 1.7; max-width: 580px; margin: 0 auto 50px;
+    color: rgba(232,237,242,0.5);
+  }
+  .final-btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--cyan); color: var(--blueprint);
+    padding: 20px 52px; font-size: 15px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; text-decoration: none; border: none; cursor: pointer;
+    transition: all 0.4s; font-family: 'Outfit', sans-serif;
+    box-shadow: 0 0 50px rgba(77,201,246,0.2);
+  }
+  .final-btn:hover { transform: translateY(-2px); box-shadow: 0 0 80px rgba(77,201,246,0.4); }
+
+  footer {
+    padding: 50px 60px; text-align: center; border-top: 1px solid var(--line-faint);
+  }
+  footer p {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    color: rgba(232,237,242,0.2); letter-spacing: 1px;
+  }
+
+  @media (max-width: 900px) {
+    nav { padding: 16px 24px; }
+    .nav-links { display: none; }
+    .hero { padding: 120px 24px 60px; }
+    .dim-v1, .dim-h1 { display: none; }
+    .layers, .specs, .testimonials, .final-cta { padding-left: 24px; padding-right: 24px; }
+    .layer { grid-template-columns: 50px 1fr; }
+    .layer-tag { display: none; }
+    .specs-inner { grid-template-columns: 1fr; }
+    .test-grid { grid-template-columns: 1fr; }
+    .metrics { gap: 30px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bp-grid"></div>
+
+<nav>
+  <div class="logo">GO2</div>
+  <div class="nav-links">
+    <a href="#layers">Blueprint</a>
+    <a href="#specs">Specifications</a>
+    <a href="#results">Results</a>
+    <button class="nav-cta">Book a Demo</button>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-annotation">Operating System for Productivity</div>
+  <h1>Build Your Company's <span class="accent">Operating Blueprint</span></h1>
+  <p>Every high-performance building starts with a blueprint. Your company deserves one too. Go2 maps, measures, and optimizes how your team actually works.</p>
+  <a href="#demo" class="hero-cta">See It In Action</a>
+  <div class="dim-line dim-h1">23% avg. productivity gain</div>
+  <div class="dim-line dim-v1">47K workers</div>
+</section>
+
+<section class="layers" id="layers">
+  <div class="layers-header">
+    <div class="annotation">System Architecture</div>
+    <h2>Four Layers of Insight</h2>
+    <p>Go2 builds your productivity blueprint from the ground up. Each layer reveals patterns the previous one couldn't see alone.</p>
+  </div>
+  <div class="layer-stack">
+    <div class="layer">
+      <div class="layer-num">L1</div>
+      <div class="layer-content">
+        <h3>Foundation: Workflow Mapping</h3>
+        <p>Understand how work actually flows through your organization. Not how you think it does, but how it really does. No keylogging or surveillance, just workflow pattern analysis.</p>
+      </div>
+      <div class="layer-tag">// discovery</div>
+    </div>
+    <div class="layer">
+      <div class="layer-num">L2</div>
+      <div class="layer-content">
+        <h3>Structure: Bottleneck Detection</h3>
+        <p>Identify where work stalls, loops, or gets lost. Meeting overload, tool fragmentation, context-switching costs. The structural issues that silently drain 23% of your capacity.</p>
+      </div>
+      <div class="layer-tag">// analysis</div>
+    </div>
+    <div class="layer">
+      <div class="layer-num">L3</div>
+      <div class="layer-content">
+        <h3>Systems: AI Coaching Engine</h3>
+        <p>Personalized coaching for every team member. Optimal focus windows, collaboration timing, energy management. Small nudges that compound into massive gains.</p>
+      </div>
+      <div class="layer-tag">// coaching</div>
+    </div>
+    <div class="layer">
+      <div class="layer-num">L4</div>
+      <div class="layer-content">
+        <h3>Finish: Continuous Optimization</h3>
+        <p>Your blueprint evolves as your company does. Go2 continuously refines its model, learning what works for your specific culture, pace, and goals.</p>
+      </div>
+      <div class="layer-tag">// evolution</div>
+    </div>
+  </div>
+</section>
+
+<section class="specs" id="specs">
+  <div class="specs-inner">
+    <div class="specs-text">
+      <h2>Built for <span class="accent">precision</span>, not paranoia</h2>
+      <p>Traditional workforce analytics tools are built on surveillance. Go2 is built on coaching. We measure outcomes, not keystrokes. We optimize workflows, not employees.</p>
+      <p>The result: teams that embrace the tool instead of resenting it. Because when you treat adults like adults, they perform like professionals.</p>
+    </div>
+    <div class="spec-sheet">
+      <div class="spec-title">Technical Specifications</div>
+      <div class="spec-row"><span class="spec-key">keystrokes_logged</span><span class="spec-val highlight">0</span></div>
+      <div class="spec-row"><span class="spec-key">screenshots_captured</span><span class="spec-val highlight">0</span></div>
+      <div class="spec-row"><span class="spec-key">workers_coached</span><span class="spec-val">47,000+</span></div>
+      <div class="spec-row"><span class="spec-key">avg_productivity_gain</span><span class="spec-val">23%</span></div>
+      <div class="spec-row"><span class="spec-key">employee_satisfaction</span><span class="spec-val">91%</span></div>
+      <div class="spec-row"><span class="spec-key">deployment_time</span><span class="spec-val">< 1 day</span></div>
+      <div class="spec-row"><span class="spec-key">avg_roi</span><span class="spec-val">4.8x</span></div>
+      <div class="spec-row"><span class="spec-key">surveillance_features</span><span class="spec-val highlight">null</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="metrics" id="results">
+  <div class="metric">
+    <div class="metric-val">47K</div>
+    <div class="metric-label">Workers Coached</div>
+  </div>
+  <div class="metric">
+    <div class="metric-val">23%</div>
+    <div class="metric-label">Avg Gain</div>
+  </div>
+  <div class="metric">
+    <div class="metric-val">4.8x</div>
+    <div class="metric-label">ROI</div>
+  </div>
+  <div class="metric">
+    <div class="metric-val">&lt;1d</div>
+    <div class="metric-label">Deploy Time</div>
+  </div>
+</div>
+
+<section class="testimonials">
+  <div class="testimonials-inner">
+    <div class="test-header">
+      <h2>Blueprints in Production</h2>
+      <p>Real companies, real results, real people who love using Go2.</p>
+    </div>
+    <div class="test-grid">
+      <div class="test-card">
+        <p class="test-quote">Go2 gave us an X-ray of our operations we never had before. We found 6 hours per week of wasted meeting time across the engineering org alone.</p>
+        <div class="test-author">// CTO, B2B SaaS</div>
+      </div>
+      <div class="test-card">
+        <p class="test-quote">The blueprint metaphor is dead-on. We literally redesigned our sprint process based on Go2's workflow analysis. 31% faster delivery cycles.</p>
+        <div class="test-author">// VP Eng, FinTech</div>
+      </div>
+      <div class="test-card">
+        <p class="test-quote">Our team actually asks for Go2's coaching. That's the difference between coaching and surveillance. People want help; they don't want watchers.</p>
+        <div class="test-author">// Head of People, Agency</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="final-cta" id="demo">
+  <h2>Draft Your <span class="accent">Blueprint</span></h2>
+  <p>Every great structure starts with a plan. Let Go2 map how your company actually operates and reveal the blueprint for peak performance.</p>
+  <a href="#" class="final-btn">Book a Demo</a>
+</section>
+
+<footer>
+  <p>// 2026 Go2 &mdash; AI productivity coaching &mdash; not surveillance</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — This Is Your Wake-Up Call</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --alarm-red: #dc2626;
+  --urgent-orange: #ea580c;
+  --warning-amber: #f59e0b;
+  --safe-green: #16a34a;
+  --dark: #0f0f0f;
+  --dark-surface: #1a1a1a;
+  --dark-card: #222222;
+  --text-light: #f5f5f5;
+  --text-muted: #a0a0a0;
+  --white: #ffffff;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color: var(--text-light);
+  line-height: 1.6;
+  overflow-x: hidden;
+  background: var(--dark);
+}
+
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+/* Nav */
+nav {
+  position: fixed; top: 0; left: 0; right: 0;
+  background: rgba(15,15,15,0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 100;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+nav .container {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 72px;
+}
+
+.logo {
+  font-size: 1.5rem; font-weight: 800; color: white;
+  text-decoration: none; letter-spacing: -0.5px;
+}
+.logo span { color: var(--alarm-red); }
+
+.nav-links { display: flex; gap: 32px; align-items: center; }
+.nav-links a {
+  text-decoration: none; color: var(--text-muted); font-size: 0.9rem;
+  font-weight: 500; transition: color 0.2s;
+}
+.nav-links a:hover { color: white; }
+
+.btn-urgent {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 28px; background: var(--alarm-red); color: white;
+  border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 600;
+  cursor: pointer; text-decoration: none; transition: all 0.3s;
+}
+.btn-urgent:hover { background: #ef4444; transform: translateY(-1px); box-shadow: 0 8px 25px rgba(220,38,38,0.4); }
+
+/* Hero */
+.hero {
+  min-height: 100vh; display: flex; align-items: center;
+  padding: 120px 0 80px;
+  background: var(--dark);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(ellipse at 50% 20%, rgba(220,38,38,0.12) 0%, transparent 60%);
+}
+
+.hero .container { position: relative; text-align: center; max-width: 900px; }
+
+.alarm-icon {
+  width: 80px; height: 80px; margin: 0 auto 32px;
+  background: rgba(220,38,38,0.1);
+  border: 2px solid rgba(220,38,38,0.3);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.5rem;
+  animation: ring 3s ease-in-out infinite;
+}
+
+@keyframes ring {
+  0%, 80%, 100% { transform: rotate(0deg); }
+  5% { transform: rotate(12deg); }
+  10% { transform: rotate(-12deg); }
+  15% { transform: rotate(10deg); }
+  20% { transform: rotate(-8deg); }
+  25% { transform: rotate(5deg); }
+  30% { transform: rotate(0deg); }
+}
+
+.hero h1 {
+  font-size: clamp(2.5rem, 5.5vw, 4rem); font-weight: 800;
+  line-height: 1.1; margin-bottom: 24px; letter-spacing: -1.5px;
+}
+
+.hero h1 .highlight {
+  background: linear-gradient(135deg, var(--alarm-red), var(--urgent-orange));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-sub {
+  font-size: 1.3rem; line-height: 1.7; color: var(--text-muted);
+  margin-bottom: 40px; max-width: 700px; margin-left: auto; margin-right: auto;
+}
+
+.hero-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 14px 32px; background: transparent; color: var(--text-muted);
+  border: 1px solid rgba(255,255,255,0.15); border-radius: 8px;
+  font-size: 0.95rem; font-weight: 600; cursor: pointer;
+  text-decoration: none; transition: all 0.3s;
+}
+.btn-ghost:hover { border-color: rgba(255,255,255,0.4); color: white; }
+
+/* Ticker */
+.ticker-section {
+  padding: 24px 0;
+  background: var(--alarm-red);
+  overflow: hidden;
+}
+
+.ticker-track {
+  display: flex; gap: 48px;
+  animation: ticker 30s linear infinite;
+  white-space: nowrap;
+  width: max-content;
+}
+
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.ticker-item {
+  font-size: 0.85rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 2px; display: flex; align-items: center; gap: 12px;
+}
+
+.ticker-item::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+}
+
+/* Gap Section */
+.gap-section {
+  padding: 100px 0;
+  background: var(--dark-surface);
+}
+
+.gap-header {
+  text-align: center; margin-bottom: 60px;
+}
+
+.section-label {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 0.8rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 2px; color: var(--urgent-orange);
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 800;
+  line-height: 1.15; letter-spacing: -0.5px; margin-bottom: 16px;
+}
+
+.section-subtitle {
+  font-size: 1.1rem; color: var(--text-muted);
+  max-width: 600px; margin: 0 auto; line-height: 1.7;
+}
+
+.gap-grid {
+  display: grid; grid-template-columns: 1fr 80px 1fr;
+  gap: 0; align-items: stretch;
+}
+
+.gap-col {
+  padding: 40px; border-radius: 16px;
+}
+
+.gap-old {
+  background: var(--dark-card);
+  border: 1px solid rgba(220,38,38,0.2);
+}
+
+.gap-new {
+  background: var(--dark-card);
+  border: 1px solid rgba(22,163,74,0.2);
+}
+
+.gap-divider {
+  display: flex; align-items: center; justify-content: center;
+}
+
+.gap-divider span {
+  writing-mode: vertical-rl;
+  font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 3px; color: var(--text-muted);
+}
+
+.gap-col h3 {
+  font-size: 1.2rem; font-weight: 700; margin-bottom: 24px;
+  display: flex; align-items: center; gap: 10px;
+}
+
+.status-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+}
+
+.status-dot.red { background: var(--alarm-red); box-shadow: 0 0 10px rgba(220,38,38,0.5); }
+.status-dot.green { background: var(--safe-green); box-shadow: 0 0 10px rgba(22,163,74,0.5); }
+
+.gap-list { list-style: none; }
+.gap-list li {
+  padding: 14px 0; font-size: 0.95rem; color: var(--text-muted);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  display: flex; align-items: flex-start; gap: 10px;
+  line-height: 1.5;
+}
+.gap-list li:last-child { border-bottom: none; }
+.gap-list .icon { flex-shrink: 0; margin-top: 2px; }
+
+/* Timeline */
+.timeline-section {
+  padding: 100px 0;
+  background: var(--dark);
+}
+
+.timeline {
+  max-width: 700px; margin: 48px auto 0;
+  position: relative;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute; left: 24px; top: 0; bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--alarm-red), var(--urgent-orange), var(--warning-amber), var(--safe-green));
+}
+
+.timeline-item {
+  display: flex; gap: 24px; margin-bottom: 36px;
+  position: relative;
+}
+
+.timeline-dot {
+  width: 50px; height: 50px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; flex-shrink: 0;
+  z-index: 1;
+}
+
+.timeline-item:nth-child(1) .timeline-dot { background: rgba(220,38,38,0.15); border: 2px solid var(--alarm-red); }
+.timeline-item:nth-child(2) .timeline-dot { background: rgba(234,88,12,0.15); border: 2px solid var(--urgent-orange); }
+.timeline-item:nth-child(3) .timeline-dot { background: rgba(245,158,11,0.15); border: 2px solid var(--warning-amber); }
+.timeline-item:nth-child(4) .timeline-dot { background: rgba(22,163,74,0.15); border: 2px solid var(--safe-green); }
+
+.timeline-content {
+  background: var(--dark-card);
+  border-radius: 12px; padding: 24px;
+  border: 1px solid rgba(255,255,255,0.05);
+  flex: 1;
+}
+
+.timeline-content h3 {
+  font-size: 1.05rem; font-weight: 700; margin-bottom: 8px;
+}
+
+.timeline-content p {
+  font-size: 0.9rem; color: var(--text-muted); line-height: 1.6;
+}
+
+.timeline-time {
+  font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 1px; margin-bottom: 4px;
+}
+
+.timeline-item:nth-child(1) .timeline-time { color: var(--alarm-red); }
+.timeline-item:nth-child(2) .timeline-time { color: var(--urgent-orange); }
+.timeline-item:nth-child(3) .timeline-time { color: var(--warning-amber); }
+.timeline-item:nth-child(4) .timeline-time { color: var(--safe-green); }
+
+/* Stats */
+.stats-section {
+  padding: 80px 0;
+  background: var(--dark-surface);
+}
+
+.stats-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.stat-card {
+  background: var(--dark-card);
+  border-radius: 16px; padding: 32px 24px;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.05);
+  transition: all 0.3s;
+}
+
+.stat-card:hover {
+  border-color: rgba(220,38,38,0.3);
+  transform: translateY(-4px);
+}
+
+.stat-value {
+  font-size: 2.8rem; font-weight: 800;
+  background: linear-gradient(135deg, var(--alarm-red), var(--urgent-orange));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1; margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;
+}
+
+/* What Go2 Does */
+.features-section {
+  padding: 100px 0;
+  background: var(--dark);
+}
+
+.features-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 24px; margin-top: 48px;
+}
+
+.feature-card {
+  background: var(--dark-card);
+  border-radius: 16px; padding: 32px;
+  border: 1px solid rgba(255,255,255,0.05);
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--alarm-red), var(--urgent-orange));
+  opacity: 0; transition: opacity 0.3s;
+}
+
+.feature-card:hover::before { opacity: 1; }
+.feature-card:hover { border-color: rgba(255,255,255,0.1); transform: translateY(-4px); }
+
+.feature-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: rgba(220,38,38,0.1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; margin-bottom: 20px;
+}
+
+.feature-card h3 {
+  font-size: 1.1rem; font-weight: 700; margin-bottom: 10px;
+}
+
+.feature-card p {
+  font-size: 0.9rem; color: var(--text-muted); line-height: 1.7;
+}
+
+/* Urgency banner */
+.urgency-banner {
+  padding: 60px 0;
+  background: linear-gradient(135deg, var(--alarm-red), var(--urgent-orange));
+  text-align: center;
+}
+
+.urgency-banner h2 {
+  font-size: clamp(1.5rem, 3vw, 2.2rem); font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.urgency-banner p {
+  font-size: 1rem; opacity: 0.9;
+  max-width: 600px; margin: 0 auto;
+}
+
+/* Testimonial */
+.testimonial-section {
+  padding: 100px 0;
+  background: var(--dark-surface);
+  text-align: center;
+}
+
+.testimonial-card {
+  max-width: 700px; margin: 48px auto 0;
+  background: var(--dark-card);
+  border-radius: 20px; padding: 48px;
+  border: 1px solid rgba(255,255,255,0.05);
+  position: relative;
+}
+
+.testimonial-card::before {
+  content: '\201C';
+  position: absolute; top: 16px; left: 32px;
+  font-size: 4rem; color: var(--alarm-red); opacity: 0.2;
+  font-family: Georgia, serif; line-height: 1;
+}
+
+.testimonial-card blockquote {
+  font-size: 1.15rem; line-height: 1.8; font-style: italic;
+  color: var(--text-light); margin-bottom: 24px;
+}
+
+.testimonial-author { font-size: 0.9rem; font-weight: 600; color: white; }
+.testimonial-role { font-size: 0.85rem; color: var(--text-muted); }
+
+/* CTA */
+.cta-section {
+  padding: 100px 0;
+  background: var(--dark);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-section::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(220,38,38,0.08) 0%, transparent 60%);
+}
+
+.cta-section .container { position: relative; }
+
+.cta-section h2 {
+  font-size: clamp(2rem, 4vw, 3rem); font-weight: 800;
+  margin-bottom: 16px; letter-spacing: -0.5px;
+}
+
+.cta-section p {
+  font-size: 1.1rem; color: var(--text-muted);
+  max-width: 550px; margin: 0 auto 36px;
+}
+
+.cta-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
+.btn-cta-lg {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 16px 40px; background: var(--alarm-red); color: white;
+  border: none; border-radius: 10px; font-size: 1.1rem; font-weight: 700;
+  cursor: pointer; text-decoration: none; transition: all 0.3s;
+}
+.btn-cta-lg:hover { background: #ef4444; transform: translateY(-2px); box-shadow: 0 12px 30px rgba(220,38,38,0.4); }
+
+/* Footer */
+footer {
+  background: #0a0a0a; color: var(--text-muted);
+  padding: 40px 0; font-size: 0.85rem;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.footer-content {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 16px;
+}
+
+.footer-links { display: flex; gap: 24px; }
+.footer-links a { color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: white; }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .gap-grid { grid-template-columns: 1fr; gap: 24px; }
+  .gap-divider { display: none; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .features-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .nav-links a:not(.btn-urgent) { display: none; }
+  section, .gap-section, .features-section, .testimonial-section, .cta-section { padding: 60px 0; }
+  .hero { padding: 100px 0 60px; }
+  .timeline::before { left: 24px; }
+}
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <a href="#" class="logo">Go2<span>.</span></a>
+    <div class="nav-links">
+      <a href="#gap">The Gap</a>
+      <a href="#how">How It Works</a>
+      <a href="#features">Features</a>
+      <a href="#cta" class="btn-urgent">Wake Up Now</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="container">
+    <div class="alarm-icon">&#9200;</div>
+    <h1>This is your <span class="highlight">wake-up call.</span></h1>
+    <p class="hero-sub">Your competitors are figuring out AI while you're still managing by gut feeling. The window to catch up is closing. Every week you wait, the gap gets wider.</p>
+    <div class="hero-actions">
+      <a href="#cta" class="btn-urgent" style="padding:16px 36px; font-size:1.05rem;">Stop Falling Behind</a>
+      <a href="#gap" class="btn-ghost">See The Gap</a>
+    </div>
+  </div>
+</section>
+
+<div class="ticker-section">
+  <div class="ticker-track">
+    <span class="ticker-item">73% of SMBs have no AI productivity strategy</span>
+    <span class="ticker-item">AI-enabled teams outperform by 3x on average</span>
+    <span class="ticker-item">Remote work visibility is at an all-time low</span>
+    <span class="ticker-item">The best employees leave companies that don't invest in tools</span>
+    <span class="ticker-item">Manual process mapping misses 60% of automation opportunities</span>
+    <span class="ticker-item">73% of SMBs have no AI productivity strategy</span>
+    <span class="ticker-item">AI-enabled teams outperform by 3x on average</span>
+    <span class="ticker-item">Remote work visibility is at an all-time low</span>
+    <span class="ticker-item">The best employees leave companies that don't invest in tools</span>
+    <span class="ticker-item">Manual process mapping misses 60% of automation opportunities</span>
+  </div>
+</div>
+
+<section class="gap-section" id="gap">
+  <div class="container">
+    <div class="gap-header">
+      <div class="section-label">The Reality Check</div>
+      <h2 class="section-title">Two Companies. Same Industry. Different Futures.</h2>
+      <p class="section-subtitle">One figured out AI-powered productivity. The other is still "planning to look into it." Which one are you?</p>
+    </div>
+    <div class="gap-grid">
+      <div class="gap-col gap-old">
+        <h3><span class="status-dot red"></span> Still Guessing</h3>
+        <ul class="gap-list">
+          <li><span class="icon">&#128164;</span><span>Quarterly reviews reveal problems months too late</span></li>
+          <li><span class="icon">&#128164;</span><span>Managers spend hours in status meetings to "stay aligned"</span></li>
+          <li><span class="icon">&#128164;</span><span>New hires figure things out on their own — or don't</span></li>
+          <li><span class="icon">&#128164;</span><span>Nobody knows which processes are eating the most time</span></li>
+          <li><span class="icon">&#128164;</span><span>Best practices live in a handful of heads</span></li>
+          <li><span class="icon">&#128164;</span><span>AI "strategy" is letting people use ChatGPT if they want</span></li>
+        </ul>
+      </div>
+      <div class="gap-divider"><span>VS</span></div>
+      <div class="gap-col gap-new">
+        <h3><span class="status-dot green"></span> AI-Enabled with Go2</h3>
+        <ul class="gap-list">
+          <li><span class="icon">&#9889;</span><span>Real-time aggregated insights surface issues in days, not months</span></li>
+          <li><span class="icon">&#9889;</span><span>Managers get dashboards, not meetings — team-level, not surveillance</span></li>
+          <li><span class="icon">&#9889;</span><span>AI coaches new hires using patterns from top performers</span></li>
+          <li><span class="icon">&#9889;</span><span>Automation mapping finds every opportunity across the team</span></li>
+          <li><span class="icon">&#9889;</span><span>Workflows are captured and shared as institutional knowledge</span></li>
+          <li><span class="icon">&#9889;</span><span>Frontier AI (Claude, GPT, Gemini) actively coaching every worker</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="urgency-banner">
+  <div class="container">
+    <h2>The gap between AI-enabled and AI-unaware is growing every single day.</h2>
+    <p>Companies that wait don't just fall behind — they become structurally unable to compete.</p>
+  </div>
+</div>
+
+<section class="timeline-section" id="how">
+  <div class="container">
+    <div style="text-align:center;">
+      <div class="section-label">From Asleep to Ahead</div>
+      <h2 class="section-title">How Go2 Closes the Gap</h2>
+      <p class="section-subtitle">Go2 takes you from flying blind to full visibility in weeks, not months.</p>
+    </div>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-dot">&#128187;</div>
+        <div class="timeline-content">
+          <div class="timeline-time">Week 1</div>
+          <h3>Deploy the Desktop Agent</h3>
+          <p>A lightweight agent installs on your team's machines. It captures work patterns — tools, workflows, time investment — silently and securely. No disruption.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot">&#128202;</div>
+        <div class="timeline-content">
+          <div class="timeline-time">Week 2-3</div>
+          <h3>AI Analyzes Everything</h3>
+          <p>Frontier AI models crunch your team's data against patterns from nearly a million workers. They find bottlenecks, inefficiencies, and automation opportunities you didn't know existed.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot">&#128161;</div>
+        <div class="timeline-content">
+          <div class="timeline-time">Week 3-4</div>
+          <h3>Insights Start Flowing</h3>
+          <p>Workers get personalized AI coaching. Managers get aggregated team dashboards. Automation candidates are surfaced and prioritized. The fog starts to lift.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot">&#127919;</div>
+        <div class="timeline-content">
+          <div class="timeline-time">Ongoing</div>
+          <h3>Continuous Acceleration</h3>
+          <p>Go2 doesn't stop at a report. It continuously coaches, continuously identifies opportunities, continuously helps your team get better. The gap reverses — now you're ahead.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stats-section">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">~1M</div>
+        <div class="stat-label">Workers in the dataset powering coaching</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">73%</div>
+        <div class="stat-label">Of SMBs have zero AI productivity strategy</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">3x</div>
+        <div class="stat-label">Performance gap between AI-enabled and unaware</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">4wk</div>
+        <div class="stat-label">From deploy to full team visibility</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="features-section" id="features">
+  <div class="container">
+    <div style="text-align:center;">
+      <div class="section-label">What You Get</div>
+      <h2 class="section-title">Stop Guessing. Start Knowing.</h2>
+      <p class="section-subtitle">Go2 replaces gut feeling with frontier AI insights — for workers and managers alike.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">&#128300;</div>
+        <h3>Silent Desktop Agent</h3>
+        <p>Captures real work patterns without interruption. No screenshots, no keylogging — just intelligent observation of tools, workflows, and time investment.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#129504;</div>
+        <h3>Frontier AI Coaching</h3>
+        <p>Claude, GPT, and Gemini analyze patterns from ~1M workers to give your team personalized productivity coaching. Like having a world-class consultant for every employee.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#128202;</div>
+        <h3>Manager Dashboards</h3>
+        <p>Aggregated team insights — never individual surveillance. See where your team is thriving, where they're stuck, and what to prioritize. Data, not opinions.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#9881;</div>
+        <h3>Automation Mapping</h3>
+        <p>Go2 identifies repetitive tasks across your team and maps them for automation. Stop paying knowledge workers to do robot work — let the robots do it.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#127891;</div>
+        <h3>Accelerated Onboarding</h3>
+        <p>New hires get coached using patterns from your best performers. They ramp faster because AI shows them what great looks like from day one.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#128274;</div>
+        <h3>Privacy-First Design</h3>
+        <p>This is NOT surveillance. Managers see team patterns, not individual browser histories. Workers get coaching, not monitoring. Built on trust, not tracking.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="testimonial-section">
+  <div class="container">
+    <div class="section-label">A Wake-Up Story</div>
+    <h2 class="section-title">They Almost Missed the Window</h2>
+    <div class="testimonial-card">
+      <blockquote>"We were the company on the left side of that comparison. 'We'll figure out AI next quarter.' Then we lost a major contract to a competitor who was using data to move twice as fast. Go2 was our wake-up call. Six weeks in, we had automated three workflows and our team was operating at a level I didn't know was possible."</blockquote>
+      <div class="testimonial-author">CEO</div>
+      <div class="testimonial-role">42-Person Professional Services Firm</div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section" id="cta">
+  <div class="container">
+    <h2>The alarm is ringing.<br>Are you going to hit snooze?</h2>
+    <p>Every week without Go2 is another week your competitors are getting ahead. The window to catch up is still open — but it won't be forever.</p>
+    <div class="cta-actions">
+      <a href="#" class="btn-cta-lg">Wake Up Your Team</a>
+      <a href="#" class="btn-ghost" style="padding:16px 36px; font-size:1.05rem;">Talk to Someone</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-content">
+      <span>&copy; 2026 Go2. All rights reserved.</span>
+      <div class="footer-links">
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+        <a href="#">Security</a>
+        <a href="#">Contact</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Intersection Observer for fade-in
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.style.opacity = '1';
+      entry.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+document.querySelectorAll('.gap-col, .timeline-item, .stat-card, .feature-card, .testimonial-card').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(20px)';
+  el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+  observer.observe(el);
+});
+
+// Smooth scroll
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function(e) {
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
+  });
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The Mirror</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a0a0a;
+  --surface: #111111;
+  --border: #1a1a1a;
+  --text: #e8e8e8;
+  --text-dim: #666;
+  --accent: #c4a882;
+  --accent-light: #e8d5bc;
+  --mirror: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* Reflection effect overlay */
+.reflection-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(196, 168, 130, 0.015) 25%,
+    transparent 50%,
+    rgba(196, 168, 130, 0.01) 75%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* Navigation */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  padding: 24px 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+  background: rgba(10, 10, 10, 0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--accent);
+}
+
+.nav-links { display: flex; gap: 36px; align-items: center; }
+.nav-links a {
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 400;
+  transition: color 0.3s;
+}
+.nav-links a:hover { color: var(--text); }
+
+.nav-cta {
+  padding: 10px 24px !important;
+  background: var(--accent) !important;
+  color: var(--bg) !important;
+  border-radius: 6px;
+  font-weight: 500 !important;
+  transition: all 0.3s !important;
+}
+.nav-cta:hover { opacity: 0.9; transform: translateY(-1px); }
+
+/* Hero */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 120px 48px 80px;
+  position: relative;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(196, 168, 130, 0.06) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: pulse-glow 8s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+}
+
+.hero-eyebrow {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  color: var(--accent);
+  margin-bottom: 32px;
+  font-weight: 500;
+  position: relative;
+}
+
+.hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(42px, 6vw, 80px);
+  font-weight: 400;
+  line-height: 1.15;
+  max-width: 900px;
+  margin-bottom: 32px;
+  position: relative;
+}
+
+.hero h1 em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.hero-sub {
+  font-size: 18px;
+  color: var(--text-dim);
+  max-width: 560px;
+  margin-bottom: 48px;
+  font-weight: 300;
+  position: relative;
+}
+
+.hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 36px;
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 6px;
+  transition: all 0.4s;
+  position: relative;
+}
+
+.hero-cta:hover {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.hero-cta .arrow {
+  transition: transform 0.3s;
+}
+.hero-cta:hover .arrow { transform: translateX(4px); }
+
+/* Mirror Section */
+.mirror-section {
+  padding: 120px 48px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.mirror-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+
+.mirror-card {
+  background: var(--surface);
+  padding: 56px 48px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.5s;
+}
+
+.mirror-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+.mirror-card:hover::after { opacity: 1; }
+.mirror-card:hover { background: #141414; }
+
+.mirror-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+}
+
+.mirror-question {
+  font-family: 'Playfair Display', serif;
+  font-size: 24px;
+  font-style: italic;
+  color: var(--accent-light);
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+
+.mirror-answer {
+  font-size: 15px;
+  color: var(--text-dim);
+  line-height: 1.8;
+}
+
+/* Uncomfortable truth section */
+.truth-section {
+  padding: 140px 48px;
+  text-align: center;
+  position: relative;
+}
+
+.truth-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+}
+
+.truth-number {
+  font-size: 120px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 8px;
+  opacity: 0.9;
+}
+
+.truth-unit {
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 6px;
+  color: var(--text-dim);
+  margin-bottom: 40px;
+}
+
+.truth-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  max-width: 640px;
+  margin: 0 auto 24px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+.truth-detail {
+  font-size: 15px;
+  color: var(--text-dim);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* Three truths */
+.truths-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 48px;
+}
+
+.truth-col {
+  padding: 80px 48px;
+  border-right: 1px solid var(--border);
+  text-align: center;
+}
+
+.truth-col:last-child { border-right: none; }
+
+.truth-col .stat {
+  font-size: 56px;
+  font-weight: 300;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+
+.truth-col .stat-label {
+  font-size: 14px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 20px;
+}
+
+.truth-col p {
+  font-size: 15px;
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+
+/* Reflection process */
+.process-section {
+  padding: 120px 48px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.process-header {
+  text-align: center;
+  margin-bottom: 80px;
+}
+
+.process-header h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 40px;
+  font-weight: 400;
+  margin-bottom: 16px;
+}
+
+.process-header p {
+  color: var(--text-dim);
+  font-size: 16px;
+}
+
+.process-step {
+  display: flex;
+  gap: 48px;
+  margin-bottom: 64px;
+  align-items: flex-start;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeUp 0.6s forwards;
+}
+
+.process-step:nth-child(2) { animation-delay: 0.15s; }
+.process-step:nth-child(3) { animation-delay: 0.3s; }
+.process-step:nth-child(4) { animation-delay: 0.45s; }
+
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.step-num {
+  font-size: 48px;
+  font-weight: 200;
+  color: var(--accent);
+  min-width: 60px;
+  line-height: 1;
+}
+
+.step-content h3 {
+  font-size: 20px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.step-content p {
+  font-size: 15px;
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+
+/* Quote section */
+.quote-section {
+  padding: 120px 48px;
+  text-align: center;
+  position: relative;
+  background: linear-gradient(180deg, transparent, rgba(196, 168, 130, 0.03), transparent);
+}
+
+.quote-mark {
+  font-family: 'Playfair Display', serif;
+  font-size: 120px;
+  color: var(--accent);
+  opacity: 0.3;
+  line-height: 0.5;
+  margin-bottom: 24px;
+}
+
+.quote-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  font-style: italic;
+  max-width: 700px;
+  margin: 0 auto 24px;
+  line-height: 1.5;
+}
+
+.quote-attr {
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.quote-attr strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* Integration strip */
+.integrations {
+  padding: 80px 48px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.integrations p {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  color: var(--text-dim);
+  margin-bottom: 32px;
+}
+
+.integration-logos {
+  display: flex;
+  justify-content: center;
+  gap: 56px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.integration-logos span {
+  font-size: 16px;
+  color: #444;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.integration-logos span:hover { color: var(--accent); }
+
+/* CTA */
+.final-cta {
+  padding: 160px 48px;
+  text-align: center;
+}
+
+.final-cta h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 400;
+  margin-bottom: 20px;
+  line-height: 1.3;
+}
+
+.final-cta h2 em { color: var(--accent); }
+
+.final-cta p {
+  color: var(--text-dim);
+  font-size: 17px;
+  max-width: 480px;
+  margin: 0 auto 40px;
+}
+
+.cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 44px;
+  background: var(--accent);
+  color: var(--bg);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 6px;
+  transition: all 0.3s;
+}
+
+.cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(196, 168, 130, 0.2);
+}
+
+/* Footer */
+footer {
+  padding: 48px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+}
+
+footer p {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  nav { padding: 16px 24px; }
+  .nav-links { display: none; }
+  .hero { padding: 100px 24px 60px; }
+  .mirror-grid { grid-template-columns: 1fr; }
+  .truths-row { grid-template-columns: 1fr; }
+  .truth-col { border-right: none; border-bottom: 1px solid var(--border); }
+  .process-step { flex-direction: column; gap: 16px; }
+  .mirror-section, .process-section, .truth-section, .final-cta { padding-left: 24px; padding-right: 24px; }
+}
+</style>
+</head>
+<body>
+
+<div class="reflection-overlay"></div>
+
+<nav>
+  <div class="logo">Go2</div>
+  <div class="nav-links">
+    <a href="#mirror">The Mirror</a>
+    <a href="#truth">The Truth</a>
+    <a href="#process">How It Works</a>
+    <a href="#cta" class="nav-cta">See It In Action</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-eyebrow">AI Productivity Coaching</div>
+  <h1>Your company has a <em>reflection</em> problem</h1>
+  <p class="hero-sub">You can't improve what you can't see. Go2 holds up a mirror to how your team actually works — then coaches them to work better.</p>
+  <a href="#cta" class="hero-cta">
+    See It In Action <span class="arrow">&rarr;</span>
+  </a>
+</section>
+
+<section class="mirror-section" id="mirror">
+  <div class="mirror-grid">
+    <div class="mirror-card">
+      <div class="mirror-label">The question you avoid</div>
+      <div class="mirror-question">"How much of my team's day is actually productive?"</div>
+      <p class="mirror-answer">Most leaders guess 70-80%. The real number is closer to 45%. Not because people are lazy — because systems are broken, context-switching is constant, and nobody has visibility into the friction.</p>
+    </div>
+    <div class="mirror-card">
+      <div class="mirror-label">The assumption that costs you</div>
+      <div class="mirror-question">"We're too small for this kind of tool."</div>
+      <p class="mirror-answer">Companies with 10-100 employees lose the most to invisible inefficiency. Enterprise has entire ops teams. You have... hope. Go2 gives you the same insight at a fraction of the cost.</p>
+    </div>
+    <div class="mirror-card">
+      <div class="mirror-label">The fear that holds you back</div>
+      <div class="mirror-question">"Won't my team think I'm spying on them?"</div>
+      <p class="mirror-answer">Surveillance software watches people. Go2 coaches them. Your team sees their own data, gets personalized suggestions, and improves on their terms. They'll thank you for it.</p>
+    </div>
+    <div class="mirror-card">
+      <div class="mirror-label">The metric you're missing</div>
+      <div class="mirror-question">"We track revenue. Isn't that enough?"</div>
+      <p class="mirror-answer">Revenue is a lagging indicator. By the time it drops, the damage is months old. Go2 shows you the leading indicators — the daily patterns that predict whether next quarter will be up or down.</p>
+    </div>
+  </div>
+</section>
+
+<section class="truth-section" id="truth">
+  <div class="truth-number">47,000+</div>
+  <div class="truth-unit">Workers Coached</div>
+  <div class="truth-text">When you finally see how work actually happens, the path to improvement becomes obvious.</div>
+  <p class="truth-detail">Go2 has coached over 47,000 workers across hundreds of SMBs. The average productivity gain is 23%. Not because we push people harder — because we remove what's in their way.</p>
+</section>
+
+<div class="truths-row">
+  <div class="truth-col">
+    <div class="stat">23%</div>
+    <div class="stat-label">Avg Productivity Gain</div>
+    <p>Not a ceiling. Teams that fully engage with coaching see gains of 30-40% within 90 days.</p>
+  </div>
+  <div class="truth-col">
+    <div class="stat">1 wk</div>
+    <div class="stat-label">Time to First Insight</div>
+    <p>Within 7 days, Go2 identifies your team's biggest friction points and delivers actionable coaching.</p>
+  </div>
+  <div class="truth-col">
+    <div class="stat">0</div>
+    <div class="stat-label">Screenshots Taken</div>
+    <p>We're not surveillance software. No screenshots, no keystroke logging. Just intelligent analysis of work patterns.</p>
+  </div>
+</div>
+
+<section class="process-section" id="process">
+  <div class="process-header">
+    <h2>The reflection process</h2>
+    <p>Four steps from invisible friction to visible improvement</p>
+  </div>
+
+  <div class="process-step">
+    <div class="step-num">01</div>
+    <div class="step-content">
+      <h3>Connect your tools</h3>
+      <p>Go2 integrates with Slack, Teams, Zoom, Google Workspace, and more. A 5-minute setup gives it the context it needs — no invasive software on anyone's machine.</p>
+    </div>
+  </div>
+
+  <div class="process-step">
+    <div class="step-num">02</div>
+    <div class="step-content">
+      <h3>The mirror appears</h3>
+      <p>Within days, Go2's AI builds a picture of how your team actually works. Meeting load, communication patterns, focus time, tool usage. The reflection is honest — and often surprising.</p>
+    </div>
+  </div>
+
+  <div class="process-step">
+    <div class="step-num">03</div>
+    <div class="step-content">
+      <h3>AI coaching begins</h3>
+      <p>Each team member receives personalized suggestions. "You have 4 hours of meetings tomorrow — consider declining this one." "Your deepest focus happens before 11am — block that time." Gentle, private, effective.</p>
+    </div>
+  </div>
+
+  <div class="process-step">
+    <div class="step-num">04</div>
+    <div class="step-content">
+      <h3>The compound effect</h3>
+      <p>Small daily improvements compound. Processes get documented automatically. Automation opportunities surface. Within a month, your team operates like a company twice its size.</p>
+    </div>
+  </div>
+</section>
+
+<section class="quote-section">
+  <div class="quote-mark">&ldquo;</div>
+  <div class="quote-text">We thought we knew how our team worked. Go2 showed us we were wrong about almost everything — and that was the best thing that ever happened to our company.</div>
+  <div class="quote-attr"><strong>Sarah Chen</strong> &middot; COO, Meridian Digital (42 employees)</div>
+</section>
+
+<section class="integrations">
+  <p>Connects with the tools you already use</p>
+  <div class="integration-logos">
+    <span>Slack</span>
+    <span>Microsoft Teams</span>
+    <span>Zoom</span>
+    <span>Google Workspace</span>
+    <span>Asana</span>
+    <span>Jira</span>
+    <span>Notion</span>
+  </div>
+</section>
+
+<section class="final-cta" id="cta">
+  <h2>Ready to see <em>the reflection?</em></h2>
+  <p>Most leaders are surprised by what they find. All of them are glad they looked.</p>
+  <a href="#" class="cta-btn">Book a Demo <span>&rarr;</span></a>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2. AI productivity coaching for teams that want the truth.</p>
+</footer>
+
+</body>
+</html>

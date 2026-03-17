@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The Silent Killer</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#080808;--bg2:#0e0e0e;--bg3:#151515;--text:#a0a0a0;--text-muted:#555;--accent:#ff3b3b;--accent2:#e53935;--accent-soft:rgba(255,59,59,0.08);--green:#00e676;--green-soft:rgba(0,230,118,0.08);--white:#f0f0f0;--gold:#ffd700;--gold-soft:rgba(255,215,0,0.08)}
+html{scroll-behavior:smooth}
+body{font-family:'Georgia','Times New Roman',serif;background:var(--bg);color:var(--text);line-height:1.7;overflow-x:hidden}
+a{color:var(--accent);text-decoration:none}
+
+/* Nav */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;background:rgba(8,8,8,0.95);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,0.03)}
+.logo{font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:1.3rem;font-weight:800;color:var(--white);letter-spacing:-0.5px}
+.logo span{color:var(--accent)}
+nav ul{display:flex;list-style:none;gap:2rem}
+nav ul a{color:var(--text-muted);font-family:-apple-system,sans-serif;font-size:0.82rem;letter-spacing:0.5px;transition:color 0.3s}
+nav ul a:hover{color:var(--white)}
+.nav-cta{font-family:-apple-system,sans-serif;padding:0.45rem 1.2rem;background:var(--accent);color:var(--white);border-radius:4px;font-weight:600;font-size:0.8rem;transition:all 0.3s}
+.nav-cta:hover{background:var(--accent2)}
+
+/* Hero */
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:8rem 2rem 6rem;position:relative}
+.hero::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 30%,rgba(255,59,59,0.04),transparent 60%)}
+.hero-content{max-width:750px;position:relative;z-index:1}
+.hero h1{font-size:3.4rem;font-weight:400;color:var(--white);line-height:1.2;margin-bottom:1.5rem;font-style:italic}
+.hero h1 em{font-style:normal;font-weight:700;color:var(--accent)}
+.hero-cost{font-family:'Courier New',monospace;font-size:5rem;font-weight:700;color:var(--accent);margin:2rem 0;letter-spacing:-2px;text-shadow:0 0 60px rgba(255,59,59,0.2)}
+.hero-cost-label{font-family:-apple-system,sans-serif;font-size:0.85rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:3px;margin-bottom:2rem}
+.hero p{font-size:1.15rem;color:var(--text);max-width:580px;margin:0 auto 2.5rem;line-height:1.8}
+.cta-primary{font-family:-apple-system,sans-serif;padding:1rem 2.5rem;background:var(--accent);color:var(--white);border:none;border-radius:4px;font-size:0.95rem;font-weight:700;cursor:pointer;transition:all 0.3s;display:inline-block;text-transform:uppercase;letter-spacing:1px}
+.cta-primary:hover{background:var(--accent2);transform:translateY(-2px);box-shadow:0 8px 30px rgba(255,59,59,0.25)}
+.cta-ghost{font-family:-apple-system,sans-serif;padding:1rem 2.5rem;background:transparent;color:var(--text);border:1px solid rgba(255,255,255,0.1);border-radius:4px;font-size:0.95rem;cursor:pointer;transition:all 0.3s;display:inline-block;margin-left:1rem}
+.cta-ghost:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Sections */
+section{position:relative;padding:6rem 2rem}
+.section-inner{max-width:1000px;margin:0 auto}
+.section-label{font-family:-apple-system,sans-serif;font-size:0.7rem;text-transform:uppercase;letter-spacing:3px;color:var(--accent);margin-bottom:1rem}
+.section-title{font-size:2.4rem;color:var(--white);font-weight:400;margin-bottom:1rem;line-height:1.3}
+.section-title strong{font-weight:700}
+.section-subtitle{font-size:1rem;color:var(--text-muted);max-width:550px;line-height:1.8}
+
+/* Bleeding Money */
+.bleed-section{background:var(--bg2)}
+.bleed-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:3rem}
+.bleed-card{padding:2.5rem 2rem;background:var(--bg);border-radius:8px;border:1px solid rgba(255,255,255,0.03);border-left:3px solid var(--accent);position:relative;overflow:hidden}
+.bleed-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),transparent);opacity:0.3}
+.bleed-amount{font-family:'Courier New',monospace;font-size:2.2rem;font-weight:700;color:var(--accent);margin-bottom:0.5rem}
+.bleed-card h3{font-family:-apple-system,sans-serif;color:var(--white);font-size:1rem;margin-bottom:0.8rem;font-weight:600}
+.bleed-card p{font-size:0.9rem;color:var(--text-muted);line-height:1.6}
+.bleed-card .per{font-family:-apple-system,sans-serif;font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
+
+/* The Silence */
+.silence-section{background:var(--bg)}
+.silence-list{margin-top:3rem;max-width:700px}
+.silence-item{padding:2rem 0;border-bottom:1px solid rgba(255,255,255,0.04);display:grid;grid-template-columns:40px 1fr;gap:1.5rem;align-items:start}
+.silence-icon{width:40px;height:40px;border-radius:50%;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+.silence-item h3{font-family:-apple-system,sans-serif;color:var(--white);font-size:1rem;margin-bottom:0.4rem;font-weight:600}
+.silence-item p{font-size:0.9rem;color:var(--text-muted);line-height:1.6}
+.silence-item em{color:var(--accent);font-style:normal;font-weight:500}
+
+/* Diagnostic */
+.diagnostic-section{background:var(--bg2)}
+.diagnostic-console{margin-top:3rem;background:var(--bg);border:1px solid rgba(255,255,255,0.05);border-radius:8px;overflow:hidden;font-family:'Courier New',monospace}
+.console-bar{padding:0.8rem 1.2rem;background:rgba(255,255,255,0.02);border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;gap:0.5rem}
+.console-dot{width:8px;height:8px;border-radius:50%}
+.console-dot.red{background:var(--accent)}
+.console-dot.yellow{background:var(--gold)}
+.console-dot.green{background:var(--green)}
+.console-title{font-size:0.75rem;color:var(--text-muted);margin-left:0.5rem;font-family:-apple-system,sans-serif}
+.console-body{padding:1.5rem;font-size:0.82rem;line-height:2}
+.console-line{display:flex;gap:1rem;align-items:baseline}
+.console-line .timestamp{color:var(--text-muted);min-width:80px;flex-shrink:0}
+.console-line .status{padding:0.15rem 0.5rem;border-radius:3px;font-size:0.7rem;font-weight:600;min-width:60px;text-align:center;flex-shrink:0}
+.status.critical{background:var(--accent-soft);color:var(--accent)}
+.status.warning{background:var(--gold-soft);color:var(--gold)}
+.status.found{background:var(--green-soft);color:var(--green)}
+.console-line .message{color:var(--text)}
+.console-line .value{color:var(--accent);font-weight:700}
+.console-line .value.positive{color:var(--green)}
+
+/* How It Works */
+.how-section{background:var(--bg)}
+.how-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin-top:3rem}
+.how-card{padding:2rem;background:var(--bg2);border:1px solid rgba(255,255,255,0.03);border-radius:8px;text-align:center}
+.how-num{font-family:'Courier New',monospace;font-size:2.5rem;font-weight:700;color:var(--accent);opacity:0.3;margin-bottom:1rem}
+.how-card h3{font-family:-apple-system,sans-serif;color:var(--white);font-size:1rem;margin-bottom:0.8rem;font-weight:600}
+.how-card p{font-size:0.88rem;color:var(--text-muted);line-height:1.6}
+
+/* AI Coaching */
+.coaching-section{background:var(--bg2)}
+.coaching-layout{display:grid;grid-template-columns:1fr 1fr;gap:3rem;margin-top:3rem;align-items:start}
+.coaching-chat{background:var(--bg);border:1px solid rgba(255,255,255,0.04);border-radius:8px;overflow:hidden}
+.chat-top{padding:0.8rem 1.2rem;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;gap:0.6rem}
+.chat-pulse{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,230,118,0.3)}50%{box-shadow:0 0 0 6px transparent}}
+.chat-label{font-family:-apple-system,sans-serif;font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
+.chat-body{padding:1.2rem}
+.chat-bubble{padding:0.8rem 1rem;margin-bottom:0.8rem;border-radius:6px;font-family:-apple-system,sans-serif;font-size:0.85rem;line-height:1.6}
+.chat-bubble.ai{background:var(--green-soft);border:1px solid rgba(0,230,118,0.1);color:var(--text)}
+.chat-bubble.user{background:rgba(255,255,255,0.03);color:var(--text-muted);margin-left:1.5rem}
+.coaching-right h3{color:var(--white);font-size:1.3rem;font-weight:400;margin-bottom:1.5rem}
+.coaching-right h3 strong{font-weight:700}
+.coaching-feat{display:flex;gap:1rem;margin-bottom:1.5rem;align-items:start}
+.coaching-icon{width:28px;height:28px;border-radius:50%;background:var(--green-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green);font-size:0.7rem;font-family:-apple-system,sans-serif;font-weight:700;margin-top:0.2rem}
+.coaching-feat p{font-family:-apple-system,sans-serif;font-size:0.88rem;color:var(--text-muted);line-height:1.6}
+.coaching-feat strong{color:var(--white);font-weight:600}
+
+/* Autopsy */
+.autopsy-section{background:var(--bg)}
+.autopsy-table{margin-top:3rem;width:100%;border-collapse:collapse;font-family:-apple-system,sans-serif}
+.autopsy-table th{text-align:left;padding:1rem 1.2rem;font-size:0.7rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);border-bottom:1px solid rgba(255,255,255,0.06);font-weight:600}
+.autopsy-table td{padding:1rem 1.2rem;font-size:0.88rem;border-bottom:1px solid rgba(255,255,255,0.03);color:var(--text)}
+.autopsy-table tr:hover td{background:rgba(255,255,255,0.01)}
+.waste-badge{font-family:'Courier New',monospace;font-weight:700}
+.waste-badge.high{color:var(--accent)}
+.waste-badge.med{color:var(--gold)}
+.waste-badge.low{color:var(--text-muted)}
+.recovery{color:var(--green);font-weight:600}
+
+/* Stats */
+.stats-section{background:var(--bg2)}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;margin-top:3rem}
+.stat-box{text-align:center;padding:2.5rem 1rem}
+.stat-val{font-family:'Courier New',monospace;font-size:3rem;font-weight:700;color:var(--accent);margin-bottom:0.3rem}
+.stat-val.green{color:var(--green)}
+.stat-desc{font-family:-apple-system,sans-serif;font-size:0.8rem;color:var(--text-muted)}
+
+/* Not Surveillance */
+.trust-section{background:var(--bg)}
+.trust-cols{display:grid;grid-template-columns:1fr 1fr;gap:3rem;margin-top:3rem}
+.trust-col{padding:2rem;background:var(--bg2);border-radius:8px;border:1px solid rgba(255,255,255,0.03)}
+.trust-col h3{font-family:-apple-system,sans-serif;color:var(--white);font-size:1.05rem;margin-bottom:1.2rem;font-weight:600;display:flex;align-items:center;gap:0.6rem}
+.trust-col ul{list-style:none}
+.trust-col li{font-family:-apple-system,sans-serif;padding:0.6rem 0;font-size:0.88rem;color:var(--text-muted);display:flex;align-items:center;gap:0.6rem;border-bottom:1px solid rgba(255,255,255,0.02)}
+.trust-col li:last-child{border:none}
+.mark-x{color:var(--accent);font-weight:700}
+.mark-v{color:var(--green);font-weight:700}
+
+/* Final CTA */
+.final-cta{background:var(--bg2);text-align:center;padding:8rem 2rem;position:relative}
+.final-cta::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 80%,rgba(255,59,59,0.03),transparent 50%)}
+.final-cta .section-inner{position:relative;z-index:1}
+.final-cta h2{font-size:2.6rem;color:var(--white);font-weight:400;margin-bottom:1rem;font-style:italic}
+.final-cta h2 strong{font-style:normal;font-weight:700;color:var(--accent)}
+.final-cta p{font-family:-apple-system,sans-serif;font-size:1rem;color:var(--text-muted);margin-bottom:2.5rem;max-width:500px;margin-left:auto;margin-right:auto;line-height:1.7}
+
+/* Footer */
+footer{background:var(--bg);border-top:1px solid rgba(255,255,255,0.03);padding:2.5rem 2rem;text-align:center}
+footer p{font-family:-apple-system,sans-serif;color:var(--text-muted);font-size:0.75rem}
+
+/* Responsive */
+@media(max-width:900px){
+  .hero h1{font-size:2.4rem}
+  .hero-cost{font-size:3.5rem}
+  .bleed-grid,.coaching-layout,.trust-cols{grid-template-columns:1fr}
+  .how-grid{grid-template-columns:1fr 1fr}
+  nav ul{display:none}
+  .autopsy-table{font-size:0.8rem}
+}
+@media(max-width:600px){
+  .hero h1{font-size:1.8rem}
+  .hero-cost{font-size:2.8rem}
+  .how-grid,.stats-grid{grid-template-columns:1fr}
+  .section-title{font-size:1.8rem}
+  .cta-ghost{margin:1rem 0 0 0}
+  .autopsy-table th,.autopsy-table td{padding:0.6rem}
+  .console-line{flex-wrap:wrap;gap:0.3rem}
+  .console-line .timestamp{min-width:auto}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">go<span>2</span></div>
+  <ul>
+    <li><a href="#cost">The Cost</a></li>
+    <li><a href="#silence">The Silence</a></li>
+    <li><a href="#diagnostic">Diagnostic</a></li>
+    <li><a href="#coaching">Coaching</a></li>
+  </ul>
+  <a href="#demo" class="nav-cta">Get a Demo</a>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="section-label">The Silent Killer of SMBs</div>
+    <h1>Inefficiency doesn't announce itself. It just quietly costs you</h1>
+    <div class="hero-cost">$800K</div>
+    <div class="hero-cost-label">per year, on average</div>
+    <p>It doesn't show up on any report. It doesn't trigger any alarm. It doesn't send you a notification. It just slowly, silently drains your company every single day. Go2 is the diagnostic that catches it.</p>
+    <a href="#demo" class="cta-primary">Request a Demo</a>
+    <a href="#cost" class="cta-ghost">See the Autopsy</a>
+  </div>
+</section>
+
+<!-- Bleeding Money -->
+<section class="bleed-section" id="cost">
+  <div class="section-inner">
+    <div class="section-label">Where It Bleeds</div>
+    <div class="section-title">The waste no one talks about</div>
+    <div class="section-subtitle">In a 30-person company, these costs hide in plain sight. No line item. No alert. Just money disappearing.</div>
+    <div class="bleed-grid">
+      <div class="bleed-card">
+        <div class="bleed-amount">$312K</div>
+        <div class="per">per year</div>
+        <h3>Redundant Processes</h3>
+        <p>Three people entering the same data into different systems. Manual steps that should have been automated two years ago. Work that gets done, undone, and redone.</p>
+      </div>
+      <div class="bleed-card">
+        <div class="bleed-amount">$198K</div>
+        <div class="per">per year</div>
+        <h3>Context Switch Tax</h3>
+        <p>Every time someone switches between tasks, they lose 23 minutes of productive focus. Multiply that across your entire team, every day, for a year.</p>
+      </div>
+      <div class="bleed-card">
+        <div class="bleed-amount">$156K</div>
+        <div class="per">per year</div>
+        <h3>Meeting Waste</h3>
+        <p>Meetings that should be emails. Status updates that could be dashboards. Entire afternoons consumed by conversations that produce no decisions.</p>
+      </div>
+      <div class="bleed-card">
+        <div class="bleed-amount">$134K</div>
+        <div class="per">per year</div>
+        <h3>Invisible Bottlenecks</h3>
+        <p>Work sitting in queues nobody sees. Approvals that take 3 days when they should take 3 minutes. The spaces between tools where work goes to die.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- The Silence -->
+<section class="silence-section" id="silence">
+  <div class="section-inner">
+    <div class="section-label">Why You Don't See It</div>
+    <div class="section-title">The silence is the <strong>problem</strong></div>
+    <div class="section-subtitle">Inefficiency is the only business problem that comes with zero alerts, zero notifications, and zero reports.</div>
+    <div class="silence-list">
+      <div class="silence-item">
+        <div class="silence-icon">&#128267;</div>
+        <div>
+          <h3>No alarm goes off</h3>
+          <p>When revenue drops, your dashboard turns red. When a server goes down, PagerDuty screams. When your team wastes 3 hours a day on redundant processes? <em>Dead silence.</em></p>
+        </div>
+      </div>
+      <div class="silence-item">
+        <div class="silence-icon">&#128203;</div>
+        <div>
+          <h3>No report shows it</h3>
+          <p>Your P&L doesn't have a "wasted time" line item. Your project tracker shows tasks completed, not how much effort was wasted completing them. <em>The numbers look fine.</em></p>
+        </div>
+      </div>
+      <div class="silence-item">
+        <div class="silence-icon">&#128101;</div>
+        <div>
+          <h3>No one complains</h3>
+          <p>Your team has adapted to the inefficiency. They don't see it either. They've built workarounds on top of workarounds. <em>It's just "how we work."</em></p>
+        </div>
+      </div>
+      <div class="silence-item">
+        <div class="silence-icon">&#128336;</div>
+        <div>
+          <h3>It compounds quietly</h3>
+          <p>A 30-minute daily inefficiency across 30 people is 375 hours a month. That's over two full-time salaries. <em>Every month. Gone.</em></p>
+        </div>
+      </div>
+      <div class="silence-item">
+        <div class="silence-icon">&#128176;</div>
+        <div>
+          <h3>It never hits crisis level</h3>
+          <p>The silent killer doesn't cause dramatic failures. It doesn't crash anything. It just ensures you're always a little slower, a little more expensive, a little less competitive than you should be. <em>Death by a thousand paper cuts.</em></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Diagnostic -->
+<section class="diagnostic-section" id="diagnostic">
+  <div class="section-inner">
+    <div class="section-label">The Diagnostic</div>
+    <div class="section-title">Go2 makes the <strong>invisible visible</strong></div>
+    <div class="section-subtitle">Think of Go2 as an MRI for your operations. It sees what no report, no meeting, and no dashboard can show you.</div>
+    <div class="diagnostic-console">
+      <div class="console-bar">
+        <div class="console-dot red"></div>
+        <div class="console-dot yellow"></div>
+        <div class="console-dot green"></div>
+        <span class="console-title">Go2 Diagnostic Scan &mdash; Week 3</span>
+      </div>
+      <div class="console-body">
+        <div class="console-line">
+          <span class="timestamp">09:14:22</span>
+          <span class="status critical">FOUND</span>
+          <span class="message">Duplicate data entry detected across CRM, billing, and onboarding systems &mdash; <span class="value">14 hrs/week wasted</span></span>
+        </div>
+        <div class="console-line">
+          <span class="timestamp">09:14:23</span>
+          <span class="status warning">WARN</span>
+          <span class="message">Engineering deep work avg: 2.1 hrs/day (benchmark: 4.0 hrs). Meetings between 10-11am breaking flow state</span>
+        </div>
+        <div class="console-line">
+          <span class="timestamp">09:14:24</span>
+          <span class="status critical">FOUND</span>
+          <span class="message">Invoice processing follows identical pattern 94% of time &mdash; automation candidate, <span class="value">$38K/yr recoverable</span></span>
+        </div>
+        <div class="console-line">
+          <span class="timestamp">09:14:25</span>
+          <span class="status warning">WARN</span>
+          <span class="message">Two senior developers shifted to 80%+ review work (was 40%). Historical pattern precedes disengagement</span>
+        </div>
+        <div class="console-line">
+          <span class="timestamp">09:14:26</span>
+          <span class="status found">RECOV</span>
+          <span class="message">Client onboarding bottleneck: legal review adds 2.3 day delay. Process redesign could save <span class="value positive">$52K/yr</span></span>
+        </div>
+        <div class="console-line">
+          <span class="timestamp">09:14:27</span>
+          <span class="status found">RECOV</span>
+          <span class="message">Report generation is 88% automatable. Currently takes 6 hrs/week across team. <span class="value positive">Ready to automate</span></span>
+        </div>
+        <div class="console-line">
+          <span class="timestamp">09:14:28</span>
+          <span class="status critical">FOUND</span>
+          <span class="message">Context switching avg: 47 switches/day per person. Top 10% performers average 18. <span class="value">$198K/yr impact</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="how-section">
+  <div class="section-inner">
+    <div class="section-label">How It Works</div>
+    <div class="section-title">Three steps to <strong>diagnosis</strong></div>
+    <div class="how-grid">
+      <div class="how-card">
+        <div class="how-num">01</div>
+        <h3>Deploy the Agent</h3>
+        <p>A lightweight desktop agent observes work patterns passively. No keylogging. No screenshots. No invasive monitoring. Just workflow pattern recognition.</p>
+      </div>
+      <div class="how-card">
+        <div class="how-num">02</div>
+        <h3>AI Analyzes</h3>
+        <p>Three frontier AI models (Claude, GPT, Gemini) process your team's patterns against data from ~1M workers. The diagnostic runs continuously.</p>
+      </div>
+      <div class="how-card">
+        <div class="how-num">03</div>
+        <h3>Waste Surfaces</h3>
+        <p>Within two weeks: bottlenecks identified, automation opportunities mapped, individual coaching activated. The silent killer has nowhere to hide.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AI Coaching -->
+<section class="coaching-section" id="coaching">
+  <div class="section-inner">
+    <div class="section-label">AI Coaching</div>
+    <div class="section-title">The <strong>treatment</strong>, not just the diagnosis</div>
+    <div class="section-subtitle">Go2 doesn't just find the waste. Every team member gets a personal AI coach that helps them eliminate it.</div>
+    <div class="coaching-layout">
+      <div class="coaching-chat">
+        <div class="chat-top">
+          <div class="chat-pulse"></div>
+          <span class="chat-label">Go2 AI Coach</span>
+        </div>
+        <div class="chat-body">
+          <div class="chat-bubble ai">You're averaging 52 context switches per day. That's costing you about 2 hours of productive time. I've identified a pattern: most switches happen right after you check Slack.</div>
+          <div class="chat-bubble user">Yeah, I keep the tab open all day.</div>
+          <div class="chat-bubble ai">Here's what the data shows: your deepest work happens in 45-60 minute blocks between 9-10:30am, before you open Slack. What if we tried a "Slack blackout" until 10:30am? Teams who do this recover an average of 1.4 hours of deep work daily.</div>
+          <div class="chat-bubble user">I'll try it tomorrow.</div>
+          <div class="chat-bubble ai">I'll track the impact and share results Friday. No one else sees this conversation or your individual data — this is between us.</div>
+        </div>
+      </div>
+      <div class="coaching-right">
+        <h3>The only tool with <strong>frontier AI coaching</strong></h3>
+        <div class="coaching-feat">
+          <div class="coaching-icon">&#10003;</div>
+          <p><strong>Based on real behavior.</strong> Not self-reported time. Not surveys. Actual observed work patterns analyzed by Claude, GPT, and Gemini.</p>
+        </div>
+        <div class="coaching-feat">
+          <div class="coaching-icon">&#10003;</div>
+          <p><strong>Benchmarked at scale.</strong> Recommendations draw from patterns across ~1M workers. Your team benefits from collective intelligence.</p>
+        </div>
+        <div class="coaching-feat">
+          <div class="coaching-icon">&#10003;</div>
+          <p><strong>Private to each person.</strong> Individual coaching stays between worker and AI. Managers see only aggregated, team-level insights.</p>
+        </div>
+        <div class="coaching-feat">
+          <div class="coaching-icon">&#10003;</div>
+          <p><strong>No competitor has this.</strong> Time Doctor, Hubstaff, Teramind — they monitor. Go2 coaches. That's the difference.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Autopsy Table -->
+<section class="autopsy-section">
+  <div class="section-inner">
+    <div class="section-label">The Autopsy</div>
+    <div class="section-title">What Go2 finds in a <strong>typical 30-person company</strong></div>
+    <table class="autopsy-table">
+      <thead>
+        <tr>
+          <th>Waste Category</th>
+          <th>Annual Cost</th>
+          <th>Recovery Potential</th>
+          <th>Automation Readiness</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Redundant data entry</td>
+          <td class="waste-badge high">$142K</td>
+          <td class="recovery">~85%</td>
+          <td>High</td>
+        </tr>
+        <tr>
+          <td>Context switching overhead</td>
+          <td class="waste-badge high">$198K</td>
+          <td class="recovery">~40%</td>
+          <td>Medium (coaching)</td>
+        </tr>
+        <tr>
+          <td>Meeting waste</td>
+          <td class="waste-badge high">$156K</td>
+          <td class="recovery">~55%</td>
+          <td>Medium</td>
+        </tr>
+        <tr>
+          <td>Process bottlenecks</td>
+          <td class="waste-badge med">$134K</td>
+          <td class="recovery">~65%</td>
+          <td>High</td>
+        </tr>
+        <tr>
+          <td>Manual report generation</td>
+          <td class="waste-badge med">$78K</td>
+          <td class="recovery">~90%</td>
+          <td>High</td>
+        </tr>
+        <tr>
+          <td>Tool fragmentation</td>
+          <td class="waste-badge low">$92K</td>
+          <td class="recovery">~50%</td>
+          <td>Medium</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Stats -->
+<section class="stats-section">
+  <div class="section-inner">
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-val">~1M</div>
+        <div class="stat-desc">Workers in dataset</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val">3</div>
+        <div class="stat-desc">Frontier AI models</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val green">14d</div>
+        <div class="stat-desc">To first diagnosis</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val green">$0</div>
+        <div class="stat-desc">Competitors with AI coaching</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Trust -->
+<section class="trust-section">
+  <div class="section-inner">
+    <div class="section-label">Trust</div>
+    <div class="section-title">Diagnostic tool, <strong>not surveillance</strong></div>
+    <div class="section-subtitle">Go2 finds waste. It doesn't watch people. There's a fundamental difference.</div>
+    <div class="trust-cols">
+      <div class="trust-col">
+        <h3><span class="mark-x">&#10007;</span> What Go2 does NOT do</h3>
+        <ul>
+          <li><span class="mark-x">&#10007;</span> Keystroke logging</li>
+          <li><span class="mark-x">&#10007;</span> Screenshot capture</li>
+          <li><span class="mark-x">&#10007;</span> Individual activity feeds for managers</li>
+          <li><span class="mark-x">&#10007;</span> Productivity scores or rankings</li>
+          <li><span class="mark-x">&#10007;</span> Punitive monitoring</li>
+        </ul>
+      </div>
+      <div class="trust-col">
+        <h3><span class="mark-v">&#10003;</span> What Go2 DOES do</h3>
+        <ul>
+          <li><span class="mark-v">&#10003;</span> Private AI coaching for each worker</li>
+          <li><span class="mark-v">&#10003;</span> Aggregated team insights for managers</li>
+          <li><span class="mark-v">&#10003;</span> Workflow bottleneck identification</li>
+          <li><span class="mark-v">&#10003;</span> Automation opportunity mapping</li>
+          <li><span class="mark-v">&#10003;</span> Burnout early warning (aggregated)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Final CTA -->
+<section class="final-cta" id="demo">
+  <div class="section-inner">
+    <div class="section-label">Stop the Bleeding</div>
+    <h2>The silent killer is <strong>already at work</strong> in your company</h2>
+    <p>Every week you wait, it costs more. Book a 30-minute demo and find out what Go2's diagnostic reveals about your operations.</p>
+    <a href="#" class="cta-primary">Request a Demo</a>
+  </div>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2. All rights reserved. &nbsp;|&nbsp; go2.io</p>
+</footer>
+
+<script>
+// Scroll reveal
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='translateY(0)'}
+  });
+},{threshold:0.08});
+document.querySelectorAll('.section-inner, .hero-content').forEach(el=>{
+  el.style.opacity='0';el.style.transform='translateY(35px)';el.style.transition='opacity 0.8s ease, transform 0.8s ease';
+  obs.observe(el);
+});
+
+// Console typing effect
+const consoleObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const lines=e.target.querySelectorAll('.console-line');
+      lines.forEach((line,i)=>{
+        line.style.opacity='0';line.style.transform='translateX(-10px)';
+        setTimeout(()=>{
+          line.style.transition='opacity 0.4s ease, transform 0.4s ease';
+          line.style.opacity='1';line.style.transform='translateX(0)';
+        },i*250);
+      });
+      consoleObs.unobserve(e.target);
+    }
+  });
+},{threshold:0.3});
+document.querySelectorAll('.console-body').forEach(el=>consoleObs.observe(el));
+
+// Cost counter animation
+const costEl=document.querySelector('.hero-cost');
+let counted=false;
+const costObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting&&!counted){
+      counted=true;
+      let start=0;const end=800000;const dur=2000;const startTime=performance.now();
+      function animate(now){
+        const elapsed=now-startTime;
+        const progress=Math.min(elapsed/dur,1);
+        const eased=1-Math.pow(1-progress,3);
+        const current=Math.floor(eased*end);
+        costEl.textContent='$'+current.toLocaleString()+'K'.replace(/K/,'');
+        if(current>=800){costEl.textContent='$800K'}
+        else{costEl.textContent='$'+Math.floor(eased*800)+'K';requestAnimationFrame(animate)}
+      }
+      requestAnimationFrame(animate);
+    }
+  });
+},{threshold:0.5});
+costObs.observe(costEl);
+</script>
+</body>
+</html>

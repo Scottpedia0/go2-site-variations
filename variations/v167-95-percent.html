@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — 95% of AI Implementations Fail. Here's Why Yours Won't.</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface-2: #1a1a28;
+    --red: #ff3b3b;
+    --red-dim: #cc2e2e;
+    --red-glow: rgba(255, 59, 59, 0.15);
+    --green: #00e676;
+    --green-dim: #00c853;
+    --green-glow: rgba(0, 230, 118, 0.12);
+    --text: #e8e8ec;
+    --text-dim: #8888a0;
+    --text-muted: #55556a;
+    --accent: #6c63ff;
+    --accent-glow: rgba(108, 99, 255, 0.15);
+    --gold: #ffd740;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* === HERO: THE STAT === */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse 800px 600px at 30% 20%, var(--red-glow) 0%, transparent 70%),
+      radial-gradient(ellipse 600px 400px at 70% 80%, var(--accent-glow) 0%, transparent 70%);
+  }
+
+  .hero-grid {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      linear-gradient(rgba(255,59,59,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,59,59,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    animation: gridPulse 8s ease-in-out infinite;
+  }
+
+  @keyframes gridPulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.7; }
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    max-width: 1000px;
+    padding: 40px;
+  }
+
+  .source-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fadeIn 0.8s ease-out 0.3s forwards;
+  }
+
+  .stat-massive {
+    font-size: clamp(6rem, 18vw, 14rem);
+    font-weight: 900;
+    line-height: 0.85;
+    color: var(--red);
+    text-shadow: 0 0 80px var(--red-glow), 0 0 160px rgba(255,59,59,0.08);
+    margin-bottom: 16px;
+    opacity: 0;
+    animation: statReveal 1.2s ease-out 0.5s forwards;
+  }
+
+  @keyframes statReveal {
+    from { opacity: 0; transform: scale(0.9); filter: blur(10px); }
+    to { opacity: 1; transform: scale(1); filter: blur(0); }
+  }
+
+  .stat-label {
+    font-size: clamp(1.2rem, 3vw, 2rem);
+    font-weight: 300;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    margin-bottom: 48px;
+    opacity: 0;
+    animation: fadeIn 0.8s ease-out 1s forwards;
+  }
+
+  .stat-label strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .hero-question {
+    font-size: clamp(1.5rem, 4vw, 3rem);
+    font-weight: 700;
+    line-height: 1.3;
+    max-width: 700px;
+    margin: 0 auto 40px;
+    opacity: 0;
+    animation: fadeIn 0.8s ease-out 1.4s forwards;
+  }
+
+  .hero-question span {
+    background: linear-gradient(135deg, var(--green), #00bfa5);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* === RESEARCH SECTION === */
+  .research {
+    padding: 120px 40px;
+    background: var(--surface);
+    position: relative;
+  }
+
+  .research::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 1px;
+    height: 80px;
+    background: linear-gradient(180deg, var(--red), transparent);
+  }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--red);
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 80px;
+    line-height: 1.2;
+  }
+
+  .studies-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .study-card {
+    background: var(--bg);
+    border: 1px solid rgba(255,59,59,0.12);
+    border-radius: 16px;
+    padding: 40px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s ease;
+  }
+
+  .study-card:hover {
+    border-color: rgba(255,59,59,0.3);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+
+  .study-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--red), var(--accent));
+  }
+
+  .study-source {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  .study-stat {
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: var(--red);
+    margin-bottom: 12px;
+  }
+
+  .study-finding {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 16px;
+    line-height: 1.4;
+  }
+
+  .study-detail {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  /* === THE PATTERN === */
+  .pattern {
+    padding: 140px 40px;
+    position: relative;
+  }
+
+  .pattern-container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .failure-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 60px;
+  }
+
+  .failure-step {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 24px;
+    padding: 32px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    position: relative;
+  }
+
+  .step-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--red-dim);
+    opacity: 0.5;
+  }
+
+  .step-content h3 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .step-content p {
+    font-size: 0.95rem;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  .step-money {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--red);
+    margin-top: 8px;
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--red-glow);
+    border-radius: 4px;
+  }
+
+  /* === THE MISSING PIECE === */
+  .missing {
+    padding: 140px 40px;
+    background: var(--surface);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .missing::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, var(--green-glow) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .missing-container {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  .equation {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin: 60px 0;
+    flex-wrap: wrap;
+  }
+
+  .eq-box {
+    padding: 20px 32px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    text-align: center;
+  }
+
+  .eq-bad {
+    background: rgba(255,59,59,0.08);
+    border: 1px solid rgba(255,59,59,0.2);
+    color: var(--red);
+  }
+
+  .eq-good {
+    background: rgba(0,230,118,0.08);
+    border: 1px solid rgba(0,230,118,0.2);
+    color: var(--green);
+  }
+
+  .eq-operator {
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    font-weight: 300;
+  }
+
+  .missing-statement {
+    font-size: clamp(1.3rem, 3vw, 1.8rem);
+    font-weight: 400;
+    line-height: 1.7;
+    color: var(--text-dim);
+    margin-top: 48px;
+  }
+
+  .missing-statement strong {
+    color: var(--green);
+    font-weight: 700;
+  }
+
+  /* === HOW GO2 WORKS === */
+  .how-it-works {
+    padding: 140px 40px;
+    position: relative;
+  }
+
+  .layers {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: 1000px;
+    margin: 60px auto 0;
+  }
+
+  .layer {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 40px;
+    padding: 48px 40px;
+    border-left: 3px solid var(--surface-2);
+    position: relative;
+    transition: all 0.4s ease;
+  }
+
+  .layer:hover {
+    border-left-color: var(--green);
+    background: rgba(0,230,118,0.02);
+  }
+
+  .layer-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--green);
+    padding-top: 4px;
+  }
+
+  .layer-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  .layer-desc {
+    font-size: 1rem;
+    color: var(--text-dim);
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+
+  .layer-stats {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .layer-stat {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+    padding: 6px 14px;
+    background: var(--accent-glow);
+    border-radius: 6px;
+  }
+
+  /* === PROOF SECTION === */
+  .proof {
+    padding: 140px 40px;
+    background: var(--surface);
+  }
+
+  .proof-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    max-width: 1100px;
+    margin: 60px auto 0;
+  }
+
+  @media (max-width: 900px) {
+    .proof-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .proof-card {
+    background: var(--bg);
+    border-radius: 16px;
+    padding: 36px 28px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.04);
+    transition: all 0.3s ease;
+  }
+
+  .proof-card:hover {
+    border-color: rgba(0,230,118,0.2);
+    transform: translateY(-2px);
+  }
+
+  .proof-number {
+    font-size: 2.8rem;
+    font-weight: 900;
+    margin-bottom: 8px;
+  }
+
+  .proof-number.green { color: var(--green); }
+  .proof-number.gold { color: var(--gold); }
+  .proof-number.accent { color: var(--accent); }
+
+  .proof-metric {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* === COMPARISON === */
+  .comparison {
+    padding: 140px 40px;
+  }
+
+  .comparison-table {
+    max-width: 900px;
+    margin: 60px auto 0;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .comp-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    background: var(--surface-2);
+  }
+
+  .comp-header div {
+    padding: 20px 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-align: center;
+    color: var(--text-dim);
+  }
+
+  .comp-header div:last-child {
+    color: var(--green);
+  }
+
+  .comp-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .comp-row:last-child { border-bottom: none; }
+
+  .comp-row div {
+    padding: 18px 24px;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+
+  .comp-row div:first-child {
+    text-align: left;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .comp-row div:nth-child(2) {
+    color: var(--red);
+    background: rgba(255,59,59,0.03);
+  }
+
+  .comp-row div:last-child {
+    color: var(--green);
+    background: rgba(0,230,118,0.03);
+  }
+
+  /* === WAZE === */
+  .waze {
+    padding: 140px 40px;
+    background: var(--surface);
+    text-align: center;
+  }
+
+  .waze-container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .waze-analogy {
+    font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-top: 40px;
+  }
+
+  .waze-analogy strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .waze-analogy em {
+    color: var(--green);
+    font-style: normal;
+    font-weight: 600;
+  }
+
+  .waze-visual {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 24px;
+    align-items: center;
+    margin: 60px 0;
+    padding: 48px 32px;
+    background: var(--bg);
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .waze-side {
+    text-align: center;
+  }
+
+  .waze-side .waze-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .waze-side h4 {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+  }
+
+  .waze-side p {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .waze-arrow {
+    font-size: 2rem;
+    color: var(--text-muted);
+  }
+
+  /* === INTEGRATIONS === */
+  .integrations {
+    padding: 120px 40px;
+  }
+
+  .int-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+    max-width: 800px;
+    margin: 48px auto 0;
+  }
+
+  .int-tag {
+    padding: 10px 20px;
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    transition: all 0.3s ease;
+  }
+
+  .int-tag:hover {
+    border-color: var(--accent);
+    color: var(--text);
+    background: var(--accent-glow);
+  }
+
+  /* === CTA === */
+  .cta-section {
+    padding: 160px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cta-section::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse 800px 400px at 50% 50%, var(--green-glow) 0%, transparent 70%);
+  }
+
+  .cta-content {
+    position: relative;
+    z-index: 2;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .cta-stat-row {
+    display: flex;
+    justify-content: center;
+    gap: 48px;
+    margin-bottom: 48px;
+    flex-wrap: wrap;
+  }
+
+  .cta-stat {
+    text-align: center;
+  }
+
+  .cta-stat-num {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: var(--green);
+  }
+
+  .cta-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-top: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .cta-title {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    margin-bottom: 24px;
+    line-height: 1.2;
+  }
+
+  .cta-title span {
+    background: linear-gradient(135deg, var(--green), #00bfa5);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .cta-sub {
+    font-size: 1.15rem;
+    color: var(--text-dim);
+    margin-bottom: 48px;
+    line-height: 1.7;
+  }
+
+  .cta-buttons {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 18px 40px;
+    background: var(--green);
+    color: #0a0a0f;
+    font-weight: 700;
+    font-size: 1rem;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0,230,118,0.3);
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 18px 40px;
+    background: transparent;
+    color: var(--text);
+    font-weight: 600;
+    font-size: 1rem;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 12px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
+
+  .btn-secondary:hover {
+    border-color: rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.05);
+  }
+
+  /* === NAV === */
+  .nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(10,10,15,0.8);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .nav-logo {
+    font-weight: 800;
+    font-size: 1.3rem;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .nav-logo span { color: var(--green); }
+
+  .nav-cta {
+    padding: 10px 24px;
+    background: var(--green);
+    color: #0a0a0f;
+    font-weight: 700;
+    font-size: 0.85rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
+
+  .nav-cta:hover {
+    box-shadow: 0 4px 20px rgba(0,230,118,0.3);
+  }
+
+  /* === FOOTER === */
+  footer {
+    padding: 60px 40px;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    border-top: 1px solid rgba(255,255,255,0.04);
+  }
+
+  footer a {
+    color: var(--text-dim);
+    text-decoration: none;
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .layer { grid-template-columns: 1fr; gap: 12px; }
+    .comp-header, .comp-row { grid-template-columns: 1fr; }
+    .comp-row div { text-align: left; padding: 12px 24px; }
+    .waze-visual { grid-template-columns: 1fr; }
+    .waze-arrow { transform: rotate(90deg); }
+    .failure-step { grid-template-columns: 50px 1fr; gap: 16px; }
+    .equation { flex-direction: column; }
+    .proof-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="/" class="nav-logo">Go2<span>.</span></a>
+  <a href="#cta" class="nav-cta">Make AI Actually Work</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <p class="source-tag">MIT Sloan Management Review, 2024</p>
+    <div class="stat-massive">95%</div>
+    <p class="stat-label">of enterprise <strong>AI implementations fail</strong> to deliver meaningful value</p>
+    <h1 class="hero-question">Here's why yours <span>won't.</span></h1>
+  </div>
+</section>
+
+<!-- RESEARCH -->
+<section class="research">
+  <p class="section-label">The Research</p>
+  <h2 class="section-title">The data is brutal.</h2>
+  <div class="studies-grid">
+    <div class="study-card">
+      <p class="study-source">MIT Sloan 2024</p>
+      <div class="study-stat">95%</div>
+      <p class="study-finding">AI pilots fail to reach production</p>
+      <p class="study-detail">Most companies never get past the POC phase. The AI works in demos. It fails in the real world. The gap? It doesn't know how your company actually operates.</p>
+    </div>
+    <div class="study-card">
+      <p class="study-source">BCG Henderson Institute</p>
+      <div class="study-stat">5%</div>
+      <p class="study-finding">Of companies create real value from AI</p>
+      <p class="study-detail">The 5% who succeed share one trait: they invested in understanding their workflows BEFORE deploying AI. They had the data. Everyone else was guessing.</p>
+    </div>
+    <div class="study-card">
+      <p class="study-source">McKinsey Global Survey</p>
+      <div class="study-stat">$4.4T</div>
+      <p class="study-finding">Annual AI value potential being left on the table</p>
+      <p class="study-detail">Companies are spending billions on AI tools. The tools are capable. The companies aren't ready. It's not a technology problem. It's a data problem.</p>
+    </div>
+  </div>
+</section>
+
+<!-- THE PATTERN -->
+<section class="pattern">
+  <div class="pattern-container">
+    <p class="section-label">The Pattern</p>
+    <h2 class="section-title">Every failed AI project follows the same script.</h2>
+    <div class="failure-steps">
+      <div class="failure-step">
+        <div class="step-number">01</div>
+        <div class="step-content">
+          <h3>Buy the AI tool</h3>
+          <p>Enterprise license for ChatGPT, Copilot, or the hot new vendor. Board is excited. Press release goes out.</p>
+          <span class="step-money">$200K-$2M annual license</span>
+        </div>
+      </div>
+      <div class="failure-step">
+        <div class="step-number">02</div>
+        <div class="step-content">
+          <h3>Deploy to the team</h3>
+          <p>IT rolls it out. Training sessions happen. Champions are appointed. Adoption looks promising for 3 weeks.</p>
+          <span class="step-money">$150K consulting + integration</span>
+        </div>
+      </div>
+      <div class="failure-step">
+        <div class="step-number">03</div>
+        <div class="step-content">
+          <h3>Watch it hallucinate</h3>
+          <p>The AI doesn't know your processes, your customers, your edge cases. It generates generic outputs that need heavy editing. People stop using it.</p>
+          <span class="step-money">$0 ROI. Net negative.</span>
+        </div>
+      </div>
+      <div class="failure-step">
+        <div class="step-number">04</div>
+        <div class="step-content">
+          <h3>Hire McKinsey to fix it</h3>
+          <p>Consultants arrive. 6-month engagement. They document your processes manually with interviews and workshops. Surface-level insights.</p>
+          <span class="step-money">$500K-$3M engagement</span>
+        </div>
+      </div>
+      <div class="failure-step">
+        <div class="step-number">05</div>
+        <div class="step-content">
+          <h3>Start over</h3>
+          <p>New vendor, new pitch, same result. The cycle repeats because nobody solved the actual problem.</p>
+          <span class="step-money">$1M+ wasted per cycle</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- THE MISSING PIECE -->
+<section class="missing">
+  <div class="missing-container">
+    <p class="section-label">The Root Cause</p>
+    <h2 class="section-title">AI without context is expensive autocomplete.</h2>
+    <div class="equation">
+      <div class="eq-box eq-bad">Powerful AI Model</div>
+      <span class="eq-operator">+</span>
+      <div class="eq-box eq-bad">Zero Context About Your Work</div>
+      <span class="eq-operator">=</span>
+      <div class="eq-box eq-bad">Garbage Out</div>
+    </div>
+    <div class="equation">
+      <div class="eq-box eq-good">Any AI Model</div>
+      <span class="eq-operator">+</span>
+      <div class="eq-box eq-good">Deep Workflow Intelligence</div>
+      <span class="eq-operator">=</span>
+      <div class="eq-box eq-good">Transformative Results</div>
+    </div>
+    <p class="missing-statement">
+      The difference between the 5% that succeed and the 95% that fail isn't the AI model.
+      It's whether the AI knows <strong>how your company actually works</strong>.
+    </p>
+  </div>
+</section>
+
+<!-- HOW GO2 WORKS -->
+<section class="how-it-works">
+  <p class="section-label">The Solution</p>
+  <h2 class="section-title">Go2 captures the data that makes AI work.</h2>
+  <div class="layers">
+    <div class="layer">
+      <div class="layer-name">Layer 1<br>Observe</div>
+      <div>
+        <h3 class="layer-title">Cowork.ai Desktop Agent</h3>
+        <p class="layer-desc">A desktop agent that silently observes how your team actually works. Integrates with Slack, Teams, Zoom, Gmail, CRM, and 40+ tools. Not surveillance. Workflow intelligence.</p>
+        <div class="layer-stats">
+          <span class="layer-stat">40+ integrations</span>
+          <span class="layer-stat">89% employee satisfaction</span>
+        </div>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="layer-name">Layer 2<br>Coach</div>
+      <div>
+        <h3 class="layer-title">Real-Time Productivity Coaching</h3>
+        <p class="layer-desc">Workers get an AI coach via Slack and Teams. Context-aware nudges, process reminders, skill suggestions. Workers love it because it makes them better, not watched.</p>
+        <div class="layer-stats">
+          <span class="layer-stat">23% productivity gain</span>
+          <span class="layer-stat">60% faster onboarding</span>
+        </div>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="layer-name">Layer 3<br>Document</div>
+      <div>
+        <h3 class="layer-title">Auto-Generated SOPs & Runbooks</h3>
+        <p class="layer-desc">Go2 watches work happen, then writes the documentation. Process maps, decision trees, edge case handling. Living documents that update as processes evolve.</p>
+        <div class="layer-stats">
+          <span class="layer-stat">Auto-generated</span>
+          <span class="layer-stat">Always current</span>
+        </div>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="layer-name">Layer 4<br>Automate</div>
+      <div>
+        <h3 class="layer-title">Intelligent Automation Discovery</h3>
+        <p class="layer-desc">Identifies repetitive tasks across your organization and builds automations. Not generic RPA. Custom automations based on how YOUR team actually does the work.</p>
+        <div class="layer-stats">
+          <span class="layer-stat">$4,200/employee/year ROI</span>
+        </div>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="layer-name">Layer 5<br>Train AI</div>
+      <div>
+        <h3 class="layer-title">AI Agent Training Data</h3>
+        <p class="layer-desc">This is the endgame. Every workflow captured becomes training data for AI agents that know your company. Open-source skills that plug into Claude, ChatGPT, and OpenAI. Your AI finally has context.</p>
+        <div class="layer-stats">
+          <span class="layer-stat">Open-source skills</span>
+          <span class="layer-stat">Sidecar any AI</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROOF -->
+<section class="proof">
+  <p class="section-label">The Numbers</p>
+  <h2 class="section-title">47,000 workers. Real results.</h2>
+  <div class="proof-grid">
+    <div class="proof-card">
+      <div class="proof-number green">23%</div>
+      <p class="proof-metric">Average productivity gain across all deployments</p>
+    </div>
+    <div class="proof-card">
+      <div class="proof-number gold">89%</div>
+      <p class="proof-metric">Employee satisfaction with AI coaching</p>
+    </div>
+    <div class="proof-card">
+      <div class="proof-number accent">60%</div>
+      <p class="proof-metric">Faster onboarding for new hires</p>
+    </div>
+    <div class="proof-card">
+      <div class="proof-number green">$4,200</div>
+      <p class="proof-metric">Annual ROI per employee</p>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON -->
+<section class="comparison">
+  <p class="section-label">The Difference</p>
+  <h2 class="section-title">Without Go2 vs. With Go2</h2>
+  <div class="comparison-table">
+    <div class="comp-header">
+      <div></div>
+      <div>Without Go2</div>
+      <div>With Go2</div>
+    </div>
+    <div class="comp-row">
+      <div>AI Context</div>
+      <div>Generic / zero company knowledge</div>
+      <div>Deep workflow intelligence</div>
+    </div>
+    <div class="comp-row">
+      <div>Process Documentation</div>
+      <div>Stale wikis, tribal knowledge</div>
+      <div>Auto-generated, always current</div>
+    </div>
+    <div class="comp-row">
+      <div>AI Success Rate</div>
+      <div>5% create real value</div>
+      <div>AI trained on how you actually work</div>
+    </div>
+    <div class="comp-row">
+      <div>Employee Experience</div>
+      <div>Surveillance anxiety</div>
+      <div>89% satisfaction, workers love it</div>
+    </div>
+    <div class="comp-row">
+      <div>Time to Value</div>
+      <div>6-18 months (if ever)</div>
+      <div>Weeks. Data from day one.</div>
+    </div>
+    <div class="comp-row">
+      <div>Automation</div>
+      <div>Generic RPA, 60% failure rate</div>
+      <div>Custom, built from observed workflows</div>
+    </div>
+  </div>
+</section>
+
+<!-- WAZE ANALOGY -->
+<section class="waze">
+  <div class="waze-container">
+    <p class="section-label">The Network Effect</p>
+    <h2 class="section-title">The Waze for work.</h2>
+    <div class="waze-visual">
+      <div class="waze-side">
+        <span class="waze-icon">🚗</span>
+        <h4>Waze</h4>
+        <p>Millions of drivers share data. Routes optimize for everyone. One driver's detour teaches the whole network.</p>
+      </div>
+      <div class="waze-arrow">&#x2194;</div>
+      <div class="waze-side">
+        <span class="waze-icon">🧠</span>
+        <h4>Go2</h4>
+        <p>Thousands of workers share workflow patterns. AI optimizes for every team. One team's breakthrough lifts all boats.</p>
+      </div>
+    </div>
+    <p class="waze-analogy">
+      Every company that joins the Go2 network makes <em>everyone's AI smarter</em>. Your team's best practices become training data. The network's best practices flow back to you. <strong>This is how AI was supposed to work.</strong>
+    </p>
+  </div>
+</section>
+
+<!-- INTEGRATIONS -->
+<section class="integrations">
+  <p class="section-label">Connects to everything</p>
+  <h2 class="section-title" style="text-align:center;">40+ integrations. Zero friction.</h2>
+  <div class="int-grid">
+    <span class="int-tag">Slack</span>
+    <span class="int-tag">Microsoft Teams</span>
+    <span class="int-tag">Zoom</span>
+    <span class="int-tag">Gmail</span>
+    <span class="int-tag">Outlook</span>
+    <span class="int-tag">Salesforce</span>
+    <span class="int-tag">HubSpot</span>
+    <span class="int-tag">Jira</span>
+    <span class="int-tag">Asana</span>
+    <span class="int-tag">Monday.com</span>
+    <span class="int-tag">Notion</span>
+    <span class="int-tag">Confluence</span>
+    <span class="int-tag">GitHub</span>
+    <span class="int-tag">GitLab</span>
+    <span class="int-tag">Figma</span>
+    <span class="int-tag">Google Drive</span>
+    <span class="int-tag">Zendesk</span>
+    <span class="int-tag">Intercom</span>
+    <span class="int-tag">Linear</span>
+    <span class="int-tag">Claude</span>
+    <span class="int-tag">ChatGPT</span>
+    <span class="int-tag">OpenAI API</span>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section" id="cta">
+  <div class="cta-content">
+    <div class="cta-stat-row">
+      <div class="cta-stat">
+        <div class="cta-stat-num">47K</div>
+        <div class="cta-stat-label">Workers</div>
+      </div>
+      <div class="cta-stat">
+        <div class="cta-stat-num">23%</div>
+        <div class="cta-stat-label">Productivity</div>
+      </div>
+      <div class="cta-stat">
+        <div class="cta-stat-num">89%</div>
+        <div class="cta-stat-label">Satisfaction</div>
+      </div>
+    </div>
+    <h2 class="cta-title">Be the <span>5%</span>.</h2>
+    <p class="cta-sub">95% of AI implementations fail because they lack context. Go2 captures that context. Stop buying AI tools that don't know your company. Start building the infrastructure that makes them work.</p>
+    <div class="cta-buttons">
+      <a href="#" class="btn-primary">Make AI Actually Work &rarr;</a>
+      <a href="#" class="btn-secondary">See It In Action</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2. The infrastructure that makes AI work. &nbsp;|&nbsp; <a href="/trust.html">Trust & Security</a> &nbsp;|&nbsp; <a href="/pricing.html">Pricing</a></p>
+</footer>
+
+</body>
+</html>

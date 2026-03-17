@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Your AI Chief of Staff</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#08080c;--surface:#0f0f16;--card:#161622;--border:rgba(255,255,255,.07);
+--gold:#d4a853;--gold-light:#f0d48a;--gold-glow:rgba(212,168,83,.2);
+--slate:#94a3b8;--white:#f8f8fc;--muted:#6b7280;
+--navy:#1e293b;--deep:#0c1222;
+}
+body{font-family:Georgia,'Times New Roman',serif;background:var(--bg);color:var(--white);overflow-x:hidden;line-height:1.7}
+h1,h2,h3,h4,.section-label,.btn,nav{font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
+a{color:var(--gold);text-decoration:none}
+.container{max-width:1000px;margin:0 auto;padding:0 2rem}
+
+/* ─── NAV ─── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:1.2rem 2rem;display:flex;justify-content:space-between;align-items:center;background:rgba(8,8,12,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.logo{font-size:1.4rem;font-weight:800;letter-spacing:-.02em}
+.logo span{color:var(--gold)}
+nav .btn-sm{padding:.5rem 1.4rem;font-size:.85rem;border-radius:6px;font-weight:600;background:var(--gold);color:var(--bg);border:none;cursor:pointer;transition:all .2s}
+nav .btn-sm:hover{box-shadow:0 4px 20px var(--gold-glow);transform:translateY(-1px)}
+
+/* ─── HERO ─── */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:8rem 2rem 4rem;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(212,168,83,.08),transparent 60%);pointer-events:none}
+.hero::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(180deg,transparent,transparent 3px,rgba(255,255,255,.01) 3px,rgba(255,255,255,.01) 4px);pointer-events:none}
+
+.exec-badge{display:inline-flex;align-items:center;gap:.5rem;border:1px solid var(--gold);border-radius:2px;padding:.4rem 1.2rem;font-family:'Segoe UI',system-ui,sans-serif;font-size:.75rem;color:var(--gold);margin-bottom:2.5rem;letter-spacing:.2em;text-transform:uppercase}
+
+.hero h1{font-size:clamp(2.5rem,6.5vw,5rem);font-weight:800;line-height:1.08;max-width:850px;margin-bottom:1.5rem;letter-spacing:-.03em;font-family:'Segoe UI',system-ui,sans-serif}
+.hero h1 .gold{color:var(--gold)}
+.hero-sub{font-size:clamp(1.05rem,1.8vw,1.25rem);color:var(--slate);max-width:580px;margin-bottom:3rem;line-height:1.8}
+
+.hero-quote{max-width:600px;padding:2rem;border-left:3px solid var(--gold);text-align:left;margin-bottom:3rem;background:rgba(212,168,83,.03)}
+.hero-quote p{font-size:1.1rem;font-style:italic;line-height:1.8;color:var(--slate)}
+.hero-quote cite{display:block;margin-top:.75rem;font-size:.85rem;color:var(--muted);font-style:normal;font-family:'Segoe UI',system-ui,sans-serif}
+
+.cta-group{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:1rem 2.2rem;border-radius:6px;font-size:1rem;font-weight:700;cursor:pointer;border:none;transition:all .25s;font-family:'Segoe UI',system-ui,sans-serif}
+.btn-primary{background:var(--gold);color:var(--bg)}
+.btn-primary:hover{background:var(--gold-light);transform:translateY(-2px);box-shadow:0 8px 40px var(--gold-glow)}
+.btn-ghost{background:transparent;color:var(--white);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ─── PROBLEM ─── */
+.problem{padding:6rem 2rem;background:var(--surface)}
+.section-label{text-transform:uppercase;letter-spacing:.2em;font-size:.75rem;color:var(--gold);margin-bottom:.5rem;font-weight:600}
+.section-title{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:1rem;letter-spacing:-.02em}
+.section-sub{color:var(--slate);font-size:1.05rem;max-width:600px;margin-bottom:3rem;line-height:1.8}
+
+.pain-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.5rem}
+@media(max-width:768px){.pain-grid{grid-template-columns:1fr}}
+.pain-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:2rem;position:relative}
+.pain-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),transparent)}
+.pain-card .number{font-size:3rem;font-weight:900;color:rgba(212,168,83,.15);line-height:1;margin-bottom:.5rem}
+.pain-card h3{font-size:1.1rem;margin-bottom:.4rem;font-family:'Segoe UI',system-ui,sans-serif}
+.pain-card p{color:var(--muted);font-size:.9rem;line-height:1.6}
+
+/* ─── CHIEF OF STAFF DUTIES ─── */
+.duties{padding:6rem 2rem}
+.duties-intro{max-width:700px;margin-bottom:4rem}
+.duties-intro p{font-size:1.15rem;line-height:1.9;color:var(--slate)}
+.duties-intro p strong{color:var(--white)}
+
+.duty-list{display:grid;gap:0}
+.duty-item{display:grid;grid-template-columns:200px 1fr 1fr;gap:2rem;padding:2rem 0;border-bottom:1px solid var(--border);align-items:start}
+@media(max-width:768px){.duty-item{grid-template-columns:1fr;gap:.75rem}}
+.duty-role{font-size:.8rem;text-transform:uppercase;letter-spacing:.15em;color:var(--gold);font-weight:600;padding-top:.2rem;font-family:'Segoe UI',system-ui,sans-serif}
+.duty-human h3{font-size:1.05rem;margin-bottom:.3rem;color:var(--muted);font-family:'Segoe UI',system-ui,sans-serif}
+.duty-human p{font-size:.9rem;color:var(--muted);line-height:1.6;text-decoration:line-through;opacity:.5}
+.duty-ai h3{font-size:1.05rem;margin-bottom:.3rem;color:var(--gold);font-family:'Segoe UI',system-ui,sans-serif}
+.duty-ai p{font-size:.9rem;color:var(--slate);line-height:1.6}
+.duty-ai .tag{display:inline-block;background:rgba(212,168,83,.1);color:var(--gold);font-size:.7rem;padding:.15rem .5rem;border-radius:3px;margin-top:.4rem;font-family:'Segoe UI',system-ui,sans-serif;font-weight:600;letter-spacing:.05em}
+
+/* ─── DAILY BRIEF ─── */
+.brief{padding:6rem 2rem;background:var(--surface)}
+.brief-mockup{max-width:700px;margin:3rem auto 0;background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.brief-header{background:linear-gradient(135deg,rgba(212,168,83,.1),rgba(212,168,83,.03));padding:1.5rem 2rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.brief-header h3{font-size:1rem;font-family:'Segoe UI',system-ui,sans-serif}
+.brief-header .time{font-size:.8rem;color:var(--muted);font-family:'Segoe UI',system-ui,sans-serif}
+.brief-body{padding:2rem}
+.brief-section{margin-bottom:2rem}
+.brief-section:last-child{margin-bottom:0}
+.brief-section h4{font-size:.75rem;text-transform:uppercase;letter-spacing:.15em;color:var(--gold);margin-bottom:.75rem;font-family:'Segoe UI',system-ui,sans-serif}
+.brief-item{display:flex;gap:.75rem;padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.9rem;color:var(--slate)}
+.brief-item:last-child{border-bottom:none}
+.brief-item .bullet{color:var(--gold);flex-shrink:0}
+.brief-item .priority{font-size:.7rem;padding:.1rem .4rem;border-radius:3px;font-weight:600;margin-left:auto;flex-shrink:0;font-family:'Segoe UI',system-ui,sans-serif}
+.priority-high{background:rgba(239,68,68,.15);color:#ef4444}
+.priority-medium{background:rgba(245,158,11,.15);color:#f59e0b}
+.priority-low{background:rgba(34,197,94,.15);color:#22c55e}
+.brief-insight{background:rgba(212,168,83,.05);border-left:2px solid var(--gold);padding:.75rem 1rem;border-radius:0 8px 8px 0;font-size:.85rem;color:var(--slate);line-height:1.6}
+
+/* ─── ROI ─── */
+.roi{padding:6rem 2rem}
+.roi-comparison{display:grid;grid-template-columns:1fr auto 1fr;gap:2rem;align-items:center;margin-top:3rem}
+@media(max-width:768px){.roi-comparison{grid-template-columns:1fr;text-align:center}}
+.roi-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2.5rem;text-align:center}
+.roi-card.human{opacity:.6}
+.roi-card .role{font-size:.8rem;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);margin-bottom:1rem;font-weight:600}
+.roi-card .salary{font-size:3rem;font-weight:900;line-height:1;margin-bottom:.5rem}
+.roi-card.human .salary{color:var(--muted)}
+.roi-card.ai .salary{color:var(--gold)}
+.roi-card .details{font-size:.85rem;color:var(--muted);line-height:1.6}
+.roi-card .details li{list-style:none;padding:.3rem 0}
+.roi-vs{font-size:1.5rem;font-weight:900;color:var(--gold);font-family:'Segoe UI',system-ui,sans-serif}
+
+.roi-math{margin-top:3rem;background:linear-gradient(135deg,rgba(212,168,83,.08),rgba(212,168,83,.02));border:1px solid rgba(212,168,83,.15);border-radius:16px;padding:2.5rem;text-align:center}
+.roi-math .big{font-size:2.5rem;font-weight:900;color:var(--gold);font-family:'Segoe UI',system-ui,sans-serif}
+.roi-math p{color:var(--slate);margin-top:.5rem;font-size:1rem}
+
+/* ─── AGENTS ─── */
+.agents{padding:6rem 2rem;background:var(--surface)}
+.agent-org{max-width:800px;margin:3rem auto 0}
+.agent-ceo{text-align:center;margin-bottom:2rem;position:relative}
+.agent-ceo::after{content:'';position:absolute;bottom:-1rem;left:50%;width:2px;height:1rem;background:var(--gold);transform:translateX(-50%)}
+.agent-ceo .badge{display:inline-block;background:var(--gold);color:var(--bg);padding:.5rem 1.5rem;border-radius:6px;font-weight:700;font-size:.9rem;font-family:'Segoe UI',system-ui,sans-serif}
+.agent-cos{text-align:center;margin-bottom:2rem;position:relative}
+.agent-cos::after{content:'';position:absolute;bottom:-1rem;left:50%;width:2px;height:1rem;background:var(--border);transform:translateX(-50%)}
+.agent-cos .badge{display:inline-block;background:rgba(212,168,83,.12);border:1px solid var(--gold);color:var(--gold);padding:.5rem 1.5rem;border-radius:6px;font-weight:700;font-size:.9rem;font-family:'Segoe UI',system-ui,sans-serif}
+.agent-row{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;position:relative;padding-top:1rem}
+.agent-row::before{content:'';position:absolute;top:0;left:10%;right:10%;height:2px;background:var(--border)}
+.agent-chip{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.6rem 1rem;font-size:.8rem;color:var(--slate);text-align:center;min-width:110px;position:relative;font-family:'Segoe UI',system-ui,sans-serif}
+.agent-chip::before{content:'';position:absolute;top:-1rem;left:50%;width:2px;height:1rem;background:var(--border);transform:translateX(-50%)}
+.agent-chip .name{font-weight:600;color:var(--white);display:block;margin-bottom:.15rem}
+
+/* ─── TESTIMONIALS ─── */
+.testimonials{padding:6rem 2rem}
+.test-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2rem;margin-top:3rem}
+@media(max-width:768px){.test-grid{grid-template-columns:1fr}}
+.test-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:2rem;position:relative}
+.test-card::before{content:'\201C';position:absolute;top:.5rem;left:1.5rem;font-size:4rem;color:rgba(212,168,83,.15);line-height:1}
+.test-card blockquote{font-size:1rem;line-height:1.8;color:var(--slate);font-style:italic;margin-bottom:1rem;padding-top:1rem}
+.test-card cite{font-size:.85rem;color:var(--muted);font-style:normal;font-family:'Segoe UI',system-ui,sans-serif}
+
+/* ─── STATS ─── */
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-radius:16px;overflow:hidden;margin-top:3rem}
+@media(max-width:768px){.stats-bar{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--card);padding:2rem;text-align:center}
+.stat .num{font-size:2.5rem;font-weight:900;color:var(--gold);line-height:1;font-family:'Segoe UI',system-ui,sans-serif}
+.stat .label{font-size:.8rem;color:var(--muted);margin-top:.4rem;font-family:'Segoe UI',system-ui,sans-serif}
+
+/* ─── FINAL CTA ─── */
+.final-cta{padding:8rem 2rem;text-align:center;position:relative;overflow:hidden}
+.final-cta::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:500px;height:500px;background:radial-gradient(circle,var(--gold-glow),transparent 70%);pointer-events:none}
+.final-cta h2{font-size:clamp(2rem,5vw,3.5rem);font-weight:900;margin-bottom:1rem;letter-spacing:-.02em;font-family:'Segoe UI',system-ui,sans-serif}
+.final-cta p{font-size:1.15rem;color:var(--slate);max-width:500px;margin:0 auto 2.5rem;line-height:1.8}
+.final-cta .fine-print{margin-top:1.5rem;font-size:.85rem;color:var(--muted);font-family:'Segoe UI',system-ui,sans-serif}
+
+footer{padding:3rem 2rem;border-top:1px solid var(--border);text-align:center;color:var(--muted);font-size:.85rem;font-family:'Segoe UI',system-ui,sans-serif}
+
+/* Scroll animations */
+.fade-up{opacity:0;transform:translateY(30px);transition:all .7s ease}
+.fade-up.visible{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">go<span>2</span></div>
+  <button class="btn-sm" onclick="document.querySelector('.final-cta').scrollIntoView({behavior:'smooth'})">Deploy Your AI Team</button>
+</nav>
+
+<!-- ─── HERO ─── -->
+<section class="hero">
+  <div class="exec-badge">Executive Intelligence</div>
+  <h1>Every CEO needs a Chief of Staff.<br><span class="gold">Yours is AI.</span></h1>
+  <p class="hero-sub">A tireless executive partner that synthesizes everything happening across your company, surfaces what matters, and makes sure nothing falls through the cracks.</p>
+
+  <div class="hero-quote">
+    <p>"The best Chief of Staff I never had. It sees across every department, remembers every commitment, and briefs me better than any human ever could."</p>
+    <cite>— CEO, 340-person SaaS company</cite>
+  </div>
+
+  <div class="cta-group">
+    <button class="btn btn-primary" onclick="document.querySelector('.final-cta').scrollIntoView({behavior:'smooth'})">Deploy Your AI Team</button>
+    <button class="btn btn-ghost" onclick="document.querySelector('.problem').scrollIntoView({behavior:'smooth'})">Why This Matters</button>
+  </div>
+</section>
+
+<!-- ─── PROBLEM ─── -->
+<section class="problem fade-up">
+  <div class="container">
+    <div class="section-label">The executive problem</div>
+    <h2 class="section-title">You are the bottleneck<br>and you know it</h2>
+    <p class="section-sub">Every CEO hits the same wall. The company grows, but your capacity to absorb information does not. Critical signals get buried in noise.</p>
+
+    <div class="pain-grid">
+      <div class="pain-card">
+        <div class="number">01</div>
+        <h3>Information overload</h3>
+        <p>You receive 200+ messages daily across Slack, email, and texts. The signal-to-noise ratio drops every quarter as the company grows.</p>
+      </div>
+      <div class="pain-card">
+        <div class="number">02</div>
+        <h3>Dropped commitments</h3>
+        <p>"Didn't we agree to ship that last month?" Important follow-ups slip through because no one tracks everything you say across every channel.</p>
+      </div>
+      <div class="pain-card">
+        <div class="number">03</div>
+        <h3>Meeting whiplash</h3>
+        <p>Back-to-back meetings mean zero time to process decisions. Context from the 10am meeting is gone by the 2pm meeting on the same topic.</p>
+      </div>
+      <div class="pain-card">
+        <div class="number">04</div>
+        <h3>Tribal knowledge risk</h3>
+        <p>When your VP of Engineering leaves, 3 years of institutional knowledge walks out the door. Nobody documented the "why" behind critical decisions.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── DUTIES ─── -->
+<section class="duties fade-up">
+  <div class="container">
+    <div class="section-label">The replacement</div>
+    <h2 class="section-title">Every Chief of Staff duty,<br>handled by AI</h2>
+
+    <div class="duties-intro">
+      <p>A human Chief of Staff costs <strong>$150K-$250K/year</strong>, takes 6 months to ramp, and can only be in one meeting at a time. Go2's AI Chief of Staff monitors <strong>every channel, every meeting, every workflow</strong> — simultaneously, 24/7.</p>
+    </div>
+
+    <div class="duty-list">
+      <div class="duty-item">
+        <div class="duty-role">Daily Briefing</div>
+        <div class="duty-human">
+          <h3>Human CoS</h3>
+          <p>Spends 90 min preparing a brief from selective sources, misses things</p>
+        </div>
+        <div class="duty-ai">
+          <h3>Go2 AI</h3>
+          <p>Synthesizes every channel, every tool, every metric into a 3-minute morning brief. Nothing missed.</p>
+          <span class="tag">AI Coach + Meeting Analyst</span>
+        </div>
+      </div>
+
+      <div class="duty-item">
+        <div class="duty-role">Follow-up Tracking</div>
+        <div class="duty-human">
+          <h3>Human CoS</h3>
+          <p>Manually tracks action items in a spreadsheet, relies on memory</p>
+        </div>
+        <div class="duty-ai">
+          <h3>Go2 AI</h3>
+          <p>Auto-captures every commitment from every meeting and message. Tracks progress. Escalates when deadlines slip.</p>
+          <span class="tag">Workflow Optimizer</span>
+        </div>
+      </div>
+
+      <div class="duty-item">
+        <div class="duty-role">Process Design</div>
+        <div class="duty-human">
+          <h3>Human CoS</h3>
+          <p>Documents processes manually, always out of date within weeks</p>
+        </div>
+        <div class="duty-ai">
+          <h3>Go2 AI</h3>
+          <p>Auto-generates and continuously updates SOPs from observed workflows. Always current, always accurate.</p>
+          <span class="tag">Process Documenter</span>
+        </div>
+      </div>
+
+      <div class="duty-item">
+        <div class="duty-role">Meeting Prep</div>
+        <div class="duty-human">
+          <h3>Human CoS</h3>
+          <p>Prepares briefing docs for key meetings, limited context</p>
+        </div>
+        <div class="duty-ai">
+          <h3>Go2 AI</h3>
+          <p>Before every meeting: relevant history, open items, attendee context, suggested talking points, and unresolved tensions to address.</p>
+          <span class="tag">Knowledge Keeper + Meeting Analyst</span>
+        </div>
+      </div>
+
+      <div class="duty-item">
+        <div class="duty-role">Cross-Functional</div>
+        <div class="duty-human">
+          <h3>Human CoS</h3>
+          <p>Sits in meetings, relays information between teams manually</p>
+        </div>
+        <div class="duty-ai">
+          <h3>Go2 AI</h3>
+          <p>Detects when teams are working on conflicting priorities or duplicating effort. Flags before it becomes a problem.</p>
+          <span class="tag">Workflow Optimizer + Automation Scout</span>
+        </div>
+      </div>
+
+      <div class="duty-item">
+        <div class="duty-role">New Hire Ramp</div>
+        <div class="duty-human">
+          <h3>Human CoS</h3>
+          <p>Creates onboarding doc once, never updates it, answers same questions</p>
+        </div>
+        <div class="duty-ai">
+          <h3>Go2 AI</h3>
+          <p>Personalized onboarding from real role data. Adapts based on new hire's pace and questions. Updates continuously.</p>
+          <span class="tag">AI Onboarding</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── DAILY BRIEF MOCKUP ─── -->
+<section class="brief fade-up">
+  <div class="container" style="text-align:center">
+    <div class="section-label">Your morning brief</div>
+    <h2 class="section-title">Every morning at 7am,<br>your AI Chief of Staff reports in</h2>
+    <p class="section-sub" style="margin-left:auto;margin-right:auto">A complete operational picture in 3 minutes. Not a dashboard you have to interpret — a brief written for you, about what you care about.</p>
+
+    <div class="brief-mockup" style="text-align:left">
+      <div class="brief-header">
+        <h3>Daily Executive Brief — Monday, March 17</h3>
+        <span class="time">7:00 AM</span>
+      </div>
+      <div class="brief-body">
+        <div class="brief-section">
+          <h4>Requires Your Attention</h4>
+          <div class="brief-item">
+            <span class="bullet">&#9656;</span>
+            <span>Enterprise deal (Meridian Corp, $420K ARR) — champion went silent after Thursday's pricing call. Suggest CEO touch-base.</span>
+            <span class="priority priority-high">Urgent</span>
+          </div>
+          <div class="brief-item">
+            <span class="bullet">&#9656;</span>
+            <span>Engineering velocity dropped 18% last sprint. Root cause: 3 senior devs pulled into unplanned support escalations.</span>
+            <span class="priority priority-high">Urgent</span>
+          </div>
+        </div>
+
+        <div class="brief-section">
+          <h4>Key Updates</h4>
+          <div class="brief-item">
+            <span class="bullet">&#9656;</span>
+            <span>Q1 pipeline: $2.1M qualified (target $2.4M). Two deals moving to close this week could bridge the gap.</span>
+            <span class="priority priority-medium">Track</span>
+          </div>
+          <div class="brief-item">
+            <span class="bullet">&#9656;</span>
+            <span>New SOP generated: "Customer escalation triage process" based on 47 observed escalations. Ready for review.</span>
+            <span class="priority priority-low">FYI</span>
+          </div>
+          <div class="brief-item">
+            <span class="bullet">&#9656;</span>
+            <span>3 meetings on today's calendar flagged as "could be async." Suggested cancellations sent to organizers.</span>
+            <span class="priority priority-low">FYI</span>
+          </div>
+        </div>
+
+        <div class="brief-section">
+          <h4>Insight</h4>
+          <div class="brief-insight">
+            Marketing and Sales are using different definitions of "qualified lead." Marketing counts 142 MQLs this month; Sales recognizes 67. This misalignment is causing friction in the weekly pipeline review. Recommend aligning on criteria before Thursday's board prep.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── ROI ─── -->
+<section class="roi fade-up">
+  <div class="container" style="text-align:center">
+    <div class="section-label">The math</div>
+    <h2 class="section-title">$150K/year role.<br>$29/user/month tool.</h2>
+
+    <div class="roi-comparison">
+      <div class="roi-card human">
+        <div class="role">Human Chief of Staff</div>
+        <div class="salary">$180K</div>
+        <ul class="details">
+          <li>6-month ramp time</li>
+          <li>One meeting at a time</li>
+          <li>8 hours/day capacity</li>
+          <li>Knowledge leaves when they leave</li>
+          <li>Selective information access</li>
+        </ul>
+      </div>
+      <div class="roi-vs">vs</div>
+      <div class="roi-card ai" style="border-color:var(--gold)">
+        <div class="role">Go2 AI Chief of Staff</div>
+        <div class="salary">$29<span style="font-size:1rem;color:var(--muted)">/user/mo</span></div>
+        <ul class="details">
+          <li>Productive in 4 hours</li>
+          <li>Every meeting, simultaneously</li>
+          <li>24/7/365 coverage</li>
+          <li>Institutional memory is permanent</li>
+          <li>Sees across every tool and channel</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="roi-math">
+      <div class="big">$4,200/employee/year ROI</div>
+      <p>Across 47,000 workers. Not a projection — measured results from real deployments.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ─── ORG CHART ─── -->
+<section class="agents fade-up">
+  <div class="container" style="text-align:center">
+    <div class="section-label">The org chart</div>
+    <h2 class="section-title">One AI Chief of Staff,<br>seven specialized agents</h2>
+    <p class="section-sub" style="margin-left:auto;margin-right:auto">The AI Chief of Staff is not one tool — it is seven AI agents working as a coordinated executive team, each with a specialty.</p>
+
+    <div class="agent-org">
+      <div class="agent-ceo">
+        <span class="badge">You (CEO)</span>
+      </div>
+      <div class="agent-cos">
+        <span class="badge">Go2 AI Chief of Staff</span>
+      </div>
+      <div class="agent-row">
+        <div class="agent-chip"><span class="name">Coach</span>Productivity</div>
+        <div class="agent-chip"><span class="name">Documenter</span>Processes</div>
+        <div class="agent-chip"><span class="name">Scout</span>Automation</div>
+        <div class="agent-chip"><span class="name">Onboarding</span>New Hires</div>
+        <div class="agent-chip"><span class="name">Knowledge</span>Memory</div>
+        <div class="agent-chip"><span class="name">Meetings</span>Analysis</div>
+        <div class="agent-chip"><span class="name">Workflow</span>Optimization</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── STATS ─── -->
+<section style="padding:4rem 2rem" class="fade-up">
+  <div class="container">
+    <div class="stats-bar">
+      <div class="stat"><div class="num">47K</div><div class="label">Workers served</div></div>
+      <div class="stat"><div class="num">23%</div><div class="label">Productivity gain</div></div>
+      <div class="stat"><div class="num">89%</div><div class="label">Satisfaction</div></div>
+      <div class="stat"><div class="num">40+</div><div class="label">Integrations</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── TESTIMONIALS ─── -->
+<section class="testimonials fade-up">
+  <div class="container">
+    <div class="section-label">From executives</div>
+    <h2 class="section-title">What leaders say</h2>
+
+    <div class="test-grid">
+      <div class="test-card">
+        <blockquote>"I used to spend my first hour sorting through messages to figure out what was on fire. Now I spend 3 minutes reading my brief and go straight to high-leverage work."</blockquote>
+        <cite>— Founder/CEO, Series B fintech</cite>
+      </div>
+      <div class="test-card">
+        <blockquote>"It caught that two teams were building the same integration. That would have cost us $80K in duplicated work. Paid for 3 years of Go2 in one catch."</blockquote>
+        <cite>— COO, 150-person services firm</cite>
+      </div>
+      <div class="test-card">
+        <blockquote>"We lost our VP of Ops and I panicked. But Go2 had documented every process she ran. The transition was seamless. That alone justified the investment."</blockquote>
+        <cite>— CEO, e-commerce brand</cite>
+      </div>
+      <div class="test-card">
+        <blockquote>"The 'this should be an email' flag on meetings is my favorite feature. We cut 8 hours of meetings per week across the leadership team."</blockquote>
+        <cite>— CTO, B2B SaaS company</cite>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FINAL CTA ─── -->
+<section class="final-cta">
+  <div class="section-label">Your move</div>
+  <h2>Hire your AI <span style="color:var(--gold)">Chief of Staff</span></h2>
+  <p>Deploys in one afternoon. No recruiter fees. No ramp time. No PTO. Just clarity, delivered to you every morning.</p>
+  <div class="cta-group">
+    <button class="btn btn-primary">Deploy Your AI Team</button>
+    <button class="btn btn-ghost">See It In Action</button>
+  </div>
+  <div class="fine-print">Free for teams up to 25 · No credit card · Works with your existing tools</div>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2. Executive intelligence, deployed in an afternoon. <a href="mailto:s@go2.io">s@go2.io</a></p>
+</footer>
+
+<script>
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

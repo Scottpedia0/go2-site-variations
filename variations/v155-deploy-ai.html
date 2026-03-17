@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Deploy AI Across Your Company in One Afternoon</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#0a0a0f;--surface:#12121a;--card:#1a1a25;--border:rgba(255,255,255,.08);
+--electric:#00d4ff;--electric-glow:rgba(0,212,255,.25);--green:#22c55e;--green-glow:rgba(34,197,94,.2);
+--amber:#f59e0b;--red:#ef4444;--white:#f0f0f5;--muted:#8888a0;--purple:#a855f7;
+}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--white);overflow-x:hidden;line-height:1.6}
+a{color:var(--electric);text-decoration:none}
+.container{max-width:1100px;margin:0 auto;padding:0 2rem}
+
+/* ─── NAV ─── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;background:rgba(10,10,15,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.logo{font-size:1.4rem;font-weight:800;letter-spacing:-.02em}
+.logo span{color:var(--electric)}
+nav .btn-sm{padding:.5rem 1.2rem;font-size:.85rem;border-radius:6px;font-weight:600;background:var(--electric);color:var(--bg);border:none;cursor:pointer;transition:all .2s}
+nav .btn-sm:hover{box-shadow:0 4px 20px var(--electric-glow);transform:translateY(-1px)}
+
+/* ─── HERO ─── */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:6rem 2rem 4rem;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:800px;background:radial-gradient(circle,var(--electric-glow) 0%,transparent 70%);pointer-events:none;animation:hero-pulse 4s ease-in-out infinite alternate}
+@keyframes hero-pulse{from{opacity:.3;transform:translateX(-50%) scale(1)}to{opacity:.6;transform:translateX(-50%) scale(1.1)}}
+
+.speed-badge{display:inline-flex;align-items:center;gap:.6rem;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);border-radius:100px;padding:.5rem 1.4rem;font-size:.85rem;color:var(--electric);margin-bottom:2rem;letter-spacing:.05em}
+.speed-badge svg{width:16px;height:16px;fill:var(--electric);animation:zap .8s ease-in-out infinite alternate}
+@keyframes zap{from{opacity:.5}to{opacity:1}}
+
+.hero h1{font-size:clamp(2.8rem,7vw,5.5rem);font-weight:900;line-height:1.05;max-width:900px;margin-bottom:1.5rem;letter-spacing:-.03em}
+.hero h1 .accent{background:linear-gradient(135deg,var(--electric),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:clamp(1.1rem,2vw,1.35rem);color:var(--muted);max-width:620px;margin-bottom:2.5rem;line-height:1.7}
+.hero-sub strong{color:var(--white)}
+
+/* Timer Visual */
+.timer-strip{display:flex;gap:1rem;margin-bottom:3rem;flex-wrap:wrap;justify-content:center}
+.timer-block{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem 1.5rem;min-width:120px;text-align:center}
+.timer-block .time{font-size:2rem;font-weight:800;font-variant-numeric:tabular-nums}
+.timer-block .time.done{color:var(--green)}
+.timer-block .label{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-top:.25rem}
+.timer-block.active{border-color:var(--electric);box-shadow:0 0 30px var(--electric-glow)}
+.timer-block.active .time{color:var(--electric)}
+
+.cta-group{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:1rem 2.2rem;border-radius:10px;font-size:1.05rem;font-weight:700;cursor:pointer;border:none;transition:all .25s}
+.btn-primary{background:var(--electric);color:var(--bg)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 40px var(--electric-glow)}
+.btn-ghost{background:transparent;color:var(--white);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--electric);color:var(--electric)}
+
+/* ─── TIMELINE ─── */
+.timeline-section{padding:6rem 2rem;position:relative}
+.timeline-section::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:2px;background:linear-gradient(180deg,transparent,var(--electric),var(--green),transparent);transform:translateX(-50%)}
+@media(max-width:768px){.timeline-section::before{left:2rem}}
+
+.section-label{text-transform:uppercase;letter-spacing:.15em;font-size:.8rem;color:var(--electric);margin-bottom:.5rem}
+.section-title{font-size:clamp(2rem,4vw,3.2rem);font-weight:800;margin-bottom:1rem;letter-spacing:-.02em}
+.section-sub{color:var(--muted);font-size:1.1rem;max-width:600px;margin-bottom:4rem}
+
+.tl-item{display:flex;gap:3rem;margin-bottom:4rem;position:relative;max-width:1100px;margin-left:auto;margin-right:auto;padding:0 2rem}
+.tl-item:nth-child(even){flex-direction:row-reverse}
+@media(max-width:768px){.tl-item,.tl-item:nth-child(even){flex-direction:column;padding-left:4rem}}
+
+.tl-dot{position:absolute;left:50%;top:2rem;transform:translateX(-50%);width:20px;height:20px;border-radius:50%;background:var(--electric);border:3px solid var(--bg);z-index:2;box-shadow:0 0 20px var(--electric-glow)}
+@media(max-width:768px){.tl-dot{left:2rem}}
+
+.tl-time{flex:0 0 180px;text-align:right;padding-top:1.5rem}
+.tl-item:nth-child(even) .tl-time{text-align:left}
+@media(max-width:768px){.tl-time{text-align:left!important;flex:none;padding-top:0}}
+.tl-time .minute{font-size:2.5rem;font-weight:800;color:var(--electric);line-height:1}
+.tl-time .range{font-size:.85rem;color:var(--muted);margin-top:.25rem}
+
+.tl-card{flex:1;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;transition:all .3s}
+.tl-card:hover{border-color:rgba(0,212,255,.3);transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.4)}
+.tl-card h3{font-size:1.3rem;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem}
+.tl-card h3 .icon{font-size:1.5rem}
+.tl-card p{color:var(--muted);font-size:.95rem;line-height:1.6}
+.tl-card .tech-tag{display:inline-block;background:rgba(0,212,255,.08);color:var(--electric);font-size:.75rem;padding:.2rem .6rem;border-radius:4px;margin-top:.75rem;font-weight:600}
+
+/* ─── COMPARISON ─── */
+.comparison{padding:6rem 2rem;background:var(--surface)}
+.compare-table{width:100%;max-width:900px;margin:3rem auto 0;border-collapse:collapse}
+.compare-table th,.compare-table td{padding:1rem 1.5rem;text-align:left;border-bottom:1px solid var(--border)}
+.compare-table th{font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600}
+.compare-table th:first-child{width:40%}
+.compare-table .col-old{color:var(--red);text-align:center}
+.compare-table .col-new{color:var(--green);text-align:center}
+.compare-table td:nth-child(2),.compare-table td:nth-child(3){text-align:center;font-weight:600}
+.compare-table tr:hover{background:rgba(255,255,255,.02)}
+.compare-table .highlight-row{background:rgba(0,212,255,.05)}
+.compare-table .highlight-row td{color:var(--electric);font-weight:700}
+
+/* ─── AGENTS ─── */
+.agents{padding:6rem 2rem}
+.agent-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;margin-top:3rem}
+.agent-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;position:relative;overflow:hidden;transition:all .3s}
+.agent-card:hover{border-color:rgba(0,212,255,.3);transform:translateY(-6px);box-shadow:0 16px 50px rgba(0,0,0,.5)}
+.agent-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--electric),var(--purple));opacity:0;transition:opacity .3s}
+.agent-card:hover::before{opacity:1}
+.agent-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:1rem}
+.agent-card h3{font-size:1.15rem;margin-bottom:.4rem}
+.agent-card p{color:var(--muted);font-size:.9rem;line-height:1.6}
+.agent-card .deploy-time{display:inline-flex;align-items:center;gap:.4rem;margin-top:.75rem;font-size:.8rem;color:var(--green);font-weight:600}
+.agent-card .deploy-time svg{width:14px;height:14px;fill:var(--green)}
+.icon-coach{background:rgba(0,212,255,.12)}
+.icon-docs{background:rgba(168,85,247,.12)}
+.icon-scout{background:rgba(245,158,11,.12)}
+.icon-onboard{background:rgba(34,197,94,.12)}
+.icon-knowledge{background:rgba(239,68,68,.12)}
+.icon-meeting{background:rgba(59,130,246,.12)}
+.icon-workflow{background:rgba(236,72,153,.12)}
+
+/* ─── ZERO CONFIG ─── */
+.zero-config{padding:6rem 2rem;background:var(--surface)}
+.config-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin-top:3rem}
+@media(max-width:768px){.config-grid{grid-template-columns:1fr}}
+.config-card{text-align:center;padding:2.5rem 2rem;background:var(--card);border-radius:16px;border:1px solid var(--border)}
+.config-card .icon{font-size:3rem;margin-bottom:1rem}
+.config-card h3{font-size:1.2rem;margin-bottom:.5rem}
+.config-card p{color:var(--muted);font-size:.9rem}
+
+/* ─── PROOF ─── */
+.proof{padding:6rem 2rem}
+.proof-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;margin-top:3rem}
+@media(max-width:768px){.proof-grid{grid-template-columns:repeat(2,1fr)}}
+.proof-stat{background:var(--card);border-radius:16px;padding:2rem;text-align:center;border:1px solid var(--border)}
+.proof-stat .number{font-size:2.8rem;font-weight:900;line-height:1;margin-bottom:.5rem}
+.proof-stat .number.blue{color:var(--electric)}
+.proof-stat .number.green{color:var(--green)}
+.proof-stat .number.purple{color:var(--purple)}
+.proof-stat .number.amber{color:var(--amber)}
+.proof-stat .desc{font-size:.85rem;color:var(--muted)}
+
+.quote-card{margin-top:3rem;background:linear-gradient(135deg,rgba(0,212,255,.06),rgba(168,85,247,.06));border:1px solid rgba(0,212,255,.15);border-radius:20px;padding:3rem;text-align:center;max-width:800px;margin-left:auto;margin-right:auto}
+.quote-card blockquote{font-size:1.3rem;font-style:italic;line-height:1.7;margin-bottom:1rem;color:var(--white)}
+.quote-card cite{color:var(--muted);font-size:.9rem;font-style:normal}
+
+/* ─── CTA ─── */
+.final-cta{padding:8rem 2rem;text-align:center;position:relative;overflow:hidden}
+.final-cta::before{content:'';position:absolute;bottom:-100px;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,var(--electric-glow),transparent 70%);pointer-events:none}
+.final-cta h2{font-size:clamp(2.2rem,5vw,4rem);font-weight:900;margin-bottom:1rem;letter-spacing:-.02em}
+.final-cta p{font-size:1.2rem;color:var(--muted);max-width:550px;margin:0 auto 2.5rem}
+.final-cta .guarantee{margin-top:1.5rem;font-size:.9rem;color:var(--muted)}
+.final-cta .guarantee strong{color:var(--green)}
+
+/* ─── FOOTER ─── */
+footer{padding:3rem 2rem;border-top:1px solid var(--border);text-align:center;color:var(--muted);font-size:.85rem}
+footer a{color:var(--electric)}
+
+/* ─── DEPLOY ANIMATION ─── */
+.deploy-visual{margin:3rem auto;max-width:700px;position:relative}
+.deploy-bar{height:48px;background:var(--card);border-radius:24px;border:1px solid var(--border);overflow:hidden;position:relative}
+.deploy-fill{height:100%;background:linear-gradient(90deg,var(--electric),var(--green));border-radius:24px;width:0;animation:deploy-fill 3s ease-out forwards 1s}
+@keyframes deploy-fill{to{width:100%}}
+.deploy-bar .label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;z-index:2}
+.deploy-checkmarks{display:flex;justify-content:space-between;margin-top:1rem;padding:0 .5rem}
+.deploy-checkmarks span{font-size:.8rem;color:var(--muted);opacity:0;animation:check-in .3s ease forwards}
+.deploy-checkmarks span:nth-child(1){animation-delay:1.5s}
+.deploy-checkmarks span:nth-child(2){animation-delay:2s}
+.deploy-checkmarks span:nth-child(3){animation-delay:2.5s}
+.deploy-checkmarks span:nth-child(4){animation-delay:3s}
+.deploy-checkmarks span:nth-child(5){animation-delay:3.5s}
+@keyframes check-in{to{opacity:1;color:var(--green)}}
+
+/* Scroll animations */
+.fade-up{opacity:0;transform:translateY(30px);transition:all .6s ease}
+.fade-up.visible{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">go<span>2</span></div>
+  <button class="btn-sm" onclick="document.querySelector('.final-cta').scrollIntoView({behavior:'smooth'})">Deploy Your AI Team</button>
+</nav>
+
+<!-- ─── HERO ─── -->
+<section class="hero">
+  <div class="speed-badge">
+    <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 10 10-12h-9l1-10z"/></svg>
+    Zero-config deployment
+  </div>
+  <h1>Deploy AI across your company <span class="accent">in one afternoon</span></h1>
+  <p class="hero-sub">No IT tickets. No 6-month implementation. No consultants. <strong>Connect your tools, invite your team, and 7 AI agents go to work.</strong></p>
+
+  <div class="timer-strip">
+    <div class="timer-block">
+      <div class="time done">0:00</div>
+      <div class="label">Sign up</div>
+    </div>
+    <div class="timer-block">
+      <div class="time done">0:08</div>
+      <div class="label">Connect tools</div>
+    </div>
+    <div class="timer-block active">
+      <div class="time">0:15</div>
+      <div class="label">AI learning</div>
+    </div>
+    <div class="timer-block">
+      <div class="time">1:00</div>
+      <div class="label">First insights</div>
+    </div>
+    <div class="timer-block">
+      <div class="time done">4:00</div>
+      <div class="label">Fully deployed</div>
+    </div>
+  </div>
+
+  <div class="cta-group">
+    <button class="btn btn-primary" onclick="document.querySelector('.final-cta').scrollIntoView({behavior:'smooth'})">Deploy Your AI Team</button>
+    <button class="btn btn-ghost" onclick="document.querySelector('.timeline-section').scrollIntoView({behavior:'smooth'})">See the Timeline</button>
+  </div>
+</section>
+
+<!-- ─── DEPLOYMENT TIMELINE ─── -->
+<section class="timeline-section">
+  <div style="text-align:center;margin-bottom:4rem">
+    <div class="section-label">The deployment timeline</div>
+    <h2 class="section-title">From zero to AI-powered<br>in 4 hours flat</h2>
+    <p class="section-sub" style="margin-left:auto;margin-right:auto">Every minute mapped. No surprises. No hidden complexity. Here is exactly what happens when you click "Deploy."</p>
+  </div>
+
+  <div class="tl-item fade-up">
+    <div class="tl-dot"></div>
+    <div class="tl-time">
+      <div class="minute">0:00</div>
+      <div class="range">Minute zero</div>
+    </div>
+    <div class="tl-card">
+      <h3><span class="icon">🔑</span> Sign Up & Authenticate</h3>
+      <p>SSO with Google or Microsoft. One click. Your team directory loads automatically. No CSV uploads, no manual entry, no IT ticket.</p>
+      <span class="tech-tag">SSO / SAML / OAuth</span>
+    </div>
+  </div>
+
+  <div class="tl-item fade-up">
+    <div class="tl-dot" style="background:var(--purple)"></div>
+    <div class="tl-time">
+      <div class="minute">0:03</div>
+      <div class="range">Three minutes in</div>
+    </div>
+    <div class="tl-card">
+      <h3><span class="icon">🔌</span> Connect Your Stack</h3>
+      <p>Slack, Teams, Google Workspace, Jira, Notion, Salesforce, HubSpot, Asana, Linear — 40+ one-click integrations. Average connect time: 47 seconds per tool.</p>
+      <span class="tech-tag">40+ integrations</span>
+    </div>
+  </div>
+
+  <div class="tl-item fade-up">
+    <div class="tl-dot" style="background:var(--amber)"></div>
+    <div class="tl-time">
+      <div class="minute">0:08</div>
+      <div class="range">Eight minutes in</div>
+    </div>
+    <div class="tl-card">
+      <h3><span class="icon">🧠</span> AI Begins Learning</h3>
+      <p>All 7 agents activate simultaneously. They analyze communication patterns, document workflows, map knowledge silos, and identify bottlenecks — silently, in the background.</p>
+      <span class="tech-tag">7 agents active</span>
+    </div>
+  </div>
+
+  <div class="tl-item fade-up">
+    <div class="tl-dot" style="background:var(--green)"></div>
+    <div class="tl-time">
+      <div class="minute">0:15</div>
+      <div class="range">Fifteen minutes in</div>
+    </div>
+    <div class="tl-card">
+      <h3><span class="icon">📊</span> First Insights Arrive</h3>
+      <p>The AI Coach sends your first personalized tip. The Meeting Analyst flags two meetings that should have been emails. The Automation Scout identifies three repetitive tasks.</p>
+      <span class="tech-tag">Real-time delivery</span>
+    </div>
+  </div>
+
+  <div class="tl-item fade-up">
+    <div class="tl-dot" style="background:var(--green)"></div>
+    <div class="tl-time">
+      <div class="minute">1:00</div>
+      <div class="range">One hour</div>
+    </div>
+    <div class="tl-card">
+      <h3><span class="icon">📋</span> SOPs Generating</h3>
+      <p>The Process Documenter has drafted its first standard operating procedures. The Knowledge Keeper has indexed 200+ documents. The Workflow Optimizer has its first bottleneck report.</p>
+      <span class="tech-tag">Autonomous operation</span>
+    </div>
+  </div>
+
+  <div class="tl-item fade-up">
+    <div class="tl-dot" style="background:var(--electric)"></div>
+    <div class="tl-time">
+      <div class="minute">4:00</div>
+      <div class="range">Four hours — done</div>
+    </div>
+    <div class="tl-card">
+      <h3><span class="icon">🚀</span> Fully Deployed</h3>
+      <p>Every team member has their AI Coach. Every meeting gets analyzed. Knowledge is searchable. Workflows are mapped. Automations are queued for review. You are live.</p>
+      <span class="tech-tag">Full deployment</span>
+    </div>
+  </div>
+</section>
+
+<!-- ─── DEPLOY VISUAL ─── -->
+<section style="padding:2rem 2rem 6rem">
+  <div class="deploy-visual">
+    <div class="deploy-bar">
+      <div class="deploy-fill"></div>
+      <div class="label">Deploying 7 AI agents...</div>
+    </div>
+    <div class="deploy-checkmarks">
+      <span>✓ Auth</span>
+      <span>✓ Integrations</span>
+      <span>✓ Learning</span>
+      <span>✓ Insights</span>
+      <span>✓ Deployed</span>
+    </div>
+  </div>
+</section>
+
+<!-- ─── COMPARISON ─── -->
+<section class="comparison fade-up">
+  <div class="container" style="text-align:center">
+    <div class="section-label">Implementation comparison</div>
+    <h2 class="section-title">Enterprise AI: the old way vs. Go2</h2>
+    <p class="section-sub" style="margin-left:auto;margin-right:auto">Traditional enterprise AI projects take 6-18 months and cost $200K+ before anyone sees value. Go2 flips that model.</p>
+
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="col-old">Traditional AI</th>
+          <th class="col-new">Go2</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Time to first value</td>
+          <td style="color:var(--red)">3-6 months</td>
+          <td style="color:var(--green)">15 minutes</td>
+        </tr>
+        <tr>
+          <td>Implementation cost</td>
+          <td style="color:var(--red)">$200K-$2M</td>
+          <td style="color:var(--green)">$0</td>
+        </tr>
+        <tr>
+          <td>IT team required</td>
+          <td style="color:var(--red)">3-5 engineers</td>
+          <td style="color:var(--green)">None</td>
+        </tr>
+        <tr>
+          <td>Training needed</td>
+          <td style="color:var(--red)">40+ hours</td>
+          <td style="color:var(--green)">Zero</td>
+        </tr>
+        <tr>
+          <td>Integrations</td>
+          <td style="color:var(--red)">Custom built</td>
+          <td style="color:var(--green)">40+ pre-built</td>
+        </tr>
+        <tr class="highlight-row">
+          <td>Full deployment</td>
+          <td style="color:var(--red)">6-18 months</td>
+          <td style="color:var(--electric)">One afternoon</td>
+        </tr>
+        <tr>
+          <td>Ongoing maintenance</td>
+          <td style="color:var(--red)">Dedicated team</td>
+          <td style="color:var(--green)">Self-updating</td>
+        </tr>
+        <tr>
+          <td>ROI timeline</td>
+          <td style="color:var(--red)">12+ months</td>
+          <td style="color:var(--green)">Week 1</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─── AGENTS DEPLOYED ─── -->
+<section class="agents fade-up">
+  <div class="container" style="text-align:center">
+    <div class="section-label">Your AI team</div>
+    <h2 class="section-title">7 agents, zero configuration</h2>
+    <p class="section-sub" style="margin-left:auto;margin-right:auto">Each agent auto-configures based on your tools, team structure, and workflows. No prompts to write. No rules to set.</p>
+  </div>
+
+  <div class="agent-grid container">
+    <div class="agent-card fade-up">
+      <div class="agent-icon icon-coach">🎯</div>
+      <h3>AI Coach</h3>
+      <p>Personalized productivity tips delivered via Slack or Teams. Learns each person's work style and adapts over time.</p>
+      <div class="deploy-time"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> Active in 8 minutes</div>
+    </div>
+    <div class="agent-card fade-up">
+      <div class="agent-icon icon-docs">📋</div>
+      <h3>Process Documenter</h3>
+      <p>Auto-generates SOPs from observed workflows. No more "how do I do this?" questions clogging your Slack channels.</p>
+      <div class="deploy-time"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> First SOP in 45 min</div>
+    </div>
+    <div class="agent-card fade-up">
+      <div class="agent-icon icon-scout">🔍</div>
+      <h3>Automation Scout</h3>
+      <p>Finds repetitive tasks across your org and suggests or builds automations. Saved one company 12 hours/week in data entry alone.</p>
+      <div class="deploy-time"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> First suggestion in 20 min</div>
+    </div>
+    <div class="agent-card fade-up">
+      <div class="agent-icon icon-onboard">🎓</div>
+      <h3>AI Onboarding</h3>
+      <p>Personalized new hire training generated from real role data. Cuts onboarding time by 60% while improving retention.</p>
+      <div class="deploy-time"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> Ready for next hire</div>
+    </div>
+    <div class="agent-card fade-up">
+      <div class="agent-icon icon-knowledge">📚</div>
+      <h3>Knowledge Keeper</h3>
+      <p>Captures tribal knowledge from conversations, docs, and meetings. Makes everything searchable. Nothing gets lost when people leave.</p>
+      <div class="deploy-time"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> Indexing in 3 min</div>
+    </div>
+    <div class="agent-card fade-up">
+      <div class="agent-icon icon-meeting">🎙️</div>
+      <h3>Meeting Analyst</h3>
+      <p>Summaries, action items, follow-up tracking, and the "this meeting should have been an email" flag that saves everyone's sanity.</p>
+      <div class="deploy-time"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> Next meeting covered</div>
+    </div>
+    <div class="agent-card fade-up">
+      <div class="agent-icon icon-workflow">⚡</div>
+      <h3>Workflow Optimizer</h3>
+      <p>Detects bottlenecks, predicts delays, and suggests re-routing. Like having a logistics expert watching every process in your company.</p>
+      <div class="deploy-time"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> First report in 2 hrs</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── ZERO CONFIG ─── -->
+<section class="zero-config fade-up">
+  <div class="container" style="text-align:center">
+    <div class="section-label">Why it is so fast</div>
+    <h2 class="section-title">Zero configuration, by design</h2>
+    <p class="section-sub" style="margin-left:auto;margin-right:auto">Most enterprise tools need months of setup because they were designed for consultants to configure. Go2 was designed for humans to deploy.</p>
+
+    <div class="config-grid">
+      <div class="config-card">
+        <div class="icon">🔗</div>
+        <h3>Auto-Discovery</h3>
+        <p>Connect one tool and Go2 maps your entire workflow graph. It discovers teams, projects, and processes automatically.</p>
+      </div>
+      <div class="config-card">
+        <div class="icon">🧬</div>
+        <h3>Self-Configuring AI</h3>
+        <p>Each agent calibrates itself to your company's patterns. No training data needed. No prompt engineering. No rule-writing.</p>
+      </div>
+      <div class="config-card">
+        <div class="icon">🔄</div>
+        <h3>Continuous Learning</h3>
+        <p>Go2 gets smarter every day. New patterns, new optimizations, new automations — all discovered and applied without human intervention.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── PROOF ─── -->
+<section class="proof fade-up">
+  <div class="container" style="text-align:center">
+    <div class="section-label">The proof</div>
+    <h2 class="section-title">Numbers from 47,000 workers</h2>
+
+    <div class="proof-grid">
+      <div class="proof-stat">
+        <div class="number blue">4hrs</div>
+        <div class="desc">Average time from<br>signup to full deployment</div>
+      </div>
+      <div class="proof-stat">
+        <div class="number green">23%</div>
+        <div class="desc">Productivity gain<br>within first month</div>
+      </div>
+      <div class="proof-stat">
+        <div class="number purple">89%</div>
+        <div class="desc">Team satisfaction<br>rating</div>
+      </div>
+      <div class="proof-stat">
+        <div class="number amber">$4,200</div>
+        <div class="desc">Annual ROI<br>per employee</div>
+      </div>
+    </div>
+
+    <div class="quote-card">
+      <blockquote>"We spent $180K on an AI initiative that took 8 months to deploy and nobody used. Go2 deployed in a Tuesday afternoon and our team actually loves it."</blockquote>
+      <cite>— VP of Operations, 200-person logistics company</cite>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FINAL CTA ─── -->
+<section class="final-cta">
+  <div class="section-label">Ready?</div>
+  <h2>Your AI team is <span style="color:var(--electric)">4 hours away</span></h2>
+  <p>No credit card. No IT approval. No implementation partner. Just results, starting this afternoon.</p>
+  <div class="cta-group">
+    <button class="btn btn-primary">Deploy Your AI Team</button>
+    <button class="btn btn-ghost">See It In Action</button>
+  </div>
+  <div class="guarantee">✓ <strong>Free pilot</strong> for teams up to 25 · No credit card required · Cancel anytime</div>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2. The fastest path from zero to AI-powered. <a href="mailto:s@go2.io">s@go2.io</a></p>
+</footer>
+
+<script>
+// Scroll-triggered fade-ups
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// Animate timer blocks sequentially
+const blocks = document.querySelectorAll('.timer-block');
+let idx = 0;
+setInterval(() => {
+  blocks.forEach(b => b.classList.remove('active'));
+  blocks[idx % blocks.length].classList.add('active');
+  idx++;
+}, 2000);
+</script>
+</body>
+</html>
