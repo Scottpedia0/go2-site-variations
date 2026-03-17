@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Coaching Playground</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0e17;--surface:#111827;--surface2:#1a2236;--border:#1e293b;--accent:#6366f1;--accent2:#818cf8;--green:#22c55e;--red:#ef4444;--orange:#f59e0b;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.header{border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.header-left{display:flex;align-items:center;gap:12px}
+.logo{font-size:20px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.divider{width:1px;height:24px;background:var(--border)}
+.view-toggle{display:flex;background:var(--surface2);border-radius:8px;padding:3px}
+.view-btn{padding:6px 16px;border-radius:6px;font-size:12px;cursor:pointer;color:var(--text3);transition:all .15s;border:none;background:none;font-family:inherit}
+.view-btn.active{background:var(--accent);color:#fff}
+.main-layout{display:flex;flex:1;overflow:hidden}
+/* Left Panel - Persona Selector */
+.left-panel{width:280px;border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;background:var(--surface)}
+.left-panel h3{padding:16px 20px 8px;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3)}
+.persona-list{flex:1;overflow-y:auto;padding:0 12px 12px}
+.persona-card{padding:14px;border-radius:10px;cursor:pointer;margin-bottom:4px;transition:all .15s;border:1px solid transparent}
+.persona-card:hover{background:var(--surface2)}
+.persona-card.active{background:rgba(99,102,241,.1);border-color:rgba(99,102,241,.3)}
+.persona-top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.persona-avatar{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.persona-name{font-size:13px;font-weight:600}
+.persona-role{font-size:11px;color:var(--text3)}
+.persona-preview{font-size:11px;color:var(--text3);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* Intensity Slider */
+.slider-section{padding:16px 20px;border-top:1px solid var(--border)}
+.slider-section label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);display:block;margin-bottom:8px}
+.slider-row{display:flex;align-items:center;gap:10px}
+.slider-row input[type="range"]{flex:1;-webkit-appearance:none;height:4px;background:var(--surface2);border-radius:2px;outline:none}
+.slider-row input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer}
+.slider-val{font-size:13px;font-weight:600;color:var(--accent2);min-width:30px;text-align:right}
+.intensity-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:4px}
+/* Timeline Selector */
+.timeline-section{padding:16px 20px;border-top:1px solid var(--border)}
+.timeline-tabs{display:flex;gap:4px;flex-wrap:wrap}
+.timeline-tab{padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;color:var(--text3);background:var(--surface2);transition:all .15s;border:none;font-family:inherit}
+.timeline-tab.active{background:var(--accent);color:#fff}
+.timeline-tab:hover:not(.active){color:var(--text)}
+/* Right Panel - Feed */
+.right-panel{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.feed-header{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.feed-header h2{font-size:16px;font-weight:600}
+.feed-meta{font-size:12px;color:var(--text3)}
+.feed-scroll{flex:1;overflow-y:auto;padding:20px 24px}
+/* Feed Items */
+.feed-day{margin-bottom:28px}
+.feed-day-header{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.feed-day-header::after{content:'';flex:1;height:1px;background:var(--border)}
+.coach-msg{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px;transition:all .3s;animation:slideIn .4s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.coach-msg.highlight{border-color:var(--accent);background:rgba(99,102,241,.05)}
+.coach-msg.alert{border-color:var(--orange);background:rgba(245,158,11,.05)}
+.coach-msg.success{border-color:var(--green);background:rgba(34,197,94,.05)}
+.coach-msg-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.coach-msg-type{display:flex;align-items:center;gap:6px}
+.coach-msg-icon{font-size:16px}
+.coach-msg-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.coach-msg-label.nudge{color:var(--accent2)}
+.coach-msg-label.insight{color:var(--orange)}
+.coach-msg-label.win{color:var(--green)}
+.coach-msg-label.tip{color:var(--text2)}
+.coach-msg-label.alert{color:var(--red)}
+.coach-msg-label.report{color:var(--accent2)}
+.coach-msg-time{font-size:11px;color:var(--text3)}
+.coach-msg-body{font-size:13px;line-height:1.7;color:var(--text2)}
+.coach-msg-body strong{color:var(--text);font-weight:600}
+.coach-msg-actions{display:flex;gap:8px;margin-top:12px}
+.coach-action{padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:all .15s;font-family:inherit}
+.coach-action:hover{border-color:var(--accent);color:var(--text)}
+.coach-action.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.coach-metric{display:inline-flex;align-items:center;gap:4px;background:var(--surface2);padding:3px 8px;border-radius:4px;font-size:12px;font-weight:600;margin:2px}
+.coach-metric.up{color:var(--green)}
+.coach-metric.down{color:var(--red)}
+.coach-metric.neutral{color:var(--text2)}
+/* Manager view */
+.manager-summary{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px}
+.manager-summary h3{font-size:15px;font-weight:600;margin-bottom:12px}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.summary-stat{text-align:center;padding:12px;background:var(--surface2);border-radius:8px}
+.summary-stat .val{font-size:18px;font-weight:700}
+.summary-stat .lbl{font-size:10px;color:var(--text3);text-transform:uppercase;margin-top:2px}
+.team-coaching-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(30,41,59,.3)}
+.team-coaching-item:last-child{border:none}
+.team-coaching-avatar{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;flex-shrink:0}
+.team-coaching-info{flex:1}
+.team-coaching-name{font-size:13px;font-weight:500}
+.team-coaching-detail{font-size:11px;color:var(--text3);margin-top:2px}
+.team-coaching-score{font-size:14px;font-weight:700;min-width:40px;text-align:right}
+.progress-track{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;margin-top:4px}
+.progress-bar-fill{height:100%;border-radius:2px;transition:width 1s}
+</style>
+</head>
+<body>
+<div class="header">
+<div class="header-left">
+<span class="logo">Go2</span>
+<span class="divider"></span>
+<span style="font-size:16px;font-weight:600">Coaching Playground</span>
+</div>
+<div class="view-toggle">
+<button class="view-btn active" data-view="worker" onclick="switchView('worker',this)">Worker View</button>
+<button class="view-btn" data-view="manager" onclick="switchView('manager',this)">Manager View</button>
+</div>
+</div>
+
+<div class="main-layout">
+<div class="left-panel">
+<h3>Select Persona</h3>
+<div class="persona-list" id="persona-list"></div>
+<div class="slider-section">
+<label>Coaching Intensity</label>
+<div class="slider-row">
+<input type="range" min="1" max="5" value="3" id="intensity-slider" oninput="updateIntensity()">
+<span class="slider-val" id="intensity-val">3</span>
+</div>
+<div class="intensity-labels"><span>Minimal</span><span>Balanced</span><span>Intensive</span></div>
+</div>
+<div class="timeline-section">
+<label style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);display:block;margin-bottom:8px">Timeline</label>
+<div class="timeline-tabs" id="timeline-tabs"></div>
+</div>
+</div>
+
+<div class="right-panel">
+<div class="feed-header">
+<h2 id="feed-title">Select a persona to begin</h2>
+<div class="feed-meta" id="feed-meta"></div>
+</div>
+<div class="feed-scroll" id="feed-scroll"></div>
+</div>
+</div>
+
+<script>
+const personas=[
+{id:'sales',icon:'&#128176;',name:'Jordan Taylor',role:'Sales Representative',dept:'Sales',color:'#ef4444',
+desc:'Outbound sales, CRM management, client calls',
+workerMsgs:{
+'Week 1':[
+{type:'nudge',time:'9:15 AM',body:"Good morning, Jordan. I noticed you typically start prospecting calls around 10 AM. Your connect rate is <span class='coach-metric up'>23% higher</span> when you call between 8:30-9:30 AM. Want to try shifting your call block earlier this week?",actions:['Shift my schedule','Tell me more']},
+{type:'tip',time:'11:42 AM',body:"You've been switching between your CRM and email <strong>18 times</strong> in the last hour. Consider batch-processing emails at set intervals instead. Top performers on your team check email 3x/day.",actions:['Set email batches','Snooze']},
+{type:'insight',time:'2:30 PM',body:"After analyzing your last 50 calls, your <strong>average talk-to-listen ratio</strong> is 68:32. The sweet spot for closing is around 45:55. Prospects who talk more are 2.1x more likely to convert.",actions:['View call analysis','Practice tips']},
+{type:'win',time:'5:00 PM',body:"Great day! You completed <span class='coach-metric up'>14 prospecting calls</span> vs your usual 10. You also reduced context switching by 22% compared to yesterday.",actions:['See full report']}
+],
+'Week 2':[
+{type:'nudge',time:'8:45 AM',body:"Your pipeline review is at 10 AM. I've pre-loaded your CRM with <strong>key talking points</strong> for each deal. Three opportunities need follow-up from last week.",actions:['View prep','Open CRM']},
+{type:'insight',time:'12:15 PM',body:"I've been tracking your email response times. You respond to internal emails in <span class='coach-metric neutral'>avg 4 min</span> but prospect emails take <span class='coach-metric down'>avg 2.3 hours</span>. Flipping this priority could increase your close rate.",actions:['See the data','Set up auto-drafts']},
+{type:'tip',time:'3:00 PM',body:"Your <strong>CRM data entry</strong> takes about 35 min/day. I can auto-fill 80% of your call notes by transcribing your conversations. That's <span class='coach-metric up'>28 min saved daily</span>.",actions:['Enable auto-fill','Show me how']},
+{type:'win',time:'5:30 PM',body:"This week you've moved <strong>3 deals</strong> from Discovery to Proposal stage. Your pipeline velocity is <span class='coach-metric up'>40% faster</span> than team average this week.",actions:['See pipeline']}
+],
+'Month 1':[
+{type:'report',time:'Monday AM',body:"<strong>Monthly Coaching Report:</strong> Your efficiency score improved from 72% to 84%. Key wins: morning call block adoption (+23% connect rate), reduced context switching (-35%), CRM auto-fill saving 9.3 hrs/month. Next focus: talk-to-listen ratio improvement.",actions:['View full report','Set new goals']},
+{type:'insight',time:'Wednesday PM',body:"Pattern detected: Your close rate drops <span class='coach-metric down'>40%</span> on deals that go more than 5 days without contact. I've set up automated follow-up reminders for 12 stale opportunities.",actions:['Review reminders','Customize rules']},
+{type:'nudge',time:'Thursday AM',body:"Your top competitor just launched a new pricing tier. I've prepared a <strong>competitive battle card</strong> with key differentiators and objection handlers based on your most successful past conversations.",actions:['View battle card','Practice pitch']}
+],
+'Month 3':[
+{type:'report',time:'Monday AM',body:"<strong>Quarter Review:</strong> Jordan, you've gone from the 4th to the <span class='coach-metric up'>1st</span> highest performer on the sales team. Key stats: Pipeline value <span class='coach-metric up'>+68%</span>, Close rate <span class='coach-metric up'>+12 points</span>, CRM time <span class='coach-metric up'>-73%</span> (auto-fill). Your morning call block is now a team best practice.",actions:['See full analysis','Share with team']},
+{type:'insight',time:'Tuesday PM',body:"Deep pattern analysis: Your highest-value deals all share 3 traits — they involved a <strong>discovery call under 20 min</strong>, a <strong>follow-up within 24 hrs</strong>, and <strong>multi-threading with 2+ stakeholders</strong>. I'm scoring new leads based on these patterns.",actions:['View lead scores','Adjust criteria']},
+{type:'tip',time:'Wednesday AM',body:"Based on 3 months of data, I've built a <strong>personalized playbook</strong> for your selling style. It includes your best-performing email templates, optimal call timing, and common objection responses that work specifically for you.",actions:['Open playbook','Export PDF']}
+]
+},
+managerMsgs:[
+{name:'Jordan Taylor',score:84,change:'+12',status:'Improving rapidly',detail:'Adopted morning call blocks. Close rate up 12 points. CRM auto-fill saving 9h/mo.'},
+]},
+{id:'dev',icon:'&#128187;',name:'Alex Rivera',role:'Software Developer',dept:'Engineering',color:'#6366f1',
+desc:'Full-stack development, code reviews, sprint work',
+workerMsgs:{
+'Week 1':[
+{type:'nudge',time:'9:30 AM',body:"Good morning, Alex. You have 3 PRs awaiting your review. I noticed you're most productive on code reviews between <strong>9-10 AM</strong> before your first meeting. Want to knock these out now?",actions:['Open PRs','After standup']},
+{type:'tip',time:'11:15 AM',body:"You've been interrupted <strong>6 times</strong> in the last 90 minutes by Slack messages. Consider setting a <strong>Focus Mode</strong> — your deepest coding sessions happen in 2+ hour uninterrupted blocks.",actions:['Enable Focus Mode','Set schedule']},
+{type:'insight',time:'3:00 PM',body:"Your code review turnaround averages <span class='coach-metric down'>18 hours</span>. The team target is 4 hours. Batching reviews into two daily sessions could cut this to <span class='coach-metric up'>3 hours</span> without impacting your coding time.",actions:['See review stats','Set review blocks']},
+{type:'win',time:'5:45 PM',body:"You had <span class='coach-metric up'>4.2 hours</span> of uninterrupted deep work today — your best this week. Your commit quality score was 94% (no reverts or hotfixes needed).",actions:['See daily summary']}
+],
+'Week 2':[
+{type:'nudge',time:'9:00 AM',body:"Sprint planning is at 10. Based on your velocity data, you can comfortably take on <strong>13-15 story points</strong> this sprint. Last sprint you took 18 and worked late 3 days.",actions:['View my velocity','Capacity planner']},
+{type:'insight',time:'1:30 PM',body:"Your debugging sessions average <span class='coach-metric neutral'>47 minutes</span>. When you write a failing test first, debugging drops to <span class='coach-metric up'>18 minutes</span>. You use TDD on 30% of tasks — increasing to 60% could save 3+ hrs/week.",actions:['Show the data','TDD resources']},
+{type:'tip',time:'4:00 PM',body:"I noticed you manually set up dev environments for each new service. This process takes ~25 min each time. A Docker compose template could automate this to <span class='coach-metric up'>2 minutes</span>.",actions:['Generate template','Show me how']},
+{type:'win',time:'6:00 PM',body:"Code review turnaround this week: <span class='coach-metric up'>4.5 hours</span> (down from 18 last week). Two teammates mentioned the faster reviews in standup. Keep it up!",actions:['See trends']}
+],
+'Month 1':[
+{type:'report',time:'Monday AM',body:"<strong>Monthly Dev Report:</strong> Deep work hours <span class='coach-metric up'>+35%</span> (4.8h avg/day). Code review turnaround <span class='coach-metric up'>-72%</span>. PR merge rate <span class='coach-metric up'>+28%</span>. Zero production incidents from your code this month. Focus areas: TDD adoption (currently 45%, target 60%).",actions:['Full report','Compare to team']},
+{type:'insight',time:'Thursday PM',body:"Your git history shows you're most productive (measured by meaningful commits) on <strong>Tuesdays and Thursdays</strong> — the days with fewest meetings. I recommend protecting these as deep work days.",actions:['Block calendar','View patterns']}
+],
+'Month 3':[
+{type:'report',time:'Monday AM',body:"<strong>Quarter Review:</strong> Alex, your engineering efficiency score is <span class='coach-metric up'>95%</span>, highest on the team. Key wins: Deep work up to 5.5h/day, TDD at 62% (saves est. 6h/week in debugging), PR reviews same-day, zero rollbacks. You've been flagged as a <strong>team mentor candidate</strong>.",actions:['See full analysis','Mentor program info']},
+{type:'insight',time:'Wednesday AM',body:"After 3 months of observing your workflow, I've identified your <strong>optimal coding pattern</strong>: 2.5hr morning block (architecture/complex logic) -> review batch -> 2hr afternoon block (implementation) -> review batch -> documentation. Days following this pattern have <span class='coach-metric up'>40% higher</span> output.",actions:['Apply template','Customize']}
+]
+}},
+{id:'support',icon:'&#127897;',name:'Casey Chen',role:'Customer Support Agent',dept:'Support',color:'#22c55e',
+desc:'Ticket handling, live chat, customer escalations',
+workerMsgs:{
+'Week 1':[
+{type:'nudge',time:'9:00 AM',body:"Morning, Casey. You have <strong>23 tickets</strong> in queue. I've pre-sorted them by priority — 4 urgent, 11 normal, 8 low. The urgent ones are mostly shipping delays from the warehouse issue yesterday.",actions:['View sorted queue','Handle urgent first']},
+{type:'tip',time:'10:30 AM',body:"You're typing the same shipping delay response with slight variations. I've drafted a <strong>template response</strong> based on your best-rated replies. Using it could save <span class='coach-metric up'>2 min per ticket</span>.",actions:['Use template','Customize it']},
+{type:'insight',time:'2:15 PM',body:"Your first-response time averages <span class='coach-metric neutral'>12 minutes</span>. Team top performers are at 5 min. However, your <strong>resolution rate is #1</strong> at 94% — customers rarely need to follow up. Quality over speed is working!",actions:['See my stats','Balance tips']},
+{type:'win',time:'5:00 PM',body:"You resolved <span class='coach-metric up'>31 tickets</span> today (team avg: 22) with a <span class='coach-metric up'>4.8/5</span> satisfaction score. Your shipping delay template saved an estimated 45 minutes.",actions:['Daily summary']}
+],
+'Week 2':[
+{type:'nudge',time:'9:15 AM',body:"I noticed you spend ~8 min per billing ticket looking up account info across 3 systems. I can <strong>auto-pull account context</strong> when a billing ticket opens — showing payment history, plan details, and recent changes in one view.",actions:['Enable auto-context','Show preview']},
+{type:'insight',time:'1:00 PM',body:"Your escalation rate is <span class='coach-metric up'>only 8%</span> (team avg: 15%). Analyzing your de-escalation patterns: you acknowledge the emotion first, then state the solution, then offer a goodwill gesture. This 3-step pattern works <span class='coach-metric up'>89% of the time</span>.",actions:['See my patterns','Share with team']},
+{type:'tip',time:'3:30 PM',body:"Trending issue detected: <strong>14 tickets</strong> about the same checkout error in the last 2 hours. I've drafted a <strong>bulk response</strong> and flagged the engineering team. Want to send it to all affected customers?",actions:['Review & send','Edit first']},
+{type:'win',time:'5:30 PM',body:"Proactive catch! Your trending issue alert helped engineering find and fix the checkout bug in <span class='coach-metric up'>47 minutes</span> vs the usual 3-hour discovery time. That prevented an estimated 200+ additional tickets.",actions:['See impact report']}
+],
+'Month 1':[
+{type:'report',time:'Monday AM',body:"<strong>Monthly Support Report:</strong> Tickets resolved: 487 (team high). CSAT: <span class='coach-metric up'>4.7/5</span>. First response time improved <span class='coach-metric up'>-40%</span> with auto-context. Your de-escalation template is now used by 3 other agents. Templates saved 14 hours this month.",actions:['Full report','Set new targets']},
+{type:'insight',time:'Wednesday PM',body:"Deep analysis: Your ticket resolution time drops <span class='coach-metric up'>35%</span> in the afternoon vs morning. Hypothesis: morning warm-up effect. Try starting with 2-3 easy tickets to build momentum, then tackle complex ones.",actions:['Try tomorrow','View analysis']}
+],
+'Month 3':[
+{type:'report',time:'Monday AM',body:"<strong>Quarter Review:</strong> Casey, you've become the team's <strong>knowledge champion</strong>. Your templates are used team-wide, your de-escalation pattern is in the training manual, and your proactive trend detection has prevented an estimated <span class='coach-metric up'>600+ tickets</span>. CSAT consistently above 4.7. Ready for Team Lead?",actions:['Full analysis','Career path']},
+{type:'insight',time:'Thursday AM',body:"I've mapped all your resolution patterns over 3 months. Your <strong>personal knowledge base</strong> now covers 156 unique issue types with recommended resolutions. This is effectively an AI agent trained on your expertise — would you like to deploy it as a first-response bot?",actions:['Preview agent','Configure rules']}
+]
+}},
+{id:'accountant',icon:'&#128200;',name:'Morgan Kim',role:'Staff Accountant',dept:'Finance',color:'#f59e0b',
+desc:'AP/AR, reconciliation, monthly close, reporting',
+workerMsgs:{
+'Week 1':[
+{type:'nudge',time:'8:30 AM',body:"Good morning, Morgan. Month-end close is in 5 days. Based on your pace, you're <span class='coach-metric neutral'>on track</span> but have 23 unreconciled transactions. Starting with bank recs today could prevent the usual Thursday crunch.",actions:['Start bank recs','View close checklist']},
+{type:'tip',time:'10:45 AM',body:"You're manually matching invoices to POs by switching between two spreadsheets. I can <strong>auto-match</strong> invoices within 2% tolerance — that covers 85% of your volume. You'd only manually review exceptions.",actions:['Enable auto-match','Show accuracy']},
+{type:'insight',time:'2:00 PM',body:"Your data entry accuracy is <span class='coach-metric up'>99.7%</span> — excellent. But you triple-check every entry, spending <span class='coach-metric down'>40% more time</span> than needed. With auto-validation rules, you could maintain accuracy with a single check.",actions:['Set up validation','Keep my process']},
+{type:'win',time:'5:00 PM',body:"You reconciled <span class='coach-metric up'>47 transactions</span> today. Auto-match handled 38 of them — you only manually reviewed 9 exceptions. Time saved: <span class='coach-metric up'>2.5 hours</span>.",actions:['Daily summary']}
+],
+'Week 2':[
+{type:'nudge',time:'8:15 AM',body:"Close day! Your checklist shows 4 remaining items. Based on previous closes, the <strong>intercompany eliminations</strong> always take longest. Starting there first could shave 2 hours off your close time.",actions:['View checklist','Prioritize items']},
+{type:'insight',time:'11:00 AM',body:"I analyzed your last 6 month-end closes. Your close time ranges from <span class='coach-metric down'>3.5 days</span> to <span class='coach-metric up'>1.8 days</span>. The fast closes had one thing in common: daily reconciliation throughout the month instead of batching at month-end.",actions:['See patterns','Set daily recs']},
+{type:'tip',time:'3:00 PM',body:"Your expense report reviews take avg 12 min each. <strong>80% of submissions</strong> follow policy perfectly. Auto-approving compliant reports and only flagging exceptions could save <span class='coach-metric up'>6 hours/month</span>.",actions:['Set auto-approve rules','Review thresholds']},
+{type:'win',time:'6:00 PM',body:"Month-end close completed in <span class='coach-metric up'>2.1 days</span> — your second-fastest ever! Auto-matching and daily recs made the difference. CFO commented on the early delivery.",actions:['Close summary']}
+],
+'Month 1':[
+{type:'report',time:'Monday AM',body:"<strong>Monthly Finance Report:</strong> Close time: <span class='coach-metric up'>2.1 days</span> (from 3.2 avg). Auto-match accuracy: 99.4%. Manual entry time reduced <span class='coach-metric up'>-55%</span>. Expense auto-approvals processing 80% of submissions. Total time saved: 18 hours this month.",actions:['Full report','Share with CFO']},
+{type:'insight',time:'Thursday AM',body:"Vendor payment analysis: You have <strong>12 vendors</strong> with predictable monthly invoices. Setting up automated PO generation for these would eliminate 60% of your PO matching work. Estimated savings: <span class='coach-metric up'>4 hours/month</span>.",actions:['Set up auto-POs','Review vendors']}
+],
+'Month 3':[
+{type:'report',time:'Monday AM',body:"<strong>Quarter Review:</strong> Morgan, your efficiency gains are remarkable. Close time down to <span class='coach-metric up'>1.4 days</span> (company best). You've automated 73% of transaction matching, 80% of expense approvals, and 60% of PO generation. The CFO has asked you to help design the automation strategy for the entire finance team.",actions:['Full analysis','Automation roadmap']},
+{type:'insight',time:'Wednesday PM',body:"Based on 3 months of data, I've identified that <strong>92% of your remaining manual work</strong> falls into 5 categories. I've drafted agent blueprints for each. If deployed, your role could shift from processing to analysis and strategic finance — higher value work.",actions:['View agent blueprints','ROI calculator']}
+]
+}},
+{id:'marketing',icon:'&#127912;',name:'Riley Patel',role:'Marketing Manager',dept:'Marketing',color:'#ec4899',
+desc:'Campaign management, content strategy, analytics',
+workerMsgs:{
+'Week 1':[
+{type:'nudge',time:'9:00 AM',body:"Morning, Riley. Your Q1 campaign launched yesterday. Early metrics: <span class='coach-metric up'>CTR 3.2%</span> (above 2.5% benchmark), but landing page bounce rate is <span class='coach-metric down'>62%</span>. The hero section might need attention.",actions:['View full metrics','A/B test ideas']},
+{type:'tip',time:'11:30 AM',body:"You spend ~45 min/day compiling metrics from Google Analytics, ad platforms, and social. I can generate a <strong>unified dashboard</strong> that auto-refreshes every hour. That's <span class='coach-metric up'>3.75 hours/week</span> back for strategy work.",actions:['Build dashboard','Customize metrics']},
+{type:'insight',time:'2:45 PM',body:"Content analysis: Your blog posts published on <strong>Tuesdays at 10 AM</strong> get <span class='coach-metric up'>2.3x more shares</span> than other days. Your email open rates peak at <strong>Thursday 8 AM</strong>. Current schedule doesn't match these patterns.",actions:['Optimize schedule','See full analysis']},
+{type:'win',time:'5:15 PM',body:"After adjusting the landing page hero based on this morning's bounce rate alert, bounce rate dropped to <span class='coach-metric up'>41%</span> in the afternoon. Quick response saved an estimated $2,400 in wasted ad spend.",actions:['Campaign summary']}
+],
+'Week 2':[
+{type:'nudge',time:'9:15 AM',body:"Competitor alert: <strong>CompetitorX</strong> launched a similar campaign yesterday with aggressive pricing. I've pulled their ad copy, landing pages, and social angles. Want to adjust your positioning?",actions:['View competitor intel','Adjust campaign']},
+{type:'insight',time:'1:00 PM',body:"Your content repurposing rate is low — each blog post becomes 1 social post. Top-performing marketing teams create <span class='coach-metric up'>8-12 content pieces</span> from each original. I can auto-generate variants: threads, carousels, email snippets, video scripts.",actions:['Generate variants','Set auto-repurpose']},
+{type:'tip',time:'3:30 PM',body:"You have <strong>4 reporting calls</strong> scheduled this week. Each takes 30 min. An auto-generated report with commentary could replace 3 of them. Stakeholders get data faster, you save <span class='coach-metric up'>1.5 hours</span>.",actions:['Generate sample report','Replace meetings']},
+{type:'win',time:'5:00 PM',body:"Content repurposing is working! Your Tuesday blog post generated <span class='coach-metric up'>12 social posts</span>, <span class='coach-metric up'>2 email sequences</span>, and <span class='coach-metric up'>1 video script</span> — all in 15 minutes vs the usual 3 hours of manual creation.",actions:['See content pipeline']}
+],
+'Month 1':[
+{type:'report',time:'Monday AM',body:"<strong>Monthly Marketing Report:</strong> Campaign ROI: <span class='coach-metric up'>340%</span> (target was 250%). Content output <span class='coach-metric up'>+400%</span> via auto-repurposing. Reporting time <span class='coach-metric up'>-80%</span> via auto-dashboards. You've shifted 12 hours/week from execution to strategy.",actions:['Full report','Share with leadership']},
+{type:'insight',time:'Thursday PM',body:"Cross-channel analysis reveals your <strong>email-to-social</strong> funnel converts at 3x your <strong>social-to-email</strong> funnel. Reallocating 20% of social ad budget to email list growth could increase overall ROI by <span class='coach-metric up'>25%</span>.",actions:['Model the shift','Test it']}
+],
+'Month 3':[
+{type:'report',time:'Monday AM',body:"<strong>Quarter Review:</strong> Riley, marketing has become the most automated department. Content engine produces 50+ pieces/week from 5 originals. Campaign optimization is 70% automated. Reporting is fully automated. Your role has evolved from execution to <strong>pure strategy and creative direction</strong>. Time on strategic work: <span class='coach-metric up'>6h/day</span> (was 1.5h).",actions:['Full analysis','Team presentation']},
+{type:'insight',time:'Wednesday AM',body:"Your marketing AI agent now handles: content repurposing, social scheduling, A/B test setup, report generation, and competitor monitoring. It's the equivalent of <span class='coach-metric up'>2.5 FTEs</span> of manual work. The next frontier: predictive campaign optimization based on your historical win patterns.",actions:['View agent dashboard','Expand capabilities']}
+]
+}}
+];
+
+const timelines=['Week 1','Week 2','Month 1','Month 3'];
+let currentPersona=null,currentTimeline='Week 1',currentView='worker',intensity=3;
+
+function init(){
+const list=document.getElementById('persona-list');
+personas.forEach((p,i)=>{
+const card=document.createElement('div');card.className='persona-card'+(i===0?' active':'');card.dataset.id=p.id;
+card.innerHTML=`<div class="persona-top"><div class="persona-avatar" style="background:${p.color}">${p.icon}</div><div><div class="persona-name">${p.name}</div><div class="persona-role">${p.role}</div></div></div><div class="persona-preview">${p.desc}</div>`;
+card.onclick=()=>selectPersona(p);
+list.appendChild(card);
+});
+const tabs=document.getElementById('timeline-tabs');
+timelines.forEach((t,i)=>{
+const tab=document.createElement('button');tab.className='timeline-tab'+(i===0?' active':'');tab.textContent=t;
+tab.onclick=()=>{document.querySelectorAll('.timeline-tab').forEach(x=>x.classList.remove('active'));tab.classList.add('active');currentTimeline=t;renderFeed()};
+tabs.appendChild(tab);
+});
+selectPersona(personas[0]);
+}
+
+function selectPersona(p){
+currentPersona=p;
+document.querySelectorAll('.persona-card').forEach(c=>c.classList.remove('active'));
+document.querySelector(`.persona-card[data-id="${p.id}"]`).classList.add('active');
+renderFeed();
+}
+
+function switchView(view,btn){
+currentView=view;
+document.querySelectorAll('.view-btn').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');renderFeed();
+}
+
+function updateIntensity(){
+intensity=parseInt(document.getElementById('intensity-slider').value);
+document.getElementById('intensity-val').textContent=intensity;
+renderFeed();
+}
+
+function renderFeed(){
+if(!currentPersona)return;
+const scroll=document.getElementById('feed-scroll');
+const title=document.getElementById('feed-title');
+const meta=document.getElementById('feed-meta');
+
+if(currentView==='manager'){
+renderManagerView();return;
+}
+
+title.textContent=`${currentPersona.name} — ${currentPersona.role}`;
+meta.textContent=`${currentTimeline} | Intensity: ${intensity}/5`;
+
+const msgs=currentPersona.workerMsgs[currentTimeline]||[];
+// Filter by intensity
+let filtered=msgs;
+if(intensity<=2)filtered=msgs.filter(m=>m.type==='win'||m.type==='report');
+else if(intensity<=3)filtered=msgs.filter(m=>m.type!=='tip'||Math.random()>.3);
+// intensity 4-5 shows all
+
+scroll.innerHTML='';
+const day=document.createElement('div');day.className='feed-day';
+const dayLabel=currentTimeline.startsWith('Week')?'Typical Day':'Key Moments';
+day.innerHTML=`<div class="feed-day-header">${dayLabel} &mdash; ${currentTimeline}</div>`;
+
+filtered.forEach((m,i)=>{
+const msgEl=document.createElement('div');
+const cls=m.type==='win'?'success':m.type==='alert'?'alert':m.type==='insight'||m.type==='report'?'highlight':'';
+msgEl.className=`coach-msg ${cls}`;
+msgEl.style.animationDelay=i*0.15+'s';
+const icons={nudge:'&#128161;',tip:'&#128736;',insight:'&#128202;',win:'&#127942;',alert:'&#9888;',report:'&#128203;'};
+const labels={nudge:'Nudge',tip:'Productivity Tip',insight:'Insight',win:'Win',alert:'Alert',report:'Report'};
+msgEl.innerHTML=`
+<div class="coach-msg-header">
+<div class="coach-msg-type"><span class="coach-msg-icon">${icons[m.type]}</span><span class="coach-msg-label ${m.type}">${labels[m.type]}</span></div>
+<span class="coach-msg-time">${m.time}</span>
+</div>
+<div class="coach-msg-body">${m.body}</div>
+${m.actions?`<div class="coach-msg-actions">${m.actions.map((a,j)=>`<button class="coach-action ${j===0?'primary':''}" onclick="this.textContent='Done!';this.style.background='var(--green)';this.style.borderColor='var(--green)';this.style.color='#fff'">${a}</button>`).join('')}</div>`:''}`;
+day.appendChild(msgEl);
+});
+
+if(intensity>=4){
+// Add extra messages at high intensity
+const extras=[
+{type:'tip',time:'Throughout Day',body:`<strong>Micro-coaching:</strong> Your posture changed — consider standing. | Tab switching detected — stay focused. | Great flow state — protecting it. | Break recommended — you've been coding for 2.5 hrs straight.`},
+];
+extras.forEach(m=>{
+const msgEl=document.createElement('div');msgEl.className='coach-msg';
+msgEl.innerHTML=`<div class="coach-msg-header"><div class="coach-msg-type"><span class="coach-msg-icon">&#128276;</span><span class="coach-msg-label tip">Micro-Coaching (Intensity ${intensity})</span></div></div><div class="coach-msg-body">${m.body}</div>`;
+day.appendChild(msgEl);
+});
+}
+
+scroll.appendChild(day);
+}
+
+function renderManagerView(){
+const scroll=document.getElementById('feed-scroll');
+const title=document.getElementById('feed-title');
+const meta=document.getElementById('feed-meta');
+title.textContent='Manager Dashboard — Team Coaching Overview';
+meta.textContent=currentTimeline;
+
+scroll.innerHTML='';
+// Summary
+const summary=document.createElement('div');summary.className='manager-summary';
+summary.innerHTML=`
+<h3>Team Coaching Summary — ${currentTimeline}</h3>
+<div class="summary-grid">
+<div class="summary-stat"><div class="val" style="color:var(--green)">84%</div><div class="lbl">Avg Efficiency</div></div>
+<div class="summary-stat"><div class="val">92%</div><div class="lbl">Coaching Adoption</div></div>
+<div class="summary-stat"><div class="val" style="color:var(--green)">+23%</div><div class="lbl">Productivity Gain</div></div>
+<div class="summary-stat"><div class="val">47h</div><div class="lbl">Hours Saved</div></div>
+</div>
+<h4 style="font-size:13px;font-weight:600;margin-bottom:12px">Team Member Progress</h4>
+${personas.map(p=>{
+const score=65+Math.floor(Math.random()*30);
+const change=Math.floor(Math.random()*20)-3;
+const colors2=score>=80?'var(--green)':score>=65?'var(--orange)':'var(--red)';
+return`<div class="team-coaching-item">
+<div class="team-coaching-avatar" style="background:${p.color}">${p.icon}</div>
+<div class="team-coaching-info">
+<div class="team-coaching-name">${p.name} — ${p.role}</div>
+<div class="team-coaching-detail">Focus: coaching adopted ${currentTimeline==='Month 3'?'fully':'partially'} | ${Math.floor(Math.random()*20)+5} coaching actions taken</div>
+<div class="progress-track"><div class="progress-bar-fill" style="width:${score}%;background:${colors2}"></div></div>
+</div>
+<div class="team-coaching-score" style="color:${colors2}">${score}%</div>
+</div>`;
+}).join('')}`;
+scroll.appendChild(summary);
+
+// Manager insights
+const insights=document.createElement('div');insights.className='feed-day';
+insights.innerHTML=`<div class="feed-day-header">Manager Insights — ${currentTimeline}</div>`;
+const mgrMsgs=[
+{type:'report',time:'Monday 8 AM',body:`<strong>Team Weekly Brief:</strong> Overall team efficiency trending <span class="coach-metric up">+5%</span>. Top performer: Alex Rivera (95%). Needs attention: Jordan's meeting load is 4.2h/day — recommend async alternatives. Support team's auto-templates saving 14h/week across team.`,actions:['View details','Schedule 1:1s']},
+{type:'insight',time:'Wednesday',body:`<strong>Cross-team pattern:</strong> Teams that adopted coaching at intensity 3+ showed <span class="coach-metric up">2.1x faster</span> productivity gains than intensity 1-2. Recommendation: increase coaching for Sales team from level 2 to level 3.`,actions:['Adjust team settings','Compare teams']},
+{type:'alert',time:'Thursday',body:`<strong>Burnout risk detected:</strong> Morgan Kim has worked 9+ hours for 8 consecutive days during month-end close. Coaching suggests: automate remaining manual reconciliation tasks and enforce a hard stop at 6 PM.`,actions:['Review workload','Message Morgan']},
+];
+mgrMsgs.forEach(m=>{
+const el=document.createElement('div');el.className=`coach-msg ${m.type==='alert'?'alert':'highlight'}`;
+const icons={report:'&#128203;',insight:'&#128202;',alert:'&#9888;'};
+el.innerHTML=`<div class="coach-msg-header"><div class="coach-msg-type"><span class="coach-msg-icon">${icons[m.type]}</span><span class="coach-msg-label ${m.type}">${m.type==='report'?'Team Report':m.type==='insight'?'Insight':'Alert'}</span></div><span class="coach-msg-time">${m.time}</span></div><div class="coach-msg-body">${m.body}</div><div class="coach-msg-actions">${m.actions.map((a,j)=>`<button class="coach-action ${j===0?'primary':''}" onclick="this.textContent='Done!';this.style.background='var(--green)';this.style.borderColor='var(--green)';this.style.color='#fff'">${a}</button>`).join('')}</div>`;
+insights.appendChild(el);
+});
+scroll.appendChild(insights);
+}
+
+init();
+</script>
+</body>
+</html>

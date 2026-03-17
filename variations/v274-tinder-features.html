@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Swipe Right on Productivity | Go2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+:root{--pink:#ff006e;--green:#06d6a0;--dark:#1a1a2e;--card:#fff;--text:#222;--muted:#888;--red:#ef4444}
+body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;overflow:hidden}
+/* Header */
+header{padding:1.5rem;text-align:center;color:#fff;z-index:10;width:100%}
+header h1{font-size:1.4rem;font-weight:800}
+header p{font-size:.8rem;opacity:.7;margin-top:.3rem}
+/* Card Stack */
+.card-stack{position:relative;width:340px;height:480px;margin:0 auto;perspective:1000px}
+@media(max-width:400px){.card-stack{width:300px;height:440px}}
+.card{position:absolute;width:100%;height:100%;background:var(--card);border-radius:20px;box-shadow:0 10px 40px rgba(0,0,0,.2);cursor:grab;touch-action:none;transition:transform .3s,opacity .3s;overflow:hidden;user-select:none}
+.card:active{cursor:grabbing}
+.card.gone{transition:transform .5s,opacity .4s;pointer-events:none}
+.card-visual{height:55%;background:linear-gradient(135deg,#667eea,#764ba2);position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.card-icon{font-size:5rem;filter:drop-shadow(0 4px 20px rgba(0,0,0,.2));z-index:1}
+.card-pattern{position:absolute;inset:0;opacity:.1}
+.card-pattern div{position:absolute;border-radius:50%;border:2px solid #fff}
+.card-body{padding:1.5rem;height:45%;display:flex;flex-direction:column;justify-content:space-between}
+.card-body h2{font-size:1.3rem;font-weight:800;color:var(--text);margin-bottom:.5rem}
+.card-body p{font-size:.85rem;color:var(--muted);line-height:1.5;flex:1}
+.card-tags{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.75rem}
+.card-tag{padding:.25rem .75rem;border-radius:20px;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.card-tag.ai{background:#ede9fe;color:#7c3aed}
+.card-tag.data{background:#dbeafe;color:#2563eb}
+.card-tag.auto{background:#d1fae5;color:#059669}
+.card-tag.coach{background:#fce7f3;color:#db2777}
+/* Overlay indicators */
+.stamp{position:absolute;top:2rem;padding:.5rem 1.5rem;border:4px solid;border-radius:8px;font-size:1.5rem;font-weight:900;z-index:10;opacity:0;transform:rotate(-15deg);pointer-events:none;letter-spacing:3px}
+.stamp.like{right:2rem;color:var(--green);border-color:var(--green);transform:rotate(-15deg)}
+.stamp.nope{left:2rem;color:var(--red);border-color:var(--red);transform:rotate(15deg)}
+/* Buttons */
+.actions{display:flex;gap:1.5rem;margin-top:1.5rem;justify-content:center;z-index:10}
+.action-btn{width:60px;height:60px;border-radius:50%;border:none;cursor:pointer;font-size:1.5rem;display:flex;align-items:center;justify-content:center;transition:all .2s;box-shadow:0 4px 15px rgba(0,0,0,.15)}
+.action-btn:hover{transform:scale(1.15)}
+.action-btn.nope{background:#fff;color:var(--red);border:2px solid var(--red)}
+.action-btn.like{background:#fff;color:var(--green);border:2px solid var(--green)}
+.action-btn.info{background:#fff;color:#3b82f6;border:2px solid #3b82f6;width:44px;height:44px;font-size:1rem}
+/* Progress */
+.progress{display:flex;gap:3px;margin-top:1rem;justify-content:center}
+.progress-dot{width:20px;height:4px;border-radius:2px;background:rgba(255,255,255,.2);transition:all .3s}
+.progress-dot.done{background:var(--green)}
+.progress-dot.noped{background:var(--red)}
+.progress-dot.current{background:#fff}
+/* Results */
+#results{position:fixed;inset:0;background:linear-gradient(135deg,#667eea,#764ba2);display:none;flex-direction:column;align-items:center;justify-content:center;padding:2rem;z-index:100;overflow-y:auto}
+#results.show{display:flex}
+.match-pct{font-size:6rem;font-weight:900;color:#fff;line-height:1}
+.match-label{color:rgba(255,255,255,.7);font-size:.9rem;margin-top:.5rem;text-transform:uppercase;letter-spacing:3px}
+.matches-list{margin-top:2rem;display:flex;flex-direction:column;gap:.75rem;width:100%;max-width:400px}
+.match-item{background:rgba(255,255,255,.15);backdrop-filter:blur(10px);border-radius:12px;padding:1rem 1.25rem;display:flex;align-items:center;gap:1rem;color:#fff}
+.match-item .icon{font-size:1.5rem}
+.match-item .info{flex:1}
+.match-item .info h3{font-size:.9rem;font-weight:700}
+.match-item .info p{font-size:.7rem;opacity:.7}
+.match-item .check{color:var(--green);font-size:1.2rem}
+.result-cta{margin-top:2rem;text-align:center}
+.result-cta a{display:inline-block;padding:1rem 2.5rem;background:#fff;color:var(--dark);font-weight:800;font-size:1rem;border-radius:50px;text-decoration:none;transition:all .2s}
+.result-cta a:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,.2)}
+.share-btns{display:flex;gap:1rem;margin-top:1.5rem;justify-content:center}
+.share-b{padding:.6rem 1.2rem;border-radius:50px;border:2px solid rgba(255,255,255,.3);background:transparent;color:#fff;font-family:inherit;font-weight:600;font-size:.8rem;cursor:pointer;transition:all .2s}
+.share-b:hover{background:rgba(255,255,255,.2)}
+/* Info modal */
+#info-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:200;padding:1rem}
+#info-modal.show{display:flex}
+.modal-content{background:#fff;border-radius:20px;padding:2rem;max-width:400px;width:100%;max-height:80vh;overflow-y:auto;color:var(--text)}
+.modal-content h2{font-size:1.3rem;margin-bottom:1rem}
+.modal-content p{font-size:.9rem;line-height:1.6;color:var(--muted);margin-bottom:1rem}
+.modal-close{float:right;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--muted)}
+.modal-stat{display:flex;gap:1rem;margin:1rem 0}
+.modal-stat div{flex:1;background:#f3f4f6;border-radius:12px;padding:1rem;text-align:center}
+.modal-stat .val{font-size:1.3rem;font-weight:800;color:var(--text)}
+.modal-stat .lbl{font-size:.65rem;color:var(--muted);text-transform:uppercase}
+</style>
+</head>
+<body>
+<header>
+<h1>Swipe Right on Productivity</h1>
+<p>Which Go2 features does your company need?</p>
+</header>
+<div class="card-stack" id="stack"></div>
+<div class="actions">
+<button class="action-btn nope" onclick="swipeAction('left')">&#x2717;</button>
+<button class="action-btn info" onclick="showInfo()">i</button>
+<button class="action-btn like" onclick="swipeAction('right')">&#x2764;</button>
+</div>
+<div class="progress" id="progress"></div>
+<div id="results">
+<div class="match-label">YOUR GO2 MATCH</div>
+<div class="match-pct" id="match-pct">0%</div>
+<div class="matches-list" id="matches-list"></div>
+<div class="result-cta">
+<a href="https://go2.io" target="_blank">Get Started with Go2</a>
+</div>
+<div class="share-btns">
+<button class="share-b" onclick="shareTwitter()">Share on Twitter</button>
+<button class="share-b" onclick="shareLinkedIn()">Share on LinkedIn</button>
+</div>
+</div>
+<div id="info-modal">
+<div class="modal-content" id="modal-body"></div>
+</div>
+<script>
+const features=[
+{title:'AI Work Coaching',desc:'Real-time, contextual coaching that helps your team work smarter — not harder. Like a productivity expert for every employee.',icon:'&#x1F9E0;',bg:'linear-gradient(135deg,#f093fb,#f5576c)',tags:['ai','coach'],detail:'Go2\'s AI coaching analyzes work patterns in real-time and delivers personalized tips. Teams see 34% average productivity improvement within 90 days.',stats:[{val:'34%',lbl:'Improvement'},{val:'Real-time',lbl:'Delivery'}]},
+{title:'Work Pattern Capture',desc:'Automatically captures how work actually happens. No surveys, no self-reporting, no guesswork. Just truth.',icon:'&#x1F4CA;',bg:'linear-gradient(135deg,#4facfe,#00f2fe)',tags:['data'],detail:'Go2 passively records work patterns across 2M+ workers. This data is what makes AI coaching and automation possible — without it, 95% of AI projects fail.',stats:[{val:'2M+',lbl:'Workers'},{val:'Zero',lbl:'Manual Input'}]},
+{title:'Auto-Documentation',desc:'Every process, workflow, and SOP documented automatically. Never write another process doc again.',icon:'&#x1F4DD;',bg:'linear-gradient(135deg,#a8edea,#fed6e3)',tags:['auto','data'],detail:'Go2 observes how work gets done and generates documentation automatically. Eliminates the $2M consulting engagement to "map processes."',stats:[{val:'$2M',lbl:'Saved vs. Consultants'},{val:'15 min',lbl:'Setup Time'}]},
+{title:'Automation Discovery',desc:'Go2 watches your workflows and identifies which tasks can be automated. It finds the ROI so you don\'t have to.',icon:'&#x1F916;',bg:'linear-gradient(135deg,#fbc2eb,#a6c1ee)',tags:['auto','ai'],detail:'Instead of guessing which processes to automate, Go2 identifies them based on real work data. Average client finds 40% of tasks are automatable.',stats:[{val:'40%',lbl:'Tasks Automatable'},{val:'3x',lbl:'ROI vs. Manual Audit'}]},
+{title:'AI Agent Training',desc:'Deploy AI agents trained on YOUR work data. Not generic models — agents that know how your specific org operates.',icon:'&#x1F680;',bg:'linear-gradient(135deg,#667eea,#764ba2)',tags:['ai','auto'],detail:'Go2\'s agents are trained on actual organizational work patterns, achieving 89% satisfaction rate. Generic AI tools? They fail 95% of the time.',stats:[{val:'89%',lbl:'Satisfaction'},{val:'95%',lbl:'Generic AI Fail Rate'}]},
+{title:'Workforce Analytics',desc:'Deep insights into how your organization works. See bottlenecks, inefficiencies, and opportunities in real-time dashboards.',icon:'&#x1F4C8;',bg:'linear-gradient(135deg,#f5af19,#f12711)',tags:['data','ai'],detail:'Go2\'s analytics go beyond vanity metrics. See actual work patterns, context-switch costs, automation opportunities, and team health — all from real data.',stats:[{val:'$60M+',lbl:'Sales Generated'},{val:'Live',lbl:'Dashboards'}]},
+{title:'Smart Notifications',desc:'Know exactly when to intervene and when to let flow happen. AI-powered alerts that actually matter.',icon:'&#x1F514;',bg:'linear-gradient(135deg,#89f7fe,#66a6ff)',tags:['coach','ai'],detail:'Go2 learns when interruptions help and when they hurt. Smart notifications reduce context-switching by up to 40% while keeping teams aligned.',stats:[{val:'40%',lbl:'Less Switching'},{val:'Smart',lbl:'Timing'}]},
+{title:'Process Optimization',desc:'Continuously improve how work gets done. Go2 identifies bottlenecks and suggests streamlined workflows.',icon:'&#x2699;',bg:'linear-gradient(135deg,#fddb92,#d1fdff)',tags:['auto','data'],detail:'Go2 doesn\'t just document processes — it optimizes them. Machine learning identifies bottlenecks and recommends improvements based on successful patterns.',stats:[{val:'28%',lbl:'Efficiency Gain'},{val:'Auto',lbl:'Recommendations'}]}
+];
+let currentIdx=features.length-1;
+let swiped=[];
+let startX=0,startY=0,isDragging=false,currentCard=null;
+function buildStack(){
+const stack=document.getElementById('stack');
+stack.innerHTML='';
+features.forEach((f,i)=>{
+const card=document.createElement('div');
+card.className='card';
+card.id=`card-${i}`;
+card.style.zIndex=i;
+card.style.transform=i>=features.length-3?`scale(${1-(features.length-1-i)*.05}) translateY(${(features.length-1-i)*8}px)`:'scale(.85) translateY(24px)';
+if(i<features.length-3)card.style.display='none';
+const patterns=Array.from({length:6},()=>{
+const s=Math.random()*100+30;
+return`<div style="width:${s}px;height:${s}px;top:${Math.random()*80}%;left:${Math.random()*80}%"></div>`;
+}).join('');
+card.innerHTML=`
+<div class="card-visual" style="background:${f.bg}">
+<div class="card-icon">${f.icon}</div>
+<div class="card-pattern">${patterns}</div>
+<div class="stamp like">NEED</div>
+<div class="stamp nope">PASS</div>
+</div>
+<div class="card-body">
+<div><h2>${f.title}</h2><p>${f.desc}</p></div>
+<div class="card-tags">${f.tags.map(t=>`<span class="card-tag ${t}">${t}</span>`).join('')}</div>
+</div>`;
+card.addEventListener('pointerdown',dragStart);
+card.addEventListener('pointermove',dragMove);
+card.addEventListener('pointerup',dragEnd);
+stack.appendChild(card);
+});
+buildProgress();
+}
+function buildProgress(){
+const p=document.getElementById('progress');
+p.innerHTML='';
+features.forEach((_,i)=>{
+const d=document.createElement('div');
+d.className='progress-dot'+(i===currentIdx?' current':'');
+d.id=`pdot-${i}`;
+p.appendChild(d);
+});
+}
+function dragStart(e){
+if(parseInt(this.id.split('-')[1])!==currentIdx)return;
+isDragging=true;currentCard=this;
+startX=e.clientX;startY=e.clientY;
+this.style.transition='none';
+this.setPointerCapture(e.pointerId);
+}
+function dragMove(e){
+if(!isDragging||!currentCard)return;
+const dx=e.clientX-startX;
+const dy=e.clientY-startY;
+const rotate=dx*.1;
+currentCard.style.transform=`translate(${dx}px,${dy}px) rotate(${rotate}deg)`;
+const likeStamp=currentCard.querySelector('.stamp.like');
+const nopeStamp=currentCard.querySelector('.stamp.nope');
+const threshold=80;
+if(dx>threshold){
+likeStamp.style.opacity=Math.min((dx-threshold)/80,1);
+nopeStamp.style.opacity=0;
+}else if(dx<-threshold){
+nopeStamp.style.opacity=Math.min((-dx-threshold)/80,1);
+likeStamp.style.opacity=0;
+}else{
+likeStamp.style.opacity=0;nopeStamp.style.opacity=0;
+}
+}
+function dragEnd(e){
+if(!isDragging||!currentCard)return;
+isDragging=false;
+const dx=e.clientX-startX;
+currentCard.style.transition='transform .5s, opacity .4s';
+const likeStamp=currentCard.querySelector('.stamp.like');
+const nopeStamp=currentCard.querySelector('.stamp.nope');
+if(Math.abs(dx)>120){
+const dir=dx>0?'right':'left';
+swipe(dir);
+}else{
+currentCard.style.transform=`scale(1) translateY(0)`;
+likeStamp.style.opacity=0;
+nopeStamp.style.opacity=0;
+}
+currentCard=null;
+}
+function swipeAction(dir){
+const card=document.getElementById(`card-${currentIdx}`);
+if(!card)return;
+currentCard=card;
+card.style.transition='transform .5s, opacity .4s';
+swipe(dir);
+}
+function swipe(dir){
+const card=document.getElementById(`card-${currentIdx}`);
+const x=dir==='right'?800:-800;
+card.style.transform=`translate(${x}px,-100px) rotate(${dir==='right'?30:-30}deg)`;
+card.style.opacity='0';
+card.classList.add('gone');
+swiped.push({feature:features[currentIdx],liked:dir==='right'});
+const dot=document.getElementById(`pdot-${currentIdx}`);
+dot.classList.remove('current');
+dot.classList.add(dir==='right'?'done':'noped');
+currentIdx--;
+if(currentIdx>=0){
+document.getElementById(`pdot-${currentIdx}`).classList.add('current');
+// Update stack appearance
+for(let i=Math.max(0,currentIdx-2);i<=currentIdx;i++){
+const c=document.getElementById(`card-${i}`);
+if(c){
+c.style.display='block';
+const offset=currentIdx-i;
+c.style.transform=`scale(${1-offset*.05}) translateY(${offset*8}px)`;
+}
+}
+}else{
+showResults();
+}
+}
+function showInfo(){
+if(currentIdx<0)return;
+const f=features[currentIdx];
+const modal=document.getElementById('info-modal');
+document.getElementById('modal-body').innerHTML=`
+<button class="modal-close" onclick="closeInfo()">&times;</button>
+<div style="font-size:3rem;margin-bottom:1rem">${f.icon}</div>
+<h2>${f.title}</h2>
+<p>${f.detail}</p>
+<div class="modal-stat">${f.stats.map(s=>`<div><div class="val">${s.val}</div><div class="lbl">${s.lbl}</div></div>`).join('')}</div>`;
+modal.classList.add('show');
+}
+function closeInfo(){document.getElementById('info-modal').classList.remove('show');}
+document.getElementById('info-modal').addEventListener('click',e=>{if(e.target.id==='info-modal')closeInfo();});
+function showResults(){
+const liked=swiped.filter(s=>s.liked);
+const pct=Math.round((liked.length/features.length)*100);
+document.getElementById('match-pct').textContent=pct+'%';
+const list=document.getElementById('matches-list');
+list.innerHTML='<div style="color:rgba(255,255,255,.7);font-size:.75rem;text-transform:uppercase;letter-spacing:2px;margin-bottom:.5rem">Your matches:</div>';
+if(liked.length===0){
+list.innerHTML+='<div class="match-item"><div class="icon">&#x1F914;</div><div class="info"><h3>No matches yet</h3><p>Maybe swipe right on a few features?</p></div></div>';
+}else{
+liked.forEach(s=>{
+list.innerHTML+=`<div class="match-item"><div class="icon">${s.feature.icon}</div><div class="info"><h3>${s.feature.title}</h3><p>${s.feature.desc.substring(0,60)}...</p></div><div class="check">&#x2764;</div></div>`;
+});
+}
+if(pct>=75){
+list.innerHTML+=`<div class="match-item" style="background:rgba(6,214,160,.2);border:1px solid rgba(6,214,160,.3)"><div class="icon">&#x1F525;</div><div class="info"><h3>Perfect Match!</h3><p>Go2 is exactly what your company needs. Let's talk.</p></div></div>`;
+}else if(pct>=50){
+list.innerHTML+=`<div class="match-item" style="background:rgba(245,158,11,.2)"><div class="icon">&#x1F4AA;</div><div class="info"><h3>Strong Match</h3><p>Go2 can transform your workflow. Start with what you liked.</p></div></div>`;
+}
+document.getElementById('results').classList.add('show');
+// Animate percentage
+let count=0;
+const interval=setInterval(()=>{
+count+=2;
+if(count>=pct){count=pct;clearInterval(interval);}
+document.getElementById('match-pct').textContent=count+'%';
+},30);
+}
+function shareTwitter(){
+const liked=swiped.filter(s=>s.liked);
+const pct=Math.round((liked.length/features.length)*100);
+window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`I'm a ${pct}% match with Go2's AI workforce platform! Swiped right on ${liked.map(l=>l.feature.title).join(', ')}. What's your match?`)}&url=${encodeURIComponent('https://go2.io')}`,'_blank');
+}
+function shareLinkedIn(){window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://go2.io')}`,'_blank');}
+buildStack();
+</script>
+</body>
+</html>

@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 | The AI Transformation - A Graphic Novel</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Permanent+Marker&family=Comic+Neue:wght@400;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a2e; font-family: 'Comic Neue', cursive; min-height: 100vh; }
+
+  .comic-page {
+    max-width: 1000px; margin: 0 auto; padding: 30px 20px;
+  }
+
+  /* Title */
+  .comic-title {
+    text-align: center; margin-bottom: 30px; position: relative;
+  }
+  .comic-title h1 {
+    font-family: 'Bangers', cursive; font-size: 64px; color: #ff3366;
+    text-shadow: 4px 4px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+    letter-spacing: 4px; line-height: 1;
+    -webkit-text-stroke: 2px #000;
+  }
+  .comic-title .subtitle {
+    font-family: 'Permanent Marker', cursive; font-size: 20px; color: #ffdd57;
+    margin-top: 4px;
+  }
+  .comic-title .issue {
+    font-size: 12px; color: #888; margin-top: 6px; font-family: 'Comic Neue', cursive;
+  }
+
+  /* Panel grid */
+  .panel-row {
+    display: flex; gap: 8px; margin-bottom: 8px;
+  }
+
+  .panel {
+    background: white; border: 4px solid #000; border-radius: 4px;
+    position: relative; overflow: hidden; min-height: 280px;
+    flex: 1;
+  }
+  .panel.wide { flex: 2; }
+  .panel.tall { min-height: 380px; }
+  .panel.full { flex: 1; min-height: 320px; }
+
+  /* Panel inner content */
+  .panel-inner {
+    width: 100%; height: 100%; position: relative; padding: 16px;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    min-height: inherit;
+  }
+
+  /* Halftone background */
+  .halftone {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle, #000 0.8px, transparent 0.8px);
+    background-size: 6px 6px;
+    opacity: 0.06;
+    pointer-events: none;
+  }
+
+  /* Scene backgrounds */
+  .scene-office {
+    background: linear-gradient(180deg, #e8e0d4 0%, #d4c8b8 60%, #8b7355 60%, #8b7355 100%);
+  }
+  .scene-dark {
+    background: linear-gradient(180deg, #2d1b69 0%, #1a1a2e 100%);
+  }
+  .scene-tech {
+    background: linear-gradient(180deg, #0a1628 0%, #1a2a4a 100%);
+  }
+  .scene-green {
+    background: linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 60%, #66bb6a 60%, #43a047 100%);
+  }
+  .scene-bright {
+    background: linear-gradient(180deg, #fff9c4 0%, #fff176 40%, #ffee58 100%);
+  }
+  .scene-sunset {
+    background: linear-gradient(180deg, #ff6f00 0%, #ff8f00 30%, #ffc107 70%, #fff8e1 100%);
+  }
+  .scene-board {
+    background: linear-gradient(180deg, #263238 0%, #37474f 50%, #546e7a 100%);
+  }
+
+  /* Characters - CSS drawn */
+  .character {
+    position: absolute; z-index: 2;
+  }
+  .char-body {
+    position: relative;
+  }
+  .char-head {
+    width: 50px; height: 55px; border-radius: 50% 50% 45% 45%;
+    border: 3px solid #000; position: relative; margin: 0 auto;
+  }
+  .char-eyes {
+    position: absolute; top: 18px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 10px;
+  }
+  .char-eye {
+    width: 8px; height: 10px; background: #000; border-radius: 50%;
+  }
+  .char-mouth {
+    position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+    width: 16px; height: 8px; border-bottom: 3px solid #000; border-radius: 0 0 50% 50%;
+  }
+  .char-mouth.angry {
+    border-bottom: none; border-top: 3px solid #000; border-radius: 50% 50% 0 0;
+    bottom: 12px;
+  }
+  .char-mouth.open {
+    width: 14px; height: 14px; background: #000; border-radius: 50%;
+    border: none; bottom: 8px;
+  }
+  .char-mouth.smile {
+    width: 20px; height: 10px;
+  }
+  .char-torso {
+    width: 60px; height: 50px; margin: -4px auto 0; border-radius: 8px 8px 0 0;
+    border: 3px solid #000;
+  }
+
+  /* Speech bubbles */
+  .speech {
+    position: absolute; z-index: 10;
+    background: white; border: 3px solid #000; border-radius: 20px;
+    padding: 12px 16px; font-size: 13px; font-weight: 700; line-height: 1.4;
+    max-width: 280px; font-family: 'Comic Neue', cursive;
+  }
+  .speech::after {
+    content: ''; position: absolute; width: 0; height: 0;
+    border: 12px solid transparent;
+  }
+  .speech.bottom::after {
+    bottom: -24px; left: 30px;
+    border-top-color: #000;
+  }
+  .speech.bottom::before {
+    content: ''; position: absolute; width: 0; height: 0;
+    border: 10px solid transparent; border-top-color: white;
+    bottom: -19px; left: 32px; z-index: 1;
+  }
+  .speech.top::after {
+    top: -24px; left: 30px;
+    border-bottom-color: #000;
+  }
+  .speech.top::before {
+    content: ''; position: absolute; width: 0; height: 0;
+    border: 10px solid transparent; border-bottom-color: white;
+    top: -19px; left: 32px; z-index: 1;
+  }
+  .speech.left::after {
+    left: -24px; top: 20px;
+    border-right-color: #000;
+  }
+  .speech.right-tail::after {
+    right: -24px; top: 20px;
+    border-left-color: #000;
+  }
+
+  /* Thought bubble */
+  .thought {
+    position: absolute; z-index: 10;
+    background: white; border: 3px solid #000; border-radius: 30px;
+    padding: 12px 16px; font-size: 13px; font-style: italic; line-height: 1.4;
+    font-family: 'Comic Neue', cursive;
+  }
+  .thought::after, .thought-dot1, .thought-dot2 {
+    content: ''; position: absolute; background: white; border: 2px solid #000; border-radius: 50%;
+  }
+  .thought::after { width: 14px; height: 14px; bottom: -18px; left: 30px; }
+
+  /* Sound effects */
+  .sfx {
+    font-family: 'Bangers', cursive; position: absolute; z-index: 15;
+    transform: rotate(-8deg);
+    -webkit-text-stroke: 2px #000;
+    text-shadow: 3px 3px 0 #000;
+    letter-spacing: 2px;
+  }
+
+  /* Action lines */
+  .action-lines {
+    position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1;
+  }
+  .action-lines::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 200%; height: 200%;
+    transform: translate(-50%, -50%);
+    background: repeating-conic-gradient(
+      rgba(255,255,255,0) 0deg, rgba(255,255,255,0) 8deg,
+      rgba(255,255,255,0.15) 8deg, rgba(255,255,255,0.15) 10deg
+    );
+  }
+
+  /* Speed lines */
+  .speed-lines {
+    position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1;
+  }
+  .speed-line {
+    position: absolute; height: 2px; background: rgba(0,0,0,0.15);
+    right: 0;
+  }
+
+  /* Narration box */
+  .narration {
+    position: absolute; z-index: 10;
+    background: #ffdd57; border: 3px solid #000; padding: 8px 14px;
+    font-size: 12px; font-weight: 700; font-family: 'Comic Neue', cursive;
+    box-shadow: 3px 3px 0 #000;
+  }
+
+  /* Stats overlay */
+  .stat-overlay {
+    position: absolute; z-index: 10;
+    background: rgba(0,0,0,0.8); border: 2px solid #33ff33; border-radius: 8px;
+    padding: 10px 14px; color: #33ff33; font-family: monospace; font-size: 12px;
+    line-height: 1.6;
+  }
+
+  /* Desk/furniture CSS */
+  .desk {
+    position: absolute; bottom: 0; width: 80%; left: 10%;
+    height: 40px; background: #5d4037; border: 3px solid #000;
+    border-radius: 4px 4px 0 0;
+  }
+  .desk::before {
+    content: ''; position: absolute; top: -20px; left: 20%;
+    width: 35px; height: 25px; background: #b0bec5; border: 2px solid #000; border-radius: 2px;
+  }
+
+  /* Monitor CSS */
+  .monitor {
+    position: absolute;
+    width: 70px; height: 50px; background: #1a1a2e; border: 3px solid #000; border-radius: 4px;
+  }
+  .monitor::after {
+    content: ''; position: absolute; bottom: -15px; left: 50%; transform: translateX(-50%);
+    width: 20px; height: 15px; background: #666; border: 2px solid #000;
+  }
+  .monitor .screen-glow {
+    position: absolute; inset: 4px; border-radius: 2px;
+  }
+
+  /* CTA panel */
+  .cta-panel {
+    background: linear-gradient(135deg, #7c3aed, #2563eb);
+    border: 4px solid #000; border-radius: 4px;
+    padding: 40px; text-align: center; margin-top: 8px;
+    position: relative; overflow: hidden;
+  }
+  .cta-panel h2 {
+    font-family: 'Bangers', cursive; font-size: 48px; color: white;
+    text-shadow: 3px 3px 0 #000; letter-spacing: 3px; margin-bottom: 10px;
+  }
+  .cta-panel p {
+    color: rgba(255,255,255,0.9); font-size: 18px; font-weight: 700; margin-bottom: 20px;
+  }
+  .cta-panel a {
+    display: inline-block; background: #ffdd57; color: #000; font-family: 'Bangers', cursive;
+    font-size: 28px; padding: 12px 40px; border: 3px solid #000; border-radius: 8px;
+    text-decoration: none; box-shadow: 4px 4px 0 #000;
+    transition: transform 0.1s, box-shadow 0.1s;
+    letter-spacing: 2px;
+  }
+  .cta-panel a:hover {
+    transform: translate(-2px, -2px); box-shadow: 6px 6px 0 #000;
+  }
+
+  /* Issue credits */
+  .credits {
+    text-align: center; padding: 20px; color: #666; font-size: 12px;
+  }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .panel-row { flex-direction: column; }
+    .panel { min-height: 260px; }
+    .comic-title h1 { font-size: 40px; }
+    .cta-panel h2 { font-size: 32px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="comic-page">
+
+  <div class="comic-title">
+    <h1>THE AI TRANSFORMATION</h1>
+    <div class="subtitle">A Go2 Graphic Novel</div>
+    <div class="issue">Issue #1 | "The 95% Problem" | March 2026</div>
+  </div>
+
+  <!-- ROW 1: The Problem -->
+  <div class="panel-row">
+    <!-- Panel 1: CEO Frustrated -->
+    <div class="panel wide" style="min-height:300px">
+      <div class="panel-inner scene-office">
+        <div class="halftone"></div>
+
+        <div class="narration" style="top:8px;left:8px">
+          NOVACRAFT HQ. MONDAY MORNING. THE QUARTERLY AI REVIEW.
+        </div>
+
+        <!-- CEO character -->
+        <div class="character" style="bottom:60px;left:60px">
+          <div class="char-body">
+            <div class="char-head" style="background:#f5deb3">
+              <div class="char-eyes"><div class="char-eye"></div><div class="char-eye"></div></div>
+              <div class="char-mouth angry"></div>
+              <!-- Hair -->
+              <div style="position:absolute;top:-4px;left:8px;right:8px;height:14px;background:#333;border-radius:50% 50% 0 0;border:2px solid #000"></div>
+              <!-- Eyebrows - angry -->
+              <div style="position:absolute;top:12px;left:10px;width:12px;height:3px;background:#333;transform:rotate(-15deg)"></div>
+              <div style="position:absolute;top:12px;right:10px;width:12px;height:3px;background:#333;transform:rotate(15deg)"></div>
+            </div>
+            <div class="char-torso" style="background:#2563eb">
+              <div style="position:absolute;top:4px;left:50%;transform:translateX(-50%);width:8px;height:8px;background:#c62828;clip-path:polygon(50% 0,0 100%,100% 100%)"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="speech bottom" style="top:16px;left:130px;max-width:320px">
+          We spent <span style="color:#c62828;font-size:18px">$200,000</span> on AI last year. RoboTask. SmartChat. DocuMind. Know what we got back?
+        </div>
+
+        <!-- Papers flying -->
+        <div style="position:absolute;bottom:100px;right:80px;transform:rotate(-15deg)">
+          <div style="width:40px;height:50px;background:white;border:2px solid #000;transform:rotate(10deg);position:absolute;top:-10px;left:20px;box-shadow:2px 2px 0 rgba(0,0,0,0.2)">
+            <div style="padding:4px;font-size:6px;color:#c62828;font-weight:bold">ROI: $0</div>
+          </div>
+          <div style="width:40px;height:50px;background:white;border:2px solid #000;transform:rotate(-20deg);position:absolute;top:5px;left:-10px;box-shadow:2px 2px 0 rgba(0,0,0,0.2)">
+            <div style="padding:4px;font-size:6px;color:#c62828;font-weight:bold">FAILED</div>
+          </div>
+        </div>
+
+        <div class="sfx" style="top:60px;right:30px;font-size:36px;color:#c62828">
+          NOTHING!
+        </div>
+
+        <div class="desk"></div>
+      </div>
+    </div>
+
+    <!-- Panel 2: The Stats -->
+    <div class="panel" style="min-height:300px">
+      <div class="panel-inner scene-dark" style="justify-content:center;align-items:center">
+        <div class="halftone" style="opacity:0.03"></div>
+        <div class="action-lines" style="opacity:0.3"></div>
+
+        <div style="text-align:center;z-index:5;position:relative">
+          <div style="font-family:'Bangers',cursive;font-size:80px;color:#ff3366;-webkit-text-stroke:3px #000;text-shadow:4px 4px 0 #000;line-height:0.9">
+            95%
+          </div>
+          <div style="font-family:'Bangers',cursive;font-size:24px;color:#ffdd57;-webkit-text-stroke:1px #000;text-shadow:2px 2px 0 #000;margin-top:8px">
+            OF AI PROJECTS
+          </div>
+          <div style="font-family:'Bangers',cursive;font-size:36px;color:white;-webkit-text-stroke:2px #000;text-shadow:3px 3px 0 #000">
+            FAIL.
+          </div>
+        </div>
+
+        <div class="narration" style="bottom:8px;right:8px;font-size:10px;max-width:160px">
+          MIT/Stanford Study, 2025. $180 billion spent. Most of it wasted.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 2: Discovery -->
+  <div class="panel-row">
+    <!-- Panel 3: Team Lead frustrated -->
+    <div class="panel">
+      <div class="panel-inner scene-office" style="background:linear-gradient(180deg,#e3f2fd,#bbdefb 60%,#78909c 60%,#546e7a 100%)">
+        <div class="halftone"></div>
+
+        <div class="narration" style="top:8px;left:8px;font-size:11px">MEANWHILE, ON THE OPS FLOOR...</div>
+
+        <div class="character" style="bottom:50px;left:30px">
+          <div class="char-body">
+            <div class="char-head" style="background:#d2a679">
+              <div class="char-eyes"><div class="char-eye"></div><div class="char-eye"></div></div>
+              <div class="char-mouth open" style="width:10px;height:10px"></div>
+              <div style="position:absolute;top:-2px;left:6px;right:6px;height:16px;background:#1a1a1a;border-radius:40% 40% 0 0;border:2px solid #000"></div>
+            </div>
+            <div class="char-torso" style="background:#43a047"></div>
+          </div>
+        </div>
+
+        <div class="speech bottom" style="top:10px;left:90px;max-width:200px;font-size:12px">
+          My team spent <span style="color:#c62828">4 HOURS</span> today copying data between THREE systems. Manually. It's 2026!
+        </div>
+
+        <!-- Multiple monitors showing frustration -->
+        <div class="monitor" style="bottom:50px;right:20px">
+          <div class="screen-glow" style="background:#c62828"></div>
+        </div>
+        <div class="monitor" style="bottom:50px;right:100px">
+          <div class="screen-glow" style="background:#e65100"></div>
+        </div>
+
+        <div class="sfx" style="bottom:120px;right:10px;font-size:20px;color:#c62828;transform:rotate(5deg)">
+          UGH!
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel 4: Junior dev discovers Go2 -->
+    <div class="panel wide" style="min-height:300px">
+      <div class="panel-inner scene-tech">
+        <div class="halftone" style="opacity:0.03"></div>
+
+        <div class="narration" style="top:8px;right:8px">PRIYA SHARMA, JUNIOR DEV.</div>
+
+        <div class="character" style="bottom:50px;right:60px">
+          <div class="char-body">
+            <div class="char-head" style="background:#c68642">
+              <div class="char-eyes"><div class="char-eye" style="width:9px;height:11px"></div><div class="char-eye" style="width:9px;height:11px"></div></div>
+              <div class="char-mouth smile"></div>
+              <div style="position:absolute;top:-6px;left:2px;right:2px;height:22px;background:#0d0d0d;border-radius:50% 50% 0 0;border:2px solid #000"></div>
+            </div>
+            <div class="char-torso" style="background:#7c3aed"></div>
+          </div>
+        </div>
+
+        <div class="speech bottom" style="top:8px;left:20px;max-width:350px">
+          I found it. <span style="color:#7c3aed;font-size:16px">Go2.</span> A desktop agent that <em>learns how you actually work</em> before trying to automate anything. That's why everything else failed - they skipped this step!
+        </div>
+
+        <!-- Monitor showing Go2 -->
+        <div class="monitor" style="bottom:45px;left:40px;width:120px;height:80px">
+          <div class="screen-glow" style="background:linear-gradient(135deg,#7c3aed,#2563eb)">
+            <div style="color:white;font-family:'Bangers',cursive;font-size:18px;text-align:center;padding-top:12px;text-shadow:none;-webkit-text-stroke:0">Go2</div>
+            <div style="color:rgba(255,255,255,0.7);font-size:7px;text-align:center;margin-top:2px">Cowork.ai Desktop Agent</div>
+          </div>
+        </div>
+
+        <div class="sfx" style="top:100px;right:20px;font-size:28px;color:#ffdd57;transform:rotate(-5deg)">
+          EUREKA!
+        </div>
+
+        <!-- Light bulb effect -->
+        <div style="position:absolute;top:80px;right:80px;width:30px;height:40px;z-index:3">
+          <div style="width:24px;height:28px;background:#ffdd57;border-radius:50% 50% 40% 40%;border:3px solid #000;margin:0 auto"></div>
+          <div style="width:14px;height:8px;background:#999;border:2px solid #000;margin:0 auto;border-radius:0 0 4px 4px"></div>
+          <!-- Rays -->
+          <div style="position:absolute;top:-8px;left:9px;width:3px;height:10px;background:#ffdd57;border:1px solid #000"></div>
+          <div style="position:absolute;top:-4px;left:-6px;width:10px;height:3px;background:#ffdd57;border:1px solid #000;transform:rotate(-30deg)"></div>
+          <div style="position:absolute;top:-4px;right:-6px;width:10px;height:3px;background:#ffdd57;border:1px solid #000;transform:rotate(30deg)"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 3: Deployment - Big panel -->
+  <div class="panel-row">
+    <div class="panel full" style="min-height:340px">
+      <div class="panel-inner scene-tech" style="background:linear-gradient(180deg,#1a1a2e 0%,#16213e 100%)">
+        <div class="halftone" style="opacity:0.03"></div>
+
+        <div class="narration" style="top:8px;left:8px">
+          DEPLOYMENT DAY. THE COWORK.AI AGENT BEGINS LEARNING.
+        </div>
+
+        <!-- Multiple workstations -->
+        <div style="position:absolute;bottom:40px;left:5%;right:5%;display:flex;justify-content:space-around">
+          <div style="text-align:center">
+            <div class="monitor" style="position:relative;width:55px;height:40px">
+              <div class="screen-glow" style="background:#7c3aed"></div>
+            </div>
+            <div style="color:rgba(255,255,255,0.5);font-size:9px;margin-top:18px">Sales</div>
+          </div>
+          <div style="text-align:center">
+            <div class="monitor" style="position:relative;width:55px;height:40px">
+              <div class="screen-glow" style="background:#7c3aed"></div>
+            </div>
+            <div style="color:rgba(255,255,255,0.5);font-size:9px;margin-top:18px">Ops</div>
+          </div>
+          <div style="text-align:center">
+            <div class="monitor" style="position:relative;width:55px;height:40px">
+              <div class="screen-glow" style="background:#7c3aed"></div>
+            </div>
+            <div style="color:rgba(255,255,255,0.5);font-size:9px;margin-top:18px">Finance</div>
+          </div>
+          <div style="text-align:center">
+            <div class="monitor" style="position:relative;width:55px;height:40px">
+              <div class="screen-glow" style="background:#7c3aed"></div>
+            </div>
+            <div style="color:rgba(255,255,255,0.5);font-size:9px;margin-top:18px">Support</div>
+          </div>
+          <div style="text-align:center">
+            <div class="monitor" style="position:relative;width:55px;height:40px">
+              <div class="screen-glow" style="background:#7c3aed"></div>
+            </div>
+            <div style="color:rgba(255,255,255,0.5);font-size:9px;margin-top:18px">HR</div>
+          </div>
+        </div>
+
+        <!-- Connection lines visual -->
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);text-align:center;z-index:5">
+          <div style="font-family:'Bangers',cursive;font-size:42px;color:#7c3aed;-webkit-text-stroke:2px #000;text-shadow:3px 3px 0 #000">
+            OBSERVING...
+          </div>
+          <div style="font-family:'Comic Neue',cursive;font-size:14px;color:rgba(255,255,255,0.7);margin-top:8px">
+            No disruption. No behavior change. Just learning.
+          </div>
+        </div>
+
+        <!-- Data flow lines (CSS) -->
+        <div style="position:absolute;top:100px;left:0;right:0;height:2px;overflow:hidden">
+          <div style="width:100%;height:100%;background:repeating-linear-gradient(90deg,transparent,transparent 10px,#7c3aed 10px,#7c3aed 20px);animation:flowRight 2s linear infinite"></div>
+        </div>
+        <div style="position:absolute;top:130px;left:0;right:0;height:1px;overflow:hidden">
+          <div style="width:100%;height:100%;background:repeating-linear-gradient(90deg,transparent,transparent 8px,#2563eb 8px,#2563eb 16px);animation:flowLeft 3s linear infinite"></div>
+        </div>
+
+        <div class="narration" style="bottom:8px;right:8px;font-size:10px;background:#7c3aed;color:white;border-color:#000">
+          PHASE 1: CAPTURE. 47 workflows mapped in 14 days.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 4: Coaching + Automation -->
+  <div class="panel-row">
+    <!-- Panel: Coaching in action -->
+    <div class="panel" style="min-height:300px">
+      <div class="panel-inner" style="background:linear-gradient(180deg,#e3f2fd 0%,#e1f5fe 100%)">
+        <div class="halftone"></div>
+
+        <div class="narration" style="top:8px;left:8px;background:#43a047;color:white;border-color:#000">
+          PHASE 2: COACH
+        </div>
+
+        <!-- Worker at desk -->
+        <div class="character" style="bottom:50px;left:30px">
+          <div class="char-body">
+            <div class="char-head" style="background:#f5deb3">
+              <div class="char-eyes"><div class="char-eye" style="width:9px;height:11px"></div><div class="char-eye" style="width:9px;height:11px"></div></div>
+              <div class="char-mouth smile" style="width:22px"></div>
+              <div style="position:absolute;top:-4px;left:8px;right:8px;height:14px;background:#c62828;border-radius:50% 50% 0 0;border:2px solid #000"></div>
+            </div>
+            <div class="char-torso" style="background:#1565c0"></div>
+          </div>
+        </div>
+
+        <!-- Coaching notification -->
+        <div style="position:absolute;top:60px;right:15px;background:white;border:3px solid #7c3aed;border-radius:12px;padding:10px;max-width:180px;z-index:10;box-shadow:3px 3px 0 rgba(0,0,0,0.2)">
+          <div style="font-size:9px;color:#7c3aed;font-weight:700;margin-bottom:4px">&#128161; GO2 COACH</div>
+          <div style="font-size:11px;font-weight:700;line-height:1.3">Hey! You've done this 3x today. Here's a shortcut that saves 10 min each time.</div>
+          <div style="margin-top:6px;background:#7c3aed;color:white;text-align:center;padding:4px;border-radius:6px;font-size:10px;font-weight:700">Show Me</div>
+        </div>
+
+        <div class="speech top" style="bottom:18px;left:80px;max-width:200px;font-size:12px">
+          Wait... that actually helps! It just saved me 10 minutes!
+        </div>
+
+        <div class="sfx" style="top:40px;left:15px;font-size:22px;color:#43a047">
+          DING!
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel: Automations deploying -->
+    <div class="panel" style="min-height:300px">
+      <div class="panel-inner scene-dark">
+        <div class="halftone" style="opacity:0.03"></div>
+        <div class="action-lines" style="opacity:0.2"></div>
+
+        <div class="narration" style="top:8px;left:8px;background:#f57c00;color:white;border-color:#000">
+          PHASE 4: AUTOMATE
+        </div>
+
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;z-index:5">
+          <div style="font-family:'Bangers',cursive;font-size:48px;color:#ffdd57;-webkit-text-stroke:2px #000;text-shadow:4px 4px 0 #000">
+            WHOOSH!
+          </div>
+          <div style="margin-top:16px;font-size:14px;color:white;font-weight:700">
+            14 workflows automated<br>
+            <span style="color:#34d399;font-size:20px">35% time reduction</span><br>
+            <span style="font-size:11px;color:rgba(255,255,255,0.6)">From real data. Not guesses.</span>
+          </div>
+        </div>
+
+        <!-- Speed lines -->
+        <div style="position:absolute;top:20%;left:0;width:40%;height:2px;background:linear-gradient(90deg,#ffdd57,transparent)"></div>
+        <div style="position:absolute;top:35%;left:0;width:55%;height:1px;background:linear-gradient(90deg,#ffdd57,transparent)"></div>
+        <div style="position:absolute;top:70%;left:0;width:35%;height:2px;background:linear-gradient(90deg,#ffdd57,transparent)"></div>
+        <div style="position:absolute;top:80%;left:0;width:50%;height:1px;background:linear-gradient(90deg,#ffdd57,transparent)"></div>
+        <div style="position:absolute;top:25%;right:0;width:45%;height:1px;background:linear-gradient(270deg,#7c3aed,transparent)"></div>
+        <div style="position:absolute;top:60%;right:0;width:30%;height:2px;background:linear-gradient(270deg,#7c3aed,transparent)"></div>
+      </div>
+    </div>
+
+    <!-- Panel: AI Agents -->
+    <div class="panel" style="min-height:300px">
+      <div class="panel-inner" style="background:linear-gradient(180deg,#1b5e20 0%,#2e7d32 40%,#388e3c 100%)">
+        <div class="halftone" style="opacity:0.03"></div>
+
+        <div class="narration" style="top:8px;left:8px;background:#1b5e20;color:#34d399;border-color:#000">
+          PHASE 5: AI AGENTS
+        </div>
+
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;z-index:5">
+          <!-- Robot character -->
+          <div style="margin:0 auto;width:70px;height:70px;background:linear-gradient(135deg,#7c3aed,#2563eb);border-radius:16px;border:4px solid #000;position:relative;display:flex;align-items:center;justify-content:center">
+            <div style="display:flex;gap:12px">
+              <div style="width:12px;height:12px;background:#34d399;border-radius:50%;border:2px solid #000"></div>
+              <div style="width:12px;height:12px;background:#34d399;border-radius:50%;border:2px solid #000"></div>
+            </div>
+            <div style="position:absolute;bottom:10px;width:20px;height:3px;background:#34d399;border-radius:2px"></div>
+            <!-- Antenna -->
+            <div style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);width:3px;height:12px;background:#000"></div>
+            <div style="position:absolute;top:-20px;left:50%;transform:translateX(-50%);width:8px;height:8px;background:#34d399;border-radius:50%;border:2px solid #000"></div>
+          </div>
+          <div style="color:white;font-family:'Bangers',cursive;font-size:24px;margin-top:12px;text-shadow:2px 2px 0 #000">
+            AGENTS ONLINE
+          </div>
+          <div style="color:rgba(255,255,255,0.8);font-size:11px;margin-top:4px;font-weight:700">
+            Trained on YOUR real work data<br>
+            Not generic. Not hallucinating.<br>
+            Actually useful.
+          </div>
+        </div>
+
+        <div class="sfx" style="bottom:20px;right:10px;font-size:20px;color:#34d399">
+          BZZT!
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 5: The Result -->
+  <div class="panel-row">
+    <!-- Big final panel -->
+    <div class="panel full" style="min-height:360px">
+      <div class="panel-inner scene-bright">
+        <div class="halftone" style="opacity:0.04"></div>
+
+        <div class="narration" style="top:8px;left:8px">
+          90 DAYS LATER. THE BOARD ROOM.
+        </div>
+
+        <!-- CEO now happy -->
+        <div class="character" style="bottom:50px;left:40px">
+          <div class="char-body">
+            <div class="char-head" style="background:#f5deb3">
+              <div class="char-eyes"><div class="char-eye" style="width:6px;height:4px;border-radius:50%"></div><div class="char-eye" style="width:6px;height:4px;border-radius:50%"></div></div>
+              <div class="char-mouth smile" style="width:24px;height:12px"></div>
+              <div style="position:absolute;top:-4px;left:8px;right:8px;height:14px;background:#333;border-radius:50% 50% 0 0;border:2px solid #000"></div>
+            </div>
+            <div class="char-torso" style="background:#2563eb"></div>
+          </div>
+        </div>
+
+        <div class="speech bottom" style="top:10px;left:100px;max-width:200px;font-size:12px">
+          THIS is what I wanted AI to look like. Company-wide rollout. <span style="color:#2563eb">NOW.</span>
+        </div>
+
+        <!-- Stats display -->
+        <div class="stat-overlay" style="top:30px;right:20px;border-color:#43a047;color:#43a047">
+          &#9632; 35% time reduction<br>
+          &#9632; 14 workflows automated<br>
+          &#9632; 340% ROI in 90 days<br>
+          &#9632; Team satisfaction +42%<br>
+          &#9632; 5 AI agents running 24/7
+        </div>
+
+        <!-- Team characters celebrating -->
+        <div class="character" style="bottom:50px;left:200px">
+          <div class="char-body">
+            <div class="char-head" style="background:#d2a679;width:40px;height:45px">
+              <div class="char-eyes" style="top:14px"><div class="char-eye" style="width:6px;height:3px"></div><div class="char-eye" style="width:6px;height:3px"></div></div>
+              <div class="char-mouth smile" style="width:16px;bottom:8px"></div>
+              <div style="position:absolute;top:-2px;left:4px;right:4px;height:14px;background:#1a1a1a;border-radius:40% 40% 0 0;border:2px solid #000"></div>
+            </div>
+            <div class="char-torso" style="background:#43a047;width:50px;height:40px"></div>
+          </div>
+        </div>
+
+        <div class="character" style="bottom:50px;right:200px">
+          <div class="char-body">
+            <div class="char-head" style="background:#c68642;width:40px;height:45px">
+              <div class="char-eyes" style="top:14px"><div class="char-eye" style="width:6px;height:3px"></div><div class="char-eye" style="width:6px;height:3px"></div></div>
+              <div class="char-mouth smile" style="width:16px;bottom:8px"></div>
+              <div style="position:absolute;top:-4px;left:2px;right:2px;height:18px;background:#0d0d0d;border-radius:50% 50% 0 0;border:2px solid #000"></div>
+            </div>
+            <div class="char-torso" style="background:#7c3aed;width:50px;height:40px"></div>
+          </div>
+        </div>
+
+        <div class="sfx" style="top:100px;left:50%;transform:translateX(-50%) rotate(-3deg);font-size:52px;color:#ff3366">
+          YES!!
+        </div>
+
+        <!-- Confetti-like elements -->
+        <div style="position:absolute;top:60px;left:15%;width:12px;height:12px;background:#ff3366;transform:rotate(45deg);border:2px solid #000"></div>
+        <div style="position:absolute;top:80px;left:35%;width:10px;height:10px;background:#ffdd57;border-radius:50%;border:2px solid #000"></div>
+        <div style="position:absolute;top:50px;right:35%;width:14px;height:6px;background:#43a047;transform:rotate(-30deg);border:2px solid #000"></div>
+        <div style="position:absolute;top:90px;right:15%;width:8px;height:14px;background:#2563eb;transform:rotate(20deg);border:2px solid #000"></div>
+        <div style="position:absolute;top:120px;left:25%;width:10px;height:4px;background:#7c3aed;transform:rotate(60deg);border:2px solid #000"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-panel">
+    <div class="action-lines" style="opacity:0.1"></div>
+    <h2 style="position:relative;z-index:2">95% OF AI FAILS.<br>BE THE 5%.</h2>
+    <p style="position:relative;z-index:2">Go2 learns how you actually work. Then makes it better.</p>
+    <a href="https://go2.io" target="_blank" style="position:relative;z-index:2">START AT GO2.IO</a>
+  </div>
+
+  <div class="credits">
+    "The AI Transformation" &copy; 2026 Go2 | Written & Illustrated in Pure CSS | No images were harmed in the making of this comic.
+  </div>
+
+</div>
+
+<style>
+  @keyframes flowRight { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+  @keyframes flowLeft { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+</style>
+
+</body>
+</html>

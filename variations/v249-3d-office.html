@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Virtual Office Intelligence</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e1a;color:#e0e0e0;font-family:'Inter',sans-serif;overflow-x:hidden;min-height:100vh}
+h1{text-align:center;padding:30px 0 10px;font-size:28px;font-weight:800;letter-spacing:-1px}
+h1 span{color:#00d4ff}
+.subtitle{text-align:center;color:#666;font-size:14px;margin-bottom:30px}
+
+/* Office container */
+.office-wrap{display:flex;justify-content:center;align-items:center;perspective:800px;padding:20px}
+.office{transform:rotateX(55deg) rotateZ(-45deg);transform-style:preserve-3d;position:relative;width:700px;height:500px}
+
+/* Floor */
+.floor{position:absolute;width:700px;height:500px;background:linear-gradient(135deg,#1a2030,#151c2c);border:2px solid #2a3040;transform:translateZ(0);box-shadow:0 0 60px rgba(0,100,200,0.1)}
+.floor-grid{position:absolute;width:100%;height:100%;background-image:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);background-size:50px 50px}
+
+/* Desk */
+.desk{position:absolute;width:100px;height:70px;transform-style:preserve-3d;cursor:pointer;transition:all 0.3s}
+.desk:hover{transform:translateZ(10px)}
+.desk-top{width:100px;height:70px;background:linear-gradient(135deg,#2a1f0e,#3d2b14);border:1px solid #4a3520;transform:translateZ(30px);border-radius:3px;position:absolute}
+.desk-front{width:100px;height:30px;background:#2a1f0e;border:1px solid #3a2510;position:absolute;top:70px;transform-origin:top;transform:rotateX(-90deg)}
+.desk-side{width:70px;height:30px;background:#241a0a;border:1px solid #3a2510;position:absolute;right:0;top:0;transform-origin:right;transform:rotateY(-90deg) translateZ(-30px);/* fix */}
+
+/* Monitor on desk */
+.monitor{position:absolute;width:40px;height:30px;background:#111;border:2px solid #333;transform:translateZ(35px);top:5px;left:30px;border-radius:2px;overflow:hidden}
+.monitor-screen{width:100%;height:100%;padding:2px;font-size:4px;font-family:'JetBrains Mono',monospace;line-height:1.2;overflow:hidden}
+.monitor-screen.active{background:#0a1a0a;color:#33ff33}
+.monitor-screen.idle{background:#1a0a0a;color:#ff5555}
+.monitor-screen.meeting{background:#0a0a1a;color:#5555ff}
+
+/* Worker */
+.worker{position:absolute;transform-style:preserve-3d;pointer-events:none}
+.worker-body{width:20px;height:20px;border-radius:50%;transform:translateZ(32px);position:absolute;top:35px;left:15px}
+.worker-head{width:14px;height:14px;border-radius:50%;transform:translateZ(45px);position:absolute;top:38px;left:18px;border:1px solid rgba(255,255,255,0.2)}
+
+/* Robot (AI agent) */
+.robot{position:absolute;transform-style:preserve-3d;cursor:pointer;transition:all 0.3s}
+.robot:hover{transform:translateZ(10px)}
+.robot-body{width:24px;height:28px;background:linear-gradient(135deg,#00d4ff,#7b61ff);transform:translateZ(5px);border-radius:4px;position:absolute;display:flex;align-items:center;justify-content:center;font-size:10px}
+.robot-head{width:18px;height:14px;background:#00d4ff;transform:translateZ(34px);border-radius:4px 4px 2px 2px;position:absolute;top:-2px;left:3px;display:flex;align-items:center;justify-content:center}
+.robot-eye{width:4px;height:4px;background:#000;border-radius:50%;margin:0 1px}
+.robot-glow{position:absolute;width:40px;height:40px;border-radius:50%;background:radial-gradient(circle,rgba(0,212,255,0.3),transparent);transform:translateZ(2px);top:-8px;left:-8px;animation:robotGlow 2s ease infinite}
+@keyframes robotGlow{0%,100%{opacity:0.5;transform:translateZ(2px) scale(1)}50%{opacity:1;transform:translateZ(2px) scale(1.3)}}
+
+/* Moving robots */
+.robot.moving{animation:robotMove 8s linear infinite}
+@keyframes robotMove{
+  0%{left:100px;top:100px}25%{left:400px;top:100px}50%{left:400px;top:300px}75%{left:100px;top:300px}100%{left:100px;top:100px}
+}
+.robot.moving2{animation:robotMove2 12s linear infinite}
+@keyframes robotMove2{
+  0%{left:500px;top:50px}20%{left:200px;top:150px}40%{left:500px;top:250px}60%{left:150px;top:350px}80%{left:350px;top:100px}100%{left:500px;top:50px}
+}
+
+/* Info panel */
+.panel{position:fixed;right:-420px;top:0;width:400px;height:100vh;background:#111827;border-left:1px solid #1f2937;transition:right 0.4s cubic-bezier(0.23,1,0.32,1);z-index:100;overflow-y:auto;padding:24px}
+.panel.open{right:0}
+.panel-close{position:absolute;top:16px;right:16px;background:none;border:none;color:#888;font-size:20px;cursor:pointer}
+.panel h2{font-size:20px;font-weight:700;margin-bottom:4px}
+.panel .role{color:#888;font-size:14px;margin-bottom:20px}
+.panel .stat-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1f2937}
+.panel .stat-label{color:#888;font-size:14px}
+.panel .stat-value{font-weight:600;font-size:14px}
+.panel .coaching-tip{background:rgba(123,97,255,0.1);border:1px solid rgba(123,97,255,0.2);border-radius:10px;padding:14px;margin:16px 0;font-size:13px;line-height:1.6}
+.panel .coaching-tip .tip-header{color:#7b61ff;font-weight:600;margin-bottom:6px;font-size:12px}
+.panel h3{font-size:16px;margin:20px 0 12px;color:#fff}
+.timeline-item{display:flex;gap:12px;padding:8px 0;font-size:13px;border-left:2px solid #1f2937;padding-left:16px;margin-left:8px}
+.timeline-item .time{color:#888;white-space:nowrap;font-family:'JetBrains Mono',monospace;font-size:11px}
+.timeline-item .activity{color:#ccc}
+.score-bar{height:6px;background:#1f2937;border-radius:3px;margin-top:6px}
+.score-fill{height:100%;border-radius:3px;transition:width 0.5s}
+.tag{display:inline-block;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600;margin-right:4px}
+.tag-focus{background:rgba(39,201,63,0.15);color:#27c93f}
+.tag-meeting{background:rgba(85,85,255,0.15);color:#5f87ff}
+.tag-break{background:rgba(255,189,46,0.15);color:#ffbd2e}
+
+/* Robot panel */
+.panel .agent-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+.agent-stat{background:#1a2030;border-radius:8px;padding:12px;text-align:center}
+.agent-stat .num{font-size:24px;font-weight:800;color:#00d4ff}
+.agent-stat .lbl{font-size:11px;color:#888;margin-top:4px}
+
+/* Legend */
+.legend{display:flex;gap:24px;justify-content:center;margin:16px 0;font-size:13px;color:#888}
+.legend-item{display:flex;align-items:center;gap:6px}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+
+/* Status bar */
+.status-bar{display:flex;justify-content:center;gap:40px;padding:16px;background:#111827;border-top:1px solid #1f2937;position:fixed;bottom:0;width:100%;font-size:13px}
+.status-item{display:flex;align-items:center;gap:6px}
+.status-item .dot{width:8px;height:8px;border-radius:50%;animation:statusPulse 2s ease infinite}
+@keyframes statusPulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.status-item .dot.green{background:#27c93f}.status-item .dot.blue{background:#00d4ff}.status-item .dot.yellow{background:#ffbd2e}
+
+/* Overlay for panel background */
+.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:90;display:none}
+.overlay.visible{display:block}
+</style>
+</head>
+<body>
+
+<h1>Go<span>2</span> Virtual Office</h1>
+<p class="subtitle">Click any worker or AI agent to see their Go2 intelligence data</p>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#27c93f"></div> Focused</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#5f87ff"></div> In Meeting</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#ffbd2e"></div> Break</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#ff5f56"></div> Context Switching</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#00d4ff"></div> AI Agent</div>
+</div>
+
+<div class="office-wrap">
+  <div class="office" id="office">
+    <div class="floor"><div class="floor-grid"></div></div>
+    <!-- Workers and desks will be generated by JS -->
+  </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+<div class="panel" id="panel">
+  <button class="panel-close" onclick="closePanel()">&times;</button>
+  <div id="panel-content"></div>
+</div>
+
+<div class="status-bar">
+  <div class="status-item"><div class="dot green"></div> 8 Workers Focused</div>
+  <div class="status-item"><div class="dot blue"></div> 3 AI Agents Active</div>
+  <div class="status-item"><div class="dot yellow"></div> 2 In Meetings</div>
+  <div class="status-item">Go2 Coaching: <strong style="color:#27c93f;margin-left:4px">156 tips today</strong></div>
+</div>
+
+<script>
+const workers=[
+  {name:'Sarah Chen',role:'Sr. Engineer',x:50,y:40,color:'#27c93f',status:'focused',focus:96,task:'Feature development (VS Code)',tip:'Your deep work streak is 2.4 hrs — your personal best this week!',score:96,
+    timeline:[{t:'8:00',a:'Email triage'},{t:'8:30',a:'Code review (3 PRs)'},{t:'9:00',a:'Feature development'},{t:'9:30',a:'Feature development (deep focus)'},{t:'10:00',a:'Sprint standup (15 min)'},{t:'10:30',a:'Feature development'},{t:'11:00',a:'Feature development'},{t:'11:30',a:'Currently working...'}]},
+  {name:'Marcus Johnson',role:'Sales Lead',x:200,y:40,color:'#27c93f',status:'focused',focus:94,task:'CRM updates (Salesforce)',tip:'Pre-call social check boosted your close rate 28%. Keep it up!',score:94,
+    timeline:[{t:'8:00',a:'Pipeline review'},{t:'8:30',a:'Client call — Acme Inc'},{t:'9:00',a:'Proposal writing'},{t:'9:30',a:'LinkedIn prospecting'},{t:'10:00',a:'Team sync'},{t:'10:30',a:'Client call — Beta Corp'},{t:'11:00',a:'CRM updates'},{t:'11:30',a:'Currently updating CRM...'}]},
+  {name:'Priya Patel',role:'Operations Mgr',x:350,y:40,color:'#5f87ff',status:'meeting',focus:91,task:'In meeting: Q1 Planning (Zoom)',tip:'You have 3.2 hrs of meetings today — 30 min over your target.',score:88,
+    timeline:[{t:'8:00',a:'Vendor emails'},{t:'8:30',a:'Process review'},{t:'9:00',a:'Team 1:1s'},{t:'9:30',a:'Team 1:1s'},{t:'10:00',a:'Q1 Planning meeting'},{t:'10:30',a:'Q1 Planning meeting'},{t:'11:00',a:'Q1 Planning meeting'},{t:'11:30',a:'Still in meeting...'}]},
+  {name:'Tom Williams',role:'Finance Analyst',x:500,y:40,color:'#27c93f',status:'focused',focus:89,task:'Month-end reconciliation (Excel)',tip:'You spend 34 min/day on formatting. Go2 agent can handle it.',score:89,
+    timeline:[{t:'8:00',a:'NetSuite reports'},{t:'8:30',a:'Variance analysis'},{t:'9:00',a:'Budget review'},{t:'9:30',a:'Invoice approvals'},{t:'10:00',a:'Month-end reconciliation'},{t:'10:30',a:'Month-end reconciliation'},{t:'11:00',a:'Reconciliation deep work'},{t:'11:30',a:'Currently reconciling...'}]},
+  {name:'Lisa Park',role:'Marketing Lead',x:50,y:180,color:'#ffbd2e',status:'break',focus:87,task:'On break (Go2 suggested)',tip:'Afternoon energy dip detected. Break now = 15% output boost.',score:85,
+    timeline:[{t:'8:00',a:'Social media scheduling'},{t:'8:30',a:'Content writing'},{t:'9:00',a:'Content writing (deep focus)'},{t:'9:30',a:'Design review (Figma)'},{t:'10:00',a:'Campaign analytics'},{t:'10:30',a:'Blog post editing'},{t:'11:00',a:'Newsletter draft'},{t:'11:30',a:'Break (coached)'}]},
+  {name:'James Rodriguez',role:'Customer Success',x:200,y:180,color:'#27c93f',status:'focused',focus:82,task:'Client onboarding (Notion)',tip:'Your onboarding docs are 40% faster since using the template Go2 found.',score:82,
+    timeline:[{t:'8:00',a:'Support queue review'},{t:'8:30',a:'Client call — onboarding'},{t:'9:00',a:'Notion docs update'},{t:'9:30',a:'Product feedback logging'},{t:'10:00',a:'Client call — renewal'},{t:'10:30',a:'Client onboarding setup'},{t:'11:00',a:'Documentation'},{t:'11:30',a:'Currently onboarding...'}]},
+  {name:'Aisha Thompson',role:'Data Analyst',x:350,y:180,color:'#ff5f56',status:'switching',focus:64,task:'Context switching (Slack/Jira/SQL)',tip:'You\'ve switched apps 12 times in 8 min. Try closing Slack for 25 min?',score:64,
+    timeline:[{t:'8:00',a:'SQL queries'},{t:'8:30',a:'Dashboard building'},{t:'9:00',a:'Slack conversations'},{t:'9:15',a:'Jira ticket update'},{t:'9:20',a:'Back to SQL'},{t:'9:30',a:'Slack again'},{t:'9:45',a:'Dashboard'},{t:'11:30',a:'Context switching detected'}]},
+  {name:'David Kim',role:'Product Manager',x:500,y:180,color:'#5f87ff',status:'meeting',focus:78,task:'In meeting: Design Review (Figma+Zoom)',tip:'Consider async design reviews — saves 1.5 hrs/week for your team.',score:78,
+    timeline:[{t:'8:00',a:'Roadmap planning'},{t:'8:30',a:'Jira grooming'},{t:'9:00',a:'Customer interview'},{t:'9:30',a:'Spec writing'},{t:'10:00',a:'Design review meeting'},{t:'10:30',a:'Design review continued'},{t:'11:00',a:'Design review'},{t:'11:30',a:'Still in meeting...'}]},
+  {name:'Nina Volkov',role:'DevOps Engineer',x:50,y:320,color:'#27c93f',status:'focused',focus:92,task:'CI/CD pipeline (Terminal)',tip:'Your deploy frequency is up 33% since Go2 automated the staging checks.',score:92,
+    timeline:[{t:'8:00',a:'Infrastructure monitoring'},{t:'8:30',a:'Terraform updates'},{t:'9:00',a:'CI/CD pipeline work'},{t:'9:30',a:'Deploy to staging'},{t:'10:00',a:'Security patching'},{t:'10:30',a:'Pipeline optimization'},{t:'11:00',a:'Monitoring setup'},{t:'11:30',a:'Currently deploying...'}]},
+  {name:'Carlos Mendez',role:'UX Designer',x:200,y:320,color:'#27c93f',status:'focused',focus:88,task:'Wireframes (Figma)',tip:'You\'re 2x faster in Figma after the keyboard shortcut tips.',score:88,
+    timeline:[{t:'8:00',a:'Design system updates'},{t:'8:30',a:'User flow mapping'},{t:'9:00',a:'Wireframe — new feature'},{t:'9:30',a:'Wireframe iteration'},{t:'10:00',a:'Design critique'},{t:'10:30',a:'Prototype building'},{t:'11:00',a:'Wireframe refinement'},{t:'11:30',a:'Currently designing...'}]},
+];
+
+const agents=[
+  {name:'Invoice Processor',id:'invoice-processor',x:420,y:290,moving:false,tasks:847,accuracy:'99.7%',basedOn:'Sarah Chen + Tom Williams patterns',uptime:'99.99%',
+    desc:'Processes incoming invoices by extracting data, validating against PO, and entering into NetSuite. Handles international vendors, split invoices, and approval routing.',
+    recent:['Processed 23 invoices from Vendor Alpha','Flagged unusual amount from Beta Corp (human review)','Auto-approved 12 recurring vendor payments','Split multi-line invoice (>50 items) per Tom\'s workaround']},
+  {name:'CRM Updater',id:'crm-updater',x:150,y:380,moving:true,tasks:234,accuracy:'98.9%',basedOn:'Marcus Johnson patterns',uptime:'99.95%',
+    desc:'Automatically creates and updates Salesforce contacts from email interactions. Logs call notes, updates deal stages, and triggers follow-up sequences.',
+    recent:['Synced 34 new contacts from email','Updated 12 deal stages','Triggered follow-up for 8 cold leads','Flagged duplicate contact for review']},
+  {name:'Report Compiler',id:'report-compiler',x:520,y:360,moving:true,tasks:12,accuracy:'100%',basedOn:'Priya Patel + Tom Williams patterns',uptime:'99.99%',
+    desc:'Compiles weekly status reports by pulling data from Jira, Salesforce, and internal dashboards. Formats per team preferences and distributes via email.',
+    recent:['Generated weekly engineering report','Compiled sales pipeline summary','Built customer success metrics deck','Auto-distributed 4 department reports']},
+];
+
+const office=document.getElementById('office');
+
+// Create desks and workers
+workers.forEach((w,i)=>{
+  const statusColors={focused:'#27c93f',meeting:'#5f87ff',break:'#ffbd2e',switching:'#ff5f56'};
+  const screenClass={focused:'active',meeting:'meeting',break:'idle',switching:'idle'};
+  const sc=statusColors[w.status]||'#27c93f';
+
+  const desk=document.createElement('div');
+  desk.className='desk';
+  desk.style.left=w.x+'px';
+  desk.style.top=w.y+'px';
+  desk.onclick=()=>showWorker(i);
+  desk.innerHTML=`
+    <div class="desk-top"></div>
+    <div class="desk-front"></div>
+    <div class="monitor"><div class="monitor-screen ${screenClass[w.status]}">${w.status==='focused'?'>>_':'...'}</div></div>
+    <div class="worker">
+      <div class="worker-body" style="background:${sc}"></div>
+      <div class="worker-head" style="background:${sc}"></div>
+    </div>
+    <div style="position:absolute;transform:translateZ(55px);font-size:9px;color:#fff;white-space:nowrap;top:25px;left:5px;text-shadow:0 1px 3px rgba(0,0,0,0.8);pointer-events:none">${w.name.split(' ')[0]}</div>
+  `;
+  office.appendChild(desk);
+});
+
+// Create agents
+agents.forEach((a,i)=>{
+  const robot=document.createElement('div');
+  robot.className='robot'+(a.moving?(i===1?' moving':' moving2'):'');
+  if(!a.moving){robot.style.left=a.x+'px';robot.style.top=a.y+'px';}
+  robot.onclick=(e)=>{e.stopPropagation();showAgent(i)};
+  robot.innerHTML=`
+    <div class="robot-glow"></div>
+    <div class="robot-body">&#129302;</div>
+    <div class="robot-head"><div class="robot-eye"></div><div class="robot-eye"></div></div>
+    <div style="position:absolute;transform:translateZ(48px);font-size:8px;color:#00d4ff;white-space:nowrap;top:-5px;left:-10px;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,0.8)">${a.name}</div>
+  `;
+  office.appendChild(robot);
+});
+
+function showWorker(idx){
+  const w=workers[idx];
+  const statusColors={focused:'#27c93f',meeting:'#5f87ff',break:'#ffbd2e',switching:'#ff5f56'};
+  const statusLabels={focused:'Focused',meeting:'In Meeting',break:'On Break',switching:'Context Switching'};
+  const sc=statusColors[w.status];
+
+  document.getElementById('panel-content').innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <div style="width:48px;height:48px;border-radius:50%;background:${sc};display:flex;align-items:center;justify-content:center;font-size:22px">&#128100;</div>
+      <div>
+        <h2>${w.name}</h2>
+        <div class="role">${w.role}</div>
+      </div>
+    </div>
+
+    <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;background:${sc}22;color:${sc};font-size:13px;font-weight:600;margin-bottom:16px">
+      <div style="width:8px;height:8px;border-radius:50%;background:${sc}"></div>
+      ${statusLabels[w.status]}
+    </div>
+
+    <div class="stat-row"><span class="stat-label">Current Task</span><span class="stat-value" style="font-size:12px;max-width:200px;text-align:right">${w.task}</span></div>
+    <div class="stat-row"><span class="stat-label">Focus Score</span><span class="stat-value" style="color:${sc}">${w.focus}%</span></div>
+    <div class="stat-row"><span class="stat-label">Productivity Score</span><span class="stat-value">${w.score}%</span></div>
+    <div class="stat-row"><span class="stat-label">Coaching Tips Today</span><span class="stat-value">8 accepted / 9 delivered</span></div>
+
+    <div style="margin-top:12px">
+      <div style="font-size:12px;color:#888;margin-bottom:4px">Focus Score</div>
+      <div class="score-bar"><div class="score-fill" style="width:${w.focus}%;background:${sc}"></div></div>
+    </div>
+
+    <div class="coaching-tip">
+      <div class="tip-header">&#129504; Latest AI Coaching Tip</div>
+      ${w.tip}
+    </div>
+
+    <h3>Today's Timeline</h3>
+    ${w.timeline.map(t=>`<div class="timeline-item"><span class="time">${t.t}</span><span class="activity">${t.a}</span></div>`).join('')}
+
+    <h3 style="margin-top:24px">Tags</h3>
+    <div style="margin-top:8px">
+      ${w.status==='focused'?'<span class="tag tag-focus">Deep Work</span>':''}
+      ${w.status==='meeting'?'<span class="tag tag-meeting">Meeting</span>':''}
+      ${w.status==='break'?'<span class="tag tag-break">Coached Break</span>':''}
+      ${w.status==='switching'?'<span class="tag" style="background:rgba(255,95,86,0.15);color:#ff5f56">Needs Focus</span>':''}
+      <span class="tag" style="background:rgba(0,212,255,0.15);color:#00d4ff">Go2 Active</span>
+    </div>
+  `;
+  openPanel();
+}
+
+function showAgent(idx){
+  const a=agents[idx];
+  document.getElementById('panel-content').innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#00d4ff,#7b61ff);display:flex;align-items:center;justify-content:center;font-size:24px">&#129302;</div>
+      <div>
+        <h2>${a.name}</h2>
+        <div class="role">AI Agent — ${a.id}</div>
+      </div>
+    </div>
+
+    <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;background:rgba(0,212,255,0.15);color:#00d4ff;font-size:13px;font-weight:600;margin-bottom:16px">
+      <div style="width:8px;height:8px;border-radius:50%;background:#00d4ff;animation:statusPulse 2s ease infinite"></div>
+      Active
+    </div>
+
+    <p style="font-size:13px;color:#aaa;line-height:1.6;margin-bottom:16px">${a.desc}</p>
+
+    <div class="agent-stats">
+      <div class="agent-stat"><div class="num">${a.tasks}</div><div class="lbl">Tasks Today</div></div>
+      <div class="agent-stat"><div class="num">${a.accuracy}</div><div class="lbl">Accuracy</div></div>
+      <div class="agent-stat"><div class="num">${a.uptime}</div><div class="lbl">Uptime</div></div>
+      <div class="agent-stat"><div class="num">0</div><div class="lbl">Errors</div></div>
+    </div>
+
+    <div class="stat-row"><span class="stat-label">Trained On</span><span class="stat-value" style="font-size:12px">${a.basedOn}</span></div>
+    <div class="stat-row"><span class="stat-label">Mode</span><span class="stat-value" style="color:#27c93f">Active (promoted)</span></div>
+    <div class="stat-row"><span class="stat-label">Human Reviews</span><span class="stat-value">12 today</span></div>
+
+    <h3>Recent Activity</h3>
+    ${a.recent.map((r,i)=>`<div class="timeline-item"><span class="time">${(10+i).toString().padStart(2,'0')}:${(Math.random()*59|0).toString().padStart(2,'0')}</span><span class="activity">${r}</span></div>`).join('')}
+
+    <div class="coaching-tip" style="border-color:rgba(0,212,255,0.2);background:rgba(0,212,255,0.05)">
+      <div class="tip-header" style="color:#00d4ff">&#129302; Agent Intelligence</div>
+      This agent was trained by observing ${a.basedOn.replace(' patterns','')} perform this process ${a.tasks>100?'thousands':'hundreds'} of times. It replicates their exact workflow including edge-case handling and workarounds that no process document captures.
+    </div>
+  `;
+  openPanel();
+}
+
+function openPanel(){
+  document.getElementById('panel').classList.add('open');
+  document.getElementById('overlay').classList.add('visible');
+}
+function closePanel(){
+  document.getElementById('panel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('visible');
+}
+
+// Close on Escape
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePanel()});
+</script>
+</body>
+</html>

@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The CTO View</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#c9d1d9;--muted:#8b949e;--accent:#58a6ff;--green:#3fb950;--red:#f85149;--yellow:#d29922;--purple:#bc8cff;--white:#f0f6fc}
+body{font-family:'SF Mono','Fira Code','Cascadia Code',monospace;background:var(--bg);color:var(--text);overflow-x:hidden;font-size:14px}
+
+/* Top bar - terminal style */
+.topbar{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;height:48px;display:flex;align-items:center;gap:16px}
+.dots{display:flex;gap:6px}
+.dot{width:12px;height:12px;border-radius:50%}
+.dot-r{background:#f85149}.dot-y{background:#d29922}.dot-g{background:#3fb950}
+.topbar-title{color:var(--muted);font-size:13px;flex:1}
+.topbar-links{display:flex;gap:16px}
+.topbar-links a{color:var(--muted);text-decoration:none;font-size:12px;padding:4px 8px;border:1px solid transparent;transition:all 0.2s}
+.topbar-links a:hover{color:var(--accent);border-color:var(--border)}
+
+/* Hero */
+.hero{min-height:100vh;display:flex;align-items:center;padding:80px 40px;position:relative}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;max-width:1400px;margin:0 auto;width:100%}
+.hero-left{display:flex;flex-direction:column;justify-content:center}
+.hero-tag{color:var(--green);font-size:12px;margin-bottom:16px}
+.hero-tag::before{content:'$ ';color:var(--muted)}
+.hero h1{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:clamp(28px,4vw,48px);font-weight:700;line-height:1.2;margin-bottom:20px;color:var(--white)}
+.hero h1 code{font-family:'SF Mono',monospace;color:var(--accent);background:rgba(88,166,255,0.1);padding:2px 8px;font-size:0.85em}
+.hero p{color:var(--muted);font-size:16px;line-height:1.7;margin-bottom:32px;font-family:-apple-system,sans-serif;max-width:500px}
+.hero-btns{display:flex;gap:12px}
+.btn{padding:10px 20px;font-size:13px;font-family:'SF Mono',monospace;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;transition:all 0.2s;text-decoration:none;display:inline-block}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn-primary{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.btn-primary:hover{background:#79c0ff}
+
+/* Terminal */
+.terminal{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;font-size:13px}
+.term-bar{background:var(--bg);padding:8px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)}
+.term-bar .dots{gap:6px}
+.term-bar .dot{width:10px;height:10px}
+.term-bar span{color:var(--muted);font-size:12px;margin-left:8px}
+.term-body{padding:16px;line-height:2;max-height:400px;overflow-y:auto}
+.term-line{display:block}
+.term-prompt{color:var(--green)}
+.term-cmd{color:var(--white)}
+.term-output{color:var(--muted)}
+.term-comment{color:var(--muted);font-style:italic}
+.term-string{color:var(--green)}
+.term-key{color:var(--accent)}
+.term-num{color:var(--yellow)}
+.term-err{color:var(--red)}
+
+/* Architecture Section */
+.arch-section{padding:100px 40px;max-width:1400px;margin:0 auto}
+.sec-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+.sec-title{font-size:28px;font-family:-apple-system,sans-serif;font-weight:700;color:var(--white);margin-bottom:12px}
+.sec-desc{color:var(--muted);font-size:14px;max-width:600px;margin-bottom:48px;line-height:1.7;font-family:-apple-system,sans-serif}
+
+.arch-diagram{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:40px;position:relative;overflow:hidden}
+.arch-row{display:flex;justify-content:center;gap:20px;margin-bottom:20px;flex-wrap:wrap}
+.arch-box{background:var(--bg);border:1px solid var(--border);padding:16px 24px;text-align:center;min-width:140px;cursor:pointer;transition:all 0.3s;position:relative}
+.arch-box:hover{border-color:var(--accent);transform:translateY(-2px)}
+.arch-box.highlight{border-color:var(--green);box-shadow:0 0 20px rgba(63,185,80,0.1)}
+.arch-box .box-label{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.arch-box .box-name{font-size:14px;color:var(--white);font-weight:600}
+.arch-box .box-tech{font-size:11px;color:var(--accent);margin-top:4px}
+.arch-connector{width:2px;height:20px;background:var(--border);margin:0 auto}
+.arch-connector-h{height:2px;flex:1;background:var(--border);max-width:40px;align-self:center}
+.arch-layer{font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;margin-top:32px}
+
+/* API Section */
+.api-section{padding:80px 40px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.api-inner{max-width:1400px;margin:0 auto}
+.api-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:40px}
+.api-endpoints{display:flex;flex-direction:column;gap:8px}
+.api-endpoint{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg);border:1px solid var(--border);cursor:pointer;transition:all 0.2s}
+.api-endpoint:hover,.api-endpoint.active{border-color:var(--accent)}
+.api-method{font-size:11px;font-weight:700;padding:3px 8px;border-radius:3px;min-width:50px;text-align:center}
+.method-get{background:rgba(63,185,80,0.15);color:var(--green)}
+.method-post{background:rgba(88,166,255,0.15);color:var(--accent)}
+.method-put{background:rgba(210,153,34,0.15);color:var(--yellow)}
+.method-delete{background:rgba(248,81,73,0.15);color:var(--red)}
+.api-path{font-size:13px;color:var(--text)}
+.api-desc{font-size:11px;color:var(--muted);margin-left:auto}
+
+.api-code{background:var(--bg);border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.api-code-header{padding:10px 16px;background:rgba(88,166,255,0.05);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.api-code-header span{font-size:12px;color:var(--muted)}
+.api-code-body{padding:16px;font-size:13px;line-height:1.8;overflow-x:auto}
+.api-code-body .keyword{color:var(--purple)}
+.api-code-body .string{color:var(--green)}
+.api-code-body .comment{color:var(--muted)}
+.api-code-body .func{color:var(--accent)}
+.api-code-body .num{color:var(--yellow)}
+
+/* Security Section */
+.security-section{padding:100px 40px;max-width:1400px;margin:0 auto}
+.security-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:40px}
+.sec-card{background:var(--surface);border:1px solid var(--border);padding:28px;transition:all 0.3s}
+.sec-card:hover{border-color:var(--green)}
+.sec-card-icon{font-size:24px;margin-bottom:12px}
+.sec-card h3{font-size:15px;font-weight:700;color:var(--white);margin-bottom:8px;font-family:-apple-system,sans-serif}
+.sec-card p{font-size:13px;color:var(--muted);line-height:1.7}
+.badge-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.badge{font-size:10px;padding:3px 10px;border:1px solid var(--border);color:var(--muted)}
+.badge-green{border-color:rgba(63,185,80,0.3);color:var(--green)}
+
+/* Integration */
+.int-section{padding:80px 40px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.int-inner{max-width:1400px;margin:0 auto}
+.int-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:40px}
+.int-card{background:var(--bg);border:1px solid var(--border);padding:24px;text-align:center;transition:all 0.3s;cursor:pointer}
+.int-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.int-card .int-name{font-size:14px;font-weight:600;color:var(--white);margin-top:8px;font-family:-apple-system,sans-serif}
+.int-card .int-type{font-size:11px;color:var(--muted);margin-top:4px}
+.int-card .int-icon{font-size:28px}
+
+/* Performance */
+.perf-section{padding:100px 40px;max-width:1200px;margin:0 auto}
+.perf-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:40px}
+.perf-card{background:var(--surface);border:1px solid var(--border);padding:24px}
+.perf-card h4{font-size:13px;color:var(--muted);margin-bottom:12px;display:flex;justify-content:space-between}
+.perf-card h4 span{color:var(--green)}
+.perf-bar-outer{height:8px;background:var(--bg);border-radius:4px;overflow:hidden;margin-bottom:8px}
+.perf-bar-inner{height:100%;border-radius:4px;transition:width 1.5s ease}
+.perf-bar-green{background:var(--green)}
+.perf-bar-blue{background:var(--accent)}
+.perf-card .perf-detail{font-size:12px;color:var(--muted);display:flex;justify-content:space-between}
+
+/* Data Flow */
+.data-section{padding:100px 40px;max-width:1400px;margin:0 auto}
+.data-flow{display:flex;align-items:center;justify-content:center;gap:0;margin-top:40px;flex-wrap:wrap}
+.data-node{background:var(--surface);border:1px solid var(--border);padding:20px;text-align:center;min-width:150px;transition:all 0.3s}
+.data-node:hover{border-color:var(--accent)}
+.data-node .dn-icon{font-size:24px;margin-bottom:8px}
+.data-node .dn-name{font-size:13px;font-weight:600;color:var(--white)}
+.data-node .dn-desc{font-size:11px;color:var(--muted);margin-top:4px}
+.data-arrow{color:var(--accent);font-size:20px;padding:0 12px}
+
+/* CTA */
+.cta{padding:100px 40px;text-align:center}
+.cta h2{font-size:32px;font-family:-apple-system,sans-serif;font-weight:700;color:var(--white);margin-bottom:16px}
+.cta h2 code{font-family:'SF Mono',monospace;color:var(--accent);font-size:0.85em}
+.cta p{color:var(--muted);max-width:500px;margin:0 auto 32px;font-size:15px;font-family:-apple-system,sans-serif;line-height:1.7}
+
+footer{padding:40px;text-align:center;font-size:12px;color:var(--muted);border-top:1px solid var(--border)}
+
+@media(max-width:900px){
+.hero-grid,.api-grid,.perf-grid{grid-template-columns:1fr}
+.security-grid,.int-grid{grid-template-columns:1fr 1fr}
+.data-flow{flex-direction:column}
+.data-arrow{transform:rotate(90deg)}
+.arch-row{flex-direction:column;align-items:center}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+  <div class="topbar-title">go2@engineering ~ docs/integration</div>
+  <div class="topbar-links">
+    <a href="#api">API</a>
+    <a href="#arch">Architecture</a>
+    <a href="#security">Security</a>
+    <a href="#integrations">Integrations</a>
+  </div>
+</div>
+
+<section class="hero">
+  <div class="hero-grid">
+    <div class="hero-left">
+      <div class="hero-tag">go2 init --stack yours</div>
+      <h1>Go2 fits <code>your stack</code>.</h1>
+      <p>REST API, webhooks, SSO, SCIM. Deploys in 15 minutes. Zero infrastructure to manage. Your data stays yours. We built this for engineers who hate vendor lock-in.</p>
+      <div class="hero-btns">
+        <a class="btn btn-primary" href="#api">API Reference</a>
+        <a class="btn" href="#arch">Architecture</a>
+        <a class="btn" href="#security">Security Specs</a>
+      </div>
+    </div>
+    <div class="terminal">
+      <div class="term-bar">
+        <div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+        <span>bash -- 80x24</span>
+      </div>
+      <div class="term-body" id="terminalBody">
+        <span class="term-line"><span class="term-comment"># Install Go2 SDK</span></span>
+        <span class="term-line"><span class="term-prompt">$ </span><span class="term-cmd">npm install @go2/sdk</span></span>
+        <span class="term-line"><span class="term-output">+ @go2/sdk@3.2.1</span></span>
+        <span class="term-line"><span class="term-output">added 12 packages in 2.1s</span></span>
+        <span class="term-line">&nbsp;</span>
+        <span class="term-line"><span class="term-comment"># Initialize with your API key</span></span>
+        <span class="term-line"><span class="term-prompt">$ </span><span class="term-cmd">go2 init --org acme-corp</span></span>
+        <span class="term-line"><span class="term-output">&#10003; Connected to Go2 API</span></span>
+        <span class="term-line"><span class="term-output">&#10003; SSO configured (Okta detected)</span></span>
+        <span class="term-line"><span class="term-output">&#10003; SCIM provisioning enabled</span></span>
+        <span class="term-line"><span class="term-output">&#10003; Webhook endpoint registered</span></span>
+        <span class="term-line">&nbsp;</span>
+        <span class="term-line"><span class="term-comment"># Query process insights</span></span>
+        <span class="term-line"><span class="term-prompt">$ </span><span class="term-cmd">go2 processes --team engineering</span></span>
+        <span class="term-line">&nbsp;</span>
+        <span class="term-line"><span class="term-key">PROCESS</span>          <span class="term-key">FREQUENCY</span>  <span class="term-key">AVG_TIME</span>  <span class="term-key">AUTOMATABLE</span></span>
+        <span class="term-line"><span class="term-output">code-review       47/week    2.3h      </span><span class="term-string">Yes (82%)</span></span>
+        <span class="term-line"><span class="term-output">deployment        12/week    45m       </span><span class="term-string">Yes (94%)</span></span>
+        <span class="term-line"><span class="term-output">incident-triage   8/week     1.8h      </span><span class="term-string">Yes (67%)</span></span>
+        <span class="term-line"><span class="term-output">sprint-planning   1/week     3.2h      </span><span class="term-output">No  (23%)</span></span>
+        <span class="term-line"><span class="term-output">documentation     34/week    1.1h      </span><span class="term-string">Yes (91%)</span></span>
+        <span class="term-line">&nbsp;</span>
+        <span class="term-line"><span class="term-prompt">$ </span><span class="term-cmd">go2 automate --process deployment --dry-run</span></span>
+        <span class="term-line"><span class="term-output">Analyzing 847 deployment observations...</span></span>
+        <span class="term-line"><span class="term-string">&#10003; Generated CI/CD pipeline (94% coverage)</span></span>
+        <span class="term-line"><span class="term-string">&#10003; Estimated savings: 9 hrs/week</span></span>
+        <span class="term-line"><span class="term-output">Review: go2 automate --preview deployment</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="arch-section" id="arch">
+  <div class="sec-label">// architecture</div>
+  <div class="sec-title">How Go2 works under the hood</div>
+  <div class="sec-desc">Lightweight agent, edge processing, encrypted sync. Your data never leaves your control. Zero performance impact.</div>
+
+  <div class="arch-diagram">
+    <div class="arch-layer">CLIENT LAYER</div>
+    <div class="arch-row">
+      <div class="arch-box highlight"><div class="box-label">Agent</div><div class="box-name">Go2 Desktop Agent</div><div class="box-tech">Electron | 12MB | &lt;1% CPU</div></div>
+      <div class="arch-box"><div class="box-label">Browser</div><div class="box-name">Chrome Extension</div><div class="box-tech">MV3 | Service Worker</div></div>
+      <div class="arch-box"><div class="box-label">Mobile</div><div class="box-name">iOS / Android SDK</div><div class="box-tech">Swift | Kotlin</div></div>
+    </div>
+    <div class="arch-connector"></div>
+    <div class="arch-layer">PROCESSING LAYER</div>
+    <div class="arch-row">
+      <div class="arch-box"><div class="box-label">Edge</div><div class="box-name">Local ML Inference</div><div class="box-tech">ONNX Runtime | On-device</div></div>
+      <div class="arch-box"><div class="box-label">Sync</div><div class="box-name">Encrypted Tunnel</div><div class="box-tech">TLS 1.3 | AES-256-GCM</div></div>
+      <div class="arch-box"><div class="box-label">Queue</div><div class="box-name">Event Stream</div><div class="box-tech">Kafka | Schema Registry</div></div>
+    </div>
+    <div class="arch-connector"></div>
+    <div class="arch-layer">PLATFORM LAYER</div>
+    <div class="arch-row">
+      <div class="arch-box"><div class="box-label">API</div><div class="box-name">REST + GraphQL</div><div class="box-tech">Go | gRPC internal</div></div>
+      <div class="arch-box"><div class="box-label">ML</div><div class="box-name">Process Mining Engine</div><div class="box-tech">PyTorch | Ray</div></div>
+      <div class="arch-box"><div class="box-label">AI</div><div class="box-name">Coaching Engine</div><div class="box-tech">LLM | Fine-tuned</div></div>
+      <div class="arch-box"><div class="box-label">Storage</div><div class="box-name">Data Lake</div><div class="box-tech">Postgres | ClickHouse</div></div>
+    </div>
+    <div class="arch-connector"></div>
+    <div class="arch-layer">INTEGRATION LAYER</div>
+    <div class="arch-row">
+      <div class="arch-box"><div class="box-label">Auth</div><div class="box-name">SSO / SCIM</div><div class="box-tech">SAML 2.0 | OIDC</div></div>
+      <div class="arch-box"><div class="box-label">Webhooks</div><div class="box-name">Event Delivery</div><div class="box-tech">At-least-once | Retry</div></div>
+      <div class="arch-box"><div class="box-label">SDK</div><div class="box-name">Client Libraries</div><div class="box-tech">JS | Python | Go | Java</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="api-section" id="api">
+  <div class="api-inner">
+    <div class="sec-label">// api reference</div>
+    <div class="sec-title">RESTful API. GraphQL optional.</div>
+    <div class="sec-desc">Everything in the UI is available via API. Versioned, documented, predictable.</div>
+
+    <div class="api-grid">
+      <div class="api-endpoints">
+        <div class="api-endpoint active" onclick="showAPI(0)">
+          <span class="api-method method-get">GET</span>
+          <span class="api-path">/v1/processes</span>
+          <span class="api-desc">List all processes</span>
+        </div>
+        <div class="api-endpoint" onclick="showAPI(1)">
+          <span class="api-method method-get">GET</span>
+          <span class="api-path">/v1/processes/{id}/insights</span>
+          <span class="api-desc">Get process insights</span>
+        </div>
+        <div class="api-endpoint" onclick="showAPI(2)">
+          <span class="api-method method-post">POST</span>
+          <span class="api-path">/v1/automations</span>
+          <span class="api-desc">Create automation</span>
+        </div>
+        <div class="api-endpoint" onclick="showAPI(3)">
+          <span class="api-method method-get">GET</span>
+          <span class="api-path">/v1/teams/{id}/metrics</span>
+          <span class="api-desc">Team productivity</span>
+        </div>
+        <div class="api-endpoint" onclick="showAPI(4)">
+          <span class="api-method method-post">POST</span>
+          <span class="api-path">/v1/webhooks</span>
+          <span class="api-desc">Register webhook</span>
+        </div>
+        <div class="api-endpoint" onclick="showAPI(5)">
+          <span class="api-method method-get">GET</span>
+          <span class="api-path">/v1/coaching/suggestions</span>
+          <span class="api-desc">AI coaching queue</span>
+        </div>
+        <div class="api-endpoint" onclick="showAPI(6)">
+          <span class="api-method method-put">PUT</span>
+          <span class="api-path">/v1/agents/{id}/config</span>
+          <span class="api-desc">Configure AI agent</span>
+        </div>
+        <div class="api-endpoint" onclick="showAPI(7)">
+          <span class="api-method method-delete">DEL</span>
+          <span class="api-path">/v1/data/{userId}</span>
+          <span class="api-desc">GDPR delete</span>
+        </div>
+      </div>
+
+      <div class="api-code" id="apiCode">
+        <div class="api-code-header"><span>JavaScript</span><span style="cursor:pointer" onclick="copyCode()">Copy</span></div>
+        <div class="api-code-body" id="apiCodeBody"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="security-section" id="security">
+  <div class="sec-label">// security & compliance</div>
+  <div class="sec-title">Built for regulated industries.</div>
+  <div class="sec-desc">SOC 2 Type II, GDPR, HIPAA-eligible. We take security as seriously as you do.</div>
+
+  <div class="security-grid">
+    <div class="sec-card">
+      <div class="sec-card-icon">&#128274;</div>
+      <h3>Encryption</h3>
+      <p>AES-256-GCM at rest. TLS 1.3 in transit. Customer-managed keys available. Zero-knowledge architecture for sensitive data.</p>
+      <div class="badge-row"><span class="badge badge-green">AES-256</span><span class="badge badge-green">TLS 1.3</span><span class="badge badge-green">CMK</span></div>
+    </div>
+    <div class="sec-card">
+      <div class="sec-card-icon">&#128737;</div>
+      <h3>SOC 2 Type II</h3>
+      <p>Annual audit by Big 4 firm. Continuous monitoring. Full trust center with real-time compliance dashboard available to customers.</p>
+      <div class="badge-row"><span class="badge badge-green">SOC 2</span><span class="badge badge-green">ISO 27001</span></div>
+    </div>
+    <div class="sec-card">
+      <div class="sec-card-icon">&#127758;</div>
+      <h3>Data Residency</h3>
+      <p>Choose your region: US, EU, APAC. Data never leaves your selected region. Full GDPR compliance including right to deletion.</p>
+      <div class="badge-row"><span class="badge badge-green">GDPR</span><span class="badge badge-green">CCPA</span><span class="badge badge-green">HIPAA</span></div>
+    </div>
+    <div class="sec-card">
+      <div class="sec-card-icon">&#128100;</div>
+      <h3>SSO / SCIM</h3>
+      <p>SAML 2.0 and OIDC support. Okta, Azure AD, Google Workspace, OneLogin. SCIM 2.0 for automated user provisioning.</p>
+      <div class="badge-row"><span class="badge">SAML</span><span class="badge">OIDC</span><span class="badge">SCIM</span></div>
+    </div>
+    <div class="sec-card">
+      <div class="sec-card-icon">&#128209;</div>
+      <h3>Audit Logs</h3>
+      <p>Immutable audit trail for every action. SIEM integration via syslog/webhook. 7-year retention. Tamper-proof with cryptographic signing.</p>
+      <div class="badge-row"><span class="badge">Splunk</span><span class="badge">Datadog</span><span class="badge">Sumo Logic</span></div>
+    </div>
+    <div class="sec-card">
+      <div class="sec-card-icon">&#128736;</div>
+      <h3>Penetration Testing</h3>
+      <p>Quarterly third-party pentests. HackerOne bug bounty program. No critical or high findings in last 4 audits.</p>
+      <div class="badge-row"><span class="badge badge-green">HackerOne</span><span class="badge badge-green">Pentest</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="int-section" id="integrations">
+  <div class="int-inner">
+    <div class="sec-label">// integrations</div>
+    <div class="sec-title">Connects to everything you use.</div>
+    <div class="sec-desc">Native integrations with 40+ tools. Custom webhooks for everything else.</div>
+
+    <div class="int-grid">
+      <div class="int-card"><div class="int-icon">&#128187;</div><div class="int-name">Jira</div><div class="int-type">Project Management</div></div>
+      <div class="int-card"><div class="int-icon">&#128172;</div><div class="int-name">Slack</div><div class="int-type">Communication</div></div>
+      <div class="int-card"><div class="int-icon">&#128230;</div><div class="int-name">GitHub</div><div class="int-type">Source Control</div></div>
+      <div class="int-card"><div class="int-icon">&#9729;&#65039;</div><div class="int-name">AWS</div><div class="int-type">Cloud</div></div>
+      <div class="int-card"><div class="int-icon">&#128200;</div><div class="int-name">Salesforce</div><div class="int-type">CRM</div></div>
+      <div class="int-card"><div class="int-icon">&#128231;</div><div class="int-name">Google Workspace</div><div class="int-type">Productivity</div></div>
+      <div class="int-card"><div class="int-icon">&#128202;</div><div class="int-name">Datadog</div><div class="int-type">Monitoring</div></div>
+      <div class="int-card"><div class="int-icon">&#128274;</div><div class="int-name">Okta</div><div class="int-type">Identity</div></div>
+      <div class="int-card"><div class="int-icon">&#128203;</div><div class="int-name">Notion</div><div class="int-type">Documentation</div></div>
+      <div class="int-card"><div class="int-icon">&#128232;</div><div class="int-name">Microsoft 365</div><div class="int-type">Productivity</div></div>
+      <div class="int-card"><div class="int-icon">&#128295;</div><div class="int-name">PagerDuty</div><div class="int-type">Incident Mgmt</div></div>
+      <div class="int-card"><div class="int-icon">&#129302;</div><div class="int-name">Custom Webhook</div><div class="int-type">Any System</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="perf-section">
+  <div class="sec-label">// performance</div>
+  <div class="sec-title">We obsess over performance.</div>
+
+  <div class="perf-grid">
+    <div class="perf-card">
+      <h4>API Latency (p99) <span>&lt;50ms</span></h4>
+      <div class="perf-bar-outer"><div class="perf-bar-inner perf-bar-green" style="width:0%" data-w="15%"></div></div>
+      <div class="perf-detail"><span>Target: &lt;100ms</span><span>Actual: 47ms</span></div>
+    </div>
+    <div class="perf-card">
+      <h4>Agent CPU Usage <span>&lt;1%</span></h4>
+      <div class="perf-bar-outer"><div class="perf-bar-inner perf-bar-green" style="width:0%" data-w="8%"></div></div>
+      <div class="perf-detail"><span>Target: &lt;3%</span><span>Actual: 0.8%</span></div>
+    </div>
+    <div class="perf-card">
+      <h4>Uptime (30 day) <span>99.99%</span></h4>
+      <div class="perf-bar-outer"><div class="perf-bar-inner perf-bar-green" style="width:0%" data-w="99.99%"></div></div>
+      <div class="perf-detail"><span>SLA: 99.95%</span><span>Actual: 99.99%</span></div>
+    </div>
+    <div class="perf-card">
+      <h4>Agent Memory <span>48MB</span></h4>
+      <div class="perf-bar-outer"><div class="perf-bar-inner perf-bar-blue" style="width:0%" data-w="12%"></div></div>
+      <div class="perf-detail"><span>Limit: 200MB</span><span>Actual: 48MB</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="data-section">
+  <div class="sec-label">// data flow</div>
+  <div class="sec-title">Your data pipeline, visualized.</div>
+  <div class="sec-desc">From capture to insight in under 30 seconds. All processing happens on encrypted channels.</div>
+
+  <div class="data-flow">
+    <div class="data-node"><div class="dn-icon">&#128187;</div><div class="dn-name">Desktop Agent</div><div class="dn-desc">Activity capture</div></div>
+    <div class="data-arrow">&#10132;</div>
+    <div class="data-node"><div class="dn-icon">&#128272;</div><div class="dn-name">Edge ML</div><div class="dn-desc">Local classification</div></div>
+    <div class="data-arrow">&#10132;</div>
+    <div class="data-node"><div class="dn-icon">&#128274;</div><div class="dn-name">Encrypted Sync</div><div class="dn-desc">TLS 1.3 tunnel</div></div>
+    <div class="data-arrow">&#10132;</div>
+    <div class="data-node"><div class="dn-icon">&#9881;&#65039;</div><div class="dn-name">Process Mining</div><div class="dn-desc">Pattern extraction</div></div>
+    <div class="data-arrow">&#10132;</div>
+    <div class="data-node"><div class="dn-icon">&#129302;</div><div class="dn-name">AI Engine</div><div class="dn-desc">Insights & coaching</div></div>
+    <div class="data-arrow">&#10132;</div>
+    <div class="data-node"><div class="dn-icon">&#128202;</div><div class="dn-name">Dashboard</div><div class="dn-desc">API & UI</div></div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="sec-label">// get started</div>
+  <h2>Ship it. <code>go2 init</code></h2>
+  <p>15 minutes to deploy. Full API access. SOC 2 compliant. No infrastructure to manage. Try it with your engineering team first.</p>
+  <a class="btn btn-primary" href="#">Start Free Pilot</a>
+  <a class="btn" href="#">Read Full Docs</a>
+</section>
+
+<footer>&copy; 2026 Go2. Built by engineers, for engineers.</footer>
+
+<script>
+const apiExamples=[
+`<span class="comment">// List all discovered processes</span>
+<span class="keyword">const</span> response = <span class="keyword">await</span> <span class="func">go2</span>.processes.<span class="func">list</span>({
+  team: <span class="string">'engineering'</span>,
+  status: <span class="string">'active'</span>,
+  sort: <span class="string">'frequency'</span>
+});
+
+<span class="comment">// Returns 342 auto-discovered processes</span>
+console.<span class="func">log</span>(response.data);
+<span class="comment">// [{ id: 'proc_abc', name: 'code-review',</span>
+<span class="comment">//    frequency: '47/week', avg_time: '2.3h',</span>
+<span class="comment">//    automatable: 0.82, status: 'active' }, ...]</span>`,
+
+`<span class="comment">// Get deep insights for a process</span>
+<span class="keyword">const</span> insights = <span class="keyword">await</span> <span class="func">go2</span>.processes.<span class="func">insights</span>(<span class="string">'proc_abc'</span>);
+
+<span class="comment">// Bottleneck analysis, optimization suggestions</span>
+console.<span class="func">log</span>(insights.bottlenecks);
+<span class="comment">// [{ step: 'approval_queue', avg_wait: '3.2h',</span>
+<span class="comment">//    recommendation: 'auto-approve for < $500',</span>
+<span class="comment">//    estimated_savings: '12h/week' }]</span>`,
+
+`<span class="comment">// Deploy an automation</span>
+<span class="keyword">const</span> automation = <span class="keyword">await</span> <span class="func">go2</span>.automations.<span class="func">create</span>({
+  process_id: <span class="string">'proc_deploy'</span>,
+  type: <span class="string">'full'</span>,
+  trigger: <span class="string">'on_merge'</span>,
+  notifications: [<span class="string">'slack:#deploys'</span>],
+  rollback: <span class="keyword">true</span>
+});
+<span class="comment">// { id: 'auto_xyz', status: 'deployed',</span>
+<span class="comment">//   coverage: 0.94, est_savings: '9h/week' }</span>`,
+
+`<span class="comment">// Get team metrics</span>
+<span class="keyword">const</span> metrics = <span class="keyword">await</span> <span class="func">go2</span>.teams.<span class="func">metrics</span>(<span class="string">'team_eng'</span>, {
+  period: <span class="string">'30d'</span>,
+  include: [<span class="string">'productivity'</span>, <span class="string">'collaboration'</span>]
+});
+<span class="comment">// { productivity_index: 847,</span>
+<span class="comment">//   collaboration_score: 0.89,</span>
+<span class="comment">//   focus_time_pct: 0.62,</span>
+<span class="comment">//   meeting_load: '28%' }</span>`,
+
+`<span class="comment">// Register a webhook</span>
+<span class="keyword">const</span> hook = <span class="keyword">await</span> <span class="func">go2</span>.webhooks.<span class="func">create</span>({
+  url: <span class="string">'https://api.acme.com/go2-events'</span>,
+  events: [
+    <span class="string">'process.bottleneck.detected'</span>,
+    <span class="string">'automation.completed'</span>,
+    <span class="string">'coaching.suggestion.created'</span>
+  ],
+  secret: <span class="string">'whsec_...'</span>
+});
+<span class="comment">// Webhook verified and active</span>`,
+
+`<span class="comment">// Get AI coaching suggestions</span>
+<span class="keyword">const</span> suggestions = <span class="keyword">await</span> <span class="func">go2</span>.coaching.<span class="func">list</span>({
+  team: <span class="string">'engineering'</span>,
+  type: <span class="string">'workflow_optimization'</span>,
+  min_impact: <span class="string">'medium'</span>
+});
+<span class="comment">// [{ suggestion: 'Batch PR reviews 2x/day',</span>
+<span class="comment">//    impact: 'high', est_time_saved: '4h/week',</span>
+<span class="comment">//    accepted_rate: 0.78 }]</span>`,
+
+`<span class="comment">// Configure an AI agent</span>
+<span class="keyword">await</span> <span class="func">go2</span>.agents.<span class="func">configure</span>(<span class="string">'agent_triage'</span>, {
+  model: <span class="string">'go2-ops-v3'</span>,
+  permissions: [<span class="string">'read:tickets'</span>, <span class="string">'write:labels'</span>],
+  rules: [{
+    <span class="keyword">if</span>: <span class="string">'severity >= P1'</span>,
+    then: <span class="string">'escalate_immediately'</span>
+  }],
+  training_data: <span class="string">'last_90d'</span>
+});`,
+
+`<span class="comment">// GDPR: Delete all user data</span>
+<span class="keyword">const</span> result = <span class="keyword">await</span> <span class="func">go2</span>.data.<span class="func">delete</span>(<span class="string">'user_123'</span>, {
+  scope: <span class="string">'complete'</span>,
+  confirmation: <span class="string">'DELETE_ALL_DATA'</span>,
+  notify: <span class="keyword">true</span>
+});
+<span class="comment">// { status: 'completed',</span>
+<span class="comment">//   records_deleted: 14892,</span>
+<span class="comment">//   certificate_url: 'https://...' }</span>`
+];
+
+function showAPI(idx){
+  document.querySelectorAll('.api-endpoint').forEach((e,i)=>{
+    e.classList.toggle('active',i===idx);
+  });
+  document.getElementById('apiCodeBody').innerHTML=apiExamples[idx];
+}
+showAPI(0);
+
+function copyCode(){
+  const text=document.getElementById('apiCodeBody').textContent;
+  navigator.clipboard.writeText(text);
+}
+
+// Animate performance bars
+const perfObs=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.querySelectorAll('.perf-bar-inner').forEach(bar=>{
+        bar.style.width=bar.dataset.w;
+      });
+    }
+  });
+},{threshold:0.3});
+document.querySelectorAll('.perf-section').forEach(el=>perfObs.observe(el));
+
+// Smooth scroll
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    e.preventDefault();
+    const t=document.querySelector(a.getAttribute('href'));
+    if(t)t.scrollIntoView({behavior:'smooth'});
+  });
+});
+
+// Terminal typing effect
+let termLines;
+function initTerminal(){
+  const body=document.getElementById('terminalBody');
+  termLines=body.querySelectorAll('.term-line');
+  termLines.forEach((line,i)=>{
+    line.style.opacity='0';
+    setTimeout(()=>{line.style.opacity='1';line.style.transition='opacity 0.3s'},i*120);
+  });
+}
+setTimeout(initTerminal,500);
+</script>
+</body>
+</html>
