@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The Proof</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap');
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #fafafa;
+    --white: #ffffff;
+    --black: #111827;
+    --grey-900: #1f2937;
+    --grey-700: #374151;
+    --grey-500: #6b7280;
+    --grey-400: #9ca3af;
+    --grey-300: #d1d5db;
+    --grey-200: #e5e7eb;
+    --grey-100: #f3f4f6;
+    --blue: #2563eb;
+    --blue-light: #dbeafe;
+    --green: #059669;
+    --green-light: #d1fae5;
+    --red: #dc2626;
+    --red-light: #fee2e2;
+    --amber: #d97706;
+    --amber-light: #fef3c7;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--black);
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 3rem;
+    background: rgba(255,255,255,0.95); backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--grey-200);
+  }
+  .logo { font-size: 1.4rem; font-weight: 800; color: var(--black); letter-spacing: -0.5px; }
+  .nav-links { display: flex; gap: 2rem; align-items: center; }
+  .nav-links a { color: var(--grey-500); text-decoration: none; font-size: 0.88rem; font-weight: 500; transition: color 0.3s; }
+  .nav-links a:hover { color: var(--black); }
+  .nav-cta {
+    background: var(--black) !important; color: var(--white) !important;
+    padding: 0.55rem 1.4rem; border-radius: 8px; font-weight: 600 !important;
+  }
+
+  /* HERO */
+  .hero {
+    padding: 10rem 2rem 6rem; text-align: center;
+    max-width: 800px; margin: 0 auto;
+  }
+  .hero h1 {
+    font-size: 3.5rem; font-weight: 900; letter-spacing: -2px;
+    line-height: 1.05; margin-bottom: 1.5rem; color: var(--black);
+  }
+  .hero p {
+    font-size: 1.2rem; color: var(--grey-500); max-width: 550px;
+    margin: 0 auto 1rem; line-height: 1.7;
+  }
+  .hero-note {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem; color: var(--grey-400);
+    margin-top: 2rem;
+  }
+
+  /* STAT CARDS ROW */
+  .stats-hero {
+    padding: 0 2rem 6rem;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem;
+  }
+  .stat-card {
+    background: var(--white); border: 1px solid var(--grey-200);
+    border-radius: 16px; padding: 2rem; text-align: center;
+    transition: all 0.3s;
+  }
+  .stat-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.06); transform: translateY(-2px); }
+  .stat-value {
+    font-size: 3.5rem; font-weight: 900; letter-spacing: -2px;
+    margin-bottom: 0.25rem;
+  }
+  .stat-value.red { color: var(--red); }
+  .stat-value.blue { color: var(--blue); }
+  .stat-value.green { color: var(--green); }
+  .stat-value.amber { color: var(--amber); }
+  .stat-label { font-size: 0.9rem; color: var(--grey-500); font-weight: 500; }
+  .stat-source {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem; color: var(--grey-400); margin-top: 0.5rem;
+  }
+
+  /* DIVIDER */
+  .divider { max-width: 1100px; margin: 0 auto; height: 1px; background: var(--grey-200); }
+
+  /* THE PROBLEM — DATA SECTION */
+  .data-section {
+    padding: 6rem 2rem;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .data-header {
+    margin-bottom: 3rem;
+  }
+  .data-label {
+    display: inline-block; font-size: 0.7rem; font-weight: 700;
+    letter-spacing: 3px; text-transform: uppercase; color: var(--grey-500);
+    margin-bottom: 0.75rem;
+  }
+  .data-title {
+    font-size: 2rem; font-weight: 800; letter-spacing: -1px;
+  }
+
+  /* BAR CHART */
+  .chart-container {
+    background: var(--white); border: 1px solid var(--grey-200);
+    border-radius: 16px; padding: 2.5rem; margin-bottom: 3rem;
+  }
+  .chart-title {
+    font-size: 0.85rem; font-weight: 700; color: var(--grey-700);
+    margin-bottom: 0.25rem;
+  }
+  .chart-subtitle {
+    font-size: 0.75rem; color: var(--grey-400); margin-bottom: 2rem;
+  }
+  .bar-chart { display: flex; flex-direction: column; gap: 1.25rem; }
+  .bar-row { display: grid; grid-template-columns: 180px 1fr 60px; gap: 1rem; align-items: center; }
+  .bar-label { font-size: 0.85rem; font-weight: 500; color: var(--grey-700); }
+  .bar-track { height: 32px; background: var(--grey-100); border-radius: 6px; position: relative; overflow: hidden; }
+  .bar-fill {
+    height: 100%; border-radius: 6px; display: flex; align-items: center;
+    padding-left: 0.75rem; font-size: 0.75rem; font-weight: 700; color: white;
+    transition: width 1s ease;
+  }
+  .bar-pct { font-family: 'DM Mono', monospace; font-size: 0.85rem; font-weight: 600; color: var(--grey-700); text-align: right; }
+
+  .fill-red { background: linear-gradient(90deg, var(--red), #ef4444); }
+  .fill-blue { background: linear-gradient(90deg, var(--blue), #3b82f6); }
+  .fill-green { background: linear-gradient(90deg, var(--green), #10b981); }
+  .fill-amber { background: linear-gradient(90deg, var(--amber), #f59e0b); }
+
+  /* COMPARISON TABLE */
+  .table-container {
+    background: var(--white); border: 1px solid var(--grey-200);
+    border-radius: 16px; padding: 2.5rem; margin-bottom: 3rem;
+    overflow-x: auto;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left; font-size: 0.75rem; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--grey-500);
+    padding: 0.75rem 1rem; border-bottom: 2px solid var(--grey-200);
+  }
+  tbody td {
+    padding: 1rem; border-bottom: 1px solid var(--grey-100);
+    font-size: 0.9rem; color: var(--grey-700);
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--grey-100); }
+  .td-bold { font-weight: 700; color: var(--black); }
+  .badge {
+    display: inline-block; font-size: 0.7rem; font-weight: 700;
+    padding: 0.2rem 0.6rem; border-radius: 50px;
+  }
+  .badge-red { background: var(--red-light); color: var(--red); }
+  .badge-green { background: var(--green-light); color: var(--green); }
+  .badge-amber { background: var(--amber-light); color: var(--amber); }
+  .badge-blue { background: var(--blue-light); color: var(--blue); }
+
+  /* TESTIMONIAL CARDS */
+  .testimonials {
+    padding: 6rem 2rem;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .test-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  .testimonial {
+    background: var(--white); border: 1px solid var(--grey-200);
+    border-radius: 16px; padding: 2rem; transition: all 0.3s;
+  }
+  .testimonial:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+  .test-quote {
+    font-size: 1rem; color: var(--grey-700); line-height: 1.7;
+    margin-bottom: 1.5rem; font-style: italic;
+  }
+  .test-author { display: flex; align-items: center; gap: 0.75rem; }
+  .test-avatar {
+    width: 40px; height: 40px; border-radius: 50%; background: var(--grey-200);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.9rem; color: var(--grey-500);
+  }
+  .test-name { font-size: 0.85rem; font-weight: 700; color: var(--black); }
+  .test-role { font-size: 0.75rem; color: var(--grey-400); }
+
+  /* CASE STUDY SNIPPETS */
+  .cases {
+    padding: 6rem 2rem;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .case-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .case-card {
+    background: var(--white); border: 1px solid var(--grey-200);
+    border-radius: 16px; padding: 2.5rem;
+    transition: all 0.3s; position: relative;
+  }
+  .case-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+  .case-industry {
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--blue); margin-bottom: 1rem;
+  }
+  .case-card h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.75rem; }
+  .case-card p { font-size: 0.9rem; color: var(--grey-500); line-height: 1.6; margin-bottom: 1.5rem; }
+  .case-results { display: flex; gap: 2rem; }
+  .case-metric { }
+  .case-metric .val {
+    font-size: 1.5rem; font-weight: 800; color: var(--green); letter-spacing: -1px;
+  }
+  .case-metric .desc { font-size: 0.75rem; color: var(--grey-400); }
+
+  /* DONUT CHART (CSS) */
+  .donut-section {
+    padding: 6rem 2rem;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .donut-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+  .donut-card {
+    background: var(--white); border: 1px solid var(--grey-200);
+    border-radius: 16px; padding: 2rem; text-align: center;
+  }
+  .donut {
+    width: 120px; height: 120px; border-radius: 50%;
+    margin: 0 auto 1.5rem; position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .donut-inner {
+    width: 80px; height: 80px; border-radius: 50%; background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; font-weight: 800; color: var(--black);
+    position: relative; z-index: 1;
+  }
+  .donut-1 { background: conic-gradient(var(--red) 0% 95%, var(--grey-200) 95% 100%); }
+  .donut-2 { background: conic-gradient(var(--green) 0% 89%, var(--grey-200) 89% 100%); }
+  .donut-3 { background: conic-gradient(var(--blue) 0% 5%, var(--grey-200) 5% 100%); }
+  .donut-label { font-size: 0.9rem; font-weight: 600; color: var(--grey-700); }
+  .donut-sub { font-size: 0.75rem; color: var(--grey-400); margin-top: 0.25rem; }
+
+  /* HOW GO2 WORKS — SIMPLE */
+  .how-section {
+    padding: 6rem 2rem;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .how-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+  .how-step {
+    background: var(--white); border: 1px solid var(--grey-200);
+    border-radius: 16px; padding: 2rem; text-align: center;
+  }
+  .how-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--black); color: var(--white);
+    font-weight: 800; font-size: 0.9rem; margin-bottom: 1rem;
+  }
+  .how-step h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .how-step p { font-size: 0.85rem; color: var(--grey-500); line-height: 1.5; }
+
+  /* CTA */
+  .cta-section {
+    padding: 6rem 2rem; text-align: center;
+    max-width: 800px; margin: 0 auto;
+  }
+  .cta-section h2 { font-size: 2.5rem; font-weight: 900; letter-spacing: -1.5px; margin-bottom: 1rem; }
+  .cta-section p { font-size: 1.1rem; color: var(--grey-500); margin-bottom: 2rem; }
+  .cta-btn {
+    display: inline-flex; padding: 1rem 2.5rem; border-radius: 12px;
+    font-weight: 700; font-size: 1rem; text-decoration: none;
+    background: var(--black); color: var(--white);
+    transition: all 0.3s; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  }
+  .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+
+  footer {
+    padding: 3rem 2rem; text-align: center;
+    border-top: 1px solid var(--grey-200);
+  }
+  footer p { color: var(--grey-400); font-size: 0.85rem; }
+
+  @media (max-width: 900px) {
+    .hero h1 { font-size: 2.5rem; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .test-grid { grid-template-columns: 1fr; }
+    .case-grid { grid-template-columns: 1fr; }
+    .donut-grid { grid-template-columns: 1fr; }
+    .how-steps { grid-template-columns: repeat(2, 1fr); }
+    .bar-row { grid-template-columns: 120px 1fr 50px; }
+    nav { padding: 1rem 1.5rem; }
+    .nav-links a:not(.nav-cta) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Go2</div>
+  <div class="nav-links">
+    <a href="#data">Data</a>
+    <a href="#cases">Case Studies</a>
+    <a href="#" class="nav-cta">See the Data</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <h1>We Don't Need to Sell You.<br>The Numbers Do.</h1>
+  <p>No marketing fluff. No buzzwords. Just the data that explains why 95% of AI fails and how Go2 fixes it.</p>
+  <div class="hero-note">All data sourced from MIT Sloan, BCG, and Go2 internal metrics.</div>
+</section>
+
+<section class="stats-hero">
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-value red">95%</div>
+      <div class="stat-label">AI pilots fail to reach production</div>
+      <div class="stat-source">MIT Sloan, 2024</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value amber">5%</div>
+      <div class="stat-label">Create real value from AI</div>
+      <div class="stat-source">BCG Research</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value green">89%</div>
+      <div class="stat-label">Worker satisfaction with Go2 coaching</div>
+      <div class="stat-source">Go2 internal</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value blue">2M+</div>
+      <div class="stat-label">Worker profiles in the network</div>
+      <div class="stat-source">Go2 platform</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<section class="data-section" id="data">
+  <div class="data-header">
+    <div class="data-label">The Problem, Quantified</div>
+    <h2 class="data-title">Why AI Keeps Failing</h2>
+  </div>
+
+  <div class="chart-container">
+    <div class="chart-title">Root Causes of AI Pilot Failure</div>
+    <div class="chart-subtitle">Percentage of failed pilots citing each factor</div>
+    <div class="bar-chart">
+      <div class="bar-row">
+        <div class="bar-label">No work process data</div>
+        <div class="bar-track"><div class="bar-fill fill-red" style="width:87%"></div></div>
+        <div class="bar-pct">87%</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Can't measure impact</div>
+        <div class="bar-track"><div class="bar-fill fill-red" style="width:73%"></div></div>
+        <div class="bar-pct">73%</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Worker resistance</div>
+        <div class="bar-track"><div class="bar-fill fill-amber" style="width:62%"></div></div>
+        <div class="bar-pct">62%</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">No training data</div>
+        <div class="bar-track"><div class="bar-fill fill-amber" style="width:58%"></div></div>
+        <div class="bar-pct">58%</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">18+ month timeline</div>
+        <div class="bar-track"><div class="bar-fill fill-blue" style="width:45%"></div></div>
+        <div class="bar-pct">45%</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <div class="chart-title">Go2 vs. Traditional Approaches</div>
+    <div class="chart-subtitle" style="margin-bottom:1.5rem">Side-by-side comparison across key dimensions</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Dimension</th>
+          <th>Without Go2</th>
+          <th>With Go2</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="td-bold">Work process visibility</td>
+          <td><span class="badge badge-red">None</span> Manual surveys only</td>
+          <td><span class="badge badge-green">Full</span> Auto-captured in real-time</td>
+        </tr>
+        <tr>
+          <td class="td-bold">AI agent training data</td>
+          <td><span class="badge badge-red">Missing</span> No real workflow data</td>
+          <td><span class="badge badge-green">Rich</span> From 2M+ worker profiles</td>
+        </tr>
+        <tr>
+          <td class="td-bold">Worker experience</td>
+          <td><span class="badge badge-amber">Mixed</span> Surveillance fears</td>
+          <td><span class="badge badge-green">89%</span> Satisfaction via coaching</td>
+        </tr>
+        <tr>
+          <td class="td-bold">Time to value</td>
+          <td><span class="badge badge-red">18+ months</span> Pilot purgatory</td>
+          <td><span class="badge badge-green">Weeks</span> Immediate data capture</td>
+        </tr>
+        <tr>
+          <td class="td-bold">Existing AI tool integration</td>
+          <td><span class="badge badge-red">Siloed</span> No work context</td>
+          <td><span class="badge badge-blue">Sidecar</span> Claude, ChatGPT, etc.</td>
+        </tr>
+        <tr>
+          <td class="td-bold">Process documentation</td>
+          <td><span class="badge badge-amber">Manual</span> Always outdated</td>
+          <td><span class="badge badge-green">Auto</span> Always current</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<section class="donut-section">
+  <div class="data-header">
+    <div class="data-label">Key Metrics</div>
+    <h2 class="data-title">The Numbers at a Glance</h2>
+  </div>
+  <div class="donut-grid">
+    <div class="donut-card">
+      <div class="donut donut-1"><div class="donut-inner">95%</div></div>
+      <div class="donut-label">AI Pilot Failure Rate</div>
+      <div class="donut-sub">Without work process data</div>
+    </div>
+    <div class="donut-card">
+      <div class="donut donut-2"><div class="donut-inner">89%</div></div>
+      <div class="donut-label">Worker Satisfaction</div>
+      <div class="donut-sub">With Go2 real-time coaching</div>
+    </div>
+    <div class="donut-card">
+      <div class="donut donut-3"><div class="donut-inner">5%</div></div>
+      <div class="donut-label">Create Real AI Value</div>
+      <div class="donut-sub">BCG research finding</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<section class="testimonials">
+  <div class="data-header">
+    <div class="data-label">What They Said</div>
+    <h2 class="data-title">Direct Quotes, No Edits</h2>
+  </div>
+  <div class="test-grid">
+    <div class="testimonial">
+      <div class="test-quote">"We spent 14 months on an AI pilot before Go2. Within 3 weeks of deploying Cowork.ai, we had more actionable data than the entire pilot produced."</div>
+      <div class="test-author">
+        <div class="test-avatar">JR</div>
+        <div>
+          <div class="test-name">James R.</div>
+          <div class="test-role">VP Operations, Enterprise SaaS</div>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial">
+      <div class="test-quote">"My team was skeptical about 'another monitoring tool.' The 89% satisfaction stat is real. They love the coaching because it actually helps them work better."</div>
+      <div class="test-author">
+        <div class="test-avatar">MK</div>
+        <div>
+          <div class="test-name">Maria K.</div>
+          <div class="test-role">Director of AI, Financial Services</div>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial">
+      <div class="test-quote">"Go2 found 47 hours per week of automatable work in our first month. That's not a typo. We had no idea those patterns existed."</div>
+      <div class="test-author">
+        <div class="test-avatar">DP</div>
+        <div>
+          <div class="test-name">David P.</div>
+          <div class="test-role">CTO, Healthcare Tech</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<section class="cases" id="cases">
+  <div class="data-header">
+    <div class="data-label">Case Studies</div>
+    <h2 class="data-title">Results, Not Promises</h2>
+  </div>
+  <div class="case-grid">
+    <div class="case-card">
+      <div class="case-industry">Financial Services</div>
+      <h3>From 18-Month Pilot to Deployed Agents in 6 Weeks</h3>
+      <p>A top-10 bank was stuck in pilot purgatory. Go2 captured work data across 200 agents, identified automation opportunities, and trained AI agents on real workflows.</p>
+      <div class="case-results">
+        <div class="case-metric"><div class="val">6 weeks</div><div class="desc">Time to deployment</div></div>
+        <div class="case-metric"><div class="val">$2.4M</div><div class="desc">Annual savings</div></div>
+        <div class="case-metric"><div class="val">91%</div><div class="desc">Satisfaction</div></div>
+      </div>
+    </div>
+    <div class="case-card">
+      <div class="case-industry">Enterprise SaaS</div>
+      <h3>Auto-Documented 340 Processes Nobody Knew Existed</h3>
+      <p>A 2,000-person company had zero documentation of actual work processes. Cowork.ai mapped everything in 30 days. Zero manual effort from workers.</p>
+      <div class="case-results">
+        <div class="case-metric"><div class="val">340</div><div class="desc">Processes mapped</div></div>
+        <div class="case-metric"><div class="val">0 hrs</div><div class="desc">Manual effort</div></div>
+        <div class="case-metric"><div class="val">52 hrs/wk</div><div class="desc">Automatable</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<section class="how-section">
+  <div class="data-header">
+    <div class="data-label">How It Works</div>
+    <h2 class="data-title">Four Steps. No Complexity.</h2>
+  </div>
+  <div class="how-steps">
+    <div class="how-step">
+      <div class="how-num">1</div>
+      <h3>Deploy Cowork.ai</h3>
+      <p>Desktop agent observes how work happens. Every worker, every workflow.</p>
+    </div>
+    <div class="how-step">
+      <div class="how-num">2</div>
+      <h3>Auto-Document</h3>
+      <p>Processes mapped automatically. Always current, zero manual effort.</p>
+    </div>
+    <div class="how-step">
+      <div class="how-num">3</div>
+      <h3>Coach & Optimize</h3>
+      <p>Real-time AI coaching for workers. 89% satisfaction because it helps.</p>
+    </div>
+    <div class="how-step">
+      <div class="how-num">4</div>
+      <h3>Train AI Agents</h3>
+      <p>Work data becomes training data. Sidecar Claude, ChatGPT, and more.</p>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <h2>See the Data Yourself</h2>
+  <p>We'll show you what Go2 finds in your work data. No pitch deck. Just data.</p>
+  <a href="#" class="cta-btn">Request a Data Review</a>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2. The data speaks for itself. $60M+ in sales. 2M+ worker profiles. 89% satisfaction.</p>
+</footer>
+
+</body>
+</html>
