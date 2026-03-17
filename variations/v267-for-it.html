@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The IT Director View</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#fafbfc;--surface:#ffffff;--card:#ffffff;--border:#d0d7de;--text:#24292f;--muted:#656d76;--accent:#0969da;--green:#1a7f37;--red:#cf222e;--yellow:#9a6700;--code-bg:#f6f8fa;--white:#ffffff}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;font-size:14px}
+
+.topbar{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--white);border-bottom:1px solid var(--border);padding:12px 32px;display:flex;justify-content:space-between;align-items:center}
+.topbar-logo{font-size:18px;font-weight:700;color:var(--accent)}
+.topbar-logo span{color:var(--muted);font-weight:400;font-size:13px;margin-left:8px}
+.topbar-links{display:flex;gap:4px}
+.topbar-links a{color:var(--muted);text-decoration:none;font-size:13px;padding:6px 12px;border-radius:6px;transition:all 0.2s}
+.topbar-links a:hover{background:var(--code-bg);color:var(--text)}
+
+.hero{min-height:90vh;display:flex;align-items:center;padding:100px 40px;max-width:960px;margin:0 auto}
+.hero-content{width:100%}
+.hero-badge{display:inline-block;padding:4px 12px;background:rgba(9,105,218,0.08);border:1px solid rgba(9,105,218,0.2);border-radius:20px;color:var(--accent);font-size:12px;font-weight:600;margin-bottom:20px}
+.hero h1{font-size:clamp(28px,4vw,44px);font-weight:700;line-height:1.25;margin-bottom:16px}
+.hero h1 code{font-family:'SF Mono','Cascadia Code',monospace;color:var(--accent);background:rgba(9,105,218,0.06);padding:2px 8px;border-radius:4px;font-size:0.9em}
+.hero p{font-size:16px;color:var(--muted);line-height:1.7;margin-bottom:28px;max-width:640px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{padding:10px 20px;font-size:14px;font-weight:600;border:1px solid var(--border);background:var(--white);color:var(--text);border-radius:6px;cursor:pointer;transition:all 0.2s;text-decoration:none;display:inline-block}
+.btn:hover{background:var(--code-bg)}
+.btn-primary{background:var(--accent);color:white;border-color:var(--accent)}
+.btn-primary:hover{background:#0860ca}
+
+.sec-header{padding:60px 40px 20px;max-width:960px;margin:0 auto}
+.sec-label{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:4px}
+.sec-title{font-size:24px;font-weight:700;margin-bottom:8px}
+.sec-desc{color:var(--muted);font-size:14px;max-width:640px;line-height:1.7}
+
+/* Doc-style content */
+.doc-section{padding:20px 40px 60px;max-width:960px;margin:0 auto}
+
+/* Deployment Steps */
+.deploy-steps{margin-top:24px}
+.deploy-step{background:var(--card);border:1px solid var(--border);border-radius:6px;margin-bottom:12px;overflow:hidden}
+.deploy-step-header{display:flex;align-items:center;padding:16px 20px;gap:12px;cursor:pointer}
+.deploy-step-header:hover{background:var(--code-bg)}
+.step-num{width:28px;height:28px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.step-num.done{background:var(--green)}
+.step-title{font-weight:600;font-size:14px;flex:1}
+.step-time{font-size:12px;color:var(--muted)}
+.step-detail{padding:0 20px 16px 60px;display:none;font-size:13px;color:var(--muted);line-height:1.7}
+.step-detail.open{display:block}
+.step-detail code{background:var(--code-bg);padding:2px 6px;border-radius:3px;font-family:'SF Mono',monospace;font-size:12px}
+.code-block{background:#24292f;color:#e6edf3;padding:16px;border-radius:6px;margin:12px 0;font-family:'SF Mono',monospace;font-size:13px;line-height:1.6;overflow-x:auto}
+.code-block .comment{color:#8b949e}
+.code-block .string{color:#a5d6ff}
+.code-block .cmd{color:#79c0ff}
+
+/* Spec Cards */
+.spec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px}
+.spec-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px}
+.spec-card h3{font-size:14px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.spec-icon{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px}
+.spec-card ul{list-style:none;font-size:13px;color:var(--muted);line-height:2}
+.spec-card li{padding-left:16px;position:relative}
+.spec-card li::before{content:'\2713';position:absolute;left:0;color:var(--green);font-weight:700}
+
+/* Compliance Table */
+.comp-table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px}
+.comp-table th{text-align:left;padding:10px 12px;border-bottom:2px solid var(--border);font-weight:600;font-size:12px;color:var(--muted)}
+.comp-table td{padding:10px 12px;border-bottom:1px solid var(--code-bg)}
+.comp-table tr:hover td{background:var(--code-bg)}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.badge-green{background:rgba(26,127,55,0.1);color:var(--green)}
+.badge-blue{background:rgba(9,105,218,0.1);color:var(--accent)}
+.badge-yellow{background:rgba(154,103,0,0.1);color:var(--yellow)}
+
+/* Architecture */
+.arch-diagram{background:var(--code-bg);border:1px solid var(--border);border-radius:6px;padding:32px;margin-top:16px;font-family:'SF Mono',monospace;font-size:12px;line-height:2;color:var(--muted);overflow-x:auto;white-space:pre}
+
+/* FAQ */
+.faq-list{margin-top:16px}
+.faq-item{border:1px solid var(--border);border-radius:6px;margin-bottom:8px;overflow:hidden}
+.faq-q{padding:14px 20px;font-weight:600;font-size:14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.faq-q:hover{background:var(--code-bg)}
+.faq-arrow{color:var(--muted);transition:transform 0.2s}
+.faq-a{padding:0 20px 14px;font-size:13px;color:var(--muted);line-height:1.7;display:none}
+.faq-a.open{display:block}
+
+/* Checklist */
+.checklist{margin-top:16px}
+.check-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--code-bg);font-size:13px}
+.check-box{width:18px;height:18px;border:2px solid var(--border);border-radius:4px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;margin-top:1px}
+.check-box.checked{background:var(--green);border-color:var(--green);color:white}
+.check-label{flex:1}
+.check-label strong{display:block;margin-bottom:2px}
+.check-label span{color:var(--muted);font-size:12px}
+
+/* CTA */
+.cta{padding:80px 40px;text-align:center;border-top:1px solid var(--border);margin-top:40px}
+.cta h2{font-size:28px;font-weight:700;margin-bottom:12px}
+.cta p{font-size:15px;color:var(--muted);max-width:480px;margin:0 auto 24px;line-height:1.7}
+
+footer{padding:32px;text-align:center;font-size:12px;color:var(--muted);border-top:1px solid var(--border)}
+
+@media(max-width:900px){
+.spec-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-logo">Go2 <span>IT Admin Guide</span></span>
+  <div class="topbar-links">
+    <a href="#deploy">Deployment</a>
+    <a href="#security">Security</a>
+    <a href="#compliance">Compliance</a>
+    <a href="#integration">Integration</a>
+    <a href="#faq">FAQ</a>
+  </div>
+</div>
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">IT Documentation</div>
+    <h1>Deploys in <code>15 minutes</code>. Zero infrastructure.</h1>
+    <p>No servers to manage. No VPN required. No agents to build. SSO on day one. SCIM for provisioning. Audit logs for compliance. Everything an IT team needs to say yes.</p>
+    <div class="btn-row">
+      <a class="btn btn-primary" href="#deploy">Deployment Guide</a>
+      <a class="btn" href="#security">Security Specs</a>
+      <a class="btn" href="#compliance">Compliance Docs</a>
+    </div>
+  </div>
+</section>
+
+<div class="sec-header" id="deploy">
+  <div class="sec-label">Deployment</div>
+  <div class="sec-title">5-Step Deployment Process</div>
+  <div class="sec-desc">Total time: under 15 minutes. No dedicated infrastructure. No firewall changes. No VPN required.</div>
+</div>
+
+<div class="doc-section">
+  <div class="deploy-steps">
+    <div class="deploy-step" onclick="toggleStep(this)">
+      <div class="deploy-step-header">
+        <div class="step-num done">1</div>
+        <div class="step-title">Configure SSO</div>
+        <div class="step-time">3 minutes</div>
+      </div>
+      <div class="step-detail">
+        SAML 2.0 and OIDC supported. Works with Okta, Azure AD, Google Workspace, OneLogin, and any SAML-compliant IdP.
+        <div class="code-block"><span class="comment"># Okta SAML Configuration</span>
+SSO URL:     https://auth.go2.io/saml/acs
+Entity ID:   https://go2.io/sp
+NameID:      email
+Attributes:  email, firstName, lastName, department
+
+<span class="comment"># Or use OIDC</span>
+Redirect URI: https://auth.go2.io/oidc/callback
+Scopes:       openid email profile</div>
+      </div>
+    </div>
+    <div class="deploy-step" onclick="toggleStep(this)">
+      <div class="deploy-step-header">
+        <div class="step-num done">2</div>
+        <div class="step-title">Enable SCIM Provisioning</div>
+        <div class="step-time">2 minutes</div>
+      </div>
+      <div class="step-detail">
+        SCIM 2.0 for automated user provisioning and deprovisioning. Assign Go2 to groups in your IdP and users are automatically created.
+        <div class="code-block"><span class="comment"># SCIM Endpoint</span>
+Base URL:  https://api.go2.io/scim/v2
+Token:     <span class="string">[generated in Go2 admin panel]</span>
+
+<span class="comment"># Supported operations</span>
+POST   /Users          <span class="comment"># Create user</span>
+PATCH  /Users/{id}     <span class="comment"># Update user</span>
+DELETE /Users/{id}     <span class="comment"># Deprovision user</span>
+GET    /Groups         <span class="comment"># List groups</span></div>
+      </div>
+    </div>
+    <div class="deploy-step" onclick="toggleStep(this)">
+      <div class="deploy-step-header">
+        <div class="step-num done">3</div>
+        <div class="step-title">Deploy Desktop Agent</div>
+        <div class="step-time">5 minutes</div>
+      </div>
+      <div class="step-detail">
+        Lightweight agent (12MB). Available via MSI, PKG, or MDM-compatible formats. Silent install supported. Auto-updates.
+        <div class="code-block"><span class="comment"># MDM deployment (Jamf, Intune, Mosyle)</span>
+<span class="cmd">curl -sL https://dl.go2.io/agent/latest/go2-agent.pkg</span>
+
+<span class="comment"># Windows (GPO/SCCM)</span>
+<span class="cmd">msiexec /i go2-agent.msi /quiet ORG_KEY=your-key</span>
+
+<span class="comment"># macOS (Homebrew)</span>
+<span class="cmd">brew install --cask go2</span>
+
+<span class="comment"># Linux (apt)</span>
+<span class="cmd">sudo apt install go2-agent</span></div>
+        <p>Agent specs: &lt;1% CPU, ~48MB RAM, auto-updates, user-pausable.</p>
+      </div>
+    </div>
+    <div class="deploy-step" onclick="toggleStep(this)">
+      <div class="deploy-step-header">
+        <div class="step-num">4</div>
+        <div class="step-title">Configure Integrations</div>
+        <div class="step-time">3 minutes</div>
+      </div>
+      <div class="step-detail">
+        OAuth-based integrations with Slack, Jira, GitHub, Salesforce, and 40+ tools. No API keys to manage.
+        <div class="code-block"><span class="comment"># Webhook for SIEM integration</span>
+POST https://api.go2.io/v1/webhooks
+{
+  "url": <span class="string">"https://your-siem.com/ingest"</span>,
+  "events": [<span class="string">"audit.login"</span>, <span class="string">"audit.data_export"</span>, <span class="string">"audit.config_change"</span>],
+  "format": <span class="string">"syslog"</span>
+}</div>
+      </div>
+    </div>
+    <div class="deploy-step" onclick="toggleStep(this)">
+      <div class="deploy-step-header">
+        <div class="step-num">5</div>
+        <div class="step-title">Set Policies & Go Live</div>
+        <div class="step-time">2 minutes</div>
+      </div>
+      <div class="step-detail">
+        Configure data retention, privacy settings, and role-based access from the admin panel. Default policies are privacy-first.
+        <div class="code-block"><span class="comment"># Default privacy policy (can be customized)</span>
+{
+  "keystroke_logging": <span class="string">false</span>,
+  "screen_recording": <span class="string">false</span>,
+  "url_tracking": <span class="string">"domain_only"</span>,
+  "personal_apps": <span class="string">"excluded"</span>,
+  "data_retention": <span class="string">"90_days"</span>,
+  "employee_dashboard": <span class="string">true</span>,
+  "employee_pause": <span class="string">true</span>
+}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sec-header" id="security">
+  <div class="sec-label">Security</div>
+  <div class="sec-title">Security Architecture</div>
+  <div class="sec-desc">Enterprise-grade security designed for regulated industries.</div>
+</div>
+
+<div class="doc-section">
+  <div class="spec-grid">
+    <div class="spec-card">
+      <h3><div class="spec-icon" style="background:rgba(26,127,55,0.1);color:var(--green)">&#128274;</div> Encryption</h3>
+      <ul>
+        <li>AES-256-GCM at rest</li>
+        <li>TLS 1.3 in transit</li>
+        <li>Customer-managed keys (BYOK)</li>
+        <li>Key rotation every 90 days</li>
+        <li>Zero-knowledge option available</li>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h3><div class="spec-icon" style="background:rgba(9,105,218,0.1);color:var(--accent)">&#128737;</div> Authentication</h3>
+      <ul>
+        <li>SAML 2.0 / OIDC SSO</li>
+        <li>SCIM 2.0 provisioning</li>
+        <li>MFA enforcement</li>
+        <li>Session management</li>
+        <li>IP allowlisting</li>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h3><div class="spec-icon" style="background:rgba(154,103,0,0.1);color:var(--yellow)">&#128209;</div> Audit & Logging</h3>
+      <ul>
+        <li>Immutable audit trail</li>
+        <li>Cryptographic signing</li>
+        <li>SIEM integration (syslog/webhook)</li>
+        <li>7-year retention</li>
+        <li>Tamper-proof storage</li>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h3><div class="spec-icon" style="background:rgba(26,127,55,0.1);color:var(--green)">&#127758;</div> Network</h3>
+      <ul>
+        <li>No inbound firewall rules needed</li>
+        <li>Outbound TLS only (port 443)</li>
+        <li>No VPN required</li>
+        <li>CDN-delivered agent updates</li>
+        <li>DDoS protection (Cloudflare)</li>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h3><div class="spec-icon" style="background:rgba(9,105,218,0.1);color:var(--accent)">&#128187;</div> Agent Security</h3>
+      <ul>
+        <li>Code-signed binaries</li>
+        <li>Auto-update with rollback</li>
+        <li>Sandboxed execution</li>
+        <li>No kernel extensions</li>
+        <li>User-pausable</li>
+      </ul>
+    </div>
+    <div class="spec-card">
+      <h3><div class="spec-icon" style="background:rgba(154,103,0,0.1);color:var(--yellow)">&#128736;</div> Vulnerability Mgmt</h3>
+      <ul>
+        <li>Quarterly pentests (third-party)</li>
+        <li>HackerOne bug bounty</li>
+        <li>SCA / SAST in CI/CD</li>
+        <li>48hr critical patch SLA</li>
+        <li>Dependency auto-updates</li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="margin-top:32px">
+    <h3 style="font-size:16px;font-weight:700;margin-bottom:12px">Network Architecture</h3>
+    <div class="arch-diagram">
++-------------------+       +-------------------+       +-------------------+
+|   Desktop Agent   |       |    Go2 Cloud      |       |   Your Systems    |
+|                   |       |                   |       |                   |
+|  Activity Capture +------>+  API Gateway      +------>+  SSO (Okta/Azure) |
+|  Edge ML Classify |  TLS  |  Process Mining   |  OAuth|  SIEM (Splunk)    |
+|  Local Encrypt    +------>+  AI Coaching      +------>+  CRM (Salesforce) |
+|                   | 1.3   |  Data Lake        |       |  PM (Jira)        |
+|  12MB | &lt;1% CPU   |       |  SOC2 | AES-256   |       |  Comms (Slack)    |
++-------------------+       +-------------------+       +-------------------+
+     Outbound only               Hosted on AWS              Your control
+     Port 443 only           US/EU/APAC regions           OAuth scoped access</div>
+  </div>
+</div>
+
+<div class="sec-header" id="compliance">
+  <div class="sec-label">Compliance</div>
+  <div class="sec-title">Certifications & Compliance</div>
+</div>
+
+<div class="doc-section">
+  <table class="comp-table">
+    <thead><tr><th>Standard</th><th>Status</th><th>Details</th><th>Report Available</th></tr></thead>
+    <tbody>
+      <tr><td>SOC 2 Type II</td><td><span class="badge badge-green">Certified</span></td><td>Annual audit by Deloitte</td><td>On request via NDA</td></tr>
+      <tr><td>ISO 27001</td><td><span class="badge badge-green">Certified</span></td><td>Full ISMS implementation</td><td>Certificate available</td></tr>
+      <tr><td>GDPR</td><td><span class="badge badge-green">Compliant</span></td><td>DPA available, EU data residency</td><td>DPA on signup</td></tr>
+      <tr><td>CCPA</td><td><span class="badge badge-green">Compliant</span></td><td>Full consumer rights support</td><td>Privacy policy</td></tr>
+      <tr><td>HIPAA</td><td><span class="badge badge-blue">Eligible</span></td><td>BAA available on Enterprise plan</td><td>On request</td></tr>
+      <tr><td>FedRAMP</td><td><span class="badge badge-yellow">In Progress</span></td><td>Expected Q3 2026</td><td>-</td></tr>
+      <tr><td>Penetration Testing</td><td><span class="badge badge-green">Quarterly</span></td><td>Third-party, no critical findings</td><td>Summary on request</td></tr>
+      <tr><td>Bug Bounty</td><td><span class="badge badge-green">Active</span></td><td>HackerOne program</td><td>Public program</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="sec-header" id="integration">
+  <div class="sec-label">Integration</div>
+  <div class="sec-title">IT Admin Checklist</div>
+  <div class="sec-desc">Everything you need to evaluate, approve, and deploy Go2.</div>
+</div>
+
+<div class="doc-section">
+  <div class="checklist" id="checklist">
+    <div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div><div class="check-label"><strong>Security questionnaire completed</strong><span>SIG Lite / CAIQ available on request</span></div></div>
+    <div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div><div class="check-label"><strong>SOC 2 Type II report reviewed</strong><span>Available under NDA</span></div></div>
+    <div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div><div class="check-label"><strong>DPA / privacy assessment signed</strong><span>GDPR-compliant DPA provided at signup</span></div></div>
+    <div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div><div class="check-label"><strong>SSO integration configured</strong><span>SAML 2.0 or OIDC - 3 minutes</span></div></div>
+    <div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div><div class="check-label"><strong>SCIM provisioning enabled</strong><span>Automated user lifecycle management</span></div></div>
+    <div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div><div class="check-label"><strong>Network requirements verified</strong><span>Outbound TLS 443 only, no inbound rules</span></div></div>
+    <div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div><div class="check-label"><strong>MDM deployment package tested</strong><span>MSI/PKG available, silent install supported</span></div></div>
+    <div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div><div class="check-label"><strong>SIEM integration configured</strong><span>Syslog or webhook to Splunk/Datadog/Sumo</span></div></div>
+    <div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div><div class="check-label"><strong>Privacy policy reviewed with Legal/HR</strong><span>Template privacy notice provided</span></div></div>
+    <div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div><div class="check-label"><strong>Pilot group identified</strong><span>Recommended: 25-50 users, 2-week pilot</span></div></div>
+  </div>
+</div>
+
+<div class="sec-header" id="faq">
+  <div class="sec-label">FAQ</div>
+  <div class="sec-title">Common IT Questions</div>
+</div>
+
+<div class="doc-section">
+  <div class="faq-list">
+    <div class="faq-item" onclick="toggleFAQ(this)">
+      <div class="faq-q">What data does the agent collect? <span class="faq-arrow">+</span></div>
+      <div class="faq-a">The agent captures application usage patterns, active/idle time, and workflow sequences. It does NOT log keystrokes, record screens, capture clipboard content, or monitor communication content. URL tracking is domain-level only (not full URLs). Personal apps can be excluded entirely. Employees can view all their collected data and pause the agent at any time.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFAQ(this)">
+      <div class="faq-q">Where is data stored? <span class="faq-arrow">+</span></div>
+      <div class="faq-a">Data is stored in AWS with your choice of region: US-East, US-West, EU-Frankfurt, or APAC-Sydney. Data never leaves your selected region. AES-256-GCM encryption at rest with customer-managed keys available. 90-day default retention (configurable). Full GDPR Article 17 right-to-deletion support.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFAQ(this)">
+      <div class="faq-q">What are the system requirements? <span class="faq-arrow">+</span></div>
+      <div class="faq-a">Windows 10+ (x64), macOS 12+ (Intel/Apple Silicon), Ubuntu 20.04+ / RHEL 8+. Agent size: 12MB. Runtime: &lt;1% CPU, ~48MB RAM. No kernel extensions, no root access required. Auto-updates with rollback. Compatible with all major MDM solutions (Jamf, Intune, Mosyle, Workspace ONE).</div>
+    </div>
+    <div class="faq-item" onclick="toggleFAQ(this)">
+      <div class="faq-q">Does it work with VDI environments? <span class="faq-arrow">+</span></div>
+      <div class="faq-a">Yes. Tested with Citrix, VMware Horizon, Amazon WorkSpaces, and Windows 365. Non-persistent VDI supported with machine-level configuration. Agent can be included in golden images.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFAQ(this)">
+      <div class="faq-q">What if an employee leaves? <span class="faq-arrow">+</span></div>
+      <div class="faq-a">SCIM deprovisioning automatically disables the user account and stops data collection. Data is retained per your policy (default 90 days), then permanently deleted. The agent can be remotely wiped via MDM or auto-uninstalls when the user is deprovisioned.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFAQ(this)">
+      <div class="faq-q">What about network impact? <span class="faq-arrow">+</span></div>
+      <div class="faq-a">Minimal. The agent batches data locally and syncs every 5 minutes over TLS. Typical bandwidth: &lt;50KB/minute per user. Edge processing reduces data volume by 90% before transmission. No impact on application performance.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFAQ(this)">
+      <div class="faq-q">How do we handle the security questionnaire? <span class="faq-arrow">+</span></div>
+      <div class="faq-a">We pre-fill SIG Lite and CAIQ questionnaires. Most IT security reviews complete in 1-2 days. We provide: SOC 2 Type II report, penetration test summary, architecture diagram, data flow documentation, and a dedicated security engineer for any questions.</div>
+    </div>
+  </div>
+</div>
+
+<section class="cta">
+  <div class="sec-label">Get Started</div>
+  <h2>The easiest enterprise deploy you'll do this year.</h2>
+  <p>15 minutes to production. No infrastructure. No firewall changes. No headaches. Start with a pilot team of 25.</p>
+  <a class="btn btn-primary" href="#">Start IT Evaluation</a>
+  <a class="btn" href="#">Download Security Whitepaper</a>
+</section>
+
+<footer>&copy; 2026 Go2. Enterprise-ready from day one.</footer>
+
+<script>
+function toggleStep(step){
+  const detail=step.querySelector('.step-detail');
+  const isOpen=detail.classList.contains('open');
+  document.querySelectorAll('.step-detail').forEach(d=>d.classList.remove('open'));
+  if(!isOpen)detail.classList.add('open');
+}
+function toggleFAQ(item){
+  const a=item.querySelector('.faq-a');
+  const isOpen=a.classList.contains('open');
+  document.querySelectorAll('.faq-a').forEach(d=>d.classList.remove('open'));
+  document.querySelectorAll('.faq-arrow').forEach(ar=>ar.textContent='+');
+  if(!isOpen){a.classList.add('open');item.querySelector('.faq-arrow').textContent='-';}
+}
+function toggleCheck(box){
+  box.classList.toggle('checked');
+  box.innerHTML=box.classList.contains('checked')?'\u2713':'';
+}
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth'});});
+});
+</script>
+</body>
+</html>

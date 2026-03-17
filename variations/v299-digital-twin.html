@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Digital Twin Organization | Go2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
+body{font-family:'Inter',system-ui,sans-serif;background:#060610;color:#fff;overflow-x:hidden}
+
+.hero{min-height:70vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:4rem 2rem;position:relative}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(6,182,212,0.1),transparent 60%)}
+.hero-badge{display:inline-flex;align-items:center;gap:0.5rem;background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.2);border-radius:50px;padding:0.4rem 1.2rem;font-size:0.8rem;color:#22d3ee;margin-bottom:1.5rem;position:relative}
+.hero h1{font-size:clamp(2.5rem,5vw,4rem);font-weight:900;line-height:1.1;margin-bottom:1rem;position:relative}
+.hero h1 span{background:linear-gradient(135deg,#22d3ee,#06b6d4,#6366f1);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:#64748b;font-size:1.15rem;max-width:650px;position:relative}
+
+.sim-section{max-width:1300px;margin:0 auto;padding:2rem}
+.sim-header{text-align:center;margin-bottom:2rem}
+.sim-header h2{font-size:1.8rem;font-weight:800;margin-bottom:0.5rem}
+.sim-header p{color:#64748b}
+
+.sim-controls{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:2rem;margin-bottom:2rem}
+.sim-controls h3{font-size:1rem;font-weight:700;margin-bottom:1.5rem;color:#22d3ee}
+.scenarios{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-bottom:1.5rem}
+.scenario-btn{background:rgba(255,255,255,0.03);border:2px solid rgba(255,255,255,0.08);border-radius:14px;padding:1rem;cursor:pointer;transition:all 0.3s;text-align:left}
+.scenario-btn:hover{border-color:rgba(6,182,212,0.3)}
+.scenario-btn.active{border-color:#06b6d4;background:rgba(6,182,212,0.05)}
+.scenario-btn h4{font-size:0.9rem;font-weight:700;margin-bottom:0.25rem}
+.scenario-btn p{font-size:0.75rem;color:#64748b;line-height:1.5}
+.scenario-icon{font-size:1.5rem;margin-bottom:0.5rem}
+
+.params{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem}
+.param{padding:0.75rem;background:rgba(255,255,255,0.02);border-radius:10px}
+.param label{display:block;font-size:0.7rem;color:#64748b;margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.05em}
+.param input[type=range]{width:100%;-webkit-appearance:none;height:4px;border-radius:2px;background:rgba(255,255,255,0.1);outline:none}
+.param input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#06b6d4;cursor:pointer}
+.param-val{text-align:right;font-size:0.85rem;font-weight:700;color:#22d3ee;margin-top:0.3rem;font-family:'JetBrains Mono',monospace}
+
+.sim-results{display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+.result-panel{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:1.5rem;position:relative}
+.result-panel h3{font-size:0.85rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+
+.before-after{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.ba-card{border-radius:12px;padding:1rem;text-align:center}
+.ba-card.before{background:rgba(248,113,113,0.05);border:1px solid rgba(248,113,113,0.15)}
+.ba-card.after{background:rgba(52,211,153,0.05);border:1px solid rgba(52,211,153,0.15)}
+.ba-label{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem}
+.ba-card.before .ba-label{color:#f87171}
+.ba-card.after .ba-label{color:#34d399}
+.ba-value{font-size:1.8rem;font-weight:900;font-family:'JetBrains Mono',monospace}
+.ba-card.before .ba-value{color:#f87171}
+.ba-card.after .ba-value{color:#34d399}
+.ba-desc{font-size:0.7rem;color:#64748b;margin-top:0.25rem}
+
+.ripple-list{display:flex;flex-direction:column;gap:0.75rem}
+.ripple-item{display:flex;align-items:flex-start;gap:0.75rem;padding:0.75rem;background:rgba(255,255,255,0.02);border-radius:10px;transition:all 0.3s;animation:rippleIn 0.5s ease}
+@keyframes rippleIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+.ripple-icon{font-size:1.2rem;flex-shrink:0;margin-top:0.1rem}
+.ripple-content h4{font-size:0.85rem;font-weight:600;margin-bottom:0.15rem}
+.ripple-content p{font-size:0.75rem;color:#94a3b8;line-height:1.5}
+.ripple-impact{font-size:0.7rem;font-weight:700;margin-top:0.3rem;display:inline-flex;padding:0.15rem 0.5rem;border-radius:6px}
+.ripple-impact.positive{background:rgba(52,211,153,0.1);color:#34d399}
+.ripple-impact.negative{background:rgba(248,113,113,0.1);color:#f87171}
+.ripple-impact.neutral{background:rgba(251,191,36,0.1);color:#fbbf24}
+
+.flow-viz{max-width:1300px;margin:3rem auto;padding:0 2rem}
+.flow-viz h2{font-size:1.5rem;font-weight:700;margin-bottom:0.5rem;text-align:center}
+.flow-viz>p{text-align:center;color:#64748b;margin-bottom:2rem}
+.flow-canvas{width:100%;height:400px;position:relative;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:20px;overflow:hidden}
+.flow-canvas canvas{width:100%;height:100%}
+
+.twin-features{max-width:1300px;margin:4rem auto;padding:0 2rem 4rem;display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+.twin-feature{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:1.5rem;transition:all 0.3s}
+.twin-feature:hover{border-color:rgba(6,182,212,0.3);transform:translateY(-2px)}
+.twin-feature .icon{font-size:2rem;margin-bottom:0.75rem}
+.twin-feature h3{font-size:1rem;font-weight:700;margin-bottom:0.5rem}
+.twin-feature p{color:#94a3b8;font-size:0.85rem;line-height:1.6}
+
+.cta{text-align:center;padding:4rem 2rem 6rem;position:relative}
+.cta::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(6,182,212,0.08),transparent 60%)}
+.cta h2{font-size:2.5rem;font-weight:900;margin-bottom:1rem;position:relative}
+.cta p{color:#64748b;margin-bottom:2rem;font-size:1.1rem;position:relative}
+.cta-btn{display:inline-flex;align-items:center;gap:0.5rem;padding:1rem 2.5rem;background:linear-gradient(135deg,#06b6d4,#6366f1);color:#fff;border:none;border-radius:12px;font-size:1.1rem;font-weight:600;cursor:pointer;text-decoration:none;transition:all 0.3s;position:relative}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(6,182,212,0.3)}
+
+@media(max-width:768px){.sim-results,.twin-features{grid-template-columns:1fr}.before-after{grid-template-columns:1fr}.scenarios{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<section class="hero">
+<div class="hero-badge">Simulate Before You Transform</div>
+<h1>Your <span>Digital Twin</span><br>Organization</h1>
+<p>Go2 creates an exact digital replica of your operation. Test changes, see ripple effects, make confident decisions — all before touching reality.</p>
+</section>
+
+<section class="sim-section">
+<div class="sim-header">
+<h2>Run a Simulation</h2>
+<p>Choose a scenario and adjust parameters to see what happens</p>
+</div>
+
+<div class="sim-controls">
+<h3>Select Scenario</h3>
+<div class="scenarios" id="scenarios">
+<div class="scenario-btn active" data-scenario="invoice" onclick="selectScenario(this)">
+<div class="scenario-icon">💰</div>
+<h4>Automate Invoice Processing</h4>
+<p>What happens when AI handles 95% of invoices?</p>
+</div>
+<div class="scenario-btn" data-scenario="support" onclick="selectScenario(this)">
+<div class="scenario-icon">🎧</div>
+<h4>AI-First Customer Support</h4>
+<p>Deploy AI agents for tier-1 support resolution</p>
+</div>
+<div class="scenario-btn" data-scenario="sales" onclick="selectScenario(this)">
+<div class="scenario-icon">📈</div>
+<h4>AI Sales Assistant</h4>
+<p>Augment every rep with an AI copilot</p>
+</div>
+<div class="scenario-btn" data-scenario="knowledge" onclick="selectScenario(this)">
+<div class="scenario-icon">🧠</div>
+<h4>Full Knowledge Capture</h4>
+<p>Auto-document every process across the org</p>
+</div>
+</div>
+
+<h3 style="margin-top:1.5rem">Adjust Parameters</h3>
+<div class="params" id="params"></div>
+</div>
+
+<div class="sim-results">
+<div class="result-panel">
+<h3>Impact Summary</h3>
+<div class="before-after" id="impactSummary"></div>
+</div>
+<div class="result-panel">
+<h3>Ripple Effects</h3>
+<div class="ripple-list" id="rippleEffects"></div>
+</div>
+</div>
+</section>
+
+<section class="flow-viz">
+<h2>Process Flow Visualization</h2>
+<p>Watch how changes propagate through your organization</p>
+<div class="flow-canvas"><canvas id="flowCanvas"></canvas></div>
+</section>
+
+<div class="twin-features">
+<div class="twin-feature"><div class="icon">🔮</div><h3>Predict Outcomes</h3><p>Run hundreds of simulations to find the optimal path. See the impact of every change before you make it.</p></div>
+<div class="twin-feature"><div class="icon">⚡</div><h3>Real-Time Sync</h3><p>Your digital twin updates continuously as your organization evolves. Always current, always accurate.</p></div>
+<div class="twin-feature"><div class="icon">🔗</div><h3>Dependency Mapping</h3><p>See how processes connect. Understand the ripple effects of any change across departments and teams.</p></div>
+<div class="twin-feature"><div class="icon">📊</div><h3>ROI Calculator</h3><p>Instant ROI projections for any automation scenario. Know exactly what you'll save before investing.</p></div>
+<div class="twin-feature"><div class="icon">🛡️</div><h3>Risk Assessment</h3><p>Identify risks before they materialize. The digital twin flags potential issues with every proposed change.</p></div>
+<div class="twin-feature"><div class="icon">🎯</div><h3>Optimization Engine</h3><p>AI-powered recommendations for the highest-impact changes. Prioritized by ROI, risk, and implementation ease.</p></div>
+</div>
+
+<section class="cta">
+<h2>Build Your Digital Twin</h2>
+<p>Go2 maps your organization automatically. Start simulating in days, not months.</p>
+<a href="https://go2.io" class="cta-btn">Create Your Twin</a>
+</section>
+
+<script>
+const scenarioData = {
+invoice: {
+params: [{label:'Automation Level',min:50,max:100,val:95,unit:'%'},{label:'Monthly Invoices',min:100,max:5000,val:800,unit:''},{label:'Avg Processing Cost',min:5,max:30,val:18,unit:'$'},{label:'Error Tolerance',min:0,max:5,val:1,unit:'%'}],
+getResults(p) {
+const autoRate=p[0]/100, vol=p[1], cost=p[2], errTol=p[3];
+const saved=Math.round(vol*autoRate*cost);
+const timeSaved=Math.round(vol*autoRate*0.15);
+return {
+impact: [
+{before:'$'+Math.round(vol*cost).toLocaleString(),after:'$'+Math.round(vol*cost*(1-autoRate*0.92)).toLocaleString(),label:'Monthly Cost',desc:'Processing cost'},
+{before:Math.round(vol*0.15)+'hrs',after:Math.round(vol*0.15*(1-autoRate*0.95))+'hrs',label:'Time Spent',desc:'Per month'},
+{before:'3.2%',after:(0.3*(1-autoRate*0.8)).toFixed(1)+'%',label:'Error Rate',desc:'Per invoice'},
+{before:'4 days',after:'< 1 hour',label:'Processing Time',desc:'Per batch'}
+],
+ripples: [
+{icon:'💰',title:'Finance Team',desc:`${Math.round(autoRate*3)} team members freed from manual entry. Can focus on analysis and strategy.`,impact:'positive',tag:'+'+timeSaved+' hrs/mo freed'},
+{icon:'📊',title:'Cash Flow',desc:'Faster invoice processing means faster payments. Average payment cycle reduced by 60%.', impact:'positive',tag:'-60% payment cycle'},
+{icon:'🤝',title:'Vendor Relations',desc:'Fewer payment errors = happier vendors. Dispute resolution drops 85%.', impact:'positive',tag:'-85% disputes'},
+{icon:'⚠️',title:'Initial Setup',desc:'2-week integration period. Finance team needs 4 hours of training on the new workflow.', impact:'neutral',tag:'2 week ramp'},
+{icon:'📈',title:'Audit Readiness',desc:'Every invoice automatically logged with full audit trail. Audit prep time drops 70%.', impact:'positive',tag:'-70% audit prep'}
+]
+};
+}
+},
+support: {
+params: [{label:'AI Resolution Rate',min:40,max:90,val:73,unit:'%'},{label:'Daily Tickets',min:50,max:1000,val:340,unit:''},{label:'Avg Ticket Cost',min:5,max:25,val:12,unit:'$'},{label:'Target CSAT',min:3,max:5,val:4.5,unit:'/5'}],
+getResults(p) {
+const rate=p[0]/100, vol=p[1], cost=p[2];
+return {
+impact: [
+{before:'$'+Math.round(vol*cost*30).toLocaleString(),after:'$'+Math.round(vol*cost*30*(1-rate*0.85)).toLocaleString(),label:'Monthly Cost',desc:'Support operations'},
+{before:'2.4 hrs',after:'< 30 sec',label:'First Response',desc:'Avg response time'},
+{before:'8 agents',after:Math.round(8*(1-rate*0.6))+' agents',label:'Team Size',desc:'Required headcount'},
+{before:'4.1/5',after:'4.6/5',label:'CSAT Score',desc:'Customer satisfaction'}
+],
+ripples: [
+{icon:'🎧',title:'Support Team',desc:`${Math.round(rate*100)}% of tickets auto-resolved. Team focuses on complex, high-value interactions.`,impact:'positive',tag:'+'+Math.round(rate*100)+'% auto-resolved'},
+{icon:'😊',title:'Customer Experience',desc:'Instant responses 24/7. No more "your call is important to us" hold music.',impact:'positive',tag:'24/7 instant response'},
+{icon:'📚',title:'Knowledge Base',desc:'Every resolution feeds back into the knowledge base. Self-service improves continuously.',impact:'positive',tag:'Self-improving KB'},
+{icon:'💡',title:'Product Team',desc:'AI identifies common issues automatically. Product gets actionable feedback at scale.',impact:'positive',tag:'Automated feedback loop'},
+{icon:'⚠️',title:'Edge Cases',desc:'Complex emotional situations still need human touch. Clear escalation paths essential.',impact:'neutral',tag:'Human backup needed'}
+]
+};
+}
+},
+sales: {
+params: [{label:'AI Assistance Level',min:30,max:90,val:70,unit:'%'},{label:'Sales Team Size',min:5,max:50,val:15,unit:''},{label:'Avg Deal Size',min:5000,max:100000,val:25000,unit:'$'},{label:'Current Win Rate',min:15,max:45,val:28,unit:'%'}],
+getResults(p) {
+const assist=p[0]/100, team=p[1], deal=p[2], win=p[3]/100;
+const newWin=Math.min(win*(1+assist*0.4),0.55);
+return {
+impact: [
+{before:(win*100).toFixed(0)+'%',after:(newWin*100).toFixed(0)+'%',label:'Win Rate',desc:'Deal close rate'},
+{before:'$'+Math.round(team*deal*win*12).toLocaleString(),after:'$'+Math.round(team*deal*newWin*12).toLocaleString(),label:'Annual Revenue',desc:'Projected'},
+{before:'4.2 hrs',after:'1.5 hrs',label:'Admin Time',desc:'Per rep per day'},
+{before:'6 days',after:'2 days',label:'Response Time',desc:'To new leads'}
+],
+ripples: [
+{icon:'🎯',title:'Sales Reps',desc:'AI handles CRM updates, email drafts, and research. Reps spend 70% more time actually selling.',impact:'positive',tag:'+70% selling time'},
+{icon:'📈',title:'Pipeline',desc:`AI-scored leads mean reps focus on the right deals. Pipeline quality up ${Math.round(assist*40)}%.`,impact:'positive',tag:'+'+Math.round(assist*40)+'% pipeline quality'},
+{icon:'💰',title:'Revenue',desc:`Projected ${Math.round((newWin/win-1)*100)}% revenue increase from improved win rates and faster cycles.`,impact:'positive',tag:'+'+Math.round((newWin/win-1)*100)+'% revenue'},
+{icon:'📊',title:'Forecasting',desc:'AI provides 95% accurate forecasts based on behavioral signals, not gut feel.',impact:'positive',tag:'95% forecast accuracy'},
+{icon:'⚠️',title:'Adoption',desc:'Some reps resist change. Plan for 4-week adoption curve with coaching.',impact:'neutral',tag:'4-week adoption'}
+]
+};
+}
+},
+knowledge: {
+params: [{label:'Capture Depth',min:50,max:100,val:90,unit:'%'},{label:'Employees',min:20,max:500,val:80,unit:''},{label:'Turnover Rate',min:5,max:30,val:15,unit:'%'},{label:'Onboarding Time (days)',min:5,max:30,val:14,unit:''}],
+getResults(p) {
+const depth=p[0]/100, emp=p[1], turnover=p[2]/100, onboard=p[3];
+return {
+impact: [
+{before:Math.round(emp*turnover)+' exits/yr',after:'0 knowledge lost',label:'Knowledge Loss',desc:'Annual impact'},
+{before:onboard+' days',after:Math.max(1,Math.round(onboard*(1-depth*0.8)))+' days',label:'Onboarding',desc:'Time to productive'},
+{before:'15%',after:Math.round(depth*97)+'%',label:'Documented',desc:'Processes captured'},
+{before:'$'+Math.round(emp*turnover*onboard*300).toLocaleString(),after:'$'+Math.round(emp*turnover*Math.max(1,onboard*(1-depth*0.8))*300).toLocaleString(),label:'Ramp Cost',desc:'Annual onboarding'}
+],
+ripples: [
+{icon:'🧠',title:'Organizational Memory',desc:`${Math.round(depth*97)}% of processes captured automatically. The company never forgets.`,impact:'positive',tag:''+Math.round(depth*97)+'% captured'},
+{icon:'👋',title:'Onboarding',desc:`New hires productive in ${Math.max(1,Math.round(14*(1-depth*0.8)))} days vs ${onboard}. AI mentor answers any question instantly.`,impact:'positive',tag:'-'+Math.round(depth*80)+'% onboarding time'},
+{icon:'🔄',title:'Continuity',desc:`When someone leaves, their knowledge stays. ${Math.round(emp*turnover)} annual exits with zero knowledge loss.`,impact:'positive',tag:'Zero knowledge loss'},
+{icon:'🤖',title:'AI Training',desc:'Documented processes become training data for AI agents. Agents improve continuously.',impact:'positive',tag:'Self-improving agents'},
+{icon:'📋',title:'Compliance',desc:'Every process documented = automatic compliance. Audit prep becomes trivial.',impact:'positive',tag:'Auto-compliance'}
+]
+};
+}
+}
+};
+
+let currentScenario = 'invoice';
+
+function selectScenario(btn) {
+document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
+btn.classList.add('active');
+currentScenario = btn.dataset.scenario;
+renderParams();
+updateResults();
+}
+
+function renderParams() {
+const params = scenarioData[currentScenario].params;
+const container = document.getElementById('params');
+container.innerHTML = params.map((p, i) => `<div class="param">
+<label>${p.label}</label>
+<input type="range" min="${p.min}" max="${p.max}" value="${p.val}" data-idx="${i}" oninput="updateResults()">
+<div class="param-val">${p.unit==='$'?'$':''}${p.val}${p.unit!=='$'?p.unit:''}</div>
+</div>`).join('');
+}
+
+function updateResults() {
+const inputs = document.querySelectorAll('#params input[type=range]');
+const vals = Array.from(inputs).map(inp => {
+const p = scenarioData[currentScenario].params[inp.dataset.idx];
+const v = parseInt(inp.value);
+inp.nextElementSibling.textContent = (p.unit==='$'?'$':'') + v.toLocaleString() + (p.unit!=='$'?p.unit:'');
+return v;
+});
+
+const results = scenarioData[currentScenario].getResults(vals);
+
+document.getElementById('impactSummary').innerHTML = results.impact.map(r => `
+<div class="ba-card before"><div class="ba-label">Before</div><div class="ba-value">${r.before}</div><div class="ba-desc">${r.label}</div></div>
+<div class="ba-card after"><div class="ba-label">After</div><div class="ba-value">${r.after}</div><div class="ba-desc">${r.label}</div></div>
+`).join('');
+
+document.getElementById('rippleEffects').innerHTML = results.ripples.map(r => `
+<div class="ripple-item">
+<div class="ripple-icon">${r.icon}</div>
+<div class="ripple-content">
+<h4>${r.title}</h4>
+<p>${r.desc}</p>
+<span class="ripple-impact ${r.impact}">${r.tag}</span>
+</div>
+</div>`).join('');
+}
+
+renderParams();
+updateResults();
+
+// Flow canvas animation
+const fc = document.getElementById('flowCanvas');
+const fctx = fc.getContext('2d');
+function resizeFlow() {
+const rect = fc.parentElement.getBoundingClientRect();
+fc.width = rect.width;
+fc.height = rect.height;
+}
+resizeFlow();
+window.addEventListener('resize', resizeFlow);
+
+const flowNodes = [];
+const depts = ['Input','Processing','Decision','Action','Output'];
+depts.forEach((d, i) => {
+const x = (i + 0.5) / depts.length * fc.width;
+for (let j = 0; j < 3; j++) {
+flowNodes.push({
+x, y: 80 + j * 120 + (Math.random()-0.5)*40,
+label: d, r: 20 + Math.random()*10,
+vx: (Math.random()-0.5)*0.3, vy: (Math.random()-0.5)*0.3,
+color: `hsl(${180 + i * 30}, 70%, 60%)`
+});
+}
+});
+
+function drawFlow() {
+fctx.clearRect(0, 0, fc.width, fc.height);
+
+// Connections
+for (let i = 0; i < flowNodes.length - 3; i++) {
+const a = flowNodes[i];
+const targets = flowNodes.slice(i+1, i+4);
+targets.forEach(b => {
+fctx.beginPath();
+fctx.moveTo(a.x, a.y);
+fctx.lineTo(b.x, b.y);
+fctx.strokeStyle = 'rgba(6,182,212,0.08)';
+fctx.lineWidth = 1;
+fctx.stroke();
+});
+}
+
+// Particles along connections
+const t = Date.now() * 0.001;
+for (let i = 0; i < flowNodes.length - 3; i += 2) {
+const a = flowNodes[i], b = flowNodes[Math.min(i+3, flowNodes.length-1)];
+const pt = (t * 0.3 + i * 0.1) % 1;
+const px = a.x + (b.x - a.x) * pt;
+const py = a.y + (b.y - a.y) * pt;
+fctx.beginPath();
+fctx.arc(px, py, 3, 0, Math.PI * 2);
+fctx.fillStyle = 'rgba(6,182,212,0.6)';
+fctx.fill();
+}
+
+// Nodes
+flowNodes.forEach(n => {
+n.x += n.vx;
+n.y += n.vy;
+if (n.x < n.r || n.x > fc.width - n.r) n.vx *= -1;
+if (n.y < n.r || n.y > fc.height - n.r) n.vy *= -1;
+
+fctx.beginPath();
+fctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+const grad = fctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+grad.addColorStop(0, n.color + '60');
+grad.addColorStop(1, n.color + '10');
+fctx.fillStyle = grad;
+fctx.fill();
+fctx.strokeStyle = n.color + '40';
+fctx.lineWidth = 1;
+fctx.stroke();
+});
+
+requestAnimationFrame(drawFlow);
+}
+drawFlow();
+
+// Animate sections
+const obs = new IntersectionObserver(entries => {
+entries.forEach(e => {
+if (e.isIntersecting) {
+e.target.style.opacity = 1;
+e.target.style.transform = 'translateY(0)';
+}
+});
+}, {threshold: 0.1});
+document.querySelectorAll('.sim-controls,.result-panel,.twin-feature,.flow-canvas').forEach(el => {
+el.style.opacity = 0; el.style.transform = 'translateY(30px)'; el.style.transition = 'all 0.6s ease';
+obs.observe(el);
+});
+</script>
+</body>
+</html>

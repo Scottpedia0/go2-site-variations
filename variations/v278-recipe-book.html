@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The AI Cookbook | Go2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Source+Sans+3:wght@300;400;600;700&display=swap');
+:root{--bg:#faf8f3;--card:#fff;--text:#2d2d2d;--muted:#777;--accent:#c0392b;--warm:#e67e22;--green:#27ae60;--border:#e8e4dd;--cream:#f5f0e8}
+body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+/* Header */
+.cookbook-header{background:linear-gradient(135deg,#c0392b,#e74c3c);padding:3rem 2rem;text-align:center;color:#fff;position:relative;overflow:hidden}
+.cookbook-header::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
+.cookbook-header h1{font-family:'Playfair Display',serif;font-size:clamp(2.5rem,6vw,4rem);font-weight:900;margin-bottom:.5rem;position:relative}
+.cookbook-header p{font-size:1.1rem;opacity:.9;max-width:500px;margin:0 auto;position:relative}
+.cookbook-header .sub{font-family:'Playfair Display',serif;font-style:italic;font-size:1rem;opacity:.7;margin-top:.5rem;position:relative}
+/* Nav */
+.recipe-nav{background:var(--card);border-bottom:2px solid var(--border);padding:1rem 2rem;display:flex;gap:1rem;overflow-x:auto;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.recipe-nav button{padding:.5rem 1.2rem;border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:'Source Sans 3',sans-serif;font-size:.85rem;border-radius:20px;cursor:pointer;white-space:nowrap;transition:all .2s}
+.recipe-nav button:hover,.recipe-nav button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+/* Recipe Grid */
+.recipes{max-width:1100px;margin:2rem auto;padding:0 2rem}
+.recipe-card{background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 2px 20px rgba(0,0,0,.06);margin-bottom:3rem;border:1px solid var(--border)}
+.recipe-hero{height:200px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.recipe-hero .emoji{font-size:5rem;filter:drop-shadow(0 4px 10px rgba(0,0,0,.1))}
+.recipe-hero .overlay{position:absolute;bottom:0;left:0;right:0;padding:1rem 1.5rem;background:linear-gradient(transparent,rgba(0,0,0,.7))}
+.recipe-hero .category{color:rgba(255,255,255,.8);font-size:.7rem;text-transform:uppercase;letter-spacing:2px}
+.recipe-body{padding:2rem}
+.recipe-body h2{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;margin-bottom:.3rem;color:var(--text)}
+.recipe-body .tagline{font-family:'Playfair Display',serif;font-style:italic;color:var(--muted);font-size:1rem;margin-bottom:1.5rem}
+.recipe-meta{display:flex;gap:2rem;flex-wrap:wrap;margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)}
+.meta-item{text-align:center}
+.meta-item .val{font-weight:700;font-size:1.1rem;color:var(--accent)}
+.meta-item .lbl{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+/* Serving adjuster */
+.serving-adjuster{display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;padding:1rem;background:var(--cream);border-radius:8px}
+.serving-adjuster label{font-weight:600;font-size:.85rem}
+.serving-adjuster input[type=range]{flex:1;accent-color:var(--accent)}
+.serving-adjuster .output{font-weight:700;color:var(--accent);min-width:100px;text-align:right;font-size:.9rem}
+/* Two col */
+.recipe-grid{display:grid;grid-template-columns:1fr 1.5fr;gap:2rem}
+@media(max-width:700px){.recipe-grid{grid-template-columns:1fr}}
+.ingredients{background:var(--cream);border-radius:8px;padding:1.5rem}
+.ingredients h3{font-family:'Playfair Display',serif;font-size:1.1rem;margin-bottom:1rem;color:var(--accent);display:flex;align-items:center;gap:.5rem}
+.ingredient{display:flex;align-items:center;gap:.75rem;padding:.5rem 0;border-bottom:1px dashed var(--border);font-size:.9rem}
+.ingredient input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
+.ingredient .amt{font-weight:700;color:var(--accent);min-width:60px}
+.steps h3{font-family:'Playfair Display',serif;font-size:1.1rem;margin-bottom:1rem;color:var(--accent)}
+.step{display:flex;gap:1rem;margin-bottom:1.25rem}
+.step-num{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;flex-shrink:0}
+.step-text{font-size:.9rem;line-height:1.7;padding-top:4px}
+/* Chef's tip */
+.chefs-tip{background:linear-gradient(135deg,#ffeaa7,#fdcb6e);border-radius:8px;padding:1.25rem;margin-top:1.5rem;display:flex;gap:1rem;align-items:flex-start}
+.chefs-tip .icon{font-size:1.5rem;flex-shrink:0}
+.chefs-tip h4{font-family:'Playfair Display',serif;font-size:.95rem;margin-bottom:.3rem}
+.chefs-tip p{font-size:.85rem;color:#6d5c00;line-height:1.5}
+/* Nutrition (ROI) */
+.nutrition{background:var(--card);border:2px solid var(--text);border-radius:8px;padding:1.5rem;margin-top:1.5rem}
+.nutrition h3{font-family:'Playfair Display',serif;font-size:1.2rem;border-bottom:8px solid var(--text);padding-bottom:4px;margin-bottom:.75rem}
+.nutrition-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:.85rem}
+.nutrition-row.bold{font-weight:700;border-bottom:3px solid var(--text)}
+.nutrition-row .pct{color:var(--accent);font-weight:600}
+/* Print */
+.print-btn{display:inline-flex;align-items:center;gap:.5rem;padding:.6rem 1.5rem;background:var(--card);border:2px solid var(--text);border-radius:6px;font-family:'Source Sans 3',sans-serif;font-weight:600;font-size:.85rem;cursor:pointer;transition:all .2s;margin-top:1rem}
+.print-btn:hover{background:var(--text);color:#fff}
+/* CTA */
+.cta{text-align:center;padding:4rem 2rem;background:var(--cream)}
+.cta h2{font-family:'Playfair Display',serif;font-size:2rem;margin-bottom:1rem}
+.cta p{color:var(--muted);max-width:500px;margin:0 auto 2rem;line-height:1.6}
+.cta a{display:inline-block;padding:1rem 2.5rem;background:var(--accent);color:#fff;text-decoration:none;border-radius:8px;font-weight:700;transition:all .2s}
+.cta a:hover{background:#a93226;transform:translateY(-2px)}
+.share-row{display:flex;gap:1rem;justify-content:center;margin-top:1.5rem}
+.share-btn{padding:.5rem 1.2rem;border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:6px;font-family:inherit;cursor:pointer;font-size:.8rem;transition:all .2s}
+.share-btn:hover{border-color:var(--accent);color:var(--accent)}
+@media print{.recipe-nav,.cta,.share-row,.print-btn,.serving-adjuster{display:none!important}body{background:#fff}}
+</style>
+</head>
+<body>
+<div class="cookbook-header">
+<h1>The AI Cookbook</h1>
+<p>Recipes for Business Transformation</p>
+<div class="sub">From the kitchens of Go2 &mdash; Serving 2M+ workers daily</div>
+</div>
+<div class="recipe-nav" id="recipe-nav"></div>
+<div class="recipes" id="recipes"></div>
+<div class="cta">
+<h2>Ready to Start Cooking?</h2>
+<p>Go2 provides all the ingredients for AI-powered workforce transformation. 2M+ workers. 89% satisfaction. $60M+ in results.</p>
+<a href="https://go2.io" target="_blank">Get the Full Cookbook</a>
+<div class="share-row">
+<button class="share-btn" onclick="shareTwitter()">Share on Twitter</button>
+<button class="share-btn" onclick="shareLinkedIn()">Share on LinkedIn</button>
+</div>
+</div>
+<script>
+const recipes=[
+{title:'Zero-Knowledge AI Deployment',tagline:'The dish that proves AI doesn\'t need years of prep work',emoji:'&#x1F680;',bg:'linear-gradient(135deg,#667eea,#764ba2)',category:'Appetizer',serves:50,servesUnit:'employees',prepTime:'15 min',cookTime:'1 week',difficulty:'Easy',
+ingredients:[{amt:'1',item:'Go2 platform account'},{amt:'50',item:'employees ready for better tools'},{amt:'0',item:'prior AI experience needed'},{amt:'1',item:'open mind about work data'},{amt:'Dash of',item:'willingness to change'},{amt:'Zero',item:'consulting firms required'}],
+steps:['Sign up for Go2 and connect to your workforce. This takes approximately 15 minutes — not 15 months.','Let Go2 passively capture how work actually happens across your team. No surveys, no interviews, no disruption.','Within the first week, review the initial work pattern insights. You\'ll see things about your workflows you never knew existed.','Enable AI coaching to start delivering real-time productivity guidance to every employee.','Watch as your team gets 34% more productive without anyone being told to "work harder."'],
+tip:'Most companies spend 6-12 months on "AI readiness assessments" before deploying anything. Go2 deploys in 15 minutes because the assessment IS the deployment. The platform learns by observing.',
+nutrition:[{label:'Time to Value',value:'1 Week',pct:''},
+{label:'Setup Complexity',value:'Minimal',pct:''},
+{label:'Consulting Fees Saved',value:'$350,000',pct:'100%'},
+{label:'Productivity Gain',value:'+34%',pct:''},
+{label:'Employee Satisfaction',value:'89%',pct:''}]},
+{title:'Auto-Documentation Souffl\u00e9',tagline:'Light, effortless, and never falls flat',emoji:'&#x1F4DD;',bg:'linear-gradient(135deg,#f093fb,#f5576c)',category:'Main Course',serves:200,servesUnit:'processes',prepTime:'0 min',cookTime:'3 months',difficulty:'Effortless',
+ingredients:[{amt:'1',item:'Go2 with auto-documentation enabled'},{amt:'200+',item:'undocumented processes (you have them)'},{amt:'0',item:'technical writers needed'},{amt:'0',item:'hours of manual documentation'},{amt:'1',item:'sigh of relief from your ops team'}],
+steps:['Enable Go2\'s auto-documentation feature. That\'s it. That\'s the step.','Go2 observes how your team actually performs each process — not how they think they do it, but how they actually do it.','Accurate, detailed process documentation generates automatically based on real observed behavior.','Review and approve the generated docs. They\'re based on reality, so they\'re actually correct.','Update happens continuously. When processes change, the docs update automatically. Novel concept.'],
+tip:'A major consulting firm quoted one of our clients $2M to document their processes. Go2 did it automatically in 3 months at a fraction of the cost. And Go2\'s docs are actually accurate because they\'re based on observation, not interviews.',
+nutrition:[{label:'Manual Writing Required',value:'Zero',pct:'0%'},
+{label:'Accuracy vs. Manual Docs',value:'+85%',pct:''},
+{label:'Cost vs. Consulting',value:'95% less',pct:''},
+{label:'Processes Documented',value:'200+',pct:''},
+{label:'Auto-Update Frequency',value:'Continuous',pct:''}]},
+{title:'Slow-Roasted Automation Discovery',tagline:'Low effort, maximum flavor — let it cook itself',emoji:'&#x1F916;',bg:'linear-gradient(135deg,#2d6a4f,#40916c)',category:'Main Course',serves:40,servesUnit:'automations found',prepTime:'0 min',cookTime:'2 weeks',difficulty:'Set & Forget',
+ingredients:[{amt:'1',item:'Go2 analyzing your workflows'},{amt:'Unlimited',item:'repetitive tasks (every company has them)'},{amt:'1',item:'engineering team ready to build automations'},{amt:'0',item:'manual process audits'},{amt:'Generous helping of',item:'real work data'}],
+steps:['Go2 begins analyzing captured work patterns across your entire organization.','The AI identifies repetitive, pattern-based tasks that are prime candidates for automation.','Within 2 weeks, receive a prioritized list of 40+ automation opportunities with estimated ROI for each.','Select the highest-impact automations and deploy them using Go2\'s AI agent training.','Repeat quarterly as Go2 continuously discovers new optimization opportunities.'],
+tip:'Internal teams typically find 5-10 automation opportunities per year through manual audits. Go2 finds 40+ in the first two weeks because it sees EVERY workflow, not just the ones people remember to mention in meetings.',
+nutrition:[{label:'Automations Found',value:'40+',pct:''},
+{label:'vs. Manual Audit',value:'8x more',pct:''},
+{label:'Time to Discover',value:'2 weeks',pct:''},
+{label:'Avg. ROI per Automation',value:'340%',pct:''},
+{label:'Manual Effort Required',value:'None',pct:'0%'}]},
+{title:'AI Coaching Tartare',tagline:'Raw, real-time, and impossibly fresh',emoji:'&#x1F9E0;',bg:'linear-gradient(135deg,#f59e0b,#ef4444)',category:'Specialty',serves:100,servesUnit:'employees coached',prepTime:'15 min',cookTime:'Ongoing',difficulty:'Medium',
+ingredients:[{amt:'1',item:'Go2 coaching engine enabled'},{amt:'100',item:'employees across any department'},{amt:'Real',item:'work pattern data (captured by Go2)'},{amt:'0',item:'annual reviews or feedback forms'},{amt:'Continuous',item:'AI-powered insights'}],
+steps:['Go2 captures work patterns and builds a behavioral model for each team and individual.','The AI coaching engine analyzes patterns in real-time — context switches, deep work blocks, collaboration patterns.','Contextual coaching tips are delivered at the right moment: "You\'ve been context-switching heavily. Consider blocking 2 hours for deep work."','Team-level insights surface: "Your design team loses 4 hours/week to unnecessary approval loops. Here\'s a streamlined process."','Over time, coaching adapts and improves as Go2 learns what resonates with each team.'],
+tip:'Traditional coaching is annual reviews that nobody finds useful. Go2\'s coaching is real-time, contextual, and based on actual behavior — not self-reported estimates. It\'s the difference between a Michelin-star chef and a microwave dinner.',
+nutrition:[{label:'Coaching Frequency',value:'Real-time',pct:''},
+{label:'Avg. Productivity Lift',value:'+34%',pct:''},
+{label:'Employee Satisfaction',value:'89%',pct:''},
+{label:'Manager Time Saved',value:'6hrs/week',pct:''},
+{label:'Annual Review Dependency',value:'Eliminated',pct:'0%'}]},
+{title:'Workforce Analytics Reduction',tagline:'Concentrate all your insights into one powerful sauce',emoji:'&#x1F4CA;',bg:'linear-gradient(135deg,#0f3460,#533483)',category:'Side Dish',serves:1,servesUnit:'entire organization',prepTime:'15 min',cookTime:'Ongoing',difficulty:'Easy',
+ingredients:[{amt:'1',item:'Go2 analytics dashboard'},{amt:'All',item:'work data from every team'},{amt:'0',item:'manual data entry'},{amt:'0',item:'spreadsheet gymnastics'},{amt:'Real-time',item:'visibility into operations'}],
+steps:['Go2 automatically aggregates work pattern data across your entire organization.','Dashboards populate with real insights: bottlenecks, efficiency metrics, team health indicators.','Unlike "the dashboard nobody looks at," Go2 surfaces actionable insights — not vanity metrics.','Set up alerts for anomalies: unusual context-switching, declining deep work time, process bottlenecks.','Use insights to make data-driven decisions about resource allocation, process improvements, and AI deployment.'],
+tip:'The average company has 47 dashboards. Leaders look at 3 of them. Go2\'s analytics are different because they\'re built on real work data — not survey responses or manual time entries. When you measure what actually happens, the insights are actually useful.',
+nutrition:[{label:'Data Sources',value:'Automatic',pct:''},
+{label:'Manual Entry Required',value:'Zero',pct:'0%'},
+{label:'Insight Accuracy',value:'Based on reality',pct:''},
+{label:'Dashboards That Matter',value:'1 (Go2)',pct:''},
+{label:'Decisions Improved',value:'All of them',pct:''}]},
+{title:'AI Agent Deployment Cake',tagline:'The grand finale — layers of work data, frosted with intelligence',emoji:'&#x1F382;',bg:'linear-gradient(135deg,#7b2ff7,#c471f5)',category:'Dessert',serves:500,servesUnit:'employees served by agents',prepTime:'2 weeks',cookTime:'Ongoing',difficulty:'Advanced (but Go2 makes it easy)',
+ingredients:[{amt:'1',item:'Go2 with 30+ days of work data captured'},{amt:'Identified',item:'automation opportunities from Go2 discovery'},{amt:'Real',item:'organizational work patterns for training'},{amt:'0',item:'generic AI models that don\'t know your business'},{amt:'1',item:'commitment to the 5% that succeeds'}],
+steps:['Select automation opportunities identified by Go2\'s discovery engine.','Go2 trains AI agents on YOUR real work data — not generic internet training data.','Test agents in controlled environments using Go2\'s simulation capabilities.','Deploy agents to production. Monitor performance via Go2 analytics.','Continuously improve as agents learn from ongoing work pattern data. Unlike generic AI, these agents get smarter about YOUR specific business over time.'],
+tip:'95% of AI agents fail because they\'re trained on generic data. Go2 agents succeed because they\'re trained on how YOUR organization actually works. It\'s the difference between hiring someone who read a book about your industry vs. someone who\'s worked there for 10 years.',
+nutrition:[{label:'Agent Success Rate',value:'89%',pct:''},
+{label:'vs. Generic AI',value:'18x better',pct:''},
+{label:'Training Data Source',value:'Your real work',pct:''},
+{label:'Time to Deploy',value:'2 weeks',pct:''},
+{label:'ROI',value:'12x average',pct:''}]}
+];
+
+// Build nav
+const nav=document.getElementById('recipe-nav');
+recipes.forEach((r,i)=>{
+const btn=document.createElement('button');
+btn.textContent=r.title;
+btn.className=i===0?'active':'';
+btn.onclick=()=>{
+document.querySelectorAll('.recipe-nav button').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+document.getElementById(`recipe-${i}`).scrollIntoView({behavior:'smooth',block:'start'});
+};
+nav.appendChild(btn);
+});
+
+// Build recipes
+const container=document.getElementById('recipes');
+recipes.forEach((r,i)=>{
+const baseServes=r.serves;
+container.innerHTML+=`
+<div class="recipe-card" id="recipe-${i}">
+<div class="recipe-hero" style="background:${r.bg}">
+<div class="emoji">${r.emoji}</div>
+<div class="overlay"><div class="category">${r.category}</div></div>
+</div>
+<div class="recipe-body">
+<h2>${r.title}</h2>
+<div class="tagline">${r.tagline}</div>
+<div class="recipe-meta">
+<div class="meta-item"><div class="val">${r.serves} ${r.servesUnit}</div><div class="lbl">Serves</div></div>
+<div class="meta-item"><div class="val">${r.prepTime}</div><div class="lbl">Prep Time</div></div>
+<div class="meta-item"><div class="val">${r.cookTime}</div><div class="lbl">Cook Time</div></div>
+<div class="meta-item"><div class="val">${r.difficulty}</div><div class="lbl">Difficulty</div></div>
+</div>
+<div class="serving-adjuster">
+<label>Adjust Servings:</label>
+<input type="range" min="1" max="5" value="1" oninput="adjustServings(${i},this.value,${baseServes})">
+<div class="output" id="serving-output-${i}">${baseServes} ${r.servesUnit} &rarr; ${getROI(r,1)}</div>
+</div>
+<div class="recipe-grid">
+<div class="ingredients">
+<h3>&#x1F95A; Ingredients</h3>
+${r.ingredients.map(ing=>`<div class="ingredient"><input type="checkbox"><span class="amt">${ing.amt}</span><span>${ing.item}</span></div>`).join('')}
+</div>
+<div class="steps">
+<h3>&#x1F4CB; Directions</h3>
+${r.steps.map((s,j)=>`<div class="step"><div class="step-num">${j+1}</div><div class="step-text">${s}</div></div>`).join('')}
+</div>
+</div>
+<div class="chefs-tip">
+<div class="icon">&#x1F468;&#x200D;&#x1F373;</div>
+<div><h4>Chef's Tip</h4><p>${r.tip}</p></div>
+</div>
+<div class="nutrition">
+<h3>Nutrition Facts (ROI Metrics)</h3>
+${r.nutrition.map(n=>`<div class="nutrition-row${n.label==='ROI'?' bold':''}"><span>${n.label}</span><span>${n.value} ${n.pct?`<span class="pct">${n.pct}</span>`:''}</span></div>`).join('')}
+</div>
+<button class="print-btn" onclick="window.print()">&#x1F5A8; Print Recipe</button>
+</div>
+</div>`;
+});
+
+function getROI(recipe,multiplier){
+const base=recipe.serves*multiplier;
+if(recipe.title.includes('Zero-Knowledge'))return`ROI: ${(12*multiplier).toFixed(0)}x`;
+if(recipe.title.includes('Documentation'))return`Saved: $${(150*multiplier).toLocaleString()}K`;
+if(recipe.title.includes('Automation'))return`Found: ${(40*multiplier)}+ automations`;
+if(recipe.title.includes('Coaching'))return`Lift: +${(34*multiplier/multiplier).toFixed(0)}%`;
+if(recipe.title.includes('Analytics'))return`Coverage: ${multiplier} org(s)`;
+if(recipe.title.includes('Agent'))return`ROI: ${(12*multiplier).toFixed(0)}x`;
+return'';
+}
+
+function adjustServings(idx,multiplier,base){
+const r=recipes[idx];
+const output=document.getElementById(`serving-output-${idx}`);
+output.innerHTML=`${base*multiplier} ${r.servesUnit} &rarr; ${getROI(r,parseInt(multiplier))}`;
+}
+
+function shareTwitter(){window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent('The AI Cookbook by Go2: "Recipe: Zero-Knowledge AI Deployment. Serves 50 employees. Prep time: 15 minutes. ROI: 12x." Best thing I\'ve read about AI implementation.')}&url=${encodeURIComponent('https://go2.io')}`,'_blank');}
+function shareLinkedIn(){window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://go2.io')}`,'_blank');}
+</script>
+</body>
+</html>
