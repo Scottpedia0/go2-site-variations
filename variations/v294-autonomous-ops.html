@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autonomous Operations | Go2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+body{font-family:'Inter',system-ui,sans-serif;background:#0a0a0f;color:#fff;overflow-x:hidden}
+
+.hero{min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:4rem 2rem;position:relative}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(99,102,241,0.12),transparent 60%)}
+.hero h1{font-size:clamp(2.5rem,5vw,4rem);font-weight:900;line-height:1.1;margin-bottom:1rem;position:relative}
+.hero h1 span{background:linear-gradient(135deg,#818cf8,#6366f1,#4f46e5);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:#64748b;font-size:1.15rem;max-width:650px;margin:0 auto 2rem}
+
+.controls{display:flex;gap:2rem;justify-content:center;flex-wrap:wrap;margin-bottom:3rem;padding:0 2rem}
+.control-group{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:1.25rem 1.5rem;min-width:200px}
+.control-group label{display:block;font-size:0.75rem;color:#64748b;margin-bottom:0.5rem;text-transform:uppercase;letter-spacing:0.05em}
+.control-slider{width:100%;-webkit-appearance:none;height:6px;border-radius:3px;background:rgba(255,255,255,0.1);outline:none}
+.control-slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#6366f1;cursor:pointer;border:2px solid #fff}
+.control-value{text-align:center;margin-top:0.5rem;font-size:1.5rem;font-weight:800;color:#a5b4fc}
+
+.org-section{max-width:1200px;margin:0 auto;padding:0 2rem}
+.org-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem}
+.org-header h2{font-size:1.5rem;font-weight:700}
+.org-legend{display:flex;gap:1.5rem;font-size:0.8rem;color:#94a3b8}
+.org-legend span{display:flex;align-items:center;gap:0.4rem}
+.legend-sq{width:12px;height:12px;border-radius:4px}
+
+.org-chart{position:relative;min-height:600px}
+.org-node{position:absolute;background:rgba(255,255,255,0.04);border:2px solid rgba(255,255,255,0.1);border-radius:16px;padding:1rem;text-align:center;cursor:pointer;transition:all 0.4s ease;min-width:140px}
+.org-node:hover{transform:scale(1.08);z-index:10;box-shadow:0 8px 30px rgba(0,0,0,0.3)}
+.org-node.human{border-color:rgba(99,102,241,0.4)}
+.org-node.ai{border-color:rgba(52,211,153,0.4);background:rgba(52,211,153,0.05)}
+.org-node.hybrid{border-color:rgba(251,191,36,0.4);background:rgba(251,191,36,0.05)}
+.org-node .node-icon{font-size:1.5rem;margin-bottom:0.4rem}
+.org-node .node-title{font-size:0.8rem;font-weight:700;margin-bottom:0.15rem}
+.org-node .node-role{font-size:0.65rem;color:#94a3b8}
+.org-node .node-type{font-size:0.55rem;padding:0.15rem 0.5rem;border-radius:10px;margin-top:0.4rem;display:inline-block;font-weight:600;text-transform:uppercase}
+.org-node.human .node-type{background:rgba(99,102,241,0.15);color:#a5b4fc}
+.org-node.ai .node-type{background:rgba(52,211,153,0.15);color:#34d399}
+.org-node.hybrid .node-type{background:rgba(251,191,36,0.15);color:#fbbf24}
+
+.org-connector{position:absolute;background:rgba(255,255,255,0.06);height:2px;transform-origin:left center;pointer-events:none}
+
+.detail-panel{position:fixed;right:-420px;top:0;bottom:0;width:400px;background:rgba(15,15,25,0.98);backdrop-filter:blur(20px);border-left:1px solid rgba(255,255,255,0.08);padding:2rem;z-index:100;transition:right 0.4s ease;overflow-y:auto}
+.detail-panel.open{right:0}
+.detail-close{position:absolute;top:1rem;right:1rem;background:none;border:none;color:#64748b;cursor:pointer;font-size:1.3rem}
+.detail-icon{font-size:3rem;margin-bottom:1rem}
+.detail-name{font-size:1.5rem;font-weight:800;margin-bottom:0.25rem}
+.detail-role{color:#64748b;margin-bottom:1.5rem}
+.detail-section{margin-bottom:1.5rem}
+.detail-section h3{font-size:0.85rem;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem}
+.detail-metric{display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.detail-metric span:first-child{color:#94a3b8;font-size:0.85rem}
+.detail-metric span:last-child{font-weight:700;font-size:0.9rem}
+.detail-bar{margin-bottom:0.75rem}
+.detail-bar-label{display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:0.3rem}
+.detail-bar-track{height:6px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden}
+.detail-bar-fill{height:100%;border-radius:3px}
+
+.summary-section{max-width:1200px;margin:4rem auto;padding:0 2rem}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem}
+.summary-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:1.5rem;text-align:center;transition:all 0.3s}
+.summary-card .big-num{font-size:2.5rem;font-weight:900;background:linear-gradient(135deg,#a5b4fc,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.summary-card .label{font-size:0.85rem;color:#64748b;margin-top:0.25rem}
+
+.automation-spectrum{max-width:1200px;margin:4rem auto;padding:0 2rem 4rem}
+.spectrum-row{display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem}
+.spectrum-label{width:150px;font-size:0.85rem;color:#94a3b8;text-align:right;flex-shrink:0}
+.spectrum-bar{flex:1;height:32px;background:rgba(255,255,255,0.03);border-radius:8px;overflow:hidden;position:relative;display:flex}
+.spectrum-human{background:linear-gradient(90deg,#6366f1,#818cf8);height:100%;transition:width 0.8s ease;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:600;min-width:30px}
+.spectrum-ai{background:linear-gradient(90deg,#34d399,#06b6d4);height:100%;transition:width 0.8s ease;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:600;min-width:30px}
+
+@media(max-width:768px){.summary-grid{grid-template-columns:repeat(2,1fr)}.controls{flex-direction:column;align-items:center}.org-chart{overflow-x:scroll}.detail-panel{width:100%}}
+</style>
+</head>
+<body>
+
+<section class="hero">
+<h1><span>Autonomous</span> Operations</h1>
+<p>Visualize a fully Go2-powered organization. See which roles are human, AI, or hybrid — and explore what's possible when AI handles the routine.</p>
+</section>
+
+<div class="controls">
+<div class="control-group">
+<label>AI Automation Level</label>
+<input type="range" min="0" max="100" value="50" class="control-slider" id="autoLevel">
+<div class="control-value" id="autoValue">50%</div>
+</div>
+<div class="control-group">
+<label>Company Size</label>
+<input type="range" min="20" max="200" value="80" class="control-slider" id="companySize" step="10">
+<div class="control-value" id="sizeValue">80</div>
+</div>
+<div class="control-group">
+<label>Monthly Savings</label>
+<div class="control-value" id="savingsValue" style="color:#34d399">$42K</div>
+</div>
+</div>
+
+<section class="org-section">
+<div class="org-header">
+<h2>Interactive Org Chart</h2>
+<div class="org-legend">
+<span><span class="legend-sq" style="background:#6366f1"></span> Human</span>
+<span><span class="legend-sq" style="background:#34d399"></span> AI Agent</span>
+<span><span class="legend-sq" style="background:#fbbf24"></span> Hybrid</span>
+</div>
+</div>
+<div class="org-chart" id="orgChart"></div>
+</section>
+
+<section class="summary-section">
+<div class="summary-grid">
+<div class="summary-card"><div class="big-num" id="sumHumans">40</div><div class="label">Human Roles</div></div>
+<div class="summary-card"><div class="big-num" id="sumAI">25</div><div class="label">AI Agents</div></div>
+<div class="summary-card"><div class="big-num" id="sumHybrid">15</div><div class="label">Hybrid Roles</div></div>
+<div class="summary-card"><div class="big-num" id="sumOutput">2.4x</div><div class="label">Output Multiplier</div></div>
+</div>
+</section>
+
+<section class="automation-spectrum">
+<h2 style="font-size:1.5rem;font-weight:700;margin-bottom:2rem">Automation by Department</h2>
+<div id="spectrumRows"></div>
+</section>
+
+<div class="detail-panel" id="detailPanel">
+<button class="detail-close" onclick="closeDetail()">&times;</button>
+<div id="detailContent"></div>
+</div>
+
+<script>
+const roles = [
+{name:"CEO",dept:"Executive",icon:"👤",autoMin:5,autoMax:20,x:50,y:0,cost:"$25K/mo",capabilities:["Strategic vision","Culture","Stakeholder relations"],aiCapabilities:["Data-driven decision support","Market analysis","Scenario modeling"]},
+{name:"VP Sales",dept:"Sales",icon:"📈",autoMin:15,autoMax:45,x:20,y:15,cost:"$18K/mo",capabilities:["Team leadership","Key accounts","Strategy"],aiCapabilities:["Pipeline analytics","Forecast automation","Rep coaching"]},
+{name:"VP Engineering",dept:"Engineering",icon:"⚙️",autoMin:10,autoMax:35,x:50,y:15,cost:"$20K/mo",capabilities:["Architecture","Team building","Tech strategy"],aiCapabilities:["Code review automation","Sprint planning","Bug triage"]},
+{name:"VP Operations",dept:"Operations",icon:"🔄",autoMin:25,autoMax:70,x:80,y:15,cost:"$16K/mo",capabilities:["Process optimization","Vendor mgmt","Compliance"],aiCapabilities:["Process automation","Bottleneck detection","Report generation"]},
+{name:"Sales Rep",dept:"Sales",icon:"🎯",autoMin:20,autoMax:50,x:5,y:35,cost:"$8K/mo",capabilities:["Relationship building","Negotiation","Closing"],aiCapabilities:["Lead qualification","Email drafting","CRM updates"]},
+{name:"SDR",dept:"Sales",icon:"📞",autoMin:40,autoMax:85,x:20,y:35,cost:"$5K/mo",capabilities:["Outbound","Cold calling","Qualifying"],aiCapabilities:["Auto-outreach","Lead scoring","Meeting scheduling"]},
+{name:"Sales Ops",dept:"Sales",icon:"📊",autoMin:50,autoMax:90,x:35,y:35,cost:"$7K/mo",capabilities:["Reporting","Forecasting","Tools"],aiCapabilities:["Auto-reporting","Pipeline analysis","Territory planning"]},
+{name:"Sr. Engineer",dept:"Engineering",icon:"💻",autoMin:10,autoMax:40,x:45,y:35,cost:"$15K/mo",capabilities:["Architecture","Mentoring","Complex features"],aiCapabilities:["Code generation","Testing automation","Documentation"]},
+{name:"Jr. Engineer",dept:"Engineering",icon:"🖥️",autoMin:25,autoMax:60,x:55,y:35,cost:"$8K/mo",capabilities:["Feature dev","Bug fixes","Learning"],aiCapabilities:["Boilerplate code","Test writing","Code review"]},
+{name:"QA Lead",dept:"Engineering",icon:"🧪",autoMin:40,autoMax:80,x:65,y:35,cost:"$9K/mo",capabilities:["Test strategy","Manual testing","Release mgmt"],aiCapabilities:["Auto test generation","Regression testing","Bug detection"]},
+{name:"Ops Manager",dept:"Operations",icon:"📋",autoMin:30,autoMax:75,x:75,y:35,cost:"$9K/mo",capabilities:["Day-to-day ops","Team coord","Escalation"],aiCapabilities:["Task routing","Status tracking","Alert management"]},
+{name:"Data Entry",dept:"Operations",icon:"⌨️",autoMin:70,autoMax:95,x:85,y:35,cost:"$4K/mo",capabilities:["Manual entry","Verification"],aiCapabilities:["Full automation","OCR extraction","Validation"]},
+{name:"Support Agent",dept:"Support",icon:"🎧",autoMin:35,autoMax:80,x:95,y:35,cost:"$4.5K/mo",capabilities:["Customer empathy","Complex issues"],aiCapabilities:["Tier-1 auto-resolve","Sentiment analysis","Knowledge base"]},
+{name:"Bookkeeper",dept:"Finance",icon:"💰",autoMin:55,autoMax:90,x:10,y:55,cost:"$5K/mo",capabilities:["Reconciliation","Reporting"],aiCapabilities:["Auto-reconciliation","Invoice processing","Expense tracking"]},
+{name:"HR Coord",dept:"HR",icon:"👋",autoMin:35,autoMax:70,x:30,y:55,cost:"$5K/mo",capabilities:["Onboarding","Benefits","Culture"],aiCapabilities:["Auto-onboarding","Policy management","Leave tracking"]},
+{name:"Content Writer",dept:"Marketing",icon:"✍️",autoMin:30,autoMax:65,x:50,y:55,cost:"$6K/mo",capabilities:["Brand voice","Creative","Strategy"],aiCapabilities:["Draft generation","SEO optimization","Content calendar"]},
+{name:"Customer Success",dept:"Support",icon:"🤝",autoMin:20,autoMax:50,x:70,y:55,cost:"$7K/mo",capabilities:["Relationship mgmt","Upselling","Retention"],aiCapabilities:["Health scoring","Usage analytics","Auto check-ins"]},
+{name:"IT Admin",dept:"Operations",icon:"🖧",autoMin:45,autoMax:85,x:90,y:55,cost:"$7K/mo",capabilities:["Infrastructure","Security","Support"],aiCapabilities:["Auto-provisioning","Monitoring","Incident response"]}
+];
+
+const depts = ["Sales","Engineering","Operations","Support","Finance","HR","Marketing"];
+let autoLevel = 50;
+
+function getNodeType(role, level) {
+const auto = role.autoMin + (role.autoMax - role.autoMin) * (level / 100);
+if (auto >= 75) return 'ai';
+if (auto >= 35) return 'hybrid';
+return 'human';
+}
+
+function renderOrg() {
+const chart = document.getElementById('orgChart');
+chart.innerHTML = '';
+let humans=0, ais=0, hybrids=0;
+
+roles.forEach((role, idx) => {
+const type = getNodeType(role, autoLevel);
+if (type === 'human') humans++;
+else if (type === 'ai') ais++;
+else hybrids++;
+
+const node = document.createElement('div');
+node.className = `org-node ${type}`;
+node.style.left = `calc(${role.x}% - 70px)`;
+node.style.top = `${role.y * 5 + 20}px`;
+node.innerHTML = `<div class="node-icon">${type === 'ai' ? '🤖' : role.icon}</div>
+<div class="node-title">${role.name}</div>
+<div class="node-role">${role.dept}</div>
+<div class="node-type">${type}</div>`;
+node.onclick = () => showDetail(role, type);
+chart.appendChild(node);
+});
+
+document.getElementById('sumHumans').textContent = humans;
+document.getElementById('sumAI').textContent = ais;
+document.getElementById('sumHybrid').textContent = hybrids;
+const mult = (1 + (ais * 0.05) + (hybrids * 0.02)).toFixed(1);
+document.getElementById('sumOutput').textContent = mult + 'x';
+
+const savings = Math.round(ais * 4.5 + hybrids * 1.5);
+document.getElementById('savingsValue').textContent = '$' + savings + 'K';
+}
+
+function renderSpectrum() {
+const rows = document.getElementById('spectrumRows');
+rows.innerHTML = '';
+depts.forEach(dept => {
+const deptRoles = roles.filter(r => r.dept === dept);
+let totalAuto = 0;
+deptRoles.forEach(r => {
+totalAuto += r.autoMin + (r.autoMax - r.autoMin) * (autoLevel / 100);
+});
+const avgAuto = Math.round(totalAuto / deptRoles.length);
+rows.innerHTML += `<div class="spectrum-row">
+<div class="spectrum-label">${dept}</div>
+<div class="spectrum-bar">
+<div class="spectrum-human" style="width:${100-avgAuto}%">${100-avgAuto}% Human</div>
+<div class="spectrum-ai" style="width:${avgAuto}%">${avgAuto}% AI</div>
+</div>
+</div>`;
+});
+}
+
+function showDetail(role, type) {
+const auto = Math.round(role.autoMin + (role.autoMax - role.autoMin) * (autoLevel / 100));
+const panel = document.getElementById('detailPanel');
+const content = document.getElementById('detailContent');
+content.innerHTML = `
+<div class="detail-icon">${type === 'ai' ? '🤖' : role.icon}</div>
+<div class="detail-name">${role.name}</div>
+<div class="detail-role">${role.dept} &bull; ${type.charAt(0).toUpperCase()+type.slice(1)}</div>
+<div class="detail-section">
+<h3>Key Metrics</h3>
+<div class="detail-metric"><span>Current Cost</span><span>${role.cost}</span></div>
+<div class="detail-metric"><span>AI Cost</span><span>$${Math.round(parseInt(role.cost.replace(/\D/g,''))*0.08)}/mo</span></div>
+<div class="detail-metric"><span>Automation Level</span><span>${auto}%</span></div>
+<div class="detail-metric"><span>Status</span><span style="color:${type==='ai'?'#34d399':type==='hybrid'?'#fbbf24':'#a5b4fc'}">${type.toUpperCase()}</span></div>
+</div>
+<div class="detail-section">
+<h3>Automation Potential</h3>
+<div class="detail-bar">
+<div class="detail-bar-label"><span>Current</span><span>${auto}%</span></div>
+<div class="detail-bar-track"><div class="detail-bar-fill" style="width:${auto}%;background:linear-gradient(90deg,#6366f1,#34d399)"></div></div>
+</div>
+<div class="detail-bar">
+<div class="detail-bar-label"><span>Maximum</span><span>${role.autoMax}%</span></div>
+<div class="detail-bar-track"><div class="detail-bar-fill" style="width:${role.autoMax}%;background:rgba(255,255,255,0.15)"></div></div>
+</div>
+</div>
+<div class="detail-section">
+<h3>Human Capabilities</h3>
+<ul style="list-style:none;padding:0">${role.capabilities.map(c=>`<li style="padding:0.3rem 0;color:#94a3b8;font-size:0.85rem">• ${c}</li>`).join('')}</ul>
+</div>
+<div class="detail-section">
+<h3>AI Can Handle</h3>
+<ul style="list-style:none;padding:0">${role.aiCapabilities.map(c=>`<li style="padding:0.3rem 0;color:#34d399;font-size:0.85rem">• ${c}</li>`).join('')}</ul>
+</div>`;
+panel.classList.add('open');
+}
+
+function closeDetail() {
+document.getElementById('detailPanel').classList.remove('open');
+}
+
+document.getElementById('autoLevel').addEventListener('input', function() {
+autoLevel = parseInt(this.value);
+document.getElementById('autoValue').textContent = autoLevel + '%';
+renderOrg();
+renderSpectrum();
+});
+
+document.getElementById('companySize').addEventListener('input', function() {
+document.getElementById('sizeValue').textContent = this.value;
+});
+
+renderOrg();
+renderSpectrum();
+</script>
+</body>
+</html>

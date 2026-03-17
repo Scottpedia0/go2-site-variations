@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — AI Agents Built on Real Work</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap');
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a2540;
+  --bg-dark: #061b30;
+  --bg-light: #0d2e4d;
+  --bg-card: #0f3460;
+  --surface: rgba(255,255,255,0.05);
+  --border: rgba(255,255,255,0.08);
+  --border-hover: rgba(255,255,255,0.15);
+  --text: #ffffff;
+  --text-dim: rgba(255,255,255,0.7);
+  --text-muted: rgba(255,255,255,0.4);
+  --accent-cyan: #80e9ff;
+  --accent-purple: #a960ee;
+  --accent-green: #42e695;
+  --accent-pink: #f966ff;
+  --accent-orange: #ff9b50;
+  --gradient-1: linear-gradient(135deg, #80e9ff, #a960ee, #f966ff);
+  --gradient-2: linear-gradient(135deg, #42e695, #80e9ff, #a960ee);
+  --gradient-3: linear-gradient(135deg, #f966ff, #ff9b50, #ffde6b);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* Animated gradient mesh background */
+.gradient-mesh {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.gradient-mesh::before {
+  content: '';
+  position: absolute;
+  width: 150%;
+  height: 150%;
+  top: -25%;
+  left: -25%;
+  background:
+    radial-gradient(ellipse 600px 400px at 20% 30%, rgba(128, 233, 255, 0.12), transparent),
+    radial-gradient(ellipse 500px 350px at 70% 20%, rgba(169, 96, 238, 0.1), transparent),
+    radial-gradient(ellipse 700px 500px at 50% 80%, rgba(249, 102, 255, 0.08), transparent),
+    radial-gradient(ellipse 400px 300px at 80% 60%, rgba(66, 230, 149, 0.06), transparent);
+  animation: meshMove 20s ease-in-out infinite alternate;
+}
+
+@keyframes meshMove {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  33% { transform: translate(-30px, 20px) rotate(1deg); }
+  66% { transform: translate(20px, -10px) rotate(-1deg); }
+  100% { transform: translate(-10px, 30px) rotate(0.5deg); }
+}
+
+/* Content wrapper */
+.content { position: relative; z-index: 1; }
+
+/* Nav */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 0 48px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(10, 37, 64, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+
+.nav-logo .logo-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--gradient-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.nav-links a {
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover { color: var(--text); }
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.btn-ghost { background: transparent; color: var(--text-dim); }
+.btn-ghost:hover { color: var(--text); }
+
+.btn-primary {
+  background: var(--accent-cyan);
+  color: var(--bg);
+}
+.btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+.btn-outline {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border-hover);
+}
+.btn-outline:hover { border-color: var(--text-dim); }
+
+/* Hero */
+.hero {
+  padding: 180px 48px 100px;
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+
+.hero-content { max-width: 560px; }
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-cyan);
+  margin-bottom: 24px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.hero-eyebrow::before {
+  content: '';
+  width: 24px;
+  height: 2px;
+  background: var(--accent-cyan);
+  border-radius: 1px;
+}
+
+.hero h1 {
+  font-size: 56px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.08;
+  margin-bottom: 24px;
+}
+
+.hero h1 .gradient-text {
+  background: var(--gradient-1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-desc {
+  font-size: 18px;
+  color: var(--text-dim);
+  line-height: 1.7;
+  margin-bottom: 36px;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 48px;
+}
+
+.hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.hero-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hero-meta-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-green);
+}
+
+/* Code Block */
+.hero-code {
+  position: relative;
+}
+
+.code-window {
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow:
+    0 4px 6px rgba(0,0,0,0.1),
+    0 20px 40px rgba(0,0,0,0.3),
+    0 0 80px rgba(128, 233, 255, 0.05);
+  transform: perspective(800px) rotateY(-2deg);
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.code-window:hover { transform: perspective(800px) rotateY(0deg); }
+
+.code-titlebar {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+}
+
+.code-dot { width: 10px; height: 10px; border-radius: 50%; }
+.code-dot:nth-child(1) { background: #ff5f57; }
+.code-dot:nth-child(2) { background: #febc2e; }
+.code-dot:nth-child(3) { background: #28c840; }
+
+.code-tabs {
+  display: flex;
+  margin-left: 16px;
+  gap: 0;
+}
+
+.code-tab {
+  padding: 4px 14px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  font-family: 'Fira Code', monospace;
+}
+
+.code-tab:hover { color: var(--text-dim); }
+.code-tab.active { color: var(--accent-cyan); border-bottom-color: var(--accent-cyan); }
+
+.code-body {
+  padding: 20px;
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+  line-height: 1.8;
+  min-height: 320px;
+  overflow: hidden;
+}
+
+.code-content { display: none; }
+.code-content.active { display: block; }
+
+.code-line {
+  display: flex;
+  gap: 0;
+  opacity: 0;
+  transform: translateX(-10px);
+  animation: codeLine 0.4s ease forwards;
+}
+
+.code-line:nth-child(1) { animation-delay: 0.1s; }
+.code-line:nth-child(2) { animation-delay: 0.15s; }
+.code-line:nth-child(3) { animation-delay: 0.2s; }
+.code-line:nth-child(4) { animation-delay: 0.25s; }
+.code-line:nth-child(5) { animation-delay: 0.3s; }
+.code-line:nth-child(6) { animation-delay: 0.35s; }
+.code-line:nth-child(7) { animation-delay: 0.4s; }
+.code-line:nth-child(8) { animation-delay: 0.45s; }
+.code-line:nth-child(9) { animation-delay: 0.5s; }
+.code-line:nth-child(10) { animation-delay: 0.55s; }
+.code-line:nth-child(11) { animation-delay: 0.6s; }
+.code-line:nth-child(12) { animation-delay: 0.65s; }
+.code-line:nth-child(13) { animation-delay: 0.7s; }
+.code-line:nth-child(14) { animation-delay: 0.75s; }
+.code-line:nth-child(15) { animation-delay: 0.8s; }
+
+@keyframes codeLine {
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.line-num {
+  width: 36px;
+  text-align: right;
+  padding-right: 16px;
+  color: var(--text-muted);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.line-content { flex: 1; }
+
+/* Syntax highlighting */
+.kw { color: var(--accent-purple); }
+.fn { color: var(--accent-cyan); }
+.str { color: var(--accent-green); }
+.cm { color: var(--text-muted); font-style: italic; }
+.num { color: var(--accent-orange); }
+.op { color: var(--text-dim); }
+.type { color: var(--accent-pink); }
+.prop { color: var(--accent-cyan); }
+
+/* API Response viz */
+.response-viz {
+  margin-top: 24px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.response-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.response-status {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(66, 230, 149, 0.15);
+  color: var(--accent-green);
+  font-weight: 600;
+  font-family: 'Fira Code', monospace;
+}
+
+.response-time {
+  margin-left: auto;
+  font-family: 'Fira Code', monospace;
+}
+
+.response-bars {
+  display: flex;
+  gap: 3px;
+  height: 32px;
+  align-items: flex-end;
+}
+
+.response-bar {
+  flex: 1;
+  border-radius: 2px 2px 0 0;
+  animation: barGrow 1s ease forwards;
+  opacity: 0;
+}
+
+@keyframes barGrow {
+  from { height: 0; opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Sections */
+.section {
+  padding: 120px 48px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 72px;
+}
+
+.section-eyebrow {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 16px;
+}
+
+.section-header h2 {
+  font-size: 44px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-bottom: 16px;
+}
+
+.section-header p {
+  font-size: 17px;
+  color: var(--text-dim);
+  max-width: 540px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+/* Feature cards - Stripe style */
+.stripe-features {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.stripe-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.stripe-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-1);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stripe-card:hover {
+  background: rgba(255,255,255,0.05);
+  border-color: var(--border-hover);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+
+.stripe-card:hover::before { transform: scaleX(1); }
+
+.stripe-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  font-size: 24px;
+}
+
+.stripe-card-icon.cyan { background: rgba(128, 233, 255, 0.1); }
+.stripe-card-icon.purple { background: rgba(169, 96, 238, 0.1); }
+.stripe-card-icon.green { background: rgba(66, 230, 149, 0.1); }
+.stripe-card-icon.pink { background: rgba(249, 102, 255, 0.1); }
+
+.stripe-card h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  letter-spacing: -0.01em;
+}
+
+.stripe-card p {
+  font-size: 15px;
+  color: var(--text-dim);
+  line-height: 1.7;
+  margin-bottom: 24px;
+}
+
+.stripe-card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: gap 0.2s;
+}
+
+.stripe-card:nth-child(1) .stripe-card-link { color: var(--accent-cyan); }
+.stripe-card:nth-child(2) .stripe-card-link { color: var(--accent-purple); }
+.stripe-card:nth-child(3) .stripe-card-link { color: var(--accent-green); }
+.stripe-card:nth-child(4) .stripe-card-link { color: var(--accent-pink); }
+
+.stripe-card:hover .stripe-card-link { gap: 10px; }
+
+/* Code deploy section */
+.deploy-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: center;
+}
+
+.deploy-content h2 {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-bottom: 20px;
+}
+
+.deploy-content p {
+  font-size: 16px;
+  color: var(--text-dim);
+  line-height: 1.7;
+  margin-bottom: 24px;
+}
+
+.deploy-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.deploy-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.deploy-step:hover {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+.deploy-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(128, 233, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  flex-shrink: 0;
+}
+
+.deploy-step h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.deploy-step p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Animated terminal */
+.terminal {
+  background: #0c0c0c;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+
+.terminal-bar {
+  padding: 10px 16px;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.terminal-body {
+  padding: 20px;
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+  line-height: 2;
+}
+
+.terminal-line {
+  opacity: 0;
+  animation: termLine 0.3s ease forwards;
+}
+
+.terminal-line:nth-child(1) { animation-delay: 0.2s; }
+.terminal-line:nth-child(2) { animation-delay: 0.7s; }
+.terminal-line:nth-child(3) { animation-delay: 1.2s; }
+.terminal-line:nth-child(4) { animation-delay: 1.6s; }
+.terminal-line:nth-child(5) { animation-delay: 2.0s; }
+.terminal-line:nth-child(6) { animation-delay: 2.4s; }
+.terminal-line:nth-child(7) { animation-delay: 2.8s; }
+.terminal-line:nth-child(8) { animation-delay: 3.2s; }
+
+@keyframes termLine {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.terminal-prompt { color: var(--accent-green); }
+.terminal-cmd { color: var(--text); }
+.terminal-output { color: var(--text-muted); }
+.terminal-success { color: var(--accent-green); }
+.terminal-info { color: var(--accent-cyan); }
+
+/* Metrics Section */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.metric-card {
+  text-align: center;
+  padding: 40px 20px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: all 0.3s;
+}
+
+.metric-card:hover {
+  background: rgba(255,255,255,0.04);
+  transform: translateY(-2px);
+}
+
+.metric-number {
+  font-size: 48px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  margin-bottom: 4px;
+}
+
+.metric-card:nth-child(1) .metric-number { color: var(--accent-cyan); }
+.metric-card:nth-child(2) .metric-number { color: var(--accent-purple); }
+.metric-card:nth-child(3) .metric-number { color: var(--accent-green); }
+.metric-card:nth-child(4) .metric-number { color: var(--accent-pink); }
+
+.metric-label {
+  font-size: 14px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Integrations */
+.integrations-section {
+  text-align: center;
+}
+
+.integration-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.integration-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 100px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dim);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.integration-pill:hover {
+  border-color: var(--border-hover);
+  background: rgba(255,255,255,0.06);
+  transform: translateY(-2px);
+}
+
+.integration-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* CTA */
+.cta-section {
+  text-align: center;
+  padding: 160px 48px;
+  position: relative;
+}
+
+.cta-section::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 800px;
+  height: 500px;
+  background: radial-gradient(ellipse at center, rgba(128, 233, 255, 0.08), rgba(169, 96, 238, 0.04), transparent);
+  pointer-events: none;
+}
+
+.cta-section h2 {
+  font-size: 52px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.cta-section p {
+  font-size: 18px;
+  color: var(--text-dim);
+  margin-bottom: 40px;
+  position: relative;
+}
+
+.cta-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  position: relative;
+}
+
+/* Footer */
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 64px 48px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr repeat(4, 1fr);
+  gap: 48px;
+  margin-bottom: 48px;
+}
+
+.footer-brand p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 16px;
+  max-width: 260px;
+  line-height: 1.6;
+}
+
+.footer-col h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+}
+
+.footer-col a {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 4px 0;
+  transition: color 0.2s;
+}
+
+.footer-col a:hover { color: var(--text-dim); }
+
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Animations */
+.fade-up {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fade-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .hero { grid-template-columns: 1fr; gap: 48px; padding: 140px 24px 80px; }
+  .hero h1 { font-size: 42px; }
+  .deploy-section { grid-template-columns: 1fr; }
+  .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+  .stripe-features { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: repeat(2, 1fr); }
+  .nav { padding: 0 24px; }
+  .section { padding: 80px 24px; }
+}
+
+/* Animated gradient line */
+.gradient-line {
+  height: 2px;
+  background: var(--gradient-1);
+  background-size: 200% 100%;
+  animation: gradientShift 4s ease-in-out infinite;
+  border-radius: 1px;
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Glow effect on cards */
+.glow-card {
+  position: relative;
+}
+
+.glow-card::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: var(--gradient-1);
+  opacity: 0;
+  z-index: -1;
+  filter: blur(20px);
+  transition: opacity 0.4s;
+}
+
+.glow-card:hover::after { opacity: 0.1; }
+</style>
+</head>
+<body>
+
+<div class="gradient-mesh"></div>
+
+<div class="content">
+
+<!-- Nav -->
+<nav class="nav">
+  <a href="#" class="nav-logo">
+    <div class="logo-mark">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 8h8M8 4v8" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+    </div>
+    Go2
+  </a>
+  <div class="nav-links">
+    <a href="#">Products</a>
+    <a href="#">Developers</a>
+    <a href="#">Pricing</a>
+    <a href="#">Company</a>
+    <a href="#">Resources</a>
+  </div>
+  <div class="nav-right">
+    <a href="#" class="btn btn-ghost">Sign in</a>
+    <a href="#" class="btn btn-primary">Start now &rarr;</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-eyebrow">Built for developers</div>
+    <h1>AI agents trained on <span class="gradient-text">real work</span>, not theory</h1>
+    <p class="hero-desc">Go2 captures how your team actually works, documents processes automatically, and deploys AI agents built on reality. The API for work intelligence.</p>
+    <div class="hero-actions">
+      <a href="#" class="btn btn-primary">Start integrating &rarr;</a>
+      <a href="#" class="btn btn-outline">Read the docs</a>
+    </div>
+    <div class="hero-meta">
+      <div class="hero-meta-item">
+        <div class="hero-meta-dot"></div>
+        All systems operational
+      </div>
+      <div class="hero-meta-item">2M+ workers</div>
+      <div class="hero-meta-item">89% satisfaction</div>
+    </div>
+  </div>
+
+  <div class="hero-code">
+    <div class="code-window">
+      <div class="code-titlebar">
+        <div class="code-dot"></div>
+        <div class="code-dot"></div>
+        <div class="code-dot"></div>
+        <div class="code-tabs">
+          <div class="code-tab active" onclick="switchTab('python')">agent.py</div>
+          <div class="code-tab" onclick="switchTab('typescript')">agent.ts</div>
+          <div class="code-tab" onclick="switchTab('curl')">curl</div>
+        </div>
+      </div>
+      <div class="code-body">
+        <div class="code-content active" id="tab-python">
+          <div class="code-line"><span class="line-num">1</span><span class="line-content"><span class="kw">from</span> go2 <span class="kw">import</span> <span class="type">Agent</span>, <span class="type">Workflow</span></span></div>
+          <div class="code-line"><span class="line-num">2</span><span class="line-content"></span></div>
+          <div class="code-line"><span class="line-num">3</span><span class="line-content"><span class="cm"># Train an agent on your team's real workflows</span></span></div>
+          <div class="code-line"><span class="line-num">4</span><span class="line-content"><span class="fn">agent</span> <span class="op">=</span> <span class="type">Agent</span>.<span class="fn">create</span>(</span></div>
+          <div class="code-line"><span class="line-num">5</span><span class="line-content">    <span class="prop">name</span><span class="op">=</span><span class="str">"invoice-processor"</span>,</span></div>
+          <div class="code-line"><span class="line-num">6</span><span class="line-content">    <span class="prop">workflow</span><span class="op">=</span><span class="type">Workflow</span>.<span class="fn">from_capture</span>(</span></div>
+          <div class="code-line"><span class="line-num">7</span><span class="line-content">        <span class="prop">team</span><span class="op">=</span><span class="str">"finance"</span>,</span></div>
+          <div class="code-line"><span class="line-num">8</span><span class="line-content">        <span class="prop">task</span><span class="op">=</span><span class="str">"invoice-processing"</span></span></div>
+          <div class="code-line"><span class="line-num">9</span><span class="line-content">    ),</span></div>
+          <div class="code-line"><span class="line-num">10</span><span class="line-content">    <span class="prop">confidence</span><span class="op">=</span><span class="num">0.95</span>,</span></div>
+          <div class="code-line"><span class="line-num">11</span><span class="line-content">)</span></div>
+          <div class="code-line"><span class="line-num">12</span><span class="line-content"></span></div>
+          <div class="code-line"><span class="line-num">13</span><span class="line-content"><span class="cm"># Deploy to production in one line</span></span></div>
+          <div class="code-line"><span class="line-num">14</span><span class="line-content"><span class="fn">deployment</span> <span class="op">=</span> agent.<span class="fn">deploy</span>(<span class="prop">env</span><span class="op">=</span><span class="str">"production"</span>)</span></div>
+          <div class="code-line"><span class="line-num">15</span><span class="line-content"><span class="kw">print</span>(f<span class="str">"Agent live: {deployment.url}"</span>)</span></div>
+        </div>
+        <div class="code-content" id="tab-typescript">
+          <div class="code-line"><span class="line-num">1</span><span class="line-content"><span class="kw">import</span> { <span class="type">Agent</span>, <span class="type">Workflow</span> } <span class="kw">from</span> <span class="str">'@go2/sdk'</span>;</span></div>
+          <div class="code-line"><span class="line-num">2</span><span class="line-content"></span></div>
+          <div class="code-line"><span class="line-num">3</span><span class="line-content"><span class="cm">// Train an agent on your team's real workflows</span></span></div>
+          <div class="code-line"><span class="line-num">4</span><span class="line-content"><span class="kw">const</span> <span class="fn">agent</span> <span class="op">=</span> <span class="kw">await</span> <span class="type">Agent</span>.<span class="fn">create</span>({</span></div>
+          <div class="code-line"><span class="line-num">5</span><span class="line-content">  <span class="prop">name</span>: <span class="str">'invoice-processor'</span>,</span></div>
+          <div class="code-line"><span class="line-num">6</span><span class="line-content">  <span class="prop">workflow</span>: <span class="kw">await</span> <span class="type">Workflow</span>.<span class="fn">fromCapture</span>({</span></div>
+          <div class="code-line"><span class="line-num">7</span><span class="line-content">    <span class="prop">team</span>: <span class="str">'finance'</span>,</span></div>
+          <div class="code-line"><span class="line-num">8</span><span class="line-content">    <span class="prop">task</span>: <span class="str">'invoice-processing'</span></span></div>
+          <div class="code-line"><span class="line-num">9</span><span class="line-content">  }),</span></div>
+          <div class="code-line"><span class="line-num">10</span><span class="line-content">  <span class="prop">confidence</span>: <span class="num">0.95</span>,</span></div>
+          <div class="code-line"><span class="line-num">11</span><span class="line-content">});</span></div>
+          <div class="code-line"><span class="line-num">12</span><span class="line-content"></span></div>
+          <div class="code-line"><span class="line-num">13</span><span class="line-content"><span class="cm">// Deploy to production in one line</span></span></div>
+          <div class="code-line"><span class="line-num">14</span><span class="line-content"><span class="kw">const</span> <span class="fn">deploy</span> <span class="op">=</span> <span class="kw">await</span> agent.<span class="fn">deploy</span>(<span class="str">'production'</span>);</span></div>
+          <div class="code-line"><span class="line-num">15</span><span class="line-content">console.<span class="fn">log</span>(<span class="str">`Agent live: </span>${deploy.url}<span class="str">`</span>);</span></div>
+        </div>
+        <div class="code-content" id="tab-curl">
+          <div class="code-line"><span class="line-num">1</span><span class="line-content"><span class="cm"># Create and deploy an agent</span></span></div>
+          <div class="code-line"><span class="line-num">2</span><span class="line-content"><span class="fn">curl</span> <span class="str">-X POST</span> https://api.go2.io/v1/agents \</span></div>
+          <div class="code-line"><span class="line-num">3</span><span class="line-content">  <span class="op">-H</span> <span class="str">"Authorization: Bearer $GO2_KEY"</span> \</span></div>
+          <div class="code-line"><span class="line-num">4</span><span class="line-content">  <span class="op">-d</span> <span class="str">'{</span></span></div>
+          <div class="code-line"><span class="line-num">5</span><span class="line-content"><span class="str">    "name": "invoice-processor",</span></span></div>
+          <div class="code-line"><span class="line-num">6</span><span class="line-content"><span class="str">    "workflow_source": {</span></span></div>
+          <div class="code-line"><span class="line-num">7</span><span class="line-content"><span class="str">      "team": "finance",</span></span></div>
+          <div class="code-line"><span class="line-num">8</span><span class="line-content"><span class="str">      "task": "invoice-processing"</span></span></div>
+          <div class="code-line"><span class="line-num">9</span><span class="line-content"><span class="str">    },</span></span></div>
+          <div class="code-line"><span class="line-num">10</span><span class="line-content"><span class="str">    "confidence": 0.95,</span></span></div>
+          <div class="code-line"><span class="line-num">11</span><span class="line-content"><span class="str">    "deploy": "production"</span></span></div>
+          <div class="code-line"><span class="line-num">12</span><span class="line-content"><span class="str">  }'</span></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="response-viz" style="margin-top:16px">
+      <div class="response-header">
+        <span class="response-status">200 OK</span>
+        <span>POST /v1/agents</span>
+        <span class="response-time">142ms</span>
+      </div>
+      <div class="response-bars" id="responseBars"></div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Features -->
+<section class="section fade-up">
+  <div class="section-header">
+    <div class="section-eyebrow">Platform</div>
+    <h2>Built for developers,<br>works for everyone</h2>
+    <p>A complete platform for capturing work intelligence, training AI agents, and deploying them at scale.</p>
+  </div>
+
+  <div class="stripe-features">
+    <div class="stripe-card glow-card">
+      <div class="stripe-card-icon cyan">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#80e9ff" stroke-width="1.5"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="#80e9ff" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <h3>Workflow Capture API</h3>
+      <p>Lightweight SDK captures how work happens through the Cowork.ai desktop agent. Zero friction, zero behavior change. Structured workflow data ready for training.</p>
+      <a href="#" class="stripe-card-link">Explore Capture API <span>&rarr;</span></a>
+    </div>
+    <div class="stripe-card glow-card">
+      <div class="stripe-card-icon purple">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="3" stroke="#a960ee" stroke-width="1.5"/><circle cx="12" cy="10" r="2" stroke="#a960ee" stroke-width="1.5"/><path d="M8 17c0-2.2 1.8-4 4-4s4 1.8 4 4" stroke="#a960ee" stroke-width="1.5"/></svg>
+      </div>
+      <h3>Agent Training Engine</h3>
+      <p>Fine-tune agents on real work data, not synthetic benchmarks. Transfer learning from your best performers. Agents that understand context because they learned from reality.</p>
+      <a href="#" class="stripe-card-link">Learn about training <span>&rarr;</span></a>
+    </div>
+    <div class="stripe-card glow-card">
+      <div class="stripe-card-icon green">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="#42e695" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h3>Real-time Coaching</h3>
+      <p>AI-powered coaching delivered at the right moment. Reduces context-switching, surfaces best practices, and helps every team member perform like your top performers.</p>
+      <a href="#" class="stripe-card-link">See coaching in action <span>&rarr;</span></a>
+    </div>
+    <div class="stripe-card glow-card">
+      <div class="stripe-card-icon pink">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#f966ff" stroke-width="1.5"/><path d="M14 2v6h6" stroke="#f966ff" stroke-width="1.5"/></svg>
+      </div>
+      <h3>Auto-Documentation</h3>
+      <p>SOPs, playbooks, and training materials generate themselves from observed workflows. Always up-to-date because they're built from actual behavior, not guesswork.</p>
+      <a href="#" class="stripe-card-link">View documentation engine <span>&rarr;</span></a>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Deploy Section -->
+<section class="section fade-up">
+  <div class="deploy-section">
+    <div class="deploy-content">
+      <div class="section-eyebrow" style="text-align:left">Deployment</div>
+      <h2>From capture to production in minutes</h2>
+      <p>Go2's pipeline takes you from raw workflow capture to deployed AI agents. No ML expertise required.</p>
+      <div class="deploy-steps">
+        <div class="deploy-step">
+          <div class="deploy-step-num">1</div>
+          <div>
+            <h4>Capture</h4>
+            <p>Install the lightweight desktop agent. Workflows are captured automatically.</p>
+          </div>
+        </div>
+        <div class="deploy-step">
+          <div class="deploy-step-num">2</div>
+          <div>
+            <h4>Train</h4>
+            <p>Select workflows, set confidence thresholds, train your agent.</p>
+          </div>
+        </div>
+        <div class="deploy-step">
+          <div class="deploy-step-num">3</div>
+          <div>
+            <h4>Deploy</h4>
+            <p>One command. Your agent is live and handling real work.</p>
+          </div>
+        </div>
+        <div class="deploy-step">
+          <div class="deploy-step-num">4</div>
+          <div>
+            <h4>Monitor</h4>
+            <p>Real-time metrics, confidence scores, and human-in-the-loop escalation.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="code-dot"></div>
+          <div class="code-dot"></div>
+          <div class="code-dot"></div>
+          <span style="font-size:12px;color:var(--text-muted);margin-left:8px;font-family:'Fira Code',monospace">Terminal</span>
+        </div>
+        <div class="terminal-body">
+          <div class="terminal-line"><span class="terminal-prompt">$</span> <span class="terminal-cmd">npx go2 deploy invoice-processor</span></div>
+          <div class="terminal-line"><span class="terminal-output">Resolving workflow data...</span></div>
+          <div class="terminal-line"><span class="terminal-info">Found 2,847 workflow captures from team "finance"</span></div>
+          <div class="terminal-line"><span class="terminal-output">Training agent on 23 unique process patterns...</span></div>
+          <div class="terminal-line"><span class="terminal-info">Confidence score: 0.97 (target: 0.95)</span></div>
+          <div class="terminal-line"><span class="terminal-output">Deploying to production...</span></div>
+          <div class="terminal-line"><span class="terminal-success">&#10003; Agent deployed successfully</span></div>
+          <div class="terminal-line"><span class="terminal-success">&#10003; https://agents.go2.io/invoice-processor</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Metrics -->
+<section class="section fade-up">
+  <div class="section-header">
+    <div class="section-eyebrow">Impact</div>
+    <h2>Numbers that matter</h2>
+    <p>Real results from real teams deploying Go2 agents in production.</p>
+  </div>
+  <div class="metrics-grid">
+    <div class="metric-card glow-card">
+      <div class="metric-number">2M+</div>
+      <div class="metric-label">Workers coached</div>
+    </div>
+    <div class="metric-card glow-card">
+      <div class="metric-number">89%</div>
+      <div class="metric-label">Satisfaction rate</div>
+    </div>
+    <div class="metric-card glow-card">
+      <div class="metric-number">847K</div>
+      <div class="metric-label">Hours saved / month</div>
+    </div>
+    <div class="metric-card glow-card">
+      <div class="metric-number">5x</div>
+      <div class="metric-label">Faster deployment</div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Integrations -->
+<section class="section fade-up integrations-section">
+  <div class="section-header">
+    <div class="section-eyebrow">Integrations</div>
+    <h2>Works with your stack</h2>
+    <p>Go2 connects to every tool your team already uses. No migration, no disruption.</p>
+  </div>
+  <div class="integration-grid">
+    <div class="integration-pill"><div class="integration-dot" style="background:#4285f4"></div>Google Workspace</div>
+    <div class="integration-pill"><div class="integration-dot" style="background:#4a154b"></div>Slack</div>
+    <div class="integration-pill"><div class="integration-dot" style="background:#0052cc"></div>Jira</div>
+    <div class="integration-pill"><div class="integration-dot" style="background:#f04438"></div>Salesforce</div>
+    <div class="integration-pill"><div class="integration-dot" style="background:#7b68ee"></div>Notion</div>
+    <div class="integration-pill"><div class="integration-dot" style="background:#ff6c37"></div>HubSpot</div>
+    <div class="integration-pill"><div class="integration-dot" style="background:#635bff"></div>Stripe</div>
+    <div class="integration-pill"><div class="integration-dot" style="background:#0078d4"></div>Microsoft 365</div>
+    <div class="integration-pill"><div class="integration-dot" style="background:#00d4aa"></div>Zendesk</div>
+    <div class="integration-pill"><div class="integration-dot" style="background:#fc6d26"></div>GitLab</div>
+    <div class="integration-pill"><div class="integration-dot" style="background:#24292e"></div>GitHub</div>
+    <div class="integration-pill"><div class="integration-dot" style="background:#4caf50"></div>QuickBooks</div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section fade-up">
+  <h2>Start building with<br><span class="gradient-text">real work data</span></h2>
+  <p>Free to start. No credit card required. Deploy your first agent today.</p>
+  <div class="cta-actions">
+    <a href="#" class="btn btn-primary" style="padding:14px 28px;font-size:16px">Start building &rarr;</a>
+    <a href="#" class="btn btn-outline" style="padding:14px 28px;font-size:16px">Contact sales</a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <a href="#" class="nav-logo" style="font-size:16px">
+        <div class="logo-mark" style="width:24px;height:24px">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 8h8M8 4v8" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        Go2
+      </a>
+      <p>Work intelligence infrastructure for the AI age.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Products</h4>
+      <a href="#">Capture API</a>
+      <a href="#">Agent Training</a>
+      <a href="#">Coaching</a>
+      <a href="#">Documentation</a>
+    </div>
+    <div class="footer-col">
+      <h4>Developers</h4>
+      <a href="#">Documentation</a>
+      <a href="#">API Reference</a>
+      <a href="#">SDKs</a>
+      <a href="#">Status</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="#">About</a>
+      <a href="#">Blog</a>
+      <a href="#">Careers</a>
+      <a href="#">Press</a>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="#">Security</a>
+      <a href="#">GDPR</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>&copy; 2026 Go2. All rights reserved.</span>
+    <span>Built with care in San Francisco</span>
+  </div>
+</footer>
+
+</div>
+
+<script>
+// Tab switching
+function switchTab(lang) {
+  document.querySelectorAll('.code-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.code-content').forEach(c => c.classList.remove('active'));
+
+  event.target.classList.add('active');
+  document.getElementById('tab-' + lang).classList.add('active');
+
+  // Re-trigger animations
+  const content = document.getElementById('tab-' + lang);
+  content.querySelectorAll('.code-line').forEach(line => {
+    line.style.animation = 'none';
+    line.offsetHeight;
+    line.style.animation = '';
+  });
+}
+
+// Response bars
+const barsContainer = document.getElementById('responseBars');
+for (let i = 0; i < 40; i++) {
+  const bar = document.createElement('div');
+  bar.className = 'response-bar';
+  const height = 5 + Math.random() * 27;
+  const hue = 160 + Math.random() * 60;
+  bar.style.cssText = `height:${height}px;background:hsla(${hue},80%,65%,0.6);animation-delay:${i * 0.03}s`;
+  barsContainer.appendChild(bar);
+}
+
+// Scroll animations
+const fadeObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('visible');
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-up').forEach(el => fadeObserver.observe(el));
+
+// Parallax on gradient mesh
+window.addEventListener('scroll', () => {
+  const mesh = document.querySelector('.gradient-mesh::before');
+  const scrollY = window.pageYOffset;
+  document.querySelector('.gradient-mesh').style.transform = `translateY(${scrollY * 0.1}px)`;
+});
+</script>
+
+</body>
+</html>
