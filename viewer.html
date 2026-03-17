@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 Website Variations Viewer</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --sidebar-w:280px;
+    --top-bar-h:56px;
+    --bg:#0f1117;
+    --sidebar-bg:#161822;
+    --card-bg:#1e2030;
+    --card-hover:#272a3d;
+    --card-active:#2d3152;
+    --accent:#6c8aff;
+    --accent-dim:#4a5fa0;
+    --text:#e2e4ed;
+    --text-dim:#8b8fa6;
+    --text-muted:#5a5e74;
+    --border:#2a2d40;
+    --star:#f5c542;
+    --tag-bg:#262940;
+    --tag-active:#6c8aff;
+    --tag-active-text:#fff;
+    --danger:#ff5c5c;
+    --success:#4ade80;
+  }
+  html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text)}
+
+  /* TOP BAR */
+  .top-bar{
+    height:var(--top-bar-h);display:flex;align-items:center;padding:0 20px;
+    background:var(--sidebar-bg);border-bottom:1px solid var(--border);
+    gap:16px;position:fixed;top:0;left:var(--sidebar-w);right:0;z-index:10;
+  }
+  .top-bar .counter{
+    font-size:13px;color:var(--text-dim);white-space:nowrap;min-width:70px;
+  }
+  .top-bar .var-name{font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .top-bar .var-desc{font-size:12px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+  .top-bar .nav-btn{
+    background:var(--card-bg);border:1px solid var(--border);color:var(--text);
+    width:34px;height:34px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    font-size:16px;transition:background .15s;flex-shrink:0;
+  }
+  .top-bar .nav-btn:hover{background:var(--card-hover)}
+  .top-bar .open-btn{
+    background:var(--accent);border:none;color:#fff;padding:0 14px;height:34px;
+    border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;
+    transition:opacity .15s;flex-shrink:0;
+  }
+  .top-bar .open-btn:hover{opacity:.85}
+  .top-bar .star-btn{
+    background:none;border:none;font-size:20px;cursor:pointer;flex-shrink:0;
+    transition:transform .15s;padding:4px;
+  }
+  .top-bar .star-btn:hover{transform:scale(1.2)}
+  .top-bar .star-btn.starred{color:var(--star)}
+  .top-bar .star-btn:not(.starred){color:var(--text-muted)}
+
+  /* SIDEBAR */
+  .sidebar{
+    position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);
+    background:var(--sidebar-bg);border-right:1px solid var(--border);
+    display:flex;flex-direction:column;z-index:20;overflow:hidden;
+  }
+  .sidebar-header{padding:14px 16px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
+  .sidebar-header h1{font-size:16px;font-weight:700;margin-bottom:2px}
+  .sidebar-header .subtitle{font-size:11px;color:var(--text-dim)}
+
+  /* FILTERS */
+  .filters{
+    padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0;
+    display:flex;flex-wrap:wrap;gap:5px;
+  }
+  .filter-tag{
+    padding:3px 10px;border-radius:12px;font-size:11px;font-weight:500;
+    background:var(--tag-bg);color:var(--text-dim);cursor:pointer;
+    border:1px solid transparent;transition:all .15s;white-space:nowrap;
+  }
+  .filter-tag:hover{color:var(--text);border-color:var(--border)}
+  .filter-tag.active{background:var(--tag-active);color:var(--tag-active-text);border-color:var(--tag-active)}
+
+  /* VARIATION LIST */
+  .var-list{flex:1;overflow-y:auto;padding:8px}
+  .var-list::-webkit-scrollbar{width:5px}
+  .var-list::-webkit-scrollbar-track{background:transparent}
+  .var-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+  .var-card{
+    padding:10px 12px;border-radius:8px;cursor:pointer;
+    margin-bottom:4px;transition:background .12s;border:1px solid transparent;
+    position:relative;
+  }
+  .var-card:hover{background:var(--card-hover)}
+  .var-card.active{background:var(--card-active);border-color:var(--accent-dim)}
+  .var-card.hidden{display:none}
+  .var-card .card-num{font-size:10px;color:var(--text-muted);font-weight:600;margin-bottom:2px;display:flex;align-items:center;gap:6px}
+  .var-card .card-num .card-star{color:var(--star);font-size:12px}
+  .var-card .card-title{font-size:13px;font-weight:600;margin-bottom:3px;line-height:1.3}
+  .var-card .card-desc{font-size:11px;color:var(--text-dim);line-height:1.3}
+  .var-card .card-tags{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}
+  .var-card .card-tag{font-size:9px;padding:1px 6px;border-radius:6px;background:var(--tag-bg);color:var(--text-muted)}
+  .var-card .card-tag.mp{background:#2d1f3d;color:#c084fc}
+
+  /* IFRAME */
+  .main{
+    position:fixed;top:var(--top-bar-h);left:var(--sidebar-w);right:0;bottom:0;
+    background:#fff;
+  }
+  .main iframe{
+    width:100%;height:100%;border:none;
+    transition:opacity .2s ease;
+  }
+  .main iframe.loading{opacity:.3}
+
+  /* MOBILE SIDEBAR TOGGLE */
+  .sidebar-toggle{
+    display:none;position:fixed;top:10px;left:10px;z-index:30;
+    background:var(--card-bg);border:1px solid var(--border);color:var(--text);
+    width:38px;height:38px;border-radius:8px;cursor:pointer;font-size:18px;
+  }
+  @media(max-width:768px){
+    :root{--sidebar-w:0px}
+    .sidebar{transform:translateX(-280px);transition:transform .25s ease}
+    .sidebar.open{transform:translateX(0);width:280px}
+    .sidebar-toggle{display:flex;align-items:center;justify-content:center}
+    .top-bar{left:0}
+    .main{left:0}
+  }
+
+  /* KEYBOARD HINT */
+  .kbd-hint{
+    position:fixed;bottom:16px;right:16px;font-size:11px;color:var(--text-muted);
+    background:var(--sidebar-bg);padding:6px 12px;border-radius:8px;border:1px solid var(--border);
+    z-index:5;
+  }
+  .kbd-hint kbd{
+    background:var(--card-bg);padding:1px 6px;border-radius:4px;border:1px solid var(--border);
+    font-family:inherit;margin:0 2px;
+  }
+</style>
+</head>
+<body>
+
+<button class="sidebar-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h1>Go2 Variations</h1>
+    <div class="subtitle" id="totalCount">49 website variations</div>
+  </div>
+  <div class="filters" id="filters"></div>
+  <div class="var-list" id="varList"></div>
+</aside>
+
+<div class="top-bar">
+  <button class="nav-btn" onclick="navigate(-1)" title="Previous (Left Arrow)">&#8592;</button>
+  <button class="nav-btn" onclick="navigate(1)" title="Next (Right Arrow)">&#8594;</button>
+  <span class="counter" id="counter">1 of 49</span>
+  <span class="var-name" id="varName"></span>
+  <span class="var-desc" id="varDesc"></span>
+  <button class="star-btn" id="starBtn" onclick="toggleStar()" title="Star this variation">&#9733;</button>
+  <button class="open-btn" onclick="openInTab()">Open in New Tab</button>
+</div>
+
+<div class="main">
+  <iframe id="viewer" src="about:blank"></iframe>
+</div>
+
+<div class="kbd-hint">
+  <kbd>&#8592;</kbd> <kbd>&#8594;</kbd> navigate &nbsp; <kbd>S</kbd> star &nbsp; <kbd>F</kbd> starred only
+</div>
+
+<script>
+const VARIATIONS = [
+  {id:"v01",path:"variations/v01-dark-interactive.html",name:"Dark Interactive",desc:"Dark theme, animated counters, coaching preview",tags:["single","premium"]},
+  {id:"v02",path:"variations/v02-intervention.html",name:"Intervention",desc:"Aggressive confrontational, red accent",tags:["single","unconventional"]},
+  {id:"v03",path:"variations/v03-calculator.html",name:"Calculator",desc:"Interactive waste calculator hero",tags:["single"]},
+  {id:"v04",path:"variations/v04-confession.html",name:"Confession",desc:"\"Yeah, we record everything\" lead",tags:["single","unconventional","no-tracking"]},
+  {id:"v05",path:"variations/v05-minimalist.html",name:"Minimalist",desc:"Ultra-minimal, 500 words max",tags:["single"]},
+  {id:"v06",path:"variations/v06-dashboard-demo.html",name:"Dashboard Demo",desc:"Homepage IS a simulated dashboard",tags:["single","unconventional"]},
+  {id:"v07",path:"variations/v07-founder-letter.html",name:"Founder Letter",desc:"Entire page is a founder letter",tags:["single","unconventional"]},
+  {id:"v08",path:"variations/v08-comparison-killer.html",name:"Comparison Killer",desc:"Competitor demolition tables",tags:["single"]},
+  {id:"v09",path:"variations/v09-three-doors.html",name:"Three Doors",desc:"Three pain-based clickable paths",tags:["single","unconventional"]},
+  {id:"v10",path:"variations/v10-anti-saas.html",name:"Anti-SaaS",desc:"Brutalist monospace punk",tags:["single","unconventional"]},
+  {id:"v11",path:"variations/v11-waze-story.html",name:"Waze Story",desc:"Full Waze analogy narrative",tags:["single"]},
+  {id:"v12",path:"variations/v12-worker-first.html",name:"Worker First",desc:"Sells to workers first",tags:["single","no-tracking"]},
+  {id:"v13",path:"variations/v13-roi-machine.html",name:"ROI Machine",desc:"Everything framed in dollars",tags:["single","premium"]},
+  {id:"v14",path:"variations/v14-agent-future.html",name:"Agent Future",desc:"All-in on AI agents",tags:["single","agent"]},
+  {id:"v15",path:"variations/v15-premium.html",name:"Premium",desc:"Luxury positioning",tags:["single","premium"]},
+  {id:"v16",path:"variations/v16-before-after.html",name:"Before / After",desc:"Split-screen before/after",tags:["single"]},
+  {id:"v17",path:"variations/v17-video-pitch.html",name:"Video Pitch",desc:"Video placeholder hero",tags:["single"]},
+  {id:"v18",path:"variations/v18-context-graveyard.html",name:"Context Graveyard",desc:"Institutional knowledge loss",tags:["single"]},
+  {id:"v19",path:"variations/v19-honest-page.html",name:"Honest Page",desc:"Radical transparency",tags:["single","no-tracking","unconventional"]},
+  {id:"v20",path:"variations/v20-automation-factory.html",name:"Automation Factory",desc:"Automation discovery engine",tags:["single","agent"]},
+  {id:"v21",path:"variations/v21-scroll-narrative.html",name:"Scroll Narrative",desc:"Pitch-deck scroll-snap",tags:["single"]},
+  {id:"v22",path:"variations/v22-multipage/index.html",name:"Clean Multi-Page",desc:"Clean multi-page (Stripe style)",tags:["multi"]},
+  {id:"v23",path:"variations/v23-aggressive-multipage/index.html",name:"Aggressive Multi-Page",desc:"Dark aggressive multi-page",tags:["multi"]},
+  {id:"v24",path:"variations/v24-emotional-journey.html",name:"Emotional Journey",desc:"Emotional arc",tags:["single"]},
+  {id:"v25",path:"variations/v25-one-question.html",name:"One Question",desc:"Three-button pain funnel",tags:["single","unconventional"]},
+  {id:"v26",path:"variations/v26-deep-agents-multipage/index.html",name:"Deep Agents Multi-Page",desc:"Deep AI agents",tags:["multi","agent"]},
+  {id:"v27",path:"variations/v27-hybrid-workforce.html",name:"Hybrid Workforce",desc:"Human+AI workforce OS",tags:["single","agent"]},
+  {id:"v28",path:"variations/v28-storyboard.html",name:"Storyboard",desc:"Fictional company timeline",tags:["single","unconventional"]},
+  {id:"v29",path:"variations/v29-consultant-killer.html",name:"Consultant Killer",desc:"vs $150K consulting",tags:["single"]},
+  {id:"v30",path:"variations/v30-ai-for-everyone.html",name:"AI for Everyone",desc:"\"Go2 knows YOUR company\"",tags:["single","agent"]},
+  {id:"v31",path:"variations/v31-company-brain.html",name:"Company Brain",desc:"Organizational intelligence",tags:["single","agent"]},
+  {id:"v32",path:"variations/v32-operating-system.html",name:"Operating System",desc:"\"OS for companies\"",tags:["single"]},
+  {id:"v33",path:"variations/v33-workforce-multiplier.html",name:"Workforce Multiplier",desc:"\"30 people, 60 output\"",tags:["single"]},
+  {id:"v34",path:"variations/v34-hire-ai-workers.html",name:"Hire AI Workers",desc:"AI hiring platform",tags:["single","agent"]},
+  {id:"v35",path:"variations/v35-process-documentation.html",name:"Process Documentation",desc:"Auto-generated SOPs",tags:["single"]},
+  {id:"v36",path:"variations/v36-the-interview.html",name:"The Interview",desc:"Q&A format",tags:["single","unconventional"]},
+  {id:"v37",path:"variations/v37-gets-smarter.html",name:"Gets Smarter",desc:"Compounding intelligence",tags:["single","agent"]},
+  {id:"v38",path:"variations/v38-ai-management.html",name:"AI Management",desc:"AI management layer",tags:["single","agent"]},
+  {id:"v39",path:"variations/v39-competitive-advantage.html",name:"Competitive Advantage",desc:"Business warfare",tags:["single"]},
+  {id:"v40",path:"variations/v40-invisible-mentor.html",name:"Invisible Mentor",desc:"Employee-first mentorship",tags:["single","no-tracking"]},
+  {id:"v41",path:"variations/v41-proof.html",name:"Proof",desc:"All evidence, zero copy",tags:["single"]},
+  {id:"v42",path:"variations/v42-ai-implementation.html",name:"AI Implementation",desc:"\"How to actually use AI\"",tags:["single","agent"]},
+  {id:"v43",path:"variations/v43-premium-multipage/index.html",name:"Premium Multi-Page",desc:"Premium 4-page",tags:["multi","premium"]},
+  {id:"v44",path:"variations/v44-two-audiences.html",name:"Two Audiences",desc:"Split manager vs worker",tags:["single"]},
+  {id:"v45",path:"variations/v45-payroll-audit.html",name:"Payroll Audit",desc:"Payroll waste/recovery",tags:["single"]},
+  {id:"v46",path:"variations/v46-the-dare.html",name:"The Dare",desc:"Challenge/guarantee",tags:["single","unconventional"]},
+  {id:"v47",path:"variations/v47-remote-work.html",name:"Remote Work",desc:"Saves remote work",tags:["single","no-tracking"]},
+  {id:"v48",path:"variations/v48-the-math.html",name:"The Math",desc:"Pure math approach",tags:["single"]},
+  {id:"v49",path:"variations/v49-enterprise-multipage/index.html",name:"Enterprise Multi-Page",desc:"Enterprise intelligence",tags:["multi","premium"]},
+];
+
+const FILTERS = [
+  {key:"all",label:"All"},
+  {key:"single",label:"Single Page"},
+  {key:"multi",label:"Multi-Page"},
+  {key:"premium",label:"Premium ($49+)"},
+  {key:"no-tracking",label:"No Time Tracking"},
+  {key:"agent",label:"Agent-Focused"},
+  {key:"unconventional",label:"Unconventional"},
+  {key:"starred",label:"\u2605 Starred"},
+];
+
+const TAG_LABELS = {single:"Single",multi:"Multi-Page",premium:"Premium",agent:"Agent","no-tracking":"No Tracking",unconventional:"Unconventional"};
+
+let currentIndex = 0;
+let activeFilter = "all";
+let stars = JSON.parse(localStorage.getItem("go2-stars") || "[]");
+
+// Touch/swipe
+let touchStartX = 0;
+let touchStartY = 0;
+
+function getVisibleIndices() {
+  return VARIATIONS.reduce((acc, v, i) => {
+    if (activeFilter === "all" || (activeFilter === "starred" && stars.includes(v.id)) || v.tags.includes(activeFilter)) acc.push(i);
+    return acc;
+  }, []);
+}
+
+function renderFilters() {
+  const el = document.getElementById("filters");
+  el.innerHTML = FILTERS.map(f =>
+    `<div class="filter-tag${activeFilter===f.key?' active':''}" data-filter="${f.key}">${f.label}</div>`
+  ).join("");
+  el.querySelectorAll(".filter-tag").forEach(t => {
+    t.addEventListener("click", () => {
+      activeFilter = t.dataset.filter;
+      renderFilters();
+      renderList();
+      const vis = getVisibleIndices();
+      if (vis.length && !vis.includes(currentIndex)) loadVariation(vis[0]);
+    });
+  });
+}
+
+function renderList() {
+  const el = document.getElementById("varList");
+  const vis = new Set(getVisibleIndices());
+  el.innerHTML = VARIATIONS.map((v, i) => {
+    const isStarred = stars.includes(v.id);
+    const hidden = !vis.has(i);
+    return `<div class="var-card${i===currentIndex?' active':''}${hidden?' hidden':''}" data-idx="${i}">
+      <div class="card-num">V${String(i+1).padStart(2,"0")}${isStarred?' <span class="card-star">\u2605</span>':''}</div>
+      <div class="card-title">${v.name}</div>
+      <div class="card-desc">${v.desc}</div>
+      <div class="card-tags">${v.tags.map(t=>`<span class="card-tag${t==='multi'?' mp':''}">${TAG_LABELS[t]||t}</span>`).join("")}</div>
+    </div>`;
+  }).join("");
+  el.querySelectorAll(".var-card").forEach(c => {
+    c.addEventListener("click", () => loadVariation(parseInt(c.dataset.idx)));
+  });
+  document.getElementById("totalCount").textContent = `${vis.size} of ${VARIATIONS.length} variations`;
+}
+
+function loadVariation(idx) {
+  currentIndex = idx;
+  const v = VARIATIONS[idx];
+  const iframe = document.getElementById("viewer");
+  iframe.classList.add("loading");
+  iframe.src = v.path;
+  iframe.onload = () => iframe.classList.remove("loading");
+
+  document.getElementById("counter").textContent = `${idx+1} of ${VARIATIONS.length}`;
+  document.getElementById("varName").textContent = `V${String(idx+1).padStart(2,"0")} — ${v.name}`;
+  document.getElementById("varDesc").textContent = v.desc;
+
+  const starBtn = document.getElementById("starBtn");
+  starBtn.className = "star-btn" + (stars.includes(v.id) ? " starred" : "");
+
+  // Scroll active card into view
+  renderList();
+  const activeCard = document.querySelector(".var-card.active");
+  if (activeCard) activeCard.scrollIntoView({block:"nearest",behavior:"smooth"});
+}
+
+function navigate(dir) {
+  const vis = getVisibleIndices();
+  if (!vis.length) return;
+  const curPos = vis.indexOf(currentIndex);
+  let next;
+  if (curPos === -1) {
+    next = dir > 0 ? 0 : vis.length - 1;
+  } else {
+    next = (curPos + dir + vis.length) % vis.length;
+  }
+  loadVariation(vis[next]);
+}
+
+function toggleStar() {
+  const v = VARIATIONS[currentIndex];
+  const idx = stars.indexOf(v.id);
+  if (idx >= 0) stars.splice(idx, 1); else stars.push(v.id);
+  localStorage.setItem("go2-stars", JSON.stringify(stars));
+  document.getElementById("starBtn").className = "star-btn" + (stars.includes(v.id) ? " starred" : "");
+  renderList();
+  const activeCard = document.querySelector(".var-card.active");
+  if (activeCard) activeCard.scrollIntoView({block:"nearest",behavior:"smooth"});
+}
+
+function openInTab() {
+  window.open(VARIATIONS[currentIndex].path, "_blank");
+}
+
+// Keyboard
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+  if (e.key === "ArrowLeft") { e.preventDefault(); navigate(-1); }
+  else if (e.key === "ArrowRight") { e.preventDefault(); navigate(1); }
+  else if (e.key === "s" || e.key === "S") { e.preventDefault(); toggleStar(); }
+  else if (e.key === "f" || e.key === "F") {
+    e.preventDefault();
+    activeFilter = activeFilter === "starred" ? "all" : "starred";
+    renderFilters(); renderList();
+    const vis = getVisibleIndices();
+    if (vis.length && !vis.includes(currentIndex)) loadVariation(vis[0]);
+  }
+});
+
+// Touch/swipe on main area
+document.querySelector(".main").addEventListener("touchstart", e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, {passive:true});
+document.querySelector(".main").addEventListener("touchend", e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+    navigate(dx < 0 ? 1 : -1);
+  }
+}, {passive:true});
+
+// Init
+renderFilters();
+renderList();
+loadVariation(0);
+</script>
+</body>
+</html>

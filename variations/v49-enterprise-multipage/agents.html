@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Agents — Go2 Enterprise Intelligence Platform</title>
+<style>
+  :root {
+    --bg-dark: #0B0F1A;
+    --bg-darker: #070A12;
+    --bg-card: #111827;
+    --bg-light: #F8F9FC;
+    --bg-section: #F1F3F9;
+    --text-primary: #FFFFFF;
+    --text-secondary: #94A3B8;
+    --text-dark: #1E293B;
+    --text-dark-secondary: #64748B;
+    --accent: #6366F1;
+    --accent-light: #818CF8;
+    --accent-glow: rgba(99, 102, 241, 0.15);
+    --accent-green: #10B981;
+    --accent-amber: #F59E0B;
+    --accent-rose: #F43F5E;
+    --accent-cyan: #06B6D4;
+    --border: rgba(148, 163, 184, 0.1);
+    --border-light: #E2E8F0;
+    --radius: 12px;
+    --radius-lg: 20px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.08);
+    --shadow-lg: 0 12px 48px rgba(0,0,0,0.12);
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--font); color: var(--text-dark); background: var(--bg-light); -webkit-font-smoothing: antialiased; line-height: 1.6; }
+
+  /* NAV */
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(11,15,26,0.92); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
+  .nav-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; height: 64px; }
+  .nav-logo { font-size: 20px; font-weight: 700; color: var(--text-primary); text-decoration: none; letter-spacing: -0.5px; }
+  .nav-logo span { color: var(--accent-light); }
+  .nav-links { display: flex; gap: 8px; align-items: center; }
+  .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 500; padding: 8px 16px; border-radius: 8px; transition: var(--transition); }
+  .nav-links a:hover, .nav-links a.active { color: var(--text-primary); background: rgba(255,255,255,0.06); }
+  .nav-cta { background: var(--accent) !important; color: var(--text-primary) !important; padding: 8px 20px !important; border-radius: 8px !important; font-weight: 600 !important; }
+  .nav-cta:hover { background: var(--accent-light) !important; }
+  .nav-mobile { display: none; background: none; border: none; cursor: pointer; padding: 8px; }
+  .nav-mobile svg { width: 24px; height: 24px; stroke: var(--text-primary); fill: none; stroke-width: 2; }
+
+  /* HERO */
+  .hero { background: var(--bg-dark); padding: 140px 32px 100px; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 50% 50% at 60% 20%, rgba(245,158,11,0.08) 0%, transparent 70%), radial-gradient(ellipse 40% 40% at 30% 30%, rgba(99,102,241,0.06) 0%, transparent 60%); }
+  .hero-grid { position: absolute; inset: 0; opacity: 0.03; background-image: linear-gradient(var(--text-secondary) 1px, transparent 1px), linear-gradient(90deg, var(--text-secondary) 1px, transparent 1px); background-size: 60px 60px; }
+  .hero-inner { max-width: 900px; margin: 0 auto; position: relative; z-index: 1; text-align: center; }
+  .section-label { font-size: 13px; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); font-weight: 600; margin-bottom: 12px; }
+  .hero .section-label { color: var(--accent-amber); }
+  .hero h1 { font-size: clamp(36px, 5vw, 60px); font-weight: 800; color: var(--text-primary); line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 20px; }
+  .hero h1 .gradient { background: linear-gradient(135deg, var(--accent-amber), var(--accent-green)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .hero-sub { font-size: 18px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 36px; max-width: 640px; margin-left: auto; margin-right: auto; }
+  .btn-primary { display: inline-flex; align-items: center; gap: 8px; background: var(--accent); color: white; padding: 14px 28px; border-radius: 10px; font-size: 15px; font-weight: 600; text-decoration: none; transition: var(--transition); }
+  .btn-primary:hover { background: var(--accent-light); transform: translateY(-1px); }
+  .btn-secondary { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.06); color: var(--text-primary); padding: 14px 28px; border-radius: 10px; font-size: 15px; font-weight: 500; text-decoration: none; transition: var(--transition); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+  .hero-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
+  /* PIPELINE */
+  .pipeline { padding: 100px 32px; background: var(--bg-light); }
+  .pipeline-inner { max-width: 1200px; margin: 0 auto; }
+  .section-title { font-size: clamp(28px, 4vw, 40px); font-weight: 700; color: var(--text-dark); line-height: 1.2; letter-spacing: -1px; margin-bottom: 16px; }
+  .section-desc { font-size: 17px; color: var(--text-dark-secondary); max-width: 560px; margin-bottom: 56px; line-height: 1.7; }
+  .pipeline-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; position: relative; }
+  .pipeline-step {
+    background: white; border: 1px solid var(--border-light);
+    padding: 40px 28px; text-align: center; position: relative;
+    transition: var(--transition);
+  }
+  .pipeline-step:first-child { border-radius: var(--radius-lg) 0 0 var(--radius-lg); }
+  .pipeline-step:last-child { border-radius: 0 var(--radius-lg) var(--radius-lg) 0; }
+  .pipeline-step:hover { z-index: 1; box-shadow: var(--shadow-lg); transform: translateY(-4px); border-color: transparent; }
+  .pipeline-num {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; margin: 0 auto 16px;
+  }
+  .pipeline-num.blue { background: rgba(99,102,241,0.1); color: var(--accent); }
+  .pipeline-num.green { background: rgba(16,185,129,0.1); color: var(--accent-green); }
+  .pipeline-num.amber { background: rgba(245,158,11,0.1); color: var(--accent-amber); }
+  .pipeline-num.cyan { background: rgba(6,182,212,0.1); color: var(--accent-cyan); }
+  .pipeline-step h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--text-dark); }
+  .pipeline-step p { font-size: 14px; color: var(--text-dark-secondary); line-height: 1.6; }
+  .pipeline-arrow {
+    position: absolute; right: -8px; top: 50%; transform: translateY(-50%);
+    z-index: 2; width: 16px; height: 16px;
+    background: white; border-right: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--border-light);
+    transform: translateY(-50%) rotate(-45deg);
+  }
+  .pipeline-step:last-child .pipeline-arrow { display: none; }
+
+  /* AGENT TYPES */
+  .agent-types { padding: 100px 32px; background: var(--bg-dark); }
+  .agent-types-inner { max-width: 1200px; margin: 0 auto; }
+  .agent-types .section-label { color: var(--accent-amber); }
+  .agent-types .section-title { color: var(--text-primary); }
+  .agent-types .section-desc { color: var(--text-secondary); }
+  .agent-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .agent-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 36px; transition: var(--transition);
+    position: relative; overflow: hidden;
+  }
+  .agent-card:hover { border-color: rgba(245,158,11,0.3); transform: translateY(-2px); }
+  .agent-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  }
+  .agent-card:nth-child(1)::before { background: var(--accent); }
+  .agent-card:nth-child(2)::before { background: var(--accent-green); }
+  .agent-card:nth-child(3)::before { background: var(--accent-amber); }
+  .agent-card:nth-child(4)::before { background: var(--accent-cyan); }
+  .agent-card:nth-child(5)::before { background: var(--accent-rose); }
+  .agent-card:nth-child(6)::before { background: var(--accent-light); }
+  .agent-card-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 20px;
+  }
+  .agent-card-icon.blue { background: rgba(99,102,241,0.15); }
+  .agent-card-icon.green { background: rgba(16,185,129,0.15); }
+  .agent-card-icon.amber { background: rgba(245,158,11,0.15); }
+  .agent-card-icon.cyan { background: rgba(6,182,212,0.15); }
+  .agent-card-icon.rose { background: rgba(244,63,94,0.15); }
+  .agent-card h3 { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+  .agent-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+  .agent-card-stats { display: flex; gap: 16px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .agent-stat { text-align: left; }
+  .agent-stat-val { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+  .agent-stat-label { font-size: 11px; color: var(--text-secondary); }
+
+  /* HUMAN IN THE LOOP */
+  .hitl { padding: 100px 32px; background: var(--bg-light); }
+  .hitl-inner { max-width: 1200px; margin: 0 auto; }
+  .hitl-split { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+  .hitl-text h3 { font-size: 28px; font-weight: 700; margin-bottom: 16px; color: var(--text-dark); letter-spacing: -0.5px; }
+  .hitl-text p { font-size: 16px; color: var(--text-dark-secondary); line-height: 1.7; margin-bottom: 16px; }
+  .hitl-checks { list-style: none; padding: 0; margin-top: 24px; }
+  .hitl-checks li {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 10px 0; font-size: 15px; color: var(--text-dark-secondary); line-height: 1.5;
+  }
+  .hitl-check-icon {
+    width: 24px; height: 24px; border-radius: 6px;
+    background: rgba(16,185,129,0.1); display: flex;
+    align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .hitl-visual {
+    background: white; border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg); overflow: hidden;
+    box-shadow: var(--shadow-lg);
+  }
+  .hitl-vis-header {
+    background: var(--bg-section); padding: 16px 24px;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 13px; font-weight: 600; color: var(--text-dark);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .hitl-vis-header .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); }
+  .hitl-vis-body { padding: 24px; }
+  .hitl-task {
+    display: flex; align-items: center; gap: 16px;
+    padding: 14px; border-radius: 8px; margin-bottom: 12px;
+    border: 1px solid var(--border-light); background: var(--bg-section);
+  }
+  .hitl-task-status { flex-shrink: 0; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .hitl-task-status.done { background: rgba(16,185,129,0.1); }
+  .hitl-task-status.review { background: rgba(245,158,11,0.1); }
+  .hitl-task-status.running { background: rgba(99,102,241,0.1); }
+  .hitl-task-text { flex: 1; }
+  .hitl-task-text h5 { font-size: 13px; font-weight: 600; color: var(--text-dark); }
+  .hitl-task-text p { font-size: 11px; color: var(--text-dark-secondary); }
+  .hitl-task-action {
+    font-size: 11px; font-weight: 600; padding: 4px 12px;
+    border-radius: 6px; border: none; cursor: pointer;
+  }
+  .hitl-task-action.approve { background: rgba(16,185,129,0.1); color: var(--accent-green); }
+  .hitl-task-action.pending { background: rgba(245,158,11,0.1); color: var(--accent-amber); }
+
+  /* USE CASES */
+  .use-cases { padding: 100px 32px; background: var(--bg-section); }
+  .use-cases-inner { max-width: 1200px; margin: 0 auto; }
+  .use-case-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  .use-case-card {
+    background: white; border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg); padding: 36px;
+    transition: var(--transition);
+  }
+  .use-case-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); border-color: transparent; }
+  .use-case-card h3 { font-size: 20px; font-weight: 700; margin-bottom: 8px; color: var(--text-dark); }
+  .use-case-card .use-case-before { font-size: 14px; color: var(--text-dark-secondary); line-height: 1.6; margin-bottom: 16px; }
+  .use-case-result {
+    background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.15);
+    border-radius: 8px; padding: 16px;
+  }
+  .use-case-result h5 { font-size: 12px; font-weight: 700; color: var(--accent-green); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .use-case-result p { font-size: 14px; color: var(--text-dark); line-height: 1.5; }
+  .use-case-metric { display: flex; gap: 24px; margin-top: 12px; }
+  .use-case-metric-item { text-align: left; }
+  .use-case-metric-val { font-size: 20px; font-weight: 700; color: var(--accent-green); }
+  .use-case-metric-label { font-size: 11px; color: var(--text-dark-secondary); }
+
+  /* CTA */
+  .cta-section { background: var(--bg-dark); padding: 100px 32px; text-align: center; position: relative; overflow: hidden; }
+  .cta-section::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 50% 60% at 50% 100%, rgba(245,158,11,0.08) 0%, transparent 70%); }
+  .cta-section-inner { max-width: 600px; margin: 0 auto; position: relative; z-index: 1; }
+  .cta-section h2 { font-size: clamp(28px,4vw,40px); font-weight: 700; color: var(--text-primary); margin-bottom: 16px; letter-spacing: -1px; }
+  .cta-section p { font-size: 17px; color: var(--text-secondary); margin-bottom: 32px; line-height: 1.6; }
+
+  /* FOOTER */
+  footer { background: var(--bg-darker); padding: 64px 32px 32px; border-top: 1px solid var(--border); }
+  .footer-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 2fr repeat(3, 1fr); gap: 48px; }
+  .footer-brand p { font-size: 14px; color: var(--text-secondary); margin-top: 12px; line-height: 1.6; }
+  .footer-col h4 { font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-secondary); margin-bottom: 16px; font-weight: 600; }
+  .footer-col a { display: block; font-size: 14px; color: rgba(148,163,184,0.7); text-decoration: none; margin-bottom: 10px; transition: var(--transition); }
+  .footer-col a:hover { color: var(--text-primary); }
+  .footer-bottom { max-width: 1200px; margin: 32px auto 0; padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--text-secondary); }
+
+  @media (max-width: 900px) {
+    .pipeline-grid { grid-template-columns: repeat(2, 1fr); }
+    .pipeline-step:first-child { border-radius: var(--radius-lg) 0 0 0; }
+    .pipeline-step:nth-child(2) { border-radius: 0 var(--radius-lg) 0 0; }
+    .pipeline-step:nth-child(3) { border-radius: 0 0 0 var(--radius-lg); }
+    .pipeline-step:last-child { border-radius: 0 0 var(--radius-lg) 0; }
+    .pipeline-arrow { display: none; }
+    .agent-grid { grid-template-columns: 1fr; }
+    .hitl-split, .use-case-grid { grid-template-columns: 1fr; }
+    .footer-inner { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 640px) {
+    .nav-links { display: none; }
+    .nav-mobile { display: block; }
+    .hero { padding: 120px 20px 80px; }
+    .pipeline-grid { grid-template-columns: 1fr; }
+    .pipeline-step, .pipeline-step:first-child, .pipeline-step:last-child,
+    .pipeline-step:nth-child(2), .pipeline-step:nth-child(3) { border-radius: var(--radius); }
+    .footer-inner { grid-template-columns: 1fr; gap: 32px; }
+    .footer-bottom { flex-direction: column; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">Go2<span>.</span></a>
+    <div class="nav-links">
+      <a href="intelligence.html">Intelligence</a>
+      <a href="agents.html" class="active">Agents</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="#" class="nav-cta">Request Demo</a>
+    </div>
+    <button class="nav-mobile"><svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-inner">
+    <div class="section-label">AI Agents</div>
+    <h1>Your best workers' knowledge, <span class="gradient">running 24/7.</span></h1>
+    <p class="hero-sub">Go2 agents learn directly from how your team works. They observe real workflows, understand the logic, then handle the repetitive parts autonomously. Always with human oversight.</p>
+    <div class="hero-buttons">
+      <a href="#" class="btn-primary">
+        See Agents in Action
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10m-4-4l4 4-4 4"/></svg>
+      </a>
+      <a href="pricing.html" class="btn-secondary">View Pricing</a>
+    </div>
+  </div>
+</section>
+
+<!-- PIPELINE -->
+<section class="pipeline">
+  <div class="pipeline-inner">
+    <div class="section-label">The Agent Pipeline</div>
+    <h2 class="section-title">From observation to autonomous execution</h2>
+    <p class="section-desc">Go2 agents don't need manual programming. They learn from watching your team, then take over the repetitive work.</p>
+
+    <div class="pipeline-grid">
+      <div class="pipeline-step">
+        <div class="pipeline-num blue">1</div>
+        <h3>Observe</h3>
+        <p>Go2 watches how your team completes specific tasks. It captures every click, keystroke, and decision point across all applications.</p>
+        <div class="pipeline-arrow"></div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-num green">2</div>
+        <h3>Learn</h3>
+        <p>Frontier AI models analyze thousands of task completions. They identify the optimal workflow, common variations, and edge cases.</p>
+        <div class="pipeline-arrow"></div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-num amber">3</div>
+        <h3>Deploy</h3>
+        <p>An AI agent is created that can execute the task autonomously. It starts in supervised mode, requiring human approval for each action.</p>
+        <div class="pipeline-arrow"></div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-num cyan">4</div>
+        <h3>Verify</h3>
+        <p>Continuous quality monitoring ensures agents maintain accuracy. Humans review edge cases and the agent improves from corrections.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AGENT TYPES -->
+<section class="agent-types">
+  <div class="agent-types-inner">
+    <div class="section-label">Agent Library</div>
+    <h2 class="section-title" style="color: var(--text-primary)">Purpose-built agents for real work</h2>
+    <p class="section-desc">Each agent type is designed for a specific category of operational work. All learn from your team's actual processes.</p>
+
+    <div class="agent-grid">
+      <div class="agent-card">
+        <div class="agent-card-icon blue">
+          <svg width="24" height="24" fill="none" stroke="var(--accent-light)" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h8"/></svg>
+        </div>
+        <h3>Data Entry Agent</h3>
+        <p>Handles structured data input across CRMs, ERPs, and spreadsheets. Learns your team's data formatting conventions and validation rules.</p>
+        <div class="agent-card-stats">
+          <div class="agent-stat">
+            <div class="agent-stat-val">95%</div>
+            <div class="agent-stat-label">Accuracy rate</div>
+          </div>
+          <div class="agent-stat">
+            <div class="agent-stat-val">8x</div>
+            <div class="agent-stat-label">Faster than manual</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="agent-card">
+        <div class="agent-card-icon green">
+          <svg width="24" height="24" fill="none" stroke="var(--accent-green)" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+        </div>
+        <h3>Report Generator</h3>
+        <p>Creates recurring reports from multiple data sources. Pulls data, applies your team's formatting, highlights anomalies, and distributes automatically.</p>
+        <div class="agent-card-stats">
+          <div class="agent-stat">
+            <div class="agent-stat-val">12h</div>
+            <div class="agent-stat-label">Saved per week</div>
+          </div>
+          <div class="agent-stat">
+            <div class="agent-stat-val">Zero</div>
+            <div class="agent-stat-label">Copy-paste errors</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="agent-card">
+        <div class="agent-card-icon amber">
+          <svg width="24" height="24" fill="none" stroke="var(--accent-amber)" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </div>
+        <h3>Process Automator</h3>
+        <p>Handles multi-step processes that span applications. Quote approvals, onboarding sequences, invoice processing, and similar workflows.</p>
+        <div class="agent-card-stats">
+          <div class="agent-stat">
+            <div class="agent-stat-val">73%</div>
+            <div class="agent-stat-label">Steps automated</div>
+          </div>
+          <div class="agent-stat">
+            <div class="agent-stat-val">4.2h</div>
+            <div class="agent-stat-label">Avg cycle reduction</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="agent-card">
+        <div class="agent-card-icon cyan">
+          <svg width="24" height="24" fill="none" stroke="var(--accent-cyan)" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        </div>
+        <h3>Quality Checker</h3>
+        <p>Monitors data quality across your systems. Catches duplicates, inconsistencies, and formatting errors before they propagate downstream.</p>
+        <div class="agent-card-stats">
+          <div class="agent-stat">
+            <div class="agent-stat-val">99.2%</div>
+            <div class="agent-stat-label">Error detection</div>
+          </div>
+          <div class="agent-stat">
+            <div class="agent-stat-val">Real-time</div>
+            <div class="agent-stat-label">Monitoring</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="agent-card">
+        <div class="agent-card-icon rose">
+          <svg width="24" height="24" fill="none" stroke="var(--accent-rose)" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="M22 6l-10 7L2 6"/></svg>
+        </div>
+        <h3>Communication Agent</h3>
+        <p>Handles routine communications: status updates, follow-ups, acknowledgments, and data requests. Drafts in your team's voice and tone.</p>
+        <div class="agent-card-stats">
+          <div class="agent-stat">
+            <div class="agent-stat-val">340+</div>
+            <div class="agent-stat-label">Msgs handled/day</div>
+          </div>
+          <div class="agent-stat">
+            <div class="agent-stat-val">2 min</div>
+            <div class="agent-stat-label">Avg response time</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="agent-card">
+        <div class="agent-card-icon blue">
+          <svg width="24" height="24" fill="none" stroke="var(--accent-light)" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+        </div>
+        <h3>Custom Agent</h3>
+        <p>Build agents for any repetitive task unique to your business. Go2 learns the workflow, you approve the automation. No code required.</p>
+        <div class="agent-card-stats">
+          <div class="agent-stat">
+            <div class="agent-stat-val">2 weeks</div>
+            <div class="agent-stat-label">Avg training time</div>
+          </div>
+          <div class="agent-stat">
+            <div class="agent-stat-val">No-code</div>
+            <div class="agent-stat-label">Setup</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HUMAN IN THE LOOP -->
+<section class="hitl">
+  <div class="hitl-inner">
+    <div class="hitl-split">
+      <div class="hitl-text">
+        <div class="section-label">Human Oversight</div>
+        <h3>Humans stay in control. Always.</h3>
+        <p>Go2 agents operate under a graduated autonomy model. Every agent starts fully supervised. As trust is established through verified accuracy, human review requirements decrease, but never disappear entirely.</p>
+        <p>Critical decisions always require human approval. Edge cases are flagged for review. Managers set autonomy levels per agent and can pause any agent instantly.</p>
+        <ul class="hitl-checks">
+          <li>
+            <div class="hitl-check-icon"><svg width="14" height="14" fill="none" stroke="var(--accent-green)" stroke-width="2"><path d="M3 7l3 3 5-5"/></svg></div>
+            Graduated autonomy with configurable approval thresholds
+          </li>
+          <li>
+            <div class="hitl-check-icon"><svg width="14" height="14" fill="none" stroke="var(--accent-green)" stroke-width="2"><path d="M3 7l3 3 5-5"/></svg></div>
+            Complete audit trail for every agent action
+          </li>
+          <li>
+            <div class="hitl-check-icon"><svg width="14" height="14" fill="none" stroke="var(--accent-green)" stroke-width="2"><path d="M3 7l3 3 5-5"/></svg></div>
+            One-click pause or rollback for any agent
+          </li>
+          <li>
+            <div class="hitl-check-icon"><svg width="14" height="14" fill="none" stroke="var(--accent-green)" stroke-width="2"><path d="M3 7l3 3 5-5"/></svg></div>
+            Edge case escalation to human reviewers
+          </li>
+          <li>
+            <div class="hitl-check-icon"><svg width="14" height="14" fill="none" stroke="var(--accent-green)" stroke-width="2"><path d="M3 7l3 3 5-5"/></svg></div>
+            Role-based permissions for agent management
+          </li>
+        </ul>
+      </div>
+      <div class="hitl-visual">
+        <div class="hitl-vis-header">
+          <span class="status-dot"></span>
+          Agent Activity Monitor
+        </div>
+        <div class="hitl-vis-body">
+          <div class="hitl-task">
+            <div class="hitl-task-status done">
+              <svg width="16" height="16" fill="none" stroke="var(--accent-green)" stroke-width="2"><path d="M3 8l3 3 7-7"/></svg>
+            </div>
+            <div class="hitl-task-text">
+              <h5>Invoice #4821 processed</h5>
+              <p>Data Entry Agent -- 12 fields, 0 errors</p>
+            </div>
+            <span class="hitl-task-action approve">Verified</span>
+          </div>
+          <div class="hitl-task">
+            <div class="hitl-task-status review">
+              <svg width="16" height="16" fill="none" stroke="var(--accent-amber)" stroke-width="2"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 1"/></svg>
+            </div>
+            <div class="hitl-task-text">
+              <h5>Monthly sales report draft</h5>
+              <p>Report Generator -- Awaiting review</p>
+            </div>
+            <span class="hitl-task-action pending">Review</span>
+          </div>
+          <div class="hitl-task">
+            <div class="hitl-task-status done">
+              <svg width="16" height="16" fill="none" stroke="var(--accent-green)" stroke-width="2"><path d="M3 8l3 3 7-7"/></svg>
+            </div>
+            <div class="hitl-task-text">
+              <h5>Customer follow-up sent (14 emails)</h5>
+              <p>Communication Agent -- Batch approved</p>
+            </div>
+            <span class="hitl-task-action approve">Verified</span>
+          </div>
+          <div class="hitl-task">
+            <div class="hitl-task-status running">
+              <svg width="16" height="16" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="8" cy="8" r="6"/><path d="M8 4v4h4"/></svg>
+            </div>
+            <div class="hitl-task-text">
+              <h5>New hire onboarding -- Step 3 of 8</h5>
+              <p>Process Automator -- Running</p>
+            </div>
+            <span class="hitl-task-action pending">Monitor</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- USE CASES -->
+<section class="use-cases">
+  <div class="use-cases-inner">
+    <div class="section-label">Results</div>
+    <h2 class="section-title">What teams achieve with Go2 agents</h2>
+    <p class="section-desc">Real operational improvements from deploying AI agents that learn from your team's workflows.</p>
+
+    <div class="use-case-grid">
+      <div class="use-case-card">
+        <h3>Operations team, 180 employees</h3>
+        <p class="use-case-before">Manual invoice processing took 3 full-time employees. Each invoice required data entry across 4 systems, with frequent copy-paste errors causing reconciliation delays.</p>
+        <div class="use-case-result">
+          <h5>After Go2 Agents</h5>
+          <p>Data Entry and Quality Checker agents now handle 92% of invoices autonomously. The team reviews only flagged exceptions.</p>
+          <div class="use-case-metric">
+            <div class="use-case-metric-item">
+              <div class="use-case-metric-val">87%</div>
+              <div class="use-case-metric-label">Time reduction</div>
+            </div>
+            <div class="use-case-metric-item">
+              <div class="use-case-metric-val">99.4%</div>
+              <div class="use-case-metric-label">Accuracy</div>
+            </div>
+            <div class="use-case-metric-item">
+              <div class="use-case-metric-val">2.1 FTE</div>
+              <div class="use-case-metric-label">Reallocated</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="use-case-card">
+        <h3>Sales operations, 240 employees</h3>
+        <p class="use-case-before">Weekly reporting consumed 20+ hours across the sales ops team. Data was pulled from 6 tools, formatted manually, and errors regularly delayed leadership reviews.</p>
+        <div class="use-case-result">
+          <h5>After Go2 Agents</h5>
+          <p>Report Generator agent pulls, formats, and distributes all recurring reports. Humans focus on analysis and strategy instead of assembly.</p>
+          <div class="use-case-metric">
+            <div class="use-case-metric-item">
+              <div class="use-case-metric-val">18h</div>
+              <div class="use-case-metric-label">Weekly time saved</div>
+            </div>
+            <div class="use-case-metric-item">
+              <div class="use-case-metric-val">Zero</div>
+              <div class="use-case-metric-label">Report delays</div>
+            </div>
+            <div class="use-case-metric-item">
+              <div class="use-case-metric-val">6</div>
+              <div class="use-case-metric-label">Tools unified</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-section-inner">
+    <h2>Put your operations on autopilot</h2>
+    <p>See how Go2 agents can handle your team's repetitive work. Book a demo and we'll identify your top automation opportunities.</p>
+    <div class="hero-buttons">
+      <a href="#" class="btn-primary">
+        Request a Demo
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10m-4-4l4 4-4 4"/></svg>
+      </a>
+      <a href="pricing.html" class="btn-secondary">View Pricing</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <a href="index.html" class="nav-logo">Go2<span>.</span></a>
+      <p>The intelligence layer for modern operations. See, coach, automate.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Platform</h4>
+      <a href="intelligence.html">Intelligence</a>
+      <a href="agents.html">Agents</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="#">Integrations</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="#">About</a>
+      <a href="#">Careers</a>
+      <a href="#">Blog</a>
+      <a href="#">Contact</a>
+    </div>
+    <div class="footer-col">
+      <h4>Resources</h4>
+      <a href="#">Documentation</a>
+      <a href="#">Security</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>&copy; 2026 Go2, Inc. All rights reserved.</span>
+    <span>go2.io</span>
+  </div>
+</footer>
+
+</body>
+</html>

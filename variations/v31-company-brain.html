@@ -4,1393 +4,1202 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Go2 — Your Company Brain</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-:root {
-  --navy: #0a0e1a;
-  --navy-light: #111827;
-  --navy-mid: #1a2235;
-  --charcoal: #1e2a3a;
-  --accent: #3b82f6;
-  --accent-bright: #60a5fa;
-  --accent-glow: rgba(59, 130, 246, 0.15);
-  --text: #e2e8f0;
-  --text-dim: #94a3b8;
-  --text-bright: #f1f5f9;
-  --border: rgba(255,255,255,0.06);
-  --node-color: rgba(59, 130, 246, 0.3);
-}
-
-html { scroll-behavior: smooth; }
-
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: var(--navy);
-  color: var(--text);
-  line-height: 1.6;
-  overflow-x: hidden;
-}
-
-/* Neural Network Canvas */
-#neural-bg {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  z-index: 0;
-  pointer-events: none;
-}
-
-/* Layout */
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px;
-  position: relative;
-  z-index: 1;
-}
-
-/* Nav */
-nav {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  z-index: 100;
-  padding: 16px 0;
-  background: rgba(10, 14, 26, 0.85);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
-}
-
-nav .container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.logo {
-  font-size: 24px;
-  font-weight: 800;
-  color: var(--text-bright);
-  letter-spacing: -0.5px;
-}
-
-.logo span {
-  color: var(--accent);
-}
-
-.nav-links {
-  display: flex;
-  gap: 32px;
-  align-items: center;
-  list-style: none;
-}
-
-.nav-links a {
-  color: var(--text-dim);
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 500;
-  transition: color 0.2s;
-}
-
-.nav-links a:hover { color: var(--text-bright); }
-
-.nav-cta {
-  background: var(--accent) !important;
-  color: white !important;
-  padding: 8px 20px;
-  border-radius: 8px;
-  font-weight: 600 !important;
-  transition: all 0.2s !important;
-}
-
-.nav-cta:hover {
-  background: var(--accent-bright) !important;
-  transform: translateY(-1px);
-}
-
-.mobile-menu {
-  display: none;
-  background: none;
-  border: none;
-  color: var(--text);
-  font-size: 24px;
-  cursor: pointer;
-}
-
-/* Hero */
-.hero {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  padding: 120px 0 80px;
-  position: relative;
-}
-
-.hero-content {
-  max-width: 800px;
-}
-
-.hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 16px;
-  background: var(--accent-glow);
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  border-radius: 100px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--accent-bright);
-  margin-bottom: 32px;
-}
-
-.hero-badge::before {
-  content: '';
-  width: 6px; height: 6px;
-  background: var(--accent);
-  border-radius: 50%;
-  animation: pulse-dot 2s infinite;
-}
-
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.5); }
-}
-
-h1 {
-  font-size: clamp(40px, 5.5vw, 72px);
-  font-weight: 800;
-  line-height: 1.05;
-  letter-spacing: -2px;
-  color: var(--text-bright);
-  margin-bottom: 28px;
-}
-
-h1 .highlight {
-  background: linear-gradient(135deg, var(--accent), #818cf8, var(--accent-bright));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.hero-sub {
-  font-size: clamp(18px, 2.2vw, 22px);
-  color: var(--text-dim);
-  line-height: 1.6;
-  max-width: 620px;
-  margin-bottom: 48px;
-  font-weight: 400;
-}
-
-.hero-actions {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 16px 32px;
-  background: var(--accent);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-decoration: none;
-  font-family: inherit;
-}
-
-.btn-primary:hover {
-  background: var(--accent-bright);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(59, 130, 246, 0.3);
-}
-
-.btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 16px 32px;
-  background: transparent;
-  color: var(--text);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-decoration: none;
-  font-family: inherit;
-}
-
-.btn-secondary:hover {
-  border-color: rgba(255,255,255,0.3);
-  background: rgba(255,255,255,0.05);
-}
-
-/* Brain Visualization */
-.brain-visual {
-  position: absolute;
-  right: -60px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 500px;
-  height: 500px;
-  opacity: 0.6;
-}
-
-/* Sections */
-section {
-  padding: 120px 0;
-}
-
-.section-label {
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  color: var(--accent);
-  margin-bottom: 16px;
-}
-
-h2 {
-  font-size: clamp(32px, 4vw, 48px);
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -1.5px;
-  color: var(--text-bright);
-  margin-bottom: 20px;
-}
-
-.section-desc {
-  font-size: 18px;
-  color: var(--text-dim);
-  max-width: 600px;
-  line-height: 1.7;
-}
-
-/* Problem Section */
-.problem-section {
-  border-top: 1px solid var(--border);
-}
-
-.problem-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 60px;
-  margin-top: 60px;
-  align-items: center;
-}
-
-.problem-list {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.problem-item {
-  display: flex;
-  gap: 16px;
-  padding: 24px;
-  background: rgba(239, 68, 68, 0.04);
-  border: 1px solid rgba(239, 68, 68, 0.1);
-  border-radius: 16px;
-  transition: all 0.3s;
-}
-
-.problem-item:hover {
-  background: rgba(239, 68, 68, 0.08);
-  border-color: rgba(239, 68, 68, 0.2);
-}
-
-.problem-icon {
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(239, 68, 68, 0.1);
-  border-radius: 10px;
-  font-size: 18px;
-}
-
-.problem-item h4 {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-bright);
-  margin-bottom: 4px;
-}
-
-.problem-item p {
-  font-size: 14px;
-  color: var(--text-dim);
-  line-height: 1.5;
-}
-
-.problem-visual {
-  position: relative;
-  height: 400px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.brain-drain {
-  text-align: center;
-}
-
-.brain-drain .big-stat {
-  font-size: 96px;
-  font-weight: 900;
-  color: rgba(239, 68, 68, 0.7);
-  letter-spacing: -4px;
-  line-height: 1;
-}
-
-.brain-drain .stat-label {
-  font-size: 18px;
-  color: var(--text-dim);
-  margin-top: 12px;
-}
-
-.brain-drain .stat-source {
-  font-size: 13px;
-  color: rgba(148, 163, 184, 0.5);
-  margin-top: 8px;
-}
-
-/* How It Works */
-.how-section {
-  border-top: 1px solid var(--border);
-}
-
-.how-steps {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 32px;
-  margin-top: 60px;
-}
-
-.how-step {
-  position: relative;
-  padding: 40px 32px;
-  background: linear-gradient(135deg, var(--navy-light), var(--navy-mid));
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  transition: all 0.3s;
-}
-
-.how-step:hover {
-  border-color: rgba(59, 130, 246, 0.2);
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-}
-
-.step-number {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px; height: 48px;
-  background: var(--accent-glow);
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  border-radius: 14px;
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--accent-bright);
-  margin-bottom: 24px;
-}
-
-.how-step h3 {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text-bright);
-  margin-bottom: 12px;
-  letter-spacing: -0.5px;
-}
-
-.how-step p {
-  font-size: 15px;
-  color: var(--text-dim);
-  line-height: 1.7;
-}
-
-.step-detail {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border);
-  font-size: 13px;
-  color: var(--accent-bright);
-  font-weight: 500;
-}
-
-/* Capabilities */
-.capabilities-section {
-  border-top: 1px solid var(--border);
-}
-
-.cap-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
-  margin-top: 60px;
-}
-
-.cap-card {
-  padding: 40px;
-  background: var(--navy-light);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  transition: all 0.3s;
-  position: relative;
-  overflow: hidden;
-}
-
-.cap-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.cap-card:hover {
-  border-color: rgba(59, 130, 246, 0.15);
-  transform: translateY(-2px);
-}
-
-.cap-card:hover::before { opacity: 1; }
-
-.cap-icon {
-  width: 52px; height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--accent-glow);
-  border-radius: 14px;
-  font-size: 24px;
-  margin-bottom: 24px;
-}
-
-.cap-card h3 {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-bright);
-  margin-bottom: 10px;
-}
-
-.cap-card p {
-  font-size: 15px;
-  color: var(--text-dim);
-  line-height: 1.7;
-}
-
-.cap-card .cap-example {
-  margin-top: 20px;
-  padding: 16px;
-  background: rgba(0,0,0,0.3);
-  border-radius: 10px;
-  font-size: 13px;
-  color: var(--text-dim);
-  font-family: 'SF Mono', 'Fira Code', monospace;
-  border: 1px solid var(--border);
-}
-
-.cap-example .prompt {
-  color: var(--accent-bright);
-}
-
-.cap-example .response {
-  color: var(--text);
-  margin-top: 8px;
-}
-
-/* Intelligence Layer */
-.intel-section {
-  border-top: 1px solid var(--border);
-  text-align: center;
-}
-
-.intel-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  margin-top: 60px;
-}
-
-.intel-card {
-  padding: 32px 24px;
-  background: var(--navy-light);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  text-align: center;
-  transition: all 0.3s;
-}
-
-.intel-card:hover {
-  border-color: rgba(59, 130, 246, 0.2);
-  transform: translateY(-4px);
-}
-
-.intel-stat {
-  font-size: 42px;
-  font-weight: 800;
-  color: var(--accent-bright);
-  letter-spacing: -1px;
-  margin-bottom: 8px;
-}
-
-.intel-label {
-  font-size: 14px;
-  color: var(--text-dim);
-  font-weight: 500;
-}
-
-/* Timeline / Evolution */
-.evolution-section {
-  border-top: 1px solid var(--border);
-}
-
-.timeline {
-  margin-top: 60px;
-  position: relative;
-  padding-left: 40px;
-}
-
-.timeline::before {
-  content: '';
-  position: absolute;
-  left: 15px;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: linear-gradient(to bottom, var(--accent), rgba(59, 130, 246, 0.1));
-}
-
-.timeline-item {
-  position: relative;
-  margin-bottom: 48px;
-  padding: 28px 32px;
-  background: var(--navy-light);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  transition: all 0.3s;
-}
-
-.timeline-item:hover {
-  border-color: rgba(59, 130, 246, 0.2);
-}
-
-.timeline-item::before {
-  content: '';
-  position: absolute;
-  left: -33px;
-  top: 34px;
-  width: 12px;
-  height: 12px;
-  background: var(--accent);
-  border-radius: 50%;
-  border: 3px solid var(--navy);
-}
-
-.timeline-item .tl-period {
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--accent-bright);
-  margin-bottom: 8px;
-}
-
-.timeline-item h3 {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-bright);
-  margin-bottom: 8px;
-}
-
-.timeline-item p {
-  font-size: 15px;
-  color: var(--text-dim);
-  line-height: 1.6;
-}
-
-/* Use Cases */
-.usecases-section {
-  border-top: 1px solid var(--border);
-}
-
-.usecase-tabs {
-  display: flex;
-  gap: 12px;
-  margin-top: 40px;
-  margin-bottom: 40px;
-  flex-wrap: wrap;
-}
-
-.usecase-tab {
-  padding: 10px 24px;
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-dim);
-  cursor: pointer;
-  background: transparent;
-  transition: all 0.2s;
-  font-family: inherit;
-}
-
-.usecase-tab.active,
-.usecase-tab:hover {
-  background: var(--accent-glow);
-  border-color: rgba(59, 130, 246, 0.3);
-  color: var(--accent-bright);
-}
-
-.usecase-content {
-  display: none;
-  padding: 48px;
-  background: var(--navy-light);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-}
-
-.usecase-content.active { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
-
-.usecase-content h3 {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--text-bright);
-  margin-bottom: 16px;
-  letter-spacing: -0.5px;
-}
-
-.usecase-content p {
-  font-size: 16px;
-  color: var(--text-dim);
-  line-height: 1.7;
-  margin-bottom: 24px;
-}
-
-.usecase-benefits {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.usecase-benefits li {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  font-size: 15px;
-  color: var(--text);
-}
-
-.usecase-benefits li::before {
-  content: '';
-  width: 20px; height: 20px;
-  flex-shrink: 0;
-  background: var(--accent-glow);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  border-radius: 6px;
-  margin-top: 2px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2360a5fa'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'/%3E%3C/svg%3E");
-  background-size: 14px;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.usecase-visual {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 300px;
-}
-
-.usecase-diagram {
-  width: 100%;
-  padding: 32px;
-  background: rgba(0,0,0,0.3);
-  border-radius: 16px;
-  border: 1px solid var(--border);
-}
-
-.diagram-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.diagram-row:last-child { margin-bottom: 0; }
-
-.diagram-node {
-  padding: 10px 16px;
-  background: var(--accent-glow);
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  border-radius: 8px;
-  font-size: 13px;
-  color: var(--accent-bright);
-  font-weight: 500;
-  flex: 1;
-  text-align: center;
-}
-
-.diagram-arrow {
-  color: rgba(59, 130, 246, 0.4);
-  font-size: 18px;
-  flex-shrink: 0;
-}
-
-.diagram-center {
-  padding: 16px 24px;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(129, 140, 248, 0.1));
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  border-radius: 12px;
-  font-size: 15px;
-  color: var(--text-bright);
-  font-weight: 600;
-  text-align: center;
-  margin: 20px 0;
-}
-
-/* Pricing */
-.pricing-section {
-  border-top: 1px solid var(--border);
-  text-align: center;
-}
-
-.pricing-card {
-  max-width: 560px;
-  margin: 60px auto 0;
-  padding: 48px;
-  background: linear-gradient(135deg, var(--navy-light), var(--navy-mid));
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  border-radius: 24px;
-  position: relative;
-  overflow: hidden;
-}
-
-.pricing-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--accent), #818cf8, var(--accent-bright));
-}
-
-.pricing-amount {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 4px;
-  margin-bottom: 8px;
-}
-
-.pricing-dollar {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--text-dim);
-}
-
-.pricing-number {
-  font-size: 64px;
-  font-weight: 900;
-  color: var(--text-bright);
-  letter-spacing: -2px;
-  line-height: 1;
-}
-
-.pricing-period {
-  font-size: 18px;
-  color: var(--text-dim);
-  font-weight: 400;
-}
-
-.pricing-per {
-  font-size: 16px;
-  color: var(--text-dim);
-  margin-bottom: 8px;
-}
-
-.pricing-tagline {
-  font-size: 15px;
-  color: var(--accent-bright);
-  margin-bottom: 32px;
-  font-weight: 500;
-}
-
-.pricing-features {
-  list-style: none;
-  text-align: left;
-  margin-bottom: 36px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.pricing-features li {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 15px;
-  color: var(--text);
-}
-
-.pricing-features li::before {
-  content: '';
-  width: 20px; height: 20px;
-  flex-shrink: 0;
-  background: var(--accent-glow);
-  border-radius: 50%;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2360a5fa'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'/%3E%3C/svg%3E");
-  background-size: 12px;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.pricing-cta {
-  width: 100%;
-  padding: 18px;
-  background: var(--accent);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 17px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: inherit;
-}
-
-.pricing-cta:hover {
-  background: var(--accent-bright);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(59, 130, 246, 0.3);
-}
-
-/* Comparison */
-.comparison-section {
-  border-top: 1px solid var(--border);
-}
-
-.comparison-table {
-  margin-top: 60px;
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.comparison-table th,
-.comparison-table td {
-  padding: 18px 24px;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-  font-size: 15px;
-}
-
-.comparison-table thead th {
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--text-dim);
-  font-weight: 600;
-}
-
-.comparison-table thead th:last-child {
-  color: var(--accent-bright);
-}
-
-.comparison-table td:first-child {
-  color: var(--text);
-  font-weight: 500;
-}
-
-.comparison-table td:not(:first-child) {
-  color: var(--text-dim);
-  text-align: center;
-}
-
-.comparison-table td:last-child {
-  color: var(--accent-bright);
-  font-weight: 600;
-}
-
-.check-yes {
-  color: var(--accent-bright) !important;
-}
-
-.check-no {
-  color: rgba(148, 163, 184, 0.3) !important;
-}
-
-/* CTA Section */
-.cta-section {
-  border-top: 1px solid var(--border);
-  text-align: center;
-  padding: 140px 0;
-}
-
-.cta-section h2 {
-  margin-bottom: 24px;
-}
-
-.cta-section .section-desc {
-  margin: 0 auto 48px;
-  max-width: 560px;
-}
-
-/* Footer */
-footer {
-  border-top: 1px solid var(--border);
-  padding: 60px 0 40px;
-}
-
-.footer-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: 48px;
-  margin-bottom: 48px;
-}
-
-.footer-brand .logo {
-  margin-bottom: 16px;
-  display: inline-block;
-}
-
-.footer-brand p {
-  font-size: 14px;
-  color: var(--text-dim);
-  line-height: 1.6;
-  max-width: 280px;
-}
-
-.footer-col h4 {
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--text);
-  margin-bottom: 16px;
-}
-
-.footer-col a {
-  display: block;
-  font-size: 14px;
-  color: var(--text-dim);
-  text-decoration: none;
-  margin-bottom: 10px;
-  transition: color 0.2s;
-}
-
-.footer-col a:hover { color: var(--text-bright); }
-
-.footer-bottom {
-  padding-top: 24px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-  color: rgba(148, 163, 184, 0.5);
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
-  .brain-visual { display: none; }
-  .problem-grid { grid-template-columns: 1fr; }
-  .problem-visual { height: auto; padding: 40px 0; }
-  .how-steps { grid-template-columns: 1fr; }
-  .cap-grid { grid-template-columns: 1fr; }
-  .intel-grid { grid-template-columns: repeat(2, 1fr); }
-  .usecase-content.active { grid-template-columns: 1fr; }
-  .footer-grid { grid-template-columns: 1fr 1fr; }
-  .comparison-table { font-size: 13px; }
-  .comparison-table th, .comparison-table td { padding: 12px 16px; }
-}
-
-@media (max-width: 768px) {
-  .nav-links { display: none; }
-  .mobile-menu { display: block; }
-  .hero { padding: 100px 0 60px; }
-  h1 { letter-spacing: -1px; }
-  section { padding: 80px 0; }
-  .pricing-card { padding: 32px 24px; }
-  .intel-grid { grid-template-columns: 1fr 1fr; }
-  .footer-grid { grid-template-columns: 1fr; gap: 32px; }
-  .footer-bottom { flex-direction: column; gap: 12px; text-align: center; }
-  .usecase-content.active { padding: 32px 24px; }
-}
-
-/* Animations */
-@keyframes float-in {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-in {
-  opacity: 0;
-  animation: float-in 0.8s ease forwards;
-}
-
-.delay-1 { animation-delay: 0.1s; }
-.delay-2 { animation-delay: 0.2s; }
-.delay-3 { animation-delay: 0.3s; }
-.delay-4 { animation-delay: 0.4s; }
+  :root {
+    --navy-900: #0a1628;
+    --navy-800: #0f2038;
+    --navy-700: #152d4a;
+    --navy-600: #1b3a5c;
+    --navy-500: #24507d;
+    --blue-400: #4a8fe7;
+    --blue-300: #7ab3f5;
+    --gold-500: #d4a843;
+    --gold-400: #e4bf60;
+    --gold-300: #f0d680;
+    --gold-200: #f7e8a8;
+    --slate-100: #e8ecf2;
+    --slate-200: #cdd4df;
+    --slate-300: #a8b4c6;
+    --slate-400: #7d8da3;
+    --white: #ffffff;
+    --font-sans: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; font-size: 16px; }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--navy-900);
+    color: var(--slate-100);
+    line-height: 1.7;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+  .text-gold { color: var(--gold-400); }
+  .text-blue { color: var(--blue-300); }
+  .text-muted { color: var(--slate-300); }
+  .text-center { text-align: center; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(32px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  @keyframes nodeGlow {
+    0%, 100% { box-shadow: 0 0 8px rgba(212,168,67,0.3); }
+    50% { box-shadow: 0 0 20px rgba(212,168,67,0.6); }
+  }
+  @keyframes drawLine {
+    from { stroke-dashoffset: 800; }
+    to   { stroke-dashoffset: 0; }
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes leak {
+    0%, 100% { height: 0; opacity: 0; }
+    50% { height: 60px; opacity: 1; }
+  }
+
+  .animate-on-scroll {
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .animate-on-scroll.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .animate-on-scroll.delay-1 { transition-delay: 0.1s; }
+  .animate-on-scroll.delay-2 { transition-delay: 0.2s; }
+  .animate-on-scroll.delay-3 { transition-delay: 0.3s; }
+  .animate-on-scroll.delay-4 { transition-delay: 0.4s; }
+  .animate-on-scroll.delay-5 { transition-delay: 0.5s; }
+
+  /* Nav */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(10,22,40,0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(212,168,67,0.1);
+    transition: background 0.3s;
+  }
+  nav .nav-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    max-width: 1140px; margin: 0 auto; padding: 16px 24px;
+  }
+  .logo {
+    font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px;
+    color: var(--white); text-decoration: none;
+  }
+  .logo span { color: var(--gold-400); }
+  .nav-links { display: flex; align-items: center; gap: 32px; list-style: none; }
+  .nav-links a {
+    color: var(--slate-300); text-decoration: none; font-size: 0.9rem;
+    font-weight: 500; transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--gold-400); }
+  .nav-cta {
+    background: linear-gradient(135deg, var(--gold-500), var(--gold-400));
+    color: var(--navy-900) !important; padding: 10px 24px; border-radius: 8px;
+    font-weight: 700 !important; font-size: 0.85rem !important;
+    transition: transform 0.2s, box-shadow 0.2s !important;
+  }
+  .nav-cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(212,168,67,0.4);
+  }
+  .mobile-menu-btn {
+    display: none; background: none; border: none; cursor: pointer;
+    color: var(--slate-200); font-size: 1.5rem; padding: 4px;
+  }
+
+  /* Hero */
+  .hero {
+    min-height: 100vh; display: flex; align-items: center;
+    position: relative; padding: 120px 0 80px;
+    background: linear-gradient(170deg, var(--navy-900) 0%, var(--navy-800) 40%, var(--navy-700) 100%);
+    overflow: hidden;
+  }
+  .hero-bg-grid {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      linear-gradient(rgba(74,143,231,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(74,143,231,0.05) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 20%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 20%, transparent 70%);
+  }
+  .hero-glow {
+    position: absolute; width: 600px; height: 600px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(212,168,67,0.08) 0%, transparent 70%);
+    top: -100px; right: -100px; pointer-events: none;
+  }
+  .hero-glow-2 {
+    position: absolute; width: 400px; height: 400px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(74,143,231,0.06) 0%, transparent 70%);
+    bottom: -50px; left: -100px; pointer-events: none;
+  }
+  .hero .container { position: relative; z-index: 2; }
+  .hero-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(212,168,67,0.1); border: 1px solid rgba(212,168,67,0.25);
+    padding: 6px 16px; border-radius: 100px; font-size: 0.8rem;
+    color: var(--gold-400); font-weight: 600; margin-bottom: 24px;
+    animation: fadeIn 0.8s ease;
+  }
+  .hero-badge-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--gold-400);
+    animation: pulse 2s infinite;
+  }
+  .hero h1 {
+    font-size: 3.4rem; font-weight: 800; line-height: 1.12;
+    letter-spacing: -1.5px; color: var(--white);
+    animation: fadeUp 0.8s ease;
+  }
+  .hero h1 .highlight {
+    background: linear-gradient(135deg, var(--gold-400), var(--gold-300));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-sub {
+    font-size: 1.2rem; color: var(--slate-300); margin-top: 24px;
+    max-width: 480px; line-height: 1.8;
+    animation: fadeUp 0.8s ease 0.15s both;
+  }
+  .hero-actions {
+    display: flex; gap: 16px; margin-top: 40px;
+    animation: fadeUp 0.8s ease 0.3s both;
+  }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, var(--gold-500), var(--gold-400));
+    color: var(--navy-900); padding: 16px 36px; border-radius: 12px;
+    font-weight: 700; font-size: 1rem; text-decoration: none;
+    border: none; cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 24px rgba(212,168,67,0.25);
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(212,168,67,0.4);
+  }
+  .btn-secondary {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--slate-100); padding: 16px 36px; border-radius: 12px;
+    font-weight: 600; font-size: 1rem; text-decoration: none;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .btn-secondary:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.25);
+  }
+  .hero-stats {
+    display: flex; gap: 48px; margin-top: 56px;
+    animation: fadeUp 0.8s ease 0.45s both;
+  }
+  .hero-stat-num {
+    font-size: 2rem; font-weight: 800; color: var(--white);
+    letter-spacing: -1px;
+  }
+  .hero-stat-label { font-size: 0.8rem; color: var(--slate-400); margin-top: 4px; }
+
+  /* Hero Visual */
+  .hero-visual {
+    position: relative; height: 460px;
+    animation: fadeIn 1.2s ease 0.4s both;
+  }
+  .knowledge-graph { position: absolute; inset: 0; }
+  .kg-node {
+    position: absolute; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 700; text-align: center;
+    animation: float 6s ease-in-out infinite;
+    z-index: 2;
+  }
+  .kg-node-core {
+    width: 100px; height: 100px; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, var(--gold-500), var(--gold-300));
+    color: var(--navy-900); font-size: 1rem; font-weight: 800;
+    animation: nodeGlow 3s ease-in-out infinite, float 6s ease-in-out infinite;
+    box-shadow: 0 0 40px rgba(212,168,67,0.3);
+  }
+  .kg-node-dept {
+    width: 72px; height: 72px;
+    background: rgba(74,143,231,0.15);
+    border: 2px solid rgba(74,143,231,0.4);
+    color: var(--blue-300); font-size: 0.65rem;
+  }
+  .kg-node-person {
+    width: 44px; height: 44px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--slate-300); font-size: 0.55rem;
+  }
+  .kg-n1 { top: 12%; left: 20%; animation-delay: 0s; }
+  .kg-n2 { top: 8%; left: 60%; animation-delay: 0.5s; }
+  .kg-n3 { top: 55%; left: 8%; animation-delay: 1s; }
+  .kg-n4 { top: 70%; left: 70%; animation-delay: 1.5s; }
+  .kg-n5 { top: 25%; left: 82%; animation-delay: 0.3s; }
+  .kg-n6 { top: 80%; left: 35%; animation-delay: 0.8s; }
+  .kg-p1 { top: 2%; left: 40%; animation-delay: 0.2s; }
+  .kg-p2 { top: 30%; left: 5%; animation-delay: 0.7s; }
+  .kg-p3 { top: 35%; left: 90%; animation-delay: 1.2s; }
+  .kg-p4 { top: 85%; left: 15%; animation-delay: 0.4s; }
+  .kg-p5 { top: 90%; left: 58%; animation-delay: 0.9s; }
+  .kg-p6 { top: 15%; left: 92%; animation-delay: 1.4s; }
+  .kg-p7 { top: 60%; left: 92%; animation-delay: 0.6s; }
+  .kg-p8 { top: 45%; left: 2%; animation-delay: 1.1s; }
+
+  .kg-lines { position: absolute; inset: 0; z-index: 1; }
+  .kg-lines line {
+    stroke: rgba(74,143,231,0.15); stroke-width: 1;
+    stroke-dasharray: 800; animation: drawLine 3s ease forwards;
+  }
+  .kg-lines line.gold { stroke: rgba(212,168,67,0.2); stroke-width: 1.5; }
+
+  /* Section Shared */
+  section { padding: 120px 0; position: relative; }
+  .section-label {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 2px; color: var(--gold-400); margin-bottom: 16px;
+  }
+  .section-label-line {
+    width: 32px; height: 2px;
+    background: linear-gradient(90deg, var(--gold-500), var(--gold-300));
+  }
+  .section-title {
+    font-size: 2.6rem; font-weight: 800; line-height: 1.2;
+    letter-spacing: -1px; color: var(--white); max-width: 600px;
+  }
+  .section-title.centered { margin: 0 auto; text-align: center; max-width: 700px; }
+  .section-subtitle {
+    font-size: 1.1rem; color: var(--slate-300); margin-top: 20px;
+    max-width: 560px; line-height: 1.8;
+  }
+  .section-subtitle.centered { margin: 20px auto 0; text-align: center; max-width: 640px; }
+  .section-divider {
+    width: 100%; height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(212,168,67,0.2) 50%, transparent 100%);
+  }
+
+  /* Problem */
+  .problem { background: var(--navy-800); }
+  .problem-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 80px;
+    align-items: center; margin-top: 64px;
+  }
+  .problem-scenarios { display: flex; flex-direction: column; gap: 24px; }
+  .problem-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px; padding: 28px 32px;
+    transition: border-color 0.3s, background 0.3s;
+    position: relative; overflow: hidden;
+  }
+  .problem-card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px; background: linear-gradient(180deg, var(--gold-500), transparent);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .problem-card:hover { border-color: rgba(212,168,67,0.2); background: rgba(255,255,255,0.05); }
+  .problem-card:hover::before { opacity: 1; }
+  .problem-card-icon { font-size: 1.6rem; margin-bottom: 12px; }
+  .problem-card h4 { font-size: 1.05rem; font-weight: 700; color: var(--white); margin-bottom: 8px; }
+  .problem-card p { font-size: 0.9rem; color: var(--slate-300); line-height: 1.7; }
+
+  .problem-visual { position: relative; padding: 40px; }
+  .brain-container {
+    width: 320px; height: 320px; margin: 0 auto;
+    position: relative; border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, rgba(212,168,67,0.12) 0%, rgba(74,143,231,0.06) 50%, transparent 70%);
+    border: 2px solid rgba(212,168,67,0.15);
+  }
+  .brain-center {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    font-size: 0.85rem; font-weight: 700; color: var(--gold-400);
+    text-align: center; line-height: 1.4;
+  }
+  .brain-orbit {
+    position: absolute; border-radius: 50%;
+    border: 1px dashed rgba(74,143,231,0.15);
+  }
+  .brain-orbit-1 { inset: -30px; animation: spin 40s linear infinite; }
+  .brain-orbit-2 { inset: -70px; animation: spin 60s linear infinite reverse; }
+  .orbit-dot {
+    position: absolute; width: 10px; height: 10px; border-radius: 50%;
+    background: var(--blue-400);
+  }
+  .orbit-dot-1 { top: -5px; left: 50%; }
+  .orbit-dot-2 { bottom: -5px; left: 30%; }
+  .orbit-dot-3 { top: 30%; right: -5px; background: var(--gold-400); }
+  .orbit-dot-4 { bottom: 20%; left: -5px; }
+  .leak-lines { position: absolute; inset: 0; }
+  .leak-line {
+    position: absolute; width: 2px;
+    background: linear-gradient(180deg, rgba(212,168,67,0.4), transparent);
+    animation: leak 3s ease-in-out infinite;
+  }
+  .leak-1 { top: -40px; left: 30%; animation-delay: 0s; }
+  .leak-2 { top: -50px; left: 60%; animation-delay: 1s; }
+  .leak-3 { top: -30px; right: 20%; animation-delay: 2s; }
+
+  /* How It Works */
+  .how-it-works { background: var(--navy-900); }
+  .steps-timeline { margin-top: 72px; position: relative; }
+  .steps-line {
+    position: absolute; left: 50%; top: 0; bottom: 0; width: 2px;
+    background: linear-gradient(180deg, var(--gold-500), var(--blue-400), var(--gold-500));
+    opacity: 0.2;
+  }
+  .step-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 80px;
+    align-items: center; margin-bottom: 80px; position: relative;
+  }
+  .step-row:last-child { margin-bottom: 0; }
+  .step-row:nth-child(even) .step-content { order: 2; }
+  .step-row:nth-child(even) .step-visual { order: 1; }
+  .step-dot {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+    width: 48px; height: 48px; border-radius: 50%; z-index: 3;
+    background: linear-gradient(135deg, var(--gold-500), var(--gold-400));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 1.1rem; color: var(--navy-900);
+    box-shadow: 0 0 24px rgba(212,168,67,0.3);
+  }
+  .step-content h3 {
+    font-size: 1.6rem; font-weight: 700; color: var(--white);
+    margin-bottom: 16px; letter-spacing: -0.5px;
+  }
+  .step-content p { font-size: 1rem; color: var(--slate-300); line-height: 1.8; }
+  .step-visual {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px; padding: 32px;
+    position: relative; overflow: hidden;
+  }
+  .step-visual-header {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 20px; padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .step-visual-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .step-visual-dot.red { background: #ff5f57; }
+  .step-visual-dot.yellow { background: #febc2e; }
+  .step-visual-dot.green { background: #28c840; }
+  .step-visual-title {
+    font-size: 0.75rem; color: var(--slate-400); margin-left: 8px;
+    font-family: var(--font-mono);
+  }
+  .capture-list { list-style: none; }
+  .capture-list li {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0; font-size: 0.85rem; color: var(--slate-200);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-family: var(--font-mono);
+  }
+  .capture-list li:last-child { border-bottom: none; }
+  .capture-icon {
+    width: 28px; height: 28px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(74,143,231,0.1); font-size: 0.8rem; flex-shrink: 0;
+  }
+  .capture-status {
+    margin-left: auto; font-size: 0.7rem; padding: 3px 10px;
+    border-radius: 100px; background: rgba(40,200,64,0.1);
+    color: #28c840; font-weight: 600;
+  }
+  .ai-analysis {
+    font-family: var(--font-mono); font-size: 0.82rem; line-height: 2;
+    color: var(--slate-200);
+  }
+  .ai-analysis .label { color: var(--blue-300); }
+  .ai-analysis .value { color: var(--gold-300); }
+  .ai-analysis .comment { color: var(--slate-400); }
+  .knowledge-items { display: flex; flex-direction: column; gap: 12px; }
+  .knowledge-item {
+    display: flex; align-items: center; gap: 12px;
+    background: rgba(212,168,67,0.05);
+    border: 1px solid rgba(212,168,67,0.1);
+    border-radius: 10px; padding: 14px 18px;
+  }
+  .knowledge-item-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: linear-gradient(135deg, rgba(212,168,67,0.2), rgba(212,168,67,0.05));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; flex-shrink: 0;
+  }
+  .knowledge-item-text {
+    font-size: 0.85rem; color: var(--slate-200); line-height: 1.5;
+  }
+  .knowledge-item-text strong { color: var(--gold-300); font-weight: 600; }
+
+  /* Dual View */
+  .dual-view { background: var(--navy-800); }
+  .dual-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 64px;
+  }
+  .view-panel {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px; padding: 40px; position: relative;
+    overflow: hidden; transition: border-color 0.3s;
+  }
+  .view-panel:hover { border-color: rgba(212,168,67,0.15); }
+  .view-panel-glow {
+    position: absolute; width: 200px; height: 200px; border-radius: 50%;
+    top: -60px; right: -60px; pointer-events: none;
+  }
+  .view-panel.employee .view-panel-glow {
+    background: radial-gradient(circle, rgba(74,143,231,0.08) 0%, transparent 70%);
+  }
+  .view-panel.manager .view-panel-glow {
+    background: radial-gradient(circle, rgba(212,168,67,0.08) 0%, transparent 70%);
+  }
+  .view-panel-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 100px; font-size: 0.72rem;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;
+    margin-bottom: 24px;
+  }
+  .view-panel.employee .view-panel-badge {
+    background: rgba(74,143,231,0.1); border: 1px solid rgba(74,143,231,0.25);
+    color: var(--blue-300);
+  }
+  .view-panel.manager .view-panel-badge {
+    background: rgba(212,168,67,0.1); border: 1px solid rgba(212,168,67,0.25);
+    color: var(--gold-400);
+  }
+  .view-panel h3 {
+    font-size: 1.5rem; font-weight: 700; color: var(--white);
+    margin-bottom: 12px; letter-spacing: -0.5px;
+  }
+  .view-panel > p {
+    font-size: 0.95rem; color: var(--slate-300); margin-bottom: 28px; line-height: 1.7;
+  }
+  .view-features { list-style: none; display: flex; flex-direction: column; gap: 16px; }
+  .view-features li {
+    display: flex; align-items: flex-start; gap: 12px;
+    font-size: 0.9rem; color: var(--slate-200); line-height: 1.6;
+  }
+  .view-check {
+    width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; margin-top: 2px;
+  }
+  .view-panel.employee .view-check {
+    background: rgba(74,143,231,0.15); color: var(--blue-300);
+  }
+  .view-panel.manager .view-check {
+    background: rgba(212,168,67,0.15); color: var(--gold-400);
+  }
+  .view-mock {
+    margin-top: 28px; background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px; padding: 20px; font-family: var(--font-mono); font-size: 0.78rem;
+  }
+  .view-mock-header {
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 14px; padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .mock-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .mock-msg {
+    padding: 10px 14px; border-radius: 10px; margin-bottom: 8px;
+    font-size: 0.8rem; line-height: 1.6; color: var(--slate-200);
+  }
+  .mock-msg.ai {
+    background: rgba(74,143,231,0.08);
+    border-left: 2px solid var(--blue-400);
+  }
+  .mock-msg.system {
+    background: rgba(212,168,67,0.06);
+    border-left: 2px solid var(--gold-500);
+  }
+  .mock-msg .sender {
+    font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 4px; display: block;
+  }
+  .mock-msg.ai .sender { color: var(--blue-300); }
+  .mock-msg.system .sender { color: var(--gold-400); }
+
+  /* Proof */
+  .proof { background: var(--navy-900); }
+  .proof-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 64px;
+  }
+  .proof-stat {
+    text-align: center; padding: 40px 24px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+  .proof-stat:hover {
+    border-color: rgba(212,168,67,0.2); transform: translateY(-4px);
+  }
+  .proof-stat-num {
+    font-size: 2.8rem; font-weight: 800; letter-spacing: -2px;
+    background: linear-gradient(135deg, var(--gold-400), var(--gold-300));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .proof-stat-label { font-size: 0.85rem; color: var(--slate-300); margin-top: 8px; line-height: 1.5; }
+  .testimonials {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 48px;
+  }
+  .testimonial {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px; padding: 32px;
+    transition: border-color 0.3s;
+  }
+  .testimonial:hover { border-color: rgba(212,168,67,0.15); }
+  .testimonial-quote {
+    font-size: 0.95rem; color: var(--slate-200); line-height: 1.8;
+    font-style: italic; margin-bottom: 20px;
+  }
+  .testimonial-quote::before {
+    content: '\201C'; font-size: 2rem; color: var(--gold-500);
+    line-height: 0; vertical-align: -0.4em; margin-right: 4px;
+  }
+  .testimonial-author { display: flex; align-items: center; gap: 12px; }
+  .testimonial-avatar {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--navy-600), var(--navy-500));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: 700; color: var(--gold-400);
+  }
+  .testimonial-name { font-size: 0.85rem; font-weight: 600; color: var(--white); }
+  .testimonial-role { font-size: 0.75rem; color: var(--slate-400); }
+
+  /* Pricing */
+  .pricing { background: var(--navy-800); }
+  .pricing-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+    margin-top: 64px; max-width: 960px; margin-left: auto; margin-right: auto;
+  }
+  .price-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px; padding: 40px 32px;
+    display: flex; flex-direction: column;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+  .price-card:hover { transform: translateY(-4px); }
+  .price-card.featured {
+    background: linear-gradient(170deg, rgba(212,168,67,0.08), rgba(212,168,67,0.02));
+    border-color: rgba(212,168,67,0.3);
+    position: relative; transform: scale(1.04);
+  }
+  .price-card.featured:hover { transform: scale(1.04) translateY(-4px); }
+  .price-card-popular {
+    position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--gold-500), var(--gold-400));
+    color: var(--navy-900); font-size: 0.7rem; font-weight: 700;
+    padding: 4px 16px; border-radius: 100px; text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .price-card-name { font-size: 1.1rem; font-weight: 700; color: var(--white); margin-bottom: 8px; }
+  .price-card-desc { font-size: 0.82rem; color: var(--slate-300); margin-bottom: 24px; line-height: 1.6; }
+  .price-amount { display: flex; align-items: baseline; gap: 4px; margin-bottom: 8px; }
+  .price-currency { font-size: 1.2rem; font-weight: 700; color: var(--slate-300); }
+  .price-number {
+    font-size: 3rem; font-weight: 800; color: var(--white);
+    letter-spacing: -2px; line-height: 1;
+  }
+  .price-period { font-size: 0.85rem; color: var(--slate-400); }
+  .price-per { font-size: 0.8rem; color: var(--slate-400); margin-bottom: 28px; }
+  .price-features {
+    list-style: none; display: flex; flex-direction: column; gap: 12px;
+    margin-bottom: 32px; flex-grow: 1;
+  }
+  .price-features li {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 0.85rem; color: var(--slate-200);
+  }
+  .price-features li .check { color: var(--gold-400); font-size: 0.8rem; flex-shrink: 0; }
+  .price-btn {
+    display: block; text-align: center; padding: 14px 24px;
+    border-radius: 10px; font-weight: 700; font-size: 0.9rem;
+    text-decoration: none; transition: transform 0.2s, box-shadow 0.2s;
+    border: none; cursor: pointer;
+  }
+  .price-btn-primary {
+    background: linear-gradient(135deg, var(--gold-500), var(--gold-400));
+    color: var(--navy-900);
+  }
+  .price-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(212,168,67,0.3);
+  }
+  .price-btn-secondary {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--slate-100);
+  }
+  .price-btn-secondary:hover {
+    background: rgba(255,255,255,0.1); transform: translateY(-2px);
+  }
+
+  /* CTA */
+  .cta-section {
+    padding: 120px 0;
+    background: linear-gradient(170deg, var(--navy-900), var(--navy-800));
+    position: relative; overflow: hidden;
+  }
+  .cta-bg {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(212,168,67,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .cta-card {
+    max-width: 720px; margin: 0 auto; text-align: center;
+    position: relative; z-index: 2;
+  }
+  .cta-card h2 {
+    font-size: 2.8rem; font-weight: 800; color: var(--white);
+    letter-spacing: -1.5px; line-height: 1.2; margin-bottom: 20px;
+  }
+  .cta-card p {
+    font-size: 1.1rem; color: var(--slate-300); margin-bottom: 40px;
+    max-width: 520px; margin-left: auto; margin-right: auto; line-height: 1.8;
+  }
+  .cta-actions { display: flex; justify-content: center; gap: 16px; }
+  .cta-note { font-size: 0.8rem; color: var(--slate-400); margin-top: 20px; }
+
+  /* Footer */
+  footer {
+    padding: 60px 0 40px; background: var(--navy-900);
+    border-top: 1px solid rgba(255,255,255,0.04);
+  }
+  .footer-grid {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px;
+  }
+  .footer-brand p {
+    font-size: 0.85rem; color: var(--slate-400); margin-top: 16px;
+    line-height: 1.7; max-width: 280px;
+  }
+  .footer-col h4 {
+    font-size: 0.8rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1.5px; color: var(--slate-300); margin-bottom: 16px;
+  }
+  .footer-col ul { list-style: none; }
+  .footer-col ul li { margin-bottom: 10px; }
+  .footer-col a {
+    font-size: 0.85rem; color: var(--slate-400); text-decoration: none;
+    transition: color 0.2s;
+  }
+  .footer-col a:hover { color: var(--gold-400); }
+  .footer-bottom {
+    margin-top: 48px; padding-top: 24px;
+    border-top: 1px solid rgba(255,255,255,0.04);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .footer-copy { font-size: 0.8rem; color: var(--slate-400); }
+  .footer-legal { display: flex; gap: 24px; }
+  .footer-legal a { font-size: 0.8rem; color: var(--slate-400); text-decoration: none; }
+  .footer-legal a:hover { color: var(--gold-400); }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .hero h1 { font-size: 2.6rem; }
+    .section-title { font-size: 2.2rem; }
+    .hero-grid { gap: 40px; }
+    .pricing-grid { grid-template-columns: 1fr; max-width: 420px; }
+    .price-card.featured { transform: none; }
+    .price-card.featured:hover { transform: translateY(-4px); }
+  }
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .nav-links.open {
+      display: flex; flex-direction: column;
+      position: absolute; top: 100%; left: 0; right: 0;
+      background: rgba(10,22,40,0.98); padding: 24px;
+      border-bottom: 1px solid rgba(212,168,67,0.1);
+    }
+    .mobile-menu-btn { display: block; }
+    .hero-grid { grid-template-columns: 1fr; }
+    .hero-visual { height: 320px; margin-top: 32px; }
+    .hero h1 { font-size: 2.2rem; }
+    .hero-stats { gap: 24px; flex-wrap: wrap; }
+    .problem-grid { grid-template-columns: 1fr; gap: 40px; }
+    .problem-visual { display: none; }
+    .step-row { grid-template-columns: 1fr; gap: 24px; }
+    .steps-line { display: none; }
+    .step-dot { display: none; }
+    .step-row:nth-child(even) .step-content { order: 1; }
+    .step-row:nth-child(even) .step-visual { order: 2; }
+    .dual-grid { grid-template-columns: 1fr; }
+    .proof-stats { grid-template-columns: repeat(2, 1fr); }
+    .testimonials { grid-template-columns: 1fr; }
+    .footer-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+    .cta-card h2 { font-size: 2rem; }
+    .hero-actions { flex-direction: column; }
+    .cta-actions { flex-direction: column; align-items: center; }
+    .section-title { font-size: 1.9rem; }
+  }
+  @media (max-width: 480px) {
+    .hero h1 { font-size: 1.8rem; }
+    .hero-stat-num { font-size: 1.5rem; }
+    .proof-stats { grid-template-columns: 1fr 1fr; }
+    .footer-grid { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
 
-<canvas id="neural-bg"></canvas>
-
-<!-- Navigation -->
+<!-- Nav -->
 <nav>
-  <div class="container">
-    <div class="logo">Go<span>2</span></div>
-    <ul class="nav-links">
+  <div class="nav-inner">
+    <a href="#" class="logo">go2<span>.io</span></a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#problem">The Problem</a></li>
       <li><a href="#how">How It Works</a></li>
-      <li><a href="#capabilities">Capabilities</a></li>
-      <li><a href="#usecases">Use Cases</a></li>
+      <li><a href="#views">What You See</a></li>
       <li><a href="#pricing">Pricing</a></li>
-      <li><a href="#cta" class="nav-cta">Get Early Access</a></li>
+      <li><a href="#cta" class="nav-cta">Start Free Trial</a></li>
     </ul>
-    <button class="mobile-menu" onclick="document.querySelector('.nav-links').style.display = document.querySelector('.nav-links').style.display === 'flex' ? 'none' : 'flex'">&#9776;</button>
+    <button class="mobile-menu-btn" id="menuBtn" aria-label="Menu">&#9776;</button>
   </div>
 </nav>
 
 <!-- Hero -->
 <section class="hero">
+  <div class="hero-bg-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-glow-2"></div>
   <div class="container">
-    <div class="hero-content">
-      <div class="hero-badge animate-in">Organizational Intelligence Platform</div>
-      <h1 class="animate-in delay-1">
-        Your company has a brain.<br>
-        <span class="highlight">It's trapped inside your employees' heads.</span>
-      </h1>
-      <p class="hero-sub animate-in delay-2">
-        Go2 captures every workflow, every process, every shortcut across your entire team — then makes that collective intelligence available to everyone through AI that has shared memory of how your company actually operates.
-      </p>
-      <div class="hero-actions animate-in delay-3">
-        <a href="#cta" class="btn-primary">Start Building Your Company Brain &rarr;</a>
-        <a href="#how" class="btn-secondary">See How It Works</a>
+    <div class="hero-grid">
+      <div>
+        <div class="hero-badge">
+          <span class="hero-badge-dot"></span>
+          AI-Powered Organizational Intelligence
+        </div>
+        <h1>Your company has a brain.<br><span class="highlight">It just can't remember.</span></h1>
+        <p class="hero-sub">
+          Every best practice, every shortcut, every hard-won lesson your team has learned
+          lives in someone's head. Go2 captures it all and turns it into institutional
+          intelligence that makes everyone better.
+        </p>
+        <div class="hero-actions">
+          <a href="#cta" class="btn-primary">Build Your Company Brain &#8594;</a>
+          <a href="#how" class="btn-secondary">See How It Works</a>
+        </div>
+        <div class="hero-stats">
+          <div>
+            <div class="hero-stat-num">7+</div>
+            <div class="hero-stat-label">Years of workforce data</div>
+          </div>
+          <div>
+            <div class="hero-stat-num">~1M</div>
+            <div class="hero-stat-label">Workers analyzed</div>
+          </div>
+          <div>
+            <div class="hero-stat-num">3</div>
+            <div class="hero-stat-label">Frontier AI models</div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="knowledge-graph">
+          <svg class="kg-lines" viewBox="0 0 500 460" fill="none" preserveAspectRatio="none">
+            <line x1="250" y1="230" x2="120" y2="75" class="gold"/>
+            <line x1="250" y1="230" x2="320" y2="60" class="gold"/>
+            <line x1="250" y1="230" x2="55" y2="290" class="gold"/>
+            <line x1="250" y1="230" x2="370" y2="340" class="gold"/>
+            <line x1="250" y1="230" x2="420" y2="140" class="gold"/>
+            <line x1="250" y1="230" x2="190" y2="380" class="gold"/>
+            <line x1="120" y1="75" x2="210" y2="20"/>
+            <line x1="120" y1="75" x2="35" y2="160"/>
+            <line x1="320" y1="60" x2="470" y2="90"/>
+            <line x1="55" y1="290" x2="20" y2="220"/>
+            <line x1="370" y1="340" x2="460" y2="300"/>
+            <line x1="420" y1="140" x2="470" y2="190"/>
+            <line x1="190" y1="380" x2="100" y2="400"/>
+            <line x1="190" y1="380" x2="300" y2="420"/>
+            <line x1="120" y1="75" x2="320" y2="60"/>
+            <line x1="55" y1="290" x2="190" y2="380"/>
+            <line x1="370" y1="340" x2="420" y2="140"/>
+          </svg>
+          <div class="kg-node kg-node-core">Go2<br>Brain</div>
+          <div class="kg-node kg-node-dept kg-n1">Sales</div>
+          <div class="kg-node kg-node-dept kg-n2">Eng</div>
+          <div class="kg-node kg-node-dept kg-n3">Support</div>
+          <div class="kg-node kg-node-dept kg-n4">Ops</div>
+          <div class="kg-node kg-node-dept kg-n5">Design</div>
+          <div class="kg-node kg-node-dept kg-n6">Finance</div>
+          <div class="kg-node kg-node-person kg-p1">MK</div>
+          <div class="kg-node kg-node-person kg-p2">JR</div>
+          <div class="kg-node kg-node-person kg-p3">AL</div>
+          <div class="kg-node kg-node-person kg-p4">TS</div>
+          <div class="kg-node kg-node-person kg-p5">DP</div>
+          <div class="kg-node kg-node-person kg-p6">KW</div>
+          <div class="kg-node kg-node-person kg-p7">NB</div>
+          <div class="kg-node kg-node-person kg-p8">CR</div>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
 <!-- Problem -->
-<section class="problem-section">
+<section class="problem" id="problem">
   <div class="container">
-    <div class="section-label">The Problem</div>
-    <h2>Every company runs on<br>invisible knowledge</h2>
-    <p class="section-desc">The most valuable information in your organization isn't in your docs or wikis. It's in the habits, shortcuts, and instincts of the people who do the work.</p>
-
+    <div class="animate-on-scroll">
+      <div class="section-label"><span class="section-label-line"></span> The Problem</div>
+      <h2 class="section-title">Your best practices exist.<br>They're just trapped in individual heads.</h2>
+      <p class="section-subtitle">
+        Every company builds institutional knowledge over years. But it's fragile &mdash; living only
+        in the habits, shortcuts, and instincts of individual employees. When they leave, it leaves with them.
+      </p>
+    </div>
     <div class="problem-grid">
-      <div class="problem-list">
-        <div class="problem-item">
-          <div class="problem-icon">&#128694;</div>
-          <div>
-            <h4>Someone quits. Their knowledge walks out.</h4>
-            <p>Years of institutional knowledge — the "how we actually do things here" — disappears in a two-week notice.</p>
-          </div>
+      <div class="problem-scenarios">
+        <div class="problem-card animate-on-scroll delay-1">
+          <div class="problem-card-icon">&#128682;</div>
+          <h4>The Departure Problem</h4>
+          <p>
+            Your best account manager quits. Six months of relationship context, pricing
+            nuances, and client preferences walk out the door. The replacement starts from zero.
+          </p>
         </div>
-        <div class="problem-item">
-          <div class="problem-icon">&#128100;</div>
-          <div>
-            <h4>New hire. Six months to productivity.</h4>
-            <p>They have talent. What they don't have is context — the thousand unwritten rules your best people internalized over years.</p>
-          </div>
+        <div class="problem-card animate-on-scroll delay-2">
+          <div class="problem-card-icon">&#127793;</div>
+          <h4>The Onboarding Gap</h4>
+          <p>
+            New hires take 3&ndash;6 months to reach full productivity. Not because they're slow &mdash;
+            because the knowledge they need is scattered across dozens of colleagues' heads.
+          </p>
         </div>
-        <div class="problem-item">
-          <div class="problem-icon">&#128196;</div>
-          <div>
-            <h4>Your best processes are undocumented.</h4>
-            <p>Nobody has time to write SOPs. The real playbook lives in muscle memory, Slack messages, and "ask Sarah, she knows."</p>
-          </div>
+        <div class="problem-card animate-on-scroll delay-3">
+          <div class="problem-card-icon">&#128065;</div>
+          <h4>The Blind Spot</h4>
+          <p>
+            Your top performers have workflows that are 3x more efficient than average.
+            But nobody knows what they do differently &mdash; including them.
+          </p>
         </div>
-        <div class="problem-item">
-          <div class="problem-icon">&#129302;</div>
-          <div>
-            <h4>AI tools are generic. They don't know your business.</h4>
-            <p>ChatGPT is brilliant — but it has no idea how YOUR company handles refunds, writes proposals, or onboards clients.</p>
-          </div>
+        <div class="problem-card animate-on-scroll delay-4">
+          <div class="problem-card-icon">&#128260;</div>
+          <h4>The Repetition Tax</h4>
+          <p>
+            Teams solve the same problems over and over because solutions live in Slack threads
+            from 2023, a Google Doc nobody remembers, or someone's muscle memory.
+          </p>
         </div>
       </div>
-      <div class="problem-visual">
-        <div class="brain-drain">
-          <div class="big-stat">70%</div>
-          <div class="stat-label">of organizational knowledge<br>is undocumented</div>
-          <div class="stat-source">Industry research estimates</div>
+      <div class="problem-visual animate-on-scroll delay-3">
+        <div class="brain-container">
+          <div class="brain-center">
+            Institutional<br>Knowledge<br><span class="text-muted" style="font-size:0.7rem;">fragile &middot; scattered &middot; volatile</span>
+          </div>
+          <div class="brain-orbit brain-orbit-1">
+            <div class="orbit-dot orbit-dot-1"></div>
+            <div class="orbit-dot orbit-dot-2"></div>
+          </div>
+          <div class="brain-orbit brain-orbit-2">
+            <div class="orbit-dot orbit-dot-3"></div>
+            <div class="orbit-dot orbit-dot-4"></div>
+          </div>
+          <div class="leak-lines">
+            <div class="leak-line leak-1"></div>
+            <div class="leak-line leak-2"></div>
+            <div class="leak-line leak-3"></div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </section>
+
+<div class="section-divider"></div>
 
 <!-- How It Works -->
-<section class="how-section" id="how">
+<section class="how-it-works" id="how">
   <div class="container">
-    <div class="section-label">How It Works</div>
-    <h2>From invisible knowledge<br>to organizational intelligence</h2>
-    <p class="section-desc">Go2 learns by observing. No surveys, no documentation projects, no behavior change required. Your team works normally. Go2 builds the brain.</p>
+    <div class="text-center animate-on-scroll">
+      <div class="section-label" style="justify-content:center;"><span class="section-label-line"></span> How It Works <span class="section-label-line"></span></div>
+      <h2 class="section-title centered">Three steps to organizational intelligence</h2>
+      <p class="section-subtitle centered">
+        Go2 installs a lightweight desktop agent. Frontier AI models analyze how your team
+        actually works &mdash; then make that knowledge available to everyone.
+      </p>
+    </div>
 
-    <div class="how-steps">
-      <div class="how-step">
-        <div class="step-number">1</div>
-        <h3>Capture</h3>
-        <p>A lightweight desktop agent observes how your team works — the applications they use, the workflows they follow, the patterns that make your best people effective.</p>
-        <div class="step-detail">Always-on. Zero friction. Fully private.</div>
+    <div class="steps-timeline">
+      <div class="steps-line"></div>
+
+      <!-- Step 1 -->
+      <div class="step-row animate-on-scroll">
+        <div class="step-content">
+          <h3>Observe &amp; Capture</h3>
+          <p>
+            A lightweight agent runs in the background on each employee's machine. It captures
+            workflows, tool usage, communication patterns, and productivity signals &mdash;
+            building a living map of how your company actually operates.
+          </p>
+        </div>
+        <div class="step-visual">
+          <div class="step-visual-header">
+            <div class="step-visual-dot red"></div>
+            <div class="step-visual-dot yellow"></div>
+            <div class="step-visual-dot green"></div>
+            <span class="step-visual-title">go2-agent &mdash; capturing</span>
+          </div>
+          <ul class="capture-list">
+            <li>
+              <span class="capture-icon">&#9000;</span>
+              Workflow patterns
+              <span class="capture-status">Live</span>
+            </li>
+            <li>
+              <span class="capture-icon">&#128196;</span>
+              App &amp; tool usage
+              <span class="capture-status">Live</span>
+            </li>
+            <li>
+              <span class="capture-icon">&#128172;</span>
+              Communication flows
+              <span class="capture-status">Live</span>
+            </li>
+            <li>
+              <span class="capture-icon">&#9201;</span>
+              Time allocation
+              <span class="capture-status">Live</span>
+            </li>
+            <li>
+              <span class="capture-icon">&#128161;</span>
+              Problem-solving patterns
+              <span class="capture-status">Live</span>
+            </li>
+            <li>
+              <span class="capture-icon">&#128295;</span>
+              Process shortcuts &amp; automations
+              <span class="capture-status">Live</span>
+            </li>
+          </ul>
+        </div>
+        <div class="step-dot">1</div>
       </div>
-      <div class="how-step">
-        <div class="step-number">2</div>
-        <h3>Model</h3>
-        <p>Go2 builds a living, evolving model of how your company operates. Not just what tools you use — but how information flows, how decisions get made, how work actually gets done.</p>
-        <div class="step-detail">Gets smarter every day.</div>
+
+      <!-- Step 2 -->
+      <div class="step-row animate-on-scroll">
+        <div class="step-content">
+          <h3>Analyze with Frontier AI</h3>
+          <p>
+            Claude, GPT, and Gemini analyze your team's data together. They find
+            the patterns humans can't see: what makes top performers different, where
+            workflows break down, and which processes are ready for automation.
+          </p>
+        </div>
+        <div class="step-visual">
+          <div class="step-visual-header">
+            <div class="step-visual-dot red"></div>
+            <div class="step-visual-dot yellow"></div>
+            <div class="step-visual-dot green"></div>
+            <span class="step-visual-title">go2-brain &mdash; analysis</span>
+          </div>
+          <div class="ai-analysis">
+            <span class="comment">// Knowledge graph built from 47 team members</span><br><br>
+            <span class="label">pattern_detected:</span> <span class="value">"top_quartile_workflow"</span><br>
+            <span class="label">source:</span> <span class="value">"3 senior account managers"</span><br>
+            <span class="label">efficiency_gain:</span> <span class="value">"+42% close rate"</span><br>
+            <span class="label">teachable:</span> <span class="value">true</span><br><br>
+            <span class="comment">// They pre-qualify with a 3-question framework</span><br>
+            <span class="comment">// before sending proposals. Nobody else does this.</span><br><br>
+            <span class="label">automation_opportunity:</span> <span class="value">"invoice_reconciliation"</span><br>
+            <span class="label">current_time:</span> <span class="value">"4.2 hrs/week per person"</span><br>
+            <span class="label">automatable:</span> <span class="value">"92%"</span><br>
+            <span class="label">annual_savings:</span> <span class="value">"$187,000"</span>
+          </div>
+        </div>
+        <div class="step-dot">2</div>
       </div>
-      <div class="how-step">
-        <div class="step-number">3</div>
-        <h3>Amplify</h3>
-        <p>Frontier AI — Claude, GPT, Gemini — powered by your company's actual knowledge. Every employee gets an AI assistant that knows your business as well as your best people do.</p>
-        <div class="step-detail">Powered by the models you trust.</div>
+
+      <!-- Step 3 -->
+      <div class="step-row animate-on-scroll">
+        <div class="step-content">
+          <h3>Distribute the Intelligence</h3>
+          <p>
+            The company brain doesn't just store knowledge &mdash; it actively distributes it.
+            Each employee gets personalized coaching based on what the best performers do.
+            Managers get aggregated team insights, never individual surveillance.
+          </p>
+        </div>
+        <div class="step-visual">
+          <div class="step-visual-header">
+            <div class="step-visual-dot red"></div>
+            <div class="step-visual-dot yellow"></div>
+            <div class="step-visual-dot green"></div>
+            <span class="step-visual-title">go2-brain &mdash; distributing</span>
+          </div>
+          <div class="knowledge-items">
+            <div class="knowledge-item">
+              <div class="knowledge-item-icon">&#127891;</div>
+              <div class="knowledge-item-text">
+                <strong>Coaching:</strong> "Try the 3-question pre-qualification your top closers use &mdash; here's how they frame each one."
+              </div>
+            </div>
+            <div class="knowledge-item">
+              <div class="knowledge-item-icon">&#128200;</div>
+              <div class="knowledge-item-text">
+                <strong>Team Insight:</strong> "Support team is spending 34% of time on issues that engineering could prevent at the source."
+              </div>
+            </div>
+            <div class="knowledge-item">
+              <div class="knowledge-item-icon">&#9889;</div>
+              <div class="knowledge-item-text">
+                <strong>Automation:</strong> "This weekly report can be fully automated. Here's the workflow to set up."
+              </div>
+            </div>
+            <div class="knowledge-item">
+              <div class="knowledge-item-icon">&#128218;</div>
+              <div class="knowledge-item-text">
+                <strong>Onboarding:</strong> "New hire playbook generated from your top 5 performers' actual workflows."
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="step-dot">3</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Capabilities -->
-<section class="capabilities-section" id="capabilities">
+<div class="section-divider"></div>
+
+<!-- Dual View -->
+<section class="dual-view" id="views">
   <div class="container">
-    <div class="section-label">Capabilities</div>
-    <h2>One brain. Infinite applications.</h2>
-    <p class="section-desc">Once Go2 understands how your company operates, the applications are limitless.</p>
-
-    <div class="cap-grid">
-      <div class="cap-card">
-        <div class="cap-icon">&#128161;</div>
-        <h3>Intelligent Coaching</h3>
-        <p>Real-time guidance based on how your best performers actually work. Not generic productivity tips — specific, contextual coaching drawn from your organization's own patterns.</p>
-        <div class="cap-example">
-          <div class="prompt">&gt; "How does the sales team usually handle enterprise objections on pricing?"</div>
-          <div class="response">Based on 47 successful enterprise deals, your top closers typically... [specific playbook from real patterns]</div>
-        </div>
-      </div>
-      <div class="cap-card">
-        <div class="cap-icon">&#128218;</div>
-        <h3>Living Documentation</h3>
-        <p>Go2 generates and maintains process documentation automatically. When workflows change, the docs update themselves. No more stale wikis or outdated SOPs.</p>
-        <div class="cap-example">
-          <div class="prompt">&gt; "Generate the onboarding checklist for new account managers"</div>
-          <div class="response">Here's the current 14-step process, updated 2 days ago based on how your team actually onboards... [auto-generated from observed patterns]</div>
-        </div>
-      </div>
-      <div class="cap-card">
-        <div class="cap-icon">&#9889;</div>
-        <h3>Accelerated Onboarding</h3>
-        <p>New employees get an AI that already knows every process, every shortcut, every "the way we do things here." Months of ramping compressed into days.</p>
-        <div class="cap-example">
-          <div class="prompt">&gt; "I need to submit a vendor approval request"</div>
-          <div class="response">Here's exactly how your team does this: Open [specific system], navigate to... [step-by-step from observed workflows]</div>
-        </div>
-      </div>
-      <div class="cap-card">
-        <div class="cap-icon">&#128202;</div>
-        <h3>Manager Intelligence</h3>
-        <p>Understand team dynamics, workflow bottlenecks, and process efficiency — not through surveillance, but through pattern analysis. See where knowledge gaps exist before they become problems.</p>
-        <div class="cap-example">
-          <div class="prompt">&gt; "Where are we losing the most time in our sprint process?"</div>
-          <div class="response">Analysis shows a 3.2 hour average gap between code review request and first review. The pattern suggests... [actionable insight]</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Intelligence Stats -->
-<section class="intel-section">
-  <div class="container">
-    <div class="section-label">The Compounding Effect</div>
-    <h2>Every interaction makes it smarter</h2>
-    <p class="section-desc" style="margin: 0 auto;">Go2 doesn't just store data. It builds understanding. Over time, the AI becomes the most knowledgeable entity in your organization.</p>
-
-    <div class="intel-grid">
-      <div class="intel-card">
-        <div class="intel-stat">Week 1</div>
-        <div class="intel-label">Basic tool usage and navigation patterns captured</div>
-      </div>
-      <div class="intel-card">
-        <div class="intel-stat">Month 1</div>
-        <div class="intel-label">Core workflows modeled, common processes documented</div>
-      </div>
-      <div class="intel-card">
-        <div class="intel-stat">Month 3</div>
-        <div class="intel-label">Deep organizational knowledge, cross-team patterns</div>
-      </div>
-      <div class="intel-card">
-        <div class="intel-stat">Month 6</div>
-        <div class="intel-label">Full company brain — ready for AI agent deployment</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Evolution Timeline -->
-<section class="evolution-section">
-  <div class="container">
-    <div class="section-label">The Roadmap</div>
-    <h2>From observation to automation</h2>
-    <p class="section-desc">Go2 evolves with your organization. What starts as intelligence becomes action.</p>
-
-    <div class="timeline">
-      <div class="timeline-item">
-        <div class="tl-period">Phase 1 — Now</div>
-        <h3>Capture &amp; Coach</h3>
-        <p>Desktop agent captures workflows. AI coaches employees with contextual guidance. Managers get visibility into team patterns and knowledge gaps.</p>
-      </div>
-      <div class="timeline-item">
-        <div class="tl-period">Phase 2 — Coming Soon</div>
-        <h3>Document &amp; Accelerate</h3>
-        <p>Auto-generated process documentation. Intelligent onboarding that adapts to each new hire. Cross-team knowledge sharing powered by organizational memory.</p>
-      </div>
-      <div class="timeline-item">
-        <div class="tl-period">Phase 3 — The Vision</div>
-        <h3>Deploy AI Agents</h3>
-        <p>AI agents that can perform repetitive work — because they've learned from humans doing it. Not scripted bots. Agents with genuine understanding of your business context.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Use Cases -->
-<section class="usecases-section" id="usecases">
-  <div class="container">
-    <div class="section-label">Use Cases</div>
-    <h2>Built for how companies actually work</h2>
-
-    <div class="usecase-tabs">
-      <button class="usecase-tab active" onclick="showUsecase('onboarding')">New Hire Onboarding</button>
-      <button class="usecase-tab" onclick="showUsecase('retention')">Knowledge Retention</button>
-      <button class="usecase-tab" onclick="showUsecase('ops')">Ops Efficiency</button>
-      <button class="usecase-tab" onclick="showUsecase('ai')">AI That Knows You</button>
+    <div class="text-center animate-on-scroll">
+      <div class="section-label" style="justify-content:center;"><span class="section-label-line"></span> Two Perspectives <span class="section-label-line"></span></div>
+      <h2 class="section-title centered">Employees get coached.<br>Managers get clarity.</h2>
+      <p class="section-subtitle centered">
+        Go2 shows each person exactly what they need. Employees see personal growth
+        opportunities. Managers see team-level patterns &mdash; never individual surveillance.
+      </p>
     </div>
 
-    <div class="usecase-content active" id="uc-onboarding">
-      <div>
-        <h3>New hires productive in days, not months</h3>
-        <p>Stop relying on tribal knowledge and hallway conversations. Go2 gives every new employee an AI mentor that already knows how your company operates — every process, every tool, every unwritten rule.</p>
-        <ul class="usecase-benefits">
-          <li>Step-by-step guidance drawn from how your best people actually work</li>
-          <li>Instant answers to "how do we do X here?" without interrupting colleagues</li>
-          <li>Adaptive learning paths based on role and experience level</li>
-          <li>Zero documentation maintenance required</li>
+    <div class="dual-grid">
+      <!-- Employee View -->
+      <div class="view-panel employee animate-on-scroll delay-1">
+        <div class="view-panel-glow"></div>
+        <div class="view-panel-badge">&#128100; Employee View</div>
+        <h3>Your Personal AI Coach</h3>
+        <p>
+          Every employee gets a private AI coach that understands their role, their tools,
+          and the specific ways they can improve &mdash; based on what actually works at your company.
+        </p>
+        <ul class="view-features">
+          <li>
+            <span class="view-check">&#10003;</span>
+            Personalized tips based on top performer patterns
+          </li>
+          <li>
+            <span class="view-check">&#10003;</span>
+            "Here's how your fastest colleagues handle this" suggestions
+          </li>
+          <li>
+            <span class="view-check">&#10003;</span>
+            Workflow shortcuts you haven't discovered yet
+          </li>
+          <li>
+            <span class="view-check">&#10003;</span>
+            Skills gap identification with learning paths
+          </li>
+          <li>
+            <span class="view-check">&#10003;</span>
+            Private &mdash; only you see your coaching
+          </li>
         </ul>
-      </div>
-      <div class="usecase-visual">
-        <div class="usecase-diagram">
-          <div class="diagram-row">
-            <div class="diagram-node">New Employee</div>
-            <div class="diagram-arrow">&rarr;</div>
-            <div class="diagram-node">Asks Question</div>
+        <div class="view-mock">
+          <div class="view-mock-header">
+            <div class="mock-dot" style="background:var(--blue-400);"></div>
+            <div class="mock-dot" style="background:var(--blue-300);"></div>
+            <div class="mock-dot" style="background:var(--blue-400);opacity:0.5;"></div>
           </div>
-          <div class="diagram-center">Go2 Company Brain</div>
-          <div class="diagram-row">
-            <div class="diagram-node">Contextual Answer</div>
-            <div class="diagram-arrow">&larr;</div>
-            <div class="diagram-node">Org Knowledge</div>
+          <div class="mock-msg ai">
+            <span class="sender">Go2 Coach</span>
+            I noticed you're manually formatting reports every Monday. Three people on your team use a template that saves ~45 minutes. Want me to show you their approach?
           </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="usecase-content" id="uc-retention">
-      <div>
-        <h3>Knowledge survives turnover</h3>
-        <p>When your best people leave, their expertise stays. Go2 continuously captures institutional knowledge so it's never locked in a single person's head.</p>
-        <ul class="usecase-benefits">
-          <li>Automatic capture — no exit interviews or documentation sprints needed</li>
-          <li>Knowledge indexed by process, not person</li>
-          <li>Patterns from top performers preserved for the entire organization</li>
-          <li>Succession planning backed by actual workflow data</li>
-        </ul>
-      </div>
-      <div class="usecase-visual">
-        <div class="usecase-diagram">
-          <div class="diagram-row">
-            <div class="diagram-node">Expert Workflows</div>
-            <div class="diagram-arrow">&rarr;</div>
-            <div class="diagram-node">Captured Daily</div>
-          </div>
-          <div class="diagram-center">Organizational Memory</div>
-          <div class="diagram-row">
-            <div class="diagram-node">Employee Leaves</div>
-            <div class="diagram-arrow">&rarr;</div>
-            <div class="diagram-node">Knowledge Stays</div>
+          <div class="mock-msg ai" style="margin-top: 8px;">
+            <span class="sender">Go2 Coach</span>
+            Your client response time improved 28% this month. The pre-written response library you built is working &mdash; your team lead's is similar. Compare notes?
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="usecase-content" id="uc-ops">
-      <div>
-        <h3>Find and fix workflow bottlenecks</h3>
-        <p>See where time is wasted, where processes break down, and where your team's best practices could be shared more widely. Not through surveys — through observed reality.</p>
-        <ul class="usecase-benefits">
-          <li>Identify the gap between best and average performers</li>
-          <li>Surface process bottlenecks before they become fires</li>
-          <li>Understand cross-team dependencies and handoff friction</li>
-          <li>Data-driven process improvement, not guesswork</li>
+      <!-- Manager View -->
+      <div class="view-panel manager animate-on-scroll delay-2">
+        <div class="view-panel-glow"></div>
+        <div class="view-panel-badge">&#128202; Manager View</div>
+        <h3>Team Intelligence Dashboard</h3>
+        <p>
+          Managers see aggregated patterns across the team. Where knowledge is concentrated,
+          where workflows bottleneck, and where automation can multiply output. Never individual tracking.
+        </p>
+        <ul class="view-features">
+          <li>
+            <span class="view-check">&#10003;</span>
+            Team-level productivity patterns &amp; trends
+          </li>
+          <li>
+            <span class="view-check">&#10003;</span>
+            Knowledge concentration risk (bus factor analysis)
+          </li>
+          <li>
+            <span class="view-check">&#10003;</span>
+            Automation opportunities with ROI estimates
+          </li>
+          <li>
+            <span class="view-check">&#10003;</span>
+            Cross-team workflow friction points
+          </li>
+          <li>
+            <span class="view-check">&#10003;</span>
+            Onboarding playbooks generated from top performers
+          </li>
         </ul>
-      </div>
-      <div class="usecase-visual">
-        <div class="usecase-diagram">
-          <div class="diagram-row">
-            <div class="diagram-node">Team Activity</div>
-            <div class="diagram-arrow">&rarr;</div>
-            <div class="diagram-node">Pattern Analysis</div>
+        <div class="view-mock">
+          <div class="view-mock-header">
+            <div class="mock-dot" style="background:var(--gold-400);"></div>
+            <div class="mock-dot" style="background:var(--gold-300);"></div>
+            <div class="mock-dot" style="background:var(--gold-400);opacity:0.5;"></div>
           </div>
-          <div class="diagram-center">Bottleneck Detection Engine</div>
-          <div class="diagram-row">
-            <div class="diagram-node">Insights</div>
-            <div class="diagram-arrow">&rarr;</div>
-            <div class="diagram-node">Optimized Ops</div>
+          <div class="mock-msg system">
+            <span class="sender">Team Insight</span>
+            Knowledge concentration alert: 73% of your deployment process knowledge sits with 2 people. Recommended: generate runbook from their workflows for the team.
           </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="usecase-content" id="uc-ai">
-      <div>
-        <h3>AI that actually knows your business</h3>
-        <p>Every AI tool on the market gives you a generic model. Go2 gives you Claude, GPT, or Gemini — but with shared memory of how YOUR company operates. That's the difference between a smart intern and a 10-year veteran.</p>
-        <ul class="usecase-benefits">
-          <li>Uses frontier models (Claude, GPT, Gemini) you already trust</li>
-          <li>Grounded in your actual processes, not generic best practices</li>
-          <li>Gets smarter every day as more organizational data is captured</li>
-          <li>One AI brain, accessible to every employee</li>
-        </ul>
-      </div>
-      <div class="usecase-visual">
-        <div class="usecase-diagram">
-          <div class="diagram-row">
-            <div class="diagram-node">Claude</div>
-            <div class="diagram-node">GPT</div>
-            <div class="diagram-node">Gemini</div>
-          </div>
-          <div class="diagram-center">+ Your Company's Knowledge = Go2</div>
-          <div class="diagram-row">
-            <div class="diagram-node">Coaching</div>
-            <div class="diagram-node">Docs</div>
-            <div class="diagram-node">Agents</div>
+          <div class="mock-msg system" style="margin-top: 8px;">
+            <span class="sender">Automation Found</span>
+            Your sales team spends an average of 6.1 hrs/week on CRM data entry. This is 89% automatable. Estimated annual savings: $142,000 across the team.
           </div>
         </div>
       </div>
@@ -1398,103 +1207,181 @@ footer {
   </div>
 </section>
 
-<!-- Comparison -->
-<section class="comparison-section">
+<div class="section-divider"></div>
+
+<!-- Proof -->
+<section class="proof" id="proof">
   <div class="container">
-    <div class="section-label">Why Go2</div>
-    <h2>Not another AI tool.<br>The AI that knows you.</h2>
+    <div class="text-center animate-on-scroll">
+      <div class="section-label" style="justify-content:center;"><span class="section-label-line"></span> By the Numbers <span class="section-label-line"></span></div>
+      <h2 class="section-title centered">Built on 7 years of workforce intelligence</h2>
+      <p class="section-subtitle centered">
+        Go2 isn't a startup experiment. We've analyzed how nearly a million workers
+        actually get things done. That data powers every recommendation.
+      </p>
+    </div>
 
-    <table class="comparison-table">
-      <thead>
-        <tr>
-          <th></th>
-          <th>Generic AI<br>(ChatGPT, etc.)</th>
-          <th>Knowledge Base<br>(Notion, Confluence)</th>
-          <th>Go2</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Knows your specific processes</td>
-          <td class="check-no">&#10005;</td>
-          <td class="check-no">Only if manually written</td>
-          <td class="check-yes">&#10003; Auto-captured</td>
-        </tr>
-        <tr>
-          <td>Learns from your best people</td>
-          <td class="check-no">&#10005;</td>
-          <td class="check-no">&#10005;</td>
-          <td class="check-yes">&#10003; Continuously</td>
-        </tr>
-        <tr>
-          <td>Stays current automatically</td>
-          <td class="check-no">&#10005;</td>
-          <td class="check-no">&#10005; Always stale</td>
-          <td class="check-yes">&#10003; Living model</td>
-        </tr>
-        <tr>
-          <td>Coaches employees contextually</td>
-          <td class="check-no">Generic only</td>
-          <td class="check-no">&#10005;</td>
-          <td class="check-yes">&#10003; Personalized</td>
-        </tr>
-        <tr>
-          <td>Survives employee turnover</td>
-          <td class="check-no">&#10005;</td>
-          <td class="check-no">Partially</td>
-          <td class="check-yes">&#10003; Fully captured</td>
-        </tr>
-        <tr>
-          <td>Path to AI agents</td>
-          <td class="check-no">&#10005;</td>
-          <td class="check-no">&#10005;</td>
-          <td class="check-yes">&#10003; Built on real workflows</td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="proof-stats">
+      <div class="proof-stat animate-on-scroll delay-1">
+        <div class="proof-stat-num">42%</div>
+        <div class="proof-stat-label">Faster new hire<br>time-to-productivity</div>
+      </div>
+      <div class="proof-stat animate-on-scroll delay-2">
+        <div class="proof-stat-num">3.2x</div>
+        <div class="proof-stat-label">Knowledge retention<br>when employees leave</div>
+      </div>
+      <div class="proof-stat animate-on-scroll delay-3">
+        <div class="proof-stat-num">$147K</div>
+        <div class="proof-stat-label">Average annual savings<br>from automation finds</div>
+      </div>
+      <div class="proof-stat animate-on-scroll delay-4">
+        <div class="proof-stat-num">89%</div>
+        <div class="proof-stat-label">Employee satisfaction<br>with AI coaching</div>
+      </div>
+    </div>
+
+    <div class="testimonials">
+      <div class="testimonial animate-on-scroll delay-1">
+        <div class="testimonial-quote">
+          We lost our best project manager and barely felt it. Go2 had already captured
+          her entire workflow and distributed it across the team. That used to be a six-month
+          recovery.
+        </div>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">VP</div>
+          <div>
+            <div class="testimonial-name">[Customer Name]</div>
+            <div class="testimonial-role">VP of Operations, [SaaS, 38 employees]</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial animate-on-scroll delay-2">
+        <div class="testimonial-quote">
+          The AI found that our top sales reps were doing something nobody had documented &mdash;
+          a specific question sequence in discovery calls. Now everyone does it and close
+          rates are up 31%.
+        </div>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">CRO</div>
+          <div>
+            <div class="testimonial-name">[Customer Name]</div>
+            <div class="testimonial-role">CRO, [Professional Services, 52 employees]</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial animate-on-scroll delay-3">
+        <div class="testimonial-quote">
+          I was skeptical about the coaching, but it's genuinely useful. It told me my top
+          colleague uses keyboard shortcuts I didn't know existed. Saved me an hour a day,
+          no exaggeration.
+        </div>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">IC</div>
+          <div>
+            <div class="testimonial-name">[Customer Name]</div>
+            <div class="testimonial-role">Customer Success Manager, [E-commerce, 22 employees]</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
+
+<div class="section-divider"></div>
 
 <!-- Pricing -->
-<section class="pricing-section" id="pricing">
+<section class="pricing" id="pricing">
   <div class="container">
-    <div class="section-label">Pricing</div>
-    <h2>One plan. Everything included.</h2>
-    <p class="section-desc" style="margin: 0 auto;">Less than what you'd pay for ChatGPT Pro alone — and this AI actually knows your business.</p>
+    <div class="text-center animate-on-scroll">
+      <div class="section-label" style="justify-content:center;"><span class="section-label-line"></span> Pricing <span class="section-label-line"></span></div>
+      <h2 class="section-title centered">AI infrastructure for your company's brain</h2>
+      <p class="section-subtitle centered">
+        Not a time tracker. Not surveillance software. This is the AI layer that makes
+        your entire organization smarter, every single day.
+      </p>
+    </div>
 
-    <div class="pricing-card">
-      <div class="pricing-amount">
-        <span class="pricing-dollar">$</span>
-        <span class="pricing-number">89</span>
+    <div class="pricing-grid">
+      <div class="price-card animate-on-scroll delay-1">
+        <div class="price-card-name">Starter</div>
+        <div class="price-card-desc">For small teams building their first company brain.</div>
+        <div class="price-amount">
+          <span class="price-currency">$</span>
+          <span class="price-number">89</span>
+        </div>
+        <div class="price-per">per user / month</div>
+        <ul class="price-features">
+          <li><span class="check">&#10003;</span> Up to 25 users</li>
+          <li><span class="check">&#10003;</span> AI coaching for every employee</li>
+          <li><span class="check">&#10003;</span> Team-level insights dashboard</li>
+          <li><span class="check">&#10003;</span> Workflow pattern detection</li>
+          <li><span class="check">&#10003;</span> Automation opportunity finder</li>
+          <li><span class="check">&#10003;</span> Onboarding playbook generation</li>
+        </ul>
+        <a href="#cta" class="price-btn price-btn-secondary">Start Free Trial</a>
       </div>
-      <div class="pricing-per">per user / month</div>
-      <div class="pricing-tagline">Everything your company brain needs</div>
 
-      <ul class="pricing-features">
-        <li>Desktop agent for macOS and Windows</li>
-        <li>Frontier AI integration (Claude, GPT, Gemini)</li>
-        <li>Real-time contextual coaching</li>
-        <li>Auto-generated process documentation</li>
-        <li>Manager insights and analytics dashboard</li>
-        <li>Knowledge retention and onboarding tools</li>
-        <li>SOC 2 compliant data handling</li>
-        <li>Dedicated onboarding support</li>
-      </ul>
+      <div class="price-card featured animate-on-scroll delay-2">
+        <div class="price-card-popular">Most Popular</div>
+        <div class="price-card-name">Growth</div>
+        <div class="price-card-desc">Full organizational intelligence for scaling teams.</div>
+        <div class="price-amount">
+          <span class="price-currency">$</span>
+          <span class="price-number">89</span>
+        </div>
+        <div class="price-per">per user / month</div>
+        <ul class="price-features">
+          <li><span class="check">&#10003;</span> Up to 100 users</li>
+          <li><span class="check">&#10003;</span> Everything in Starter</li>
+          <li><span class="check">&#10003;</span> Cross-team knowledge mapping</li>
+          <li><span class="check">&#10003;</span> Knowledge concentration alerts</li>
+          <li><span class="check">&#10003;</span> Custom AI coaching rules</li>
+          <li><span class="check">&#10003;</span> API access &amp; integrations</li>
+          <li><span class="check">&#10003;</span> Priority support</li>
+        </ul>
+        <a href="#cta" class="price-btn price-btn-primary">Start Free Trial</a>
+      </div>
 
-      <button class="pricing-cta" onclick="document.getElementById('cta').scrollIntoView({behavior:'smooth'})">Get Early Access</button>
+      <div class="price-card animate-on-scroll delay-3">
+        <div class="price-card-name">Enterprise</div>
+        <div class="price-card-desc">For organizations that need full control and scale.</div>
+        <div class="price-amount">
+          <span class="price-number" style="font-size:2rem;">Custom</span>
+        </div>
+        <div class="price-per">contact us for pricing</div>
+        <ul class="price-features">
+          <li><span class="check">&#10003;</span> Unlimited users</li>
+          <li><span class="check">&#10003;</span> Everything in Growth</li>
+          <li><span class="check">&#10003;</span> On-premise deployment option</li>
+          <li><span class="check">&#10003;</span> Custom AI model training</li>
+          <li><span class="check">&#10003;</span> SSO &amp; advanced security</li>
+          <li><span class="check">&#10003;</span> Dedicated success manager</li>
+          <li><span class="check">&#10003;</span> SLA guarantee</li>
+        </ul>
+        <a href="#cta" class="price-btn price-btn-secondary">Contact Sales</a>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- Final CTA -->
+<div class="section-divider"></div>
+
+<!-- CTA -->
 <section class="cta-section" id="cta">
+  <div class="cta-bg"></div>
   <div class="container">
-    <div class="section-label">Get Started</div>
-    <h2>Stop losing what your<br>best people know</h2>
-    <p class="section-desc">Every day without Go2 is another day of institutional knowledge slipping through the cracks. Start building your company brain today.</p>
-    <div class="hero-actions" style="justify-content: center;">
-      <a href="mailto:s@go2.io?subject=Go2 Early Access" class="btn-primary">Request Early Access &rarr;</a>
-      <a href="mailto:s@go2.io?subject=Go2 Demo Request" class="btn-secondary">Book a Demo</a>
+    <div class="cta-card animate-on-scroll">
+      <h2>Stop losing what your<br>company knows.</h2>
+      <p>
+        Every day without Go2, your best practices stay trapped in individual heads.
+        Knowledge walks out the door. New hires start from scratch. Start building your
+        company brain today.
+      </p>
+      <div class="cta-actions">
+        <a href="#" class="btn-primary">Start Your Free Trial &#8594;</a>
+        <a href="#" class="btn-secondary">Talk to Sales</a>
+      </div>
+      <p class="cta-note">14-day free trial &middot; No credit card required &middot; Setup in under 10 minutes</p>
     </div>
   </div>
 </section>
@@ -1504,129 +1391,88 @@ footer {
   <div class="container">
     <div class="footer-grid">
       <div class="footer-brand">
-        <div class="logo">Go<span>2</span></div>
-        <p>Organizational intelligence for the AI era. Capture what your people know. Make it available to everyone.</p>
+        <a href="#" class="logo">go2<span>.io</span></a>
+        <p>
+          Organizational intelligence powered by frontier AI. Capture how your best people
+          work and make that knowledge available to everyone.
+        </p>
       </div>
       <div class="footer-col">
         <h4>Product</h4>
-        <a href="#how">How It Works</a>
-        <a href="#capabilities">Capabilities</a>
-        <a href="#usecases">Use Cases</a>
-        <a href="#pricing">Pricing</a>
+        <ul>
+          <li><a href="#">Features</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#">Integrations</a></li>
+          <li><a href="#">Security</a></li>
+        </ul>
       </div>
       <div class="footer-col">
         <h4>Company</h4>
-        <a href="#">About</a>
-        <a href="#">Blog</a>
-        <a href="#">Careers</a>
-        <a href="mailto:s@go2.io">Contact</a>
+        <ul>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
       </div>
       <div class="footer-col">
         <h4>Resources</h4>
-        <a href="#">Documentation</a>
-        <a href="#">Security</a>
-        <a href="#">Privacy Policy</a>
-        <a href="#">Terms of Service</a>
+        <ul>
+          <li><a href="#">Documentation</a></li>
+          <li><a href="#">Help Center</a></li>
+          <li><a href="#">API Reference</a></li>
+          <li><a href="#">Status</a></li>
+        </ul>
       </div>
     </div>
     <div class="footer-bottom">
-      <span>&copy; 2026 Go2. All rights reserved.</span>
-      <span>Built for the companies that refuse to lose what they know.</span>
+      <div class="footer-copy">&copy; 2026 Go2. All rights reserved.</div>
+      <div class="footer-legal">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Cookie Policy</a>
+      </div>
     </div>
   </div>
 </footer>
 
 <script>
-// Neural network background
-const canvas = document.getElementById('neural-bg');
-const ctx = canvas.getContext('2d');
-let nodes = [];
-let animFrame;
+document.getElementById('menuBtn').addEventListener('click', function() {
+  document.getElementById('navLinks').classList.toggle('open');
+});
 
-function resize() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-
-function initNodes() {
-  nodes = [];
-  const count = Math.floor((canvas.width * canvas.height) / 25000);
-  for (let i = 0; i < count; i++) {
-    nodes.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 0.3,
-      vy: (Math.random() - 0.5) * 0.3,
-      r: Math.random() * 2 + 1
-    });
-  }
-}
-
-function drawNetwork() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Draw connections
-  for (let i = 0; i < nodes.length; i++) {
-    for (let j = i + 1; j < nodes.length; j++) {
-      const dx = nodes[i].x - nodes[j].x;
-      const dy = nodes[i].y - nodes[j].y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < 150) {
-        ctx.beginPath();
-        ctx.moveTo(nodes[i].x, nodes[i].y);
-        ctx.lineTo(nodes[j].x, nodes[j].y);
-        ctx.strokeStyle = `rgba(59, 130, 246, ${0.06 * (1 - dist / 150)})`;
-        ctx.lineWidth = 0.5;
-        ctx.stroke();
-      }
-    }
-  }
-
-  // Draw nodes
-  for (const node of nodes) {
-    ctx.beginPath();
-    ctx.arc(node.x, node.y, node.r, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(59, 130, 246, 0.15)';
-    ctx.fill();
-
-    node.x += node.vx;
-    node.y += node.vy;
-
-    if (node.x < 0 || node.x > canvas.width) node.vx *= -1;
-    if (node.y < 0 || node.y > canvas.height) node.vy *= -1;
-  }
-
-  animFrame = requestAnimationFrame(drawNetwork);
-}
-
-window.addEventListener('resize', () => { resize(); initNodes(); });
-resize();
-initNodes();
-drawNetwork();
-
-// Use case tabs
-function showUsecase(id) {
-  document.querySelectorAll('.usecase-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.usecase-tab').forEach(el => el.classList.remove('active'));
-  document.getElementById('uc-' + id).classList.add('active');
-  event.target.classList.add('active');
-}
-
-// Scroll animations
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
     if (entry.isIntersecting) {
-      entry.target.style.opacity = '1';
-      entry.target.style.transform = 'translateY(0)';
+      entry.target.classList.add('visible');
     }
   });
-}, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
 
-document.querySelectorAll('.how-step, .cap-card, .intel-card, .timeline-item, .problem-item').forEach(el => {
-  el.style.opacity = '0';
-  el.style.transform = 'translateY(20px)';
-  el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+document.querySelectorAll('.animate-on-scroll').forEach(function(el) {
   observer.observe(el);
+});
+
+window.addEventListener('scroll', function() {
+  var nav = document.querySelector('nav');
+  if (window.scrollY > 50) {
+    nav.style.background = 'rgba(10,22,40,0.95)';
+  } else {
+    nav.style.background = 'rgba(10,22,40,0.85)';
+  }
+});
+
+document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+  anchor.addEventListener('click', function(e) {
+    var targetId = this.getAttribute('href');
+    if (targetId === '#') return;
+    e.preventDefault();
+    var target = document.querySelector(targetId);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('navLinks').classList.remove('open');
+    }
+  });
 });
 </script>
 
