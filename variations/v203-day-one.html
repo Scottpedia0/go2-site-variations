@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 - Day One</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&family=JetBrains+Mono:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #FAFAFA;
+    --bg-alt: #F2F2F2;
+    --text: #1A1A1A;
+    --text-muted: #666;
+    --text-light: #999;
+    --primary: #2D5BFF;
+    --primary-light: rgba(45, 91, 255, 0.08);
+    --success: #00C48C;
+    --success-light: rgba(0, 196, 140, 0.08);
+    --accent: #FF6B35;
+    --accent-light: rgba(255, 107, 53, 0.08);
+    --purple: #7C3AED;
+    --purple-light: rgba(124, 58, 237, 0.08);
+    --border: #E5E5E5;
+    --card-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* Nav */
+  nav {
+    position: fixed; top: 0; width: 100%; z-index: 100;
+    padding: 1rem 3rem;
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(250, 250, 250, 0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .logo { font-size: 1.3rem; font-weight: 700; color: var(--text); }
+  .logo span { color: var(--primary); }
+  .nav-r { display: flex; gap: 1.5rem; align-items: center; }
+  .nav-r a { color: var(--text-muted); text-decoration: none; font-size: 0.85rem; font-weight: 500; }
+  .nav-r a:hover { color: var(--text); }
+  .btn-primary {
+    padding: 0.6rem 1.5rem; background: var(--primary);
+    color: #fff; border-radius: 8px; font-weight: 600;
+    font-size: 0.85rem; text-decoration: none;
+    transition: all 0.2s; border: none; cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(45, 91, 255, 0.3); }
+
+  /* Hero */
+  .hero {
+    padding: 10rem 3rem 6rem;
+    text-align: center;
+    max-width: 900px; margin: 0 auto;
+  }
+  .hero-badge {
+    display: inline-block; padding: 0.4rem 1rem;
+    background: var(--primary-light);
+    color: var(--primary); font-size: 0.75rem;
+    font-weight: 600; border-radius: 100px;
+    margin-bottom: 2rem; letter-spacing: 0.05em;
+  }
+  .hero h1 {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: 700; line-height: 1.15;
+    margin-bottom: 1.5rem;
+  }
+  .hero h1 span { color: var(--primary); }
+  .hero p {
+    font-size: 1.15rem; color: var(--text-muted);
+    max-width: 600px; margin: 0 auto 2.5rem;
+    line-height: 1.7;
+  }
+
+  /* Stat banner */
+  .stat-banner {
+    background: var(--text); color: #fff;
+    padding: 3rem;
+  }
+  .stat-banner-inner {
+    max-width: 1100px; margin: 0 auto;
+    display: flex; justify-content: space-around;
+    flex-wrap: wrap; gap: 2rem;
+  }
+  .sb-item { text-align: center; }
+  .sb-item .num {
+    font-size: 2rem; font-weight: 700;
+    display: block; margin-bottom: 0.3rem;
+  }
+  .sb-item .num.red { color: #FF6B6B; }
+  .sb-item .num.green { color: var(--success); }
+  .sb-item .label { font-size: 0.8rem; color: rgba(255,255,255,0.5); }
+
+  /* Timeline Section */
+  .timeline-section {
+    padding: 6rem 3rem;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .timeline-section > h2 {
+    font-size: 2.2rem; font-weight: 700;
+    text-align: center; margin-bottom: 1rem;
+  }
+  .timeline-section > p {
+    text-align: center; color: var(--text-muted);
+    margin-bottom: 4rem; font-size: 1.05rem;
+  }
+
+  /* Growth Curve */
+  .growth-curve {
+    width: 100%; height: 200px; margin-bottom: 4rem;
+    position: relative; overflow: visible;
+  }
+  .growth-curve svg {
+    width: 100%; height: 100%;
+  }
+  .curve-labels {
+    display: flex; justify-content: space-between;
+    padding: 0.5rem 2rem;
+  }
+  .curve-labels span {
+    font-size: 0.7rem; color: var(--text-light);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Timeline */
+  .timeline {
+    position: relative;
+    padding: 2rem 0;
+  }
+  .timeline::before {
+    content: ''; position: absolute;
+    left: 50%; top: 0; bottom: 0;
+    width: 2px; background: var(--border);
+    transform: translateX(-50%);
+  }
+  .tl-item {
+    display: flex; align-items: flex-start;
+    margin-bottom: 4rem; position: relative;
+  }
+  .tl-item:nth-child(odd) { flex-direction: row; }
+  .tl-item:nth-child(even) { flex-direction: row-reverse; }
+
+  .tl-content {
+    width: 45%; padding: 2rem;
+    background: #fff; border-radius: 16px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border);
+    transition: all 0.3s;
+    position: relative;
+  }
+  .tl-content:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+  }
+  .tl-dot {
+    position: absolute; left: 50%; top: 2.5rem;
+    width: 16px; height: 16px; border-radius: 50%;
+    transform: translateX(-50%);
+    z-index: 2; border: 3px solid #fff;
+    box-shadow: 0 0 0 2px var(--border);
+  }
+  .tl-spacer { width: 50%; }
+
+  .tl-day {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; font-weight: 500;
+    padding: 0.3rem 0.8rem; border-radius: 6px;
+    display: inline-block; margin-bottom: 1rem;
+  }
+  .tl-content h3 {
+    font-size: 1.2rem; font-weight: 700;
+    margin-bottom: 0.6rem;
+  }
+  .tl-content p {
+    font-size: 0.9rem; color: var(--text-muted);
+    line-height: 1.7;
+  }
+  .tl-features {
+    margin-top: 1rem; display: flex;
+    flex-wrap: wrap; gap: 0.4rem;
+  }
+  .tl-feat {
+    font-size: 0.7rem; padding: 0.25rem 0.7rem;
+    border-radius: 100px; font-weight: 500;
+  }
+
+  /* Day colors */
+  .day1 .tl-dot { background: var(--primary); box-shadow: 0 0 0 2px var(--primary); }
+  .day1 .tl-day { background: var(--primary-light); color: var(--primary); }
+  .day1 .tl-feat { background: var(--primary-light); color: var(--primary); }
+
+  .day7 .tl-dot { background: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+  .day7 .tl-day { background: var(--accent-light); color: var(--accent); }
+  .day7 .tl-feat { background: var(--accent-light); color: var(--accent); }
+
+  .day30 .tl-dot { background: var(--purple); box-shadow: 0 0 0 2px var(--purple); }
+  .day30 .tl-day { background: var(--purple-light); color: var(--purple); }
+  .day30 .tl-feat { background: var(--purple-light); color: var(--purple); }
+
+  .day100 .tl-dot { background: var(--success); box-shadow: 0 0 0 2px var(--success); }
+  .day100 .tl-day { background: var(--success-light); color: var(--success); }
+  .day100 .tl-feat { background: var(--success-light); color: var(--success); }
+
+  /* What changes section */
+  .changes-section {
+    padding: 6rem 3rem; background: #fff;
+  }
+  .changes-inner {
+    max-width: 1100px; margin: 0 auto;
+  }
+  .changes-inner h2 {
+    font-size: 2rem; font-weight: 700;
+    text-align: center; margin-bottom: 3rem;
+  }
+  .changes-grid {
+    display: grid; grid-template-columns: 1fr 60px 1fr;
+    gap: 1.5rem; align-items: center;
+  }
+  .change-before, .change-after {
+    padding: 1.5rem 2rem; border-radius: 12px;
+    font-size: 0.95rem; line-height: 1.6;
+  }
+  .change-before {
+    background: #FFF5F5; border: 1px solid #FFE0E0;
+    color: #CC4444; text-align: right;
+  }
+  .change-arrow {
+    text-align: center; font-size: 1.5rem; color: var(--text-light);
+  }
+  .change-after {
+    background: #F0FFF4; border: 1px solid #C6F6D5;
+    color: #22803D;
+  }
+
+  /* Waze / Network */
+  .network-section {
+    padding: 6rem 3rem; text-align: center;
+    max-width: 800px; margin: 0 auto;
+  }
+  .network-section h2 {
+    font-size: 2rem; font-weight: 700; margin-bottom: 1rem;
+  }
+  .network-section p {
+    color: var(--text-muted); font-size: 1.05rem;
+    line-height: 1.8; margin-bottom: 1rem;
+  }
+
+  /* CTA */
+  .cta-section {
+    padding: 6rem 3rem;
+    background: linear-gradient(135deg, var(--primary) 0%, #1a3fd4 100%);
+    text-align: center; color: #fff;
+  }
+  .cta-section h2 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 700; margin-bottom: 1rem;
+  }
+  .cta-section p {
+    opacity: 0.8; margin-bottom: 2.5rem;
+    font-size: 1.05rem;
+  }
+  .cta-white {
+    display: inline-block; padding: 1rem 2.5rem;
+    background: #fff; color: var(--primary);
+    font-weight: 700; font-size: 1rem;
+    border-radius: 10px; text-decoration: none;
+    transition: all 0.2s;
+  }
+  .cta-white:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.2); }
+
+  footer {
+    padding: 3rem; text-align: center;
+    font-size: 0.8rem; color: var(--text-light);
+  }
+
+  .reveal {
+    opacity: 0; transform: translateY(30px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 768px) {
+    .hero { padding: 8rem 2rem 4rem; }
+    .timeline::before { left: 20px; }
+    .tl-item, .tl-item:nth-child(even) { flex-direction: column; }
+    .tl-content { width: 100%; margin-left: 40px; }
+    .tl-spacer { display: none; }
+    .tl-dot { left: 20px; }
+    .changes-grid { grid-template-columns: 1fr; }
+    .change-before { text-align: left; }
+    .change-arrow { transform: rotate(90deg); }
+    .stat-banner-inner { flex-direction: column; gap: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Go<span>2</span></div>
+  <div class="nav-r">
+    <a href="#timeline">Timeline</a>
+    <a href="#changes">Impact</a>
+    <a href="#cta" class="btn-primary">Start Day One</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge">THE AI INFRASTRUCTURE COMPANY</div>
+  <h1>Everything changes from <span>Day One</span></h1>
+  <p>95% of AI pilots fail because companies don't have data about how work actually happens. Go2 starts capturing that data the moment you install it. Here's what happens next.</p>
+  <a href="#timeline" class="btn-primary" style="font-size:1rem;padding:0.8rem 2rem;">See the Timeline</a>
+</section>
+
+<div class="stat-banner">
+  <div class="stat-banner-inner">
+    <div class="sb-item">
+      <span class="num red">95%</span>
+      <span class="label">AI pilots fail (MIT)</span>
+    </div>
+    <div class="sb-item">
+      <span class="num red">5%</span>
+      <span class="label">Create real AI value (BCG)</span>
+    </div>
+    <div class="sb-item">
+      <span class="num green">89%</span>
+      <span class="label">Go2 worker satisfaction</span>
+    </div>
+    <div class="sb-item">
+      <span class="num green">40+</span>
+      <span class="label">Hours/week automatable</span>
+    </div>
+  </div>
+</div>
+
+<section class="timeline-section" id="timeline">
+  <h2>Your Go2 Journey</h2>
+  <p>From silent data capture to full AI deployment in 100 days.</p>
+
+  <!-- Growth Curve -->
+  <div class="growth-curve reveal">
+    <svg viewBox="0 0 1000 200" preserveAspectRatio="none">
+      <!-- Grid lines -->
+      <line x1="0" y1="50" x2="1000" y2="50" stroke="#eee" stroke-width="1"/>
+      <line x1="0" y1="100" x2="1000" y2="100" stroke="#eee" stroke-width="1"/>
+      <line x1="0" y1="150" x2="1000" y2="150" stroke="#eee" stroke-width="1"/>
+      <!-- Vertical markers -->
+      <line x1="10" y1="0" x2="10" y2="200" stroke="#ddd" stroke-width="1" stroke-dasharray="4"/>
+      <line x1="70" y1="0" x2="70" y2="200" stroke="#ddd" stroke-width="1" stroke-dasharray="4"/>
+      <line x1="300" y1="0" x2="300" y2="200" stroke="#ddd" stroke-width="1" stroke-dasharray="4"/>
+      <line x1="990" y1="0" x2="990" y2="200" stroke="#ddd" stroke-width="1" stroke-dasharray="4"/>
+      <!-- Curve fill -->
+      <path d="M0,195 C50,192 100,185 200,165 C350,135 500,90 700,50 C850,25 950,12 1000,8 L1000,200 L0,200 Z" fill="url(#curveGrad)" opacity="0.15"/>
+      <!-- Curve line -->
+      <path d="M0,195 C50,192 100,185 200,165 C350,135 500,90 700,50 C850,25 950,12 1000,8" fill="none" stroke="#2D5BFF" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Dots -->
+      <circle cx="10" cy="194" r="5" fill="#2D5BFF"/>
+      <circle cx="70" cy="187" r="5" fill="#FF6B35"/>
+      <circle cx="300" cy="145" r="5" fill="#7C3AED"/>
+      <circle cx="990" cy="8" r="6" fill="#00C48C"/>
+      <!-- Labels -->
+      <text x="10" y="210" fill="#999" font-size="11" font-family="JetBrains Mono">D1</text>
+      <text x="65" y="210" fill="#999" font-size="11" font-family="JetBrains Mono">D7</text>
+      <text x="290" y="210" fill="#999" font-size="11" font-family="JetBrains Mono">D30</text>
+      <text x="970" y="210" fill="#999" font-size="11" font-family="JetBrains Mono">D100</text>
+      <defs>
+        <linearGradient id="curveGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#2D5BFF"/>
+          <stop offset="50%" stop-color="#7C3AED"/>
+          <stop offset="100%" stop-color="#00C48C"/>
+        </linearGradient>
+      </defs>
+    </svg>
+    <div style="text-align:right;margin-top:0.3rem;">
+      <span style="font-size:0.7rem;color:var(--text-light);font-family:'JetBrains Mono',monospace;">AI readiness &uarr;</span>
+    </div>
+  </div>
+
+  <!-- Timeline Items -->
+  <div class="timeline">
+    <div class="tl-item day1 reveal">
+      <div class="tl-content">
+        <span class="tl-day">Day 1</span>
+        <h3>Data Capture Begins</h3>
+        <p>Cowork.ai installs silently on every desktop. It begins observing workflows, tool usage, and work patterns. Zero disruption. Workers don't change a thing.</p>
+        <div class="tl-features">
+          <span class="tl-feat">Silent install</span>
+          <span class="tl-feat">Workflow mapping</span>
+          <span class="tl-feat">Tool usage tracking</span>
+        </div>
+      </div>
+      <div class="tl-dot"></div>
+      <div class="tl-spacer"></div>
+    </div>
+
+    <div class="tl-item day7 reveal">
+      <div class="tl-spacer"></div>
+      <div class="tl-dot"></div>
+      <div class="tl-content">
+        <span class="tl-day">Day 7</span>
+        <h3>First Coaching Moments</h3>
+        <p>With a week of data, Cowork.ai starts offering real-time, contextual suggestions. Not generic tips. Specific, relevant guidance based on what each worker actually does.</p>
+        <div class="tl-features">
+          <span class="tl-feat">Real-time coaching</span>
+          <span class="tl-feat">Personalized tips</span>
+          <span class="tl-feat">89% satisfaction</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tl-item day30 reveal">
+      <div class="tl-content">
+        <span class="tl-day">Day 30</span>
+        <h3>Automations Identified</h3>
+        <p>Process maps are complete. Go2 identifies 40+ hours per week of automatable tasks per team. Not guesswork. Data-backed, specific, actionable targets.</p>
+        <div class="tl-features">
+          <span class="tl-feat">Process maps</span>
+          <span class="tl-feat">Automation targets</span>
+          <span class="tl-feat">ROI projections</span>
+        </div>
+      </div>
+      <div class="tl-dot"></div>
+      <div class="tl-spacer"></div>
+    </div>
+
+    <div class="tl-item day100 reveal">
+      <div class="tl-spacer"></div>
+      <div class="tl-dot"></div>
+      <div class="tl-content">
+        <span class="tl-day">Day 100</span>
+        <h3>AI Agents Deployed</h3>
+        <p>With real training data from real workflows, AI agents go live. Not hallucinating. Not guessing. Actually performing tasks the way your best people do.</p>
+        <div class="tl-features">
+          <span class="tl-feat">Trained AI agents</span>
+          <span class="tl-feat">Open-source tools</span>
+          <span class="tl-feat">Continuous learning</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="changes-section" id="changes">
+  <div class="changes-inner">
+    <h2>Before Go2 vs. After Go2</h2>
+    <div class="changes-grid reveal">
+      <div class="change-before">AI tools have no context about your business</div>
+      <div class="change-arrow">&rarr;</div>
+      <div class="change-after">AI tools trained on your actual workflows</div>
+    </div>
+    <div class="changes-grid reveal" style="margin-top:1rem;">
+      <div class="change-before">Process documentation is outdated or missing</div>
+      <div class="change-arrow">&rarr;</div>
+      <div class="change-after">Living process maps that update automatically</div>
+    </div>
+    <div class="changes-grid reveal" style="margin-top:1rem;">
+      <div class="change-before">Tribal knowledge leaves when people leave</div>
+      <div class="change-arrow">&rarr;</div>
+      <div class="change-after">Institutional knowledge captured and preserved</div>
+    </div>
+    <div class="changes-grid reveal" style="margin-top:1rem;">
+      <div class="change-before">Automation guesswork and failed pilots</div>
+      <div class="change-arrow">&rarr;</div>
+      <div class="change-after">Data-backed automation with proven ROI</div>
+    </div>
+  </div>
+</section>
+
+<section class="network-section reveal">
+  <h2>The Waze Effect</h2>
+  <p>Every worker who uses Go2 contributes data. That data makes every AI tool smarter for everyone. Like Waze for work: the more people participate, the more intelligent the entire system becomes.</p>
+  <p style="color:var(--primary);font-weight:600;">2M+ worker profiles. $60M+ in revenue. The network effect is already happening.</p>
+</section>
+
+<section class="cta-section" id="cta">
+  <h2 class="reveal">Your Day One starts now</h2>
+  <p class="reveal">100 days from today, your AI stack could actually be working.</p>
+  <a href="#" class="cta-white reveal">Begin the Journey</a>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2 &middot; The missing infrastructure for AI that works</p>
+</footer>
+
+<script>
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
