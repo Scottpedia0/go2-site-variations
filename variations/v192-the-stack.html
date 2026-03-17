@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The Work Intelligence Stack</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0d1117;
+    --bg-secondary: #161b22;
+    --bg-tertiary: #21262d;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --text-muted: #8b949e;
+    --green: #3fb950;
+    --blue: #58a6ff;
+    --purple: #bc8cff;
+    --orange: #d29922;
+    --red: #f85149;
+    --cyan: #39d2c0;
+    --yellow: #e3b341;
+    --pink: #f778ba;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* Top bar - terminal style */
+  .top-bar {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .traffic-lights {
+    display: flex;
+    gap: 8px;
+  }
+
+  .traffic-lights span {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+
+  .traffic-lights span:nth-child(1) { background: var(--red); }
+  .traffic-lights span:nth-child(2) { background: var(--orange); }
+  .traffic-lights span:nth-child(3) { background: var(--green); }
+
+  .top-bar-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .top-bar-nav {
+    margin-left: auto;
+    display: flex;
+    gap: 1.5rem;
+  }
+
+  .top-bar-nav a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-family: 'JetBrains Mono', monospace;
+    transition: color 0.2s;
+  }
+
+  .top-bar-nav a:hover { color: var(--blue); }
+
+  /* Hero */
+  .hero {
+    padding: 6rem 2rem 4rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    padding: 0.3rem 0.8rem;
+    border: 1px solid var(--green);
+    color: var(--green);
+    border-radius: 20px;
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.05em;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.5rem, 5vw, 4.5rem);
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+  }
+
+  .hero h1 .accent { color: var(--cyan); }
+  .hero h1 .dim { color: var(--text-muted); }
+
+  .hero-sub {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    max-width: 650px;
+    margin-bottom: 2.5rem;
+    line-height: 1.7;
+  }
+
+  /* Terminal block */
+  .terminal {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 2rem 0;
+    max-width: 800px;
+  }
+
+  .terminal-header {
+    background: var(--bg-tertiary);
+    padding: 0.6rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .terminal-header .dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .terminal-header .dots span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--border);
+  }
+
+  .terminal-header .tab {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-left: 0.5rem;
+  }
+
+  .terminal-body {
+    padding: 1.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    line-height: 1.8;
+    overflow-x: auto;
+  }
+
+  .terminal-body .prompt {
+    color: var(--green);
+  }
+
+  .terminal-body .cmd {
+    color: var(--text);
+  }
+
+  .terminal-body .comment {
+    color: var(--text-muted);
+  }
+
+  .terminal-body .output {
+    color: var(--text-muted);
+    padding-left: 0;
+  }
+
+  .terminal-body .success {
+    color: var(--green);
+  }
+
+  .terminal-body .info {
+    color: var(--blue);
+  }
+
+  /* Code blocks */
+  .code-section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+  }
+
+  .code-section h2 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .code-section .section-sub {
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+    font-size: 1.05rem;
+  }
+
+  .code-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .code-block {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .code-block:hover {
+    border-color: var(--blue);
+  }
+
+  .code-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1rem;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .code-block-header .filename {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  .code-block-header .lang {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    background: var(--bg);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+  }
+
+  .code-content {
+    padding: 1.2rem 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    line-height: 1.9;
+    overflow-x: auto;
+    counter-reset: line;
+  }
+
+  .code-content .line {
+    display: block;
+    padding-left: 3rem;
+    position: relative;
+  }
+
+  .code-content .line::before {
+    counter-increment: line;
+    content: counter(line);
+    position: absolute;
+    left: 0;
+    width: 2rem;
+    text-align: right;
+    color: var(--border);
+    font-size: 0.75rem;
+  }
+
+  .kw { color: var(--purple); }
+  .fn { color: var(--blue); }
+  .str { color: var(--green); }
+  .num { color: var(--orange); }
+  .cm { color: var(--text-muted); }
+  .tp { color: var(--cyan); }
+  .op { color: var(--red); }
+  .prop { color: var(--pink); }
+
+  /* Architecture diagram */
+  .architecture {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+  }
+
+  .architecture h2 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .architecture .section-sub {
+    color: var(--text-muted);
+    margin-bottom: 3rem;
+  }
+
+  .stack-diagram {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .stack-layer {
+    display: flex;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    position: relative;
+    transition: all 0.3s;
+  }
+
+  .stack-layer:hover {
+    border-color: var(--cyan);
+    background: rgba(57, 210, 192, 0.03);
+  }
+
+  .stack-layer .layer-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    width: 2rem;
+    flex-shrink: 0;
+  }
+
+  .stack-layer .layer-name {
+    font-weight: 600;
+    font-size: 1.05rem;
+    margin-right: 1rem;
+    min-width: 180px;
+  }
+
+  .stack-layer .layer-desc {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  .stack-layer .layer-tag {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--cyan);
+    border: 1px solid rgba(57,210,192,0.2);
+    white-space: nowrap;
+  }
+
+  .stack-connector {
+    width: 2px;
+    height: 20px;
+    background: var(--border);
+    margin-left: 3rem;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+  }
+
+  .stat-item {
+    text-align: center;
+    padding: 2rem 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .stat-item .stat-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--cyan);
+  }
+
+  .stat-item .stat-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+  }
+
+  /* Why it fails section */
+  .why-fails {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .why-fails h2 {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .fail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  .fail-card {
+    padding: 2rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    border-left: 3px solid var(--red);
+  }
+
+  .fail-card.fix {
+    border-left-color: var(--green);
+  }
+
+  .fail-card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .fail-card h3 .icon-x { color: var(--red); }
+  .fail-card h3 .icon-check { color: var(--green); }
+
+  .fail-card p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  /* CTA */
+  .cta-section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 6rem 2rem;
+    text-align: center;
+  }
+
+  .cta-section h2 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    margin-bottom: 1rem;
+  }
+
+  .cta-section p {
+    color: var(--text-muted);
+    max-width: 550px;
+    margin: 0 auto 2rem;
+    font-size: 1.05rem;
+  }
+
+  .cta-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.9rem 2rem;
+    background: var(--cyan);
+    color: var(--bg);
+    font-weight: 600;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: opacity 0.2s;
+  }
+
+  .btn-primary:hover { opacity: 0.9; }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.9rem 2rem;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-family: 'JetBrains Mono', monospace;
+    transition: border-color 0.2s;
+  }
+
+  .btn-secondary:hover { border-color: var(--text-muted); }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 2rem;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .code-grid { grid-template-columns: 1fr; }
+    .stats-bar { grid-template-columns: 1fr 1fr; }
+    .fail-grid { grid-template-columns: 1fr; }
+    .stack-layer { flex-wrap: wrap; }
+    .stack-layer .layer-tag { margin-left: 0; margin-top: 0.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="traffic-lights">
+    <span></span><span></span><span></span>
+  </div>
+  <span class="top-bar-title">go2 &mdash; work intelligence infrastructure</span>
+  <nav class="top-bar-nav">
+    <a href="#">docs</a>
+    <a href="#">api</a>
+    <a href="#">github</a>
+    <a href="#">changelog</a>
+  </nav>
+</div>
+
+<section class="hero">
+  <div class="badge">v2.0 &mdash; OPEN SOURCE AGENT TRAINING</div>
+  <h1>
+    <span class="dim">The missing</span><br>
+    <span class="accent">infrastructure</span><br>
+    <span class="dim">for AI that works.</span>
+  </h1>
+  <p class="hero-sub">95% of AI pilots fail because AI doesn't know how your company works. Go2 captures work intelligence through Cowork.ai, then exposes it as the training data, coaching engine, and process documentation your AI stack needs.</p>
+
+  <div class="terminal">
+    <div class="terminal-header">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <span class="tab">~/projects/acme-corp</span>
+    </div>
+    <div class="terminal-body">
+      <span class="prompt">$</span> <span class="cmd">npm install @go2/sdk</span><br>
+      <span class="output">added 12 packages in 1.2s</span><br>
+      <br>
+      <span class="prompt">$</span> <span class="cmd">go2 init --org acme-corp</span><br>
+      <span class="info">&#x2139; Connecting to Go2 Work Intelligence Platform...</span><br>
+      <span class="success">&#x2713; Organization configured</span><br>
+      <span class="success">&#x2713; 847 worker profiles synced</span><br>
+      <span class="success">&#x2713; 23 process maps discovered</span><br>
+      <span class="success">&#x2713; Agent training pipeline ready</span><br>
+      <br>
+      <span class="prompt">$</span> <span class="cmd">go2 status</span><br>
+      <span class="output">Work Intelligence Score: <span style="color:var(--green)">94/100</span></span><br>
+      <span class="output">Automatable hours found: <span style="color:var(--cyan)">40+ hrs/week</span></span><br>
+      <span class="output">Active coaching sessions: <span style="color:var(--blue)">312</span></span><br>
+      <span class="output">Worker satisfaction: <span style="color:var(--green)">89%</span></span><br>
+    </div>
+  </div>
+</section>
+
+<section class="code-section">
+  <h2>Integrate in minutes, not months.</h2>
+  <p class="section-sub">Go2 sidecars your existing AI tools. Claude, ChatGPT, your custom agents &mdash; we make them smarter.</p>
+
+  <div class="code-grid">
+    <div class="code-block">
+      <div class="code-block-header">
+        <span class="filename">coaching.ts</span>
+        <span class="lang">TypeScript</span>
+      </div>
+      <div class="code-content">
+        <span class="line"><span class="kw">import</span> { <span class="tp">Go2</span>, <span class="tp">Coach</span> } <span class="kw">from</span> <span class="str">'@go2/sdk'</span>;</span>
+        <span class="line"></span>
+        <span class="line"><span class="cm">// Real-time coaching from work patterns</span></span>
+        <span class="line"><span class="kw">const</span> <span class="fn">coach</span> = <span class="kw">new</span> <span class="tp">Coach</span>({</span>
+        <span class="line">  <span class="prop">orgId</span>: <span class="str">'acme-corp'</span>,</span>
+        <span class="line">  <span class="prop">mode</span>: <span class="str">'real-time'</span>,</span>
+        <span class="line">  <span class="prop">privacy</span>: <span class="str">'worker-first'</span></span>
+        <span class="line">});</span>
+        <span class="line"></span>
+        <span class="line"><span class="cm">// Worker gets smart suggestions</span></span>
+        <span class="line"><span class="kw">const</span> <span class="fn">tips</span> = <span class="kw">await</span> coach.<span class="fn">getSuggestions</span>({</span>
+        <span class="line">  <span class="prop">workerId</span>: <span class="str">'sarah-j'</span>,</span>
+        <span class="line">  <span class="prop">context</span>: <span class="str">'current-task'</span></span>
+        <span class="line">});</span>
+        <span class="line"><span class="cm">// => ["Try the template from Q3 report",</span></span>
+        <span class="line"><span class="cm">//     "Mike solved this in 12 min last week"]</span></span>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header">
+        <span class="filename">agent-training.py</span>
+        <span class="lang">Python</span>
+      </div>
+      <div class="code-content">
+        <span class="line"><span class="kw">from</span> <span class="tp">go2</span> <span class="kw">import</span> <span class="tp">WorkGraph</span>, <span class="tp">AgentTrainer</span></span>
+        <span class="line"></span>
+        <span class="line"><span class="cm"># Your work patterns as training data</span></span>
+        <span class="line"><span class="fn">graph</span> = <span class="tp">WorkGraph</span>.<span class="fn">connect</span>(<span class="str">"acme-corp"</span>)</span>
+        <span class="line"></span>
+        <span class="line"><span class="cm"># Discover automatable processes</span></span>
+        <span class="line"><span class="fn">opportunities</span> = graph.<span class="fn">find_automation</span>(</span>
+        <span class="line">    <span class="prop">min_frequency</span>=<span class="num">5</span>,  <span class="cm"># per week</span></span>
+        <span class="line">    <span class="prop">min_time</span>=<span class="num">30</span>,       <span class="cm"># minutes each</span></span>
+        <span class="line">)</span>
+        <span class="line"></span>
+        <span class="line"><span class="cm"># Train agents on real work patterns</span></span>
+        <span class="line"><span class="fn">trainer</span> = <span class="tp">AgentTrainer</span>(graph)</span>
+        <span class="line"><span class="fn">agent</span> = trainer.<span class="fn">build</span>(</span>
+        <span class="line">    <span class="prop">task</span>=<span class="str">"invoice_processing"</span>,</span>
+        <span class="line">    <span class="prop">sidecar</span>=<span class="str">"claude-3.5"</span>  <span class="cm"># enhances, not replaces</span></span>
+        <span class="line">)</span>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header">
+        <span class="filename">process-docs.ts</span>
+        <span class="lang">TypeScript</span>
+      </div>
+      <div class="code-content">
+        <span class="line"><span class="kw">import</span> { <span class="tp">ProcessMap</span> } <span class="kw">from</span> <span class="str">'@go2/sdk'</span>;</span>
+        <span class="line"></span>
+        <span class="line"><span class="cm">// Auto-document how work actually happens</span></span>
+        <span class="line"><span class="kw">const</span> <span class="fn">docs</span> = <span class="kw">await</span> <span class="tp">ProcessMap</span>.<span class="fn">generate</span>({</span>
+        <span class="line">  <span class="prop">process</span>: <span class="str">'customer-onboarding'</span>,</span>
+        <span class="line">  <span class="prop">format</span>: <span class="str">'markdown'</span>,</span>
+        <span class="line">  <span class="prop">includeVariations</span>: <span class="kw">true</span></span>
+        <span class="line">});</span>
+        <span class="line"></span>
+        <span class="line"><span class="cm">// Not what you THINK happens.</span></span>
+        <span class="line"><span class="cm">// What ACTUALLY happens.</span></span>
+        <span class="line"><span class="cm">// 23 steps, 3 workarounds,</span></span>
+        <span class="line"><span class="cm">// 2 undocumented tribal knowledge bits.</span></span>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header">
+        <span class="filename">waze-for-work.ts</span>
+        <span class="lang">TypeScript</span>
+      </div>
+      <div class="code-content">
+        <span class="line"><span class="cm">// The Waze analogy:</span></span>
+        <span class="line"><span class="cm">// Workers contribute data.</span></span>
+        <span class="line"><span class="cm">// Everyone gets smarter.</span></span>
+        <span class="line"></span>
+        <span class="line"><span class="kw">import</span> { <span class="tp">Collective</span> } <span class="kw">from</span> <span class="str">'@go2/sdk'</span>;</span>
+        <span class="line"></span>
+        <span class="line"><span class="kw">const</span> <span class="fn">insights</span> = <span class="kw">await</span> <span class="tp">Collective</span>.<span class="fn">benchmark</span>({</span>
+        <span class="line">  <span class="prop">process</span>: <span class="str">'quarterly-close'</span>,</span>
+        <span class="line">  <span class="prop">industry</span>: <span class="str">'fintech'</span>,</span>
+        <span class="line">  <span class="prop">companySize</span>: <span class="str">'500-2000'</span></span>
+        <span class="line">});</span>
+        <span class="line"></span>
+        <span class="line"><span class="cm">// insights.avgTime: "4.2 days"</span></span>
+        <span class="line"><span class="cm">// insights.yourTime: "7.1 days"</span></span>
+        <span class="line"><span class="cm">// insights.topQuartile: "2.8 days"</span></span>
+        <span class="line"><span class="cm">// insights.recommendations: [...]</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="architecture">
+  <h2>The Stack</h2>
+  <p class="section-sub">Go2 is infrastructure. Your AI tools sit on top.</p>
+
+  <div class="stack-diagram">
+    <div class="stack-layer">
+      <span class="layer-num">L4</span>
+      <span class="layer-name" style="color:var(--purple)">Your AI Tools</span>
+      <span class="layer-desc">Claude, ChatGPT, custom agents &mdash; enhanced by Go2 data</span>
+      <span class="layer-tag">CONSUMER</span>
+    </div>
+    <div class="stack-connector"></div>
+    <div class="stack-layer">
+      <span class="layer-num">L3</span>
+      <span class="layer-name" style="color:var(--blue)">Go2 Intelligence API</span>
+      <span class="layer-desc">Coaching, process docs, automation discovery, benchmarks</span>
+      <span class="layer-tag">API LAYER</span>
+    </div>
+    <div class="stack-connector"></div>
+    <div class="stack-layer">
+      <span class="layer-num">L2</span>
+      <span class="layer-name" style="color:var(--cyan)">Work Graph</span>
+      <span class="layer-desc">2M+ profiles, process maps, behavioral patterns, tribal knowledge</span>
+      <span class="layer-tag">DATA LAYER</span>
+    </div>
+    <div class="stack-connector"></div>
+    <div class="stack-layer">
+      <span class="layer-num">L1</span>
+      <span class="layer-name" style="color:var(--green)">Cowork.ai Agent</span>
+      <span class="layer-desc">Desktop agent for ALL workers. Captures how work happens. Privacy-first.</span>
+      <span class="layer-tag">COLLECTION</span>
+    </div>
+  </div>
+</section>
+
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-num">95%</div>
+    <div class="stat-label">AI pilots fail (MIT)</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">$60M+</div>
+    <div class="stat-label">Revenue</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">2M+</div>
+    <div class="stat-label">Worker profiles</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">89%</div>
+    <div class="stat-label">Worker satisfaction</div>
+  </div>
+</div>
+
+<section class="why-fails">
+  <h2>Why AI fails without Go2</h2>
+  <div class="fail-grid">
+    <div class="fail-card">
+      <h3><span class="icon-x">&#x2717;</span> Without work data</h3>
+      <p>AI agents hallucinate processes, miss edge cases, ignore tribal knowledge. They automate the wrong things. Workers reject them. $2B wasted.</p>
+    </div>
+    <div class="fail-card fix">
+      <h3><span class="icon-check">&#x2713;</span> With Go2</h3>
+      <p>AI agents trained on how work actually happens. They know the workarounds, the exceptions, the real process. Workers trust them because they get it right.</p>
+    </div>
+    <div class="fail-card">
+      <h3><span class="icon-x">&#x2717;</span> Surveillance tools</h3>
+      <p>Screenshots, keyloggers, "productivity scores." Workers game the system. Trust erodes. The data is useless because behavior changes under observation.</p>
+    </div>
+    <div class="fail-card fix">
+      <h3><span class="icon-check">&#x2713;</span> Go2 coaching</h3>
+      <p>Workers get real-time coaching, smart suggestions, automated documentation. 89% satisfaction because it helps THEM. They contribute data willingly &mdash; like Waze.</p>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <h2>Build AI that actually works.</h2>
+  <p>Go2 is the infrastructure layer your AI stack is missing. Open source agent training tools. API-first. Privacy-first.</p>
+  <div class="cta-buttons">
+    <a href="#" class="btn-primary">Get API Access</a>
+    <a href="#" class="btn-secondary">$ go2 docs --open</a>
+  </div>
+</section>
+
+<footer>
+  go2 &copy; 2025 &middot; infrastructure for work intelligence &middot; open source agent training
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Agent Training (v174)</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#08070e;--surface:#0f0e18;--surface2:#17162a;--agent:#00e5a0;--agent-dim:rgba(0,229,160,.08);
+--neural:#7c3aed;--neural-dim:rgba(124,58,237,.08);--pulse:#f43f5e;--amber:#f59e0b;
+--white:#f0f0f5;--muted:#6b7280;--platinum:#9ca3af;
+}
+body{font-family:'Inter','Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--white);overflow-x:hidden;line-height:1.7}
+a{color:var(--agent);text-decoration:none}
+
+/* NEURAL BG */
+.neural-bg{position:fixed;inset:0;pointer-events:none;z-index:0}
+.neural-bg canvas{width:100%;height:100%;opacity:.04}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:1.25rem 2rem;display:flex;justify-content:space-between;align-items:center;background:rgba(8,7,14,.9);backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,229,160,.06)}
+.logo{font-size:1.4rem;font-weight:700}.logo span{color:var(--agent)}
+.nav-tag{font-size:.65rem;text-transform:uppercase;letter-spacing:.15em;color:var(--agent);background:var(--agent-dim);padding:.25rem .75rem;border-radius:20px;border:1px solid rgba(0,229,160,.15)}
+.nav-cta{padding:.6rem 1.5rem;background:var(--agent);color:#000;border:none;border-radius:6px;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .3s}
+.nav-cta:hover{box-shadow:0 0 30px rgba(0,229,160,.35)}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:8rem 2rem 6rem;position:relative;z-index:1}
+.hero::before{content:'';position:absolute;top:20%;left:50%;transform:translateX(-50%);width:800px;height:800px;background:radial-gradient(circle,rgba(0,229,160,.04),rgba(124,58,237,.03),transparent 70%);pointer-events:none}
+
+.hero-badge{display:inline-flex;align-items:center;gap:.5rem;padding:.5rem 1.25rem;background:var(--neural-dim);border:1px solid rgba(124,58,237,.2);border-radius:30px;margin-bottom:2rem;font-size:.8rem;color:var(--neural)}
+.hero-badge .blink{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--neural);animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+.hero h1{font-size:clamp(2.2rem,5.5vw,4.2rem);font-weight:800;line-height:1.15;max-width:900px;margin-bottom:1.5rem;letter-spacing:-.03em}
+.hero h1 .green{color:var(--agent)}
+.hero h1 .purple{color:var(--neural)}
+.hero-sub{font-size:clamp(1.05rem,2vw,1.25rem);color:var(--platinum);max-width:640px;margin-bottom:3rem;line-height:1.8}
+.hero-sub strong{color:var(--white);font-weight:600}
+.hero-ctas{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.9rem 2rem;border-radius:8px;font-size:.95rem;font-weight:600;cursor:pointer;border:none;transition:all .3s}
+.btn-green{background:var(--agent);color:#000}
+.btn-green:hover{box-shadow:0 8px 40px rgba(0,229,160,.3);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--platinum);border:1px solid rgba(255,255,255,.1)}
+.btn-ghost:hover{border-color:var(--agent);color:var(--agent)}
+
+/* SECTIONS */
+.section-label{text-transform:uppercase;letter-spacing:.2em;font-size:.7rem;color:var(--agent);margin-bottom:.75rem;font-weight:600}
+h2{font-size:clamp(1.7rem,4vw,2.6rem);font-weight:700;margin-bottom:1rem;letter-spacing:-.02em}
+.lead{color:var(--platinum);font-size:1.05rem;max-width:600px;margin-bottom:3rem;line-height:1.7}
+
+/* THE PROBLEM */
+.problem{padding:6rem 2rem;position:relative;z-index:1}
+.problem .container{max-width:900px;margin:0 auto}
+.problem-cards{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin:2rem 0}
+@media(max-width:768px){.problem-cards{grid-template-columns:1fr}}
+.p-card{background:var(--surface);border:1px solid rgba(255,255,255,.04);border-radius:12px;padding:2rem;position:relative;overflow:hidden;transition:all .4s}
+.p-card:hover{border-color:rgba(244,63,94,.15)}
+.p-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--pulse)}
+.p-card .p-icon{font-size:2rem;margin-bottom:1rem}
+.p-card h3{font-size:1.05rem;font-weight:700;margin-bottom:.5rem}
+.p-card p{color:var(--muted);font-size:.88rem;line-height:1.6}
+
+/* THE MANUAL WAY */
+.manual{padding:6rem 2rem;background:var(--surface);position:relative;z-index:1}
+.manual .container{max-width:900px;margin:0 auto}
+.manual-flow{display:grid;gap:1rem;margin:2rem 0}
+.manual-step{display:flex;gap:1rem;align-items:center;padding:1rem 1.5rem;background:var(--bg);border:1px solid rgba(255,255,255,.03);border-radius:10px}
+.manual-step .step-icon{width:36px;height:36px;border-radius:50%;background:rgba(244,63,94,.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.9rem;color:var(--pulse)}
+.manual-step .step-text{font-size:.9rem;color:var(--platinum)}
+.manual-step .step-time{margin-left:auto;font-size:.75rem;color:var(--pulse);font-weight:600;white-space:nowrap}
+.manual-total{text-align:right;padding:1rem 0;font-size:1.2rem;color:var(--pulse);font-weight:700}
+
+/* GO2 WAY */
+.go2way{padding:6rem 2rem;position:relative;z-index:1}
+.go2way .container{max-width:1000px;margin:0 auto}
+.transform-grid{display:grid;grid-template-columns:1fr 80px 1fr;gap:0;align-items:center;margin:3rem 0}
+@media(max-width:768px){.transform-grid{grid-template-columns:1fr;gap:2rem}.transform-arrow{display:none}}
+
+.transform-col{background:var(--surface);border-radius:16px;padding:2.5rem;border:1px solid rgba(255,255,255,.04)}
+.transform-col.human{border-top:3px solid var(--amber)}
+.transform-col.agent{border-top:3px solid var(--agent)}
+.transform-col h3{font-size:1.1rem;font-weight:700;margin-bottom:1.5rem;display:flex;align-items:center;gap:.5rem}
+.transform-col.human h3{color:var(--amber)}
+.transform-col.agent h3{color:var(--agent)}
+
+.transform-list{list-style:none;display:grid;gap:1rem}
+.transform-list li{display:flex;gap:.75rem;align-items:flex-start;font-size:.88rem;color:var(--platinum);line-height:1.5}
+.transform-list .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:6px}
+.transform-col.human .dot{background:var(--amber)}
+.transform-col.agent .dot{background:var(--agent)}
+
+.transform-arrow{display:flex;align-items:center;justify-content:center}
+.arrow-visual{display:flex;flex-direction:column;align-items:center;gap:.25rem}
+.arrow-line{width:40px;height:2px;background:linear-gradient(90deg,var(--amber),var(--agent))}
+.arrow-label{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;writing-mode:vertical-lr}
+
+/* PIPELINE */
+.pipeline{padding:6rem 2rem;background:var(--surface);position:relative;z-index:1}
+.pipeline .container{max-width:1100px;margin:0 auto}
+.pipe-stages{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin:3rem 0}
+@media(max-width:900px){.pipe-stages{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:500px){.pipe-stages{grid-template-columns:1fr 1fr}}
+
+.pipe-stage{background:var(--bg);border:1px solid rgba(255,255,255,.04);border-radius:12px;padding:1.5rem;text-align:center;position:relative;transition:all .4s}
+.pipe-stage:hover{border-color:rgba(0,229,160,.15);transform:translateY(-2px)}
+.pipe-stage:not(:last-child)::after{content:'→';position:absolute;right:-12px;top:50%;transform:translateY(-50%);color:var(--muted);z-index:2;font-size:1rem}
+@media(max-width:500px){.pipe-stage:not(:last-child)::after{display:none}}
+.pipe-num{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.15em;margin-bottom:.5rem}
+.pipe-icon{font-size:1.8rem;margin-bottom:.75rem}
+.pipe-stage h3{font-size:.85rem;font-weight:700;margin-bottom:.4rem}
+.pipe-stage p{color:var(--muted);font-size:.75rem;line-height:1.5}
+
+/* USE CASES */
+.usecases{padding:6rem 2rem;position:relative;z-index:1}
+.usecases .container{max-width:1100px;margin:0 auto}
+.uc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin:2.5rem 0}
+@media(max-width:768px){.uc-grid{grid-template-columns:1fr}}
+.uc-card{background:var(--surface);border:1px solid rgba(255,255,255,.04);border-radius:12px;padding:2rem;transition:all .4s;position:relative;overflow:hidden}
+.uc-card:hover{border-color:rgba(0,229,160,.15);transform:translateY(-2px)}
+.uc-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.uc-card:nth-child(1)::before{background:var(--agent)}
+.uc-card:nth-child(2)::before{background:var(--neural)}
+.uc-card:nth-child(3)::before{background:var(--amber)}
+.uc-card:nth-child(4)::before{background:var(--pulse)}
+.uc-card:nth-child(5)::before{background:var(--agent)}
+.uc-card:nth-child(6)::before{background:var(--neural)}
+.uc-card .uc-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);margin-bottom:.75rem}
+.uc-card h3{font-size:1rem;font-weight:700;margin-bottom:.5rem}
+.uc-card p{color:var(--muted);font-size:.85rem;line-height:1.6}
+.uc-card .uc-result{margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.04);font-size:.8rem;color:var(--agent);font-weight:600}
+
+/* AGENT TYPES */
+.agent-types{padding:6rem 2rem;background:var(--surface);position:relative;z-index:1}
+.agent-types .container{max-width:1000px;margin:0 auto}
+.at-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.5rem;margin:2.5rem 0}
+@media(max-width:768px){.at-grid{grid-template-columns:1fr}}
+.at-card{background:var(--bg);border:1px solid rgba(255,255,255,.04);border-radius:12px;padding:2rem;display:flex;gap:1.5rem;align-items:flex-start;transition:all .4s}
+.at-card:hover{border-color:rgba(124,58,237,.15)}
+.at-icon{width:50px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.5rem;background:var(--neural-dim);border:1px solid rgba(124,58,237,.15)}
+.at-card h3{font-size:1rem;font-weight:700;margin-bottom:.4rem}
+.at-card p{color:var(--muted);font-size:.85rem;line-height:1.6}
+.at-card .at-status{margin-top:.5rem;font-size:.75rem;color:var(--agent);font-weight:600}
+
+/* HOW TRAINING WORKS */
+.training{padding:6rem 2rem;position:relative;z-index:1}
+.training .container{max-width:900px;margin:0 auto}
+.train-steps{display:grid;gap:2rem;margin:2.5rem 0}
+.train-step{display:grid;grid-template-columns:80px 1fr;gap:1.5rem;align-items:start}
+.train-num{font-size:2rem;font-weight:800;color:var(--neural);text-align:center;line-height:1;padding-top:.25rem;position:relative}
+.train-num::after{content:'';position:absolute;bottom:-20px;left:50%;width:1px;height:20px;background:rgba(124,58,237,.15)}
+.train-step:last-child .train-num::after{display:none}
+.train-step h3{font-size:1.05rem;font-weight:700;margin-bottom:.4rem}
+.train-step p{color:var(--muted);font-size:.9rem;line-height:1.6}
+.train-step .train-detail{margin-top:.5rem;font-size:.8rem;color:var(--agent);font-weight:500}
+
+/* RESULTS */
+.results{padding:6rem 2rem;background:var(--surface);position:relative;z-index:1}
+.results .container{max-width:1000px;margin:0 auto;text-align:center}
+.result-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;margin:2.5rem 0}
+@media(max-width:768px){.result-row{grid-template-columns:repeat(2,1fr)}}
+.result-item{padding:2rem 1rem}
+.result-num{font-size:2.8rem;font-weight:800;line-height:1;margin-bottom:.5rem;background:linear-gradient(135deg,var(--agent),var(--neural));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.result-label{color:var(--muted);font-size:.82rem}
+
+/* ENDGAME */
+.endgame{padding:6rem 2rem;position:relative;z-index:1}
+.endgame .container{max-width:800px;margin:0 auto;text-align:center}
+.endgame-visual{margin:3rem 0}
+.eg-timeline{display:grid;gap:0;position:relative}
+.eg-timeline::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,var(--agent),var(--neural),rgba(124,58,237,.1));transform:translateX(-50%)}
+.eg-phase{padding:1.5rem 0;display:grid;grid-template-columns:1fr 40px 1fr;gap:0;align-items:center}
+.eg-phase:nth-child(odd) .eg-content{text-align:right;grid-column:1}
+.eg-phase:nth-child(odd) .eg-empty{grid-column:3}
+.eg-phase:nth-child(even) .eg-content{grid-column:3}
+.eg-phase:nth-child(even) .eg-empty{grid-column:1}
+.eg-dot{width:14px;height:14px;border-radius:50%;background:var(--agent);margin:0 auto;position:relative;z-index:2;grid-column:2}
+.eg-phase:nth-child(2) .eg-dot{background:var(--neural)}
+.eg-phase:nth-child(3) .eg-dot{background:var(--amber)}
+.eg-phase:nth-child(4) .eg-dot{background:var(--pulse)}
+.eg-content h4{font-size:.9rem;font-weight:700;margin-bottom:.25rem}
+.eg-content p{color:var(--muted);font-size:.8rem;line-height:1.5}
+
+/* PRIVACY */
+.privacy{padding:4rem 2rem;position:relative;z-index:1}
+.privacy .container{max-width:800px;margin:0 auto;background:var(--surface);border:1px solid rgba(255,255,255,.04);border-radius:16px;padding:2.5rem;display:flex;gap:2rem;align-items:center}
+@media(max-width:768px){.privacy .container{flex-direction:column;text-align:center}}
+.privacy-icon{font-size:3rem;flex-shrink:0}
+.privacy h3{font-size:1.1rem;font-weight:700;margin-bottom:.5rem}
+.privacy p{color:var(--muted);font-size:.9rem;line-height:1.6}
+
+/* FINAL CTA */
+.final-cta{padding:8rem 2rem;text-align:center;position:relative;z-index:1}
+.final-cta::before{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(0,229,160,.05),transparent 70%);pointer-events:none}
+.final-cta h2{font-size:clamp(2rem,4.5vw,3.2rem);margin-bottom:1rem}
+.final-cta h2 .green{color:var(--agent)}
+.final-cta p{color:var(--platinum);font-size:1.1rem;max-width:520px;margin:0 auto 2.5rem}
+
+/* FOOTER */
+footer{padding:3rem 2rem;border-top:1px solid rgba(255,255,255,.04);text-align:center;color:var(--muted);font-size:.8rem;position:relative;z-index:1}
+footer a{color:var(--agent)}
+
+/* REVEAL */
+.reveal{opacity:0;transform:translateY(30px);transition:all .7s cubic-bezier(.16,1,.3,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Go<span>2</span></div>
+  <div class="nav-tag">Agent Training Platform</div>
+  <button class="nav-cta">Feed Your AI</button>
+</nav>
+
+<!-- ════════ HERO ════════ -->
+<section class="hero">
+  <div class="hero-badge"><span class="blink"></span> The Age of AI Agents is Here</div>
+  <h1>Your next AI employee<br>needs a <span class="green">training manual.</span><br>Go2 writes it <span class="purple">automatically.</span></h1>
+  <p class="hero-sub">AI agents are ready to do real work. But they need to learn <strong>your</strong> processes first. Go2 maps how your humans work, then turns that into training data for AI agents that actually get things done.</p>
+  <div class="hero-ctas">
+    <button class="btn btn-green">Make AI Actually Work</button>
+    <button class="btn btn-ghost">See How It Works</button>
+  </div>
+</section>
+
+<!-- ════════ THE PROBLEM ════════ -->
+<section class="problem reveal">
+  <div class="container">
+    <div class="section-label">The Agent Problem</div>
+    <h2>Everyone wants AI agents. Nobody can train them.</h2>
+    <p class="lead">AI agents can now browse the web, use software, and complete multi-step tasks. But there's a massive gap between what agents CAN do and what they actually DO at your company.</p>
+
+    <div class="problem-cards">
+      <div class="p-card">
+        <div class="p-icon">🤖</div>
+        <h3>Agents Without Context</h3>
+        <p>Generic AI agents don't know your CRM workflow, your approval process, your naming conventions, or where to find your templates. They're powerful but clueless about YOUR business.</p>
+      </div>
+      <div class="p-card">
+        <div class="p-icon">📋</div>
+        <h3>The Documentation Gap</h3>
+        <p>95% of knowledge work processes are undocumented. They live in people's heads. You can't train an agent on processes that don't exist in written form.</p>
+      </div>
+      <div class="p-card">
+        <div class="p-icon">⏰</div>
+        <h3>The Manual Trap</h3>
+        <p>Manually writing agent training documentation takes weeks per process. By the time you finish, the process has changed. It's a treadmill you can never get off.</p>
+      </div>
+      <div class="p-card">
+        <div class="p-icon">💰</div>
+        <h3>The Consultant Tax</h3>
+        <p>Hiring consultants to map processes costs $50K-$500K and takes 3-6 months. The output is a static PDF that's outdated before the ink dries.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ THE MANUAL WAY ════════ -->
+<section class="manual reveal">
+  <div class="container">
+    <div class="section-label">The Old Way</div>
+    <h2>Building an AI agent training manual today</h2>
+
+    <div class="manual-flow">
+      <div class="manual-step">
+        <div class="step-icon">1</div>
+        <div class="step-text">Interview every team member about their workflows</div>
+        <div class="step-time">2-4 weeks</div>
+      </div>
+      <div class="manual-step">
+        <div class="step-icon">2</div>
+        <div class="step-text">Document each process step-by-step (they'll forget half the steps)</div>
+        <div class="step-time">3-6 weeks</div>
+      </div>
+      <div class="manual-step">
+        <div class="step-icon">3</div>
+        <div class="step-text">Validate documentation against actual work (find 40% is wrong)</div>
+        <div class="step-time">2-3 weeks</div>
+      </div>
+      <div class="manual-step">
+        <div class="step-icon">4</div>
+        <div class="step-text">Format for AI consumption (structured data, decision trees)</div>
+        <div class="step-time">2-4 weeks</div>
+      </div>
+      <div class="manual-step">
+        <div class="step-icon">5</div>
+        <div class="step-text">Test agent, find gaps, go back to step 1</div>
+        <div class="step-time">Repeat forever</div>
+      </div>
+    </div>
+    <div class="manual-total">Total: 3-6 months per process. $50K-$500K in consulting fees.</div>
+  </div>
+</section>
+
+<!-- ════════ THE GO2 WAY ════════ -->
+<section class="go2way reveal">
+  <div class="container">
+    <div class="section-label" style="text-align:center">The Go2 Way</div>
+    <h2 style="text-align:center">Human workflows become agent training data. Automatically.</h2>
+
+    <div class="transform-grid">
+      <div class="transform-col human">
+        <h3>🧑 Human Does The Work</h3>
+        <ul class="transform-list">
+          <li><span class="dot"></span>Opens CRM, looks up account, checks last contact date</li>
+          <li><span class="dot"></span>Switches to email, drafts follow-up using company template</li>
+          <li><span class="dot"></span>Logs activity in CRM, sets next task reminder</li>
+          <li><span class="dot"></span>Updates pipeline status in spreadsheet</li>
+          <li><span class="dot"></span>Posts summary in Slack channel</li>
+        </ul>
+      </div>
+
+      <div class="transform-arrow">
+        <div class="arrow-visual">
+          <div class="arrow-line"></div>
+          <div class="arrow-line"></div>
+          <div class="arrow-line"></div>
+          <div class="arrow-label">Go2</div>
+          <div class="arrow-line"></div>
+          <div class="arrow-line"></div>
+          <div class="arrow-line"></div>
+        </div>
+      </div>
+
+      <div class="transform-col agent">
+        <h3>🤖 Agent Learns The Process</h3>
+        <ul class="transform-list">
+          <li><span class="dot"></span>Structured process map: 5 steps, 3 apps, 2 decision points</li>
+          <li><span class="dot"></span>Template patterns extracted and parameterized</li>
+          <li><span class="dot"></span>Timing data: 12 min average, 8 min for top performers</li>
+          <li><span class="dot"></span>Exception handling: what happens when account is missing data</li>
+          <li><span class="dot"></span>Ready-to-deploy agent workflow with human-in-the-loop checkpoints</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ PIPELINE ════════ -->
+<section class="pipeline reveal">
+  <div class="container">
+    <div class="section-label" style="text-align:center">The Pipeline</div>
+    <h2 style="text-align:center">From observation to trained agent in 5 steps</h2>
+
+    <div class="pipe-stages">
+      <div class="pipe-stage">
+        <div class="pipe-num">Step 1</div>
+        <div class="pipe-icon">👁️</div>
+        <h3>Observe</h3>
+        <p>Desktop agent watches workflow execution across all apps</p>
+      </div>
+      <div class="pipe-stage">
+        <div class="pipe-num">Step 2</div>
+        <div class="pipe-icon">🗺️</div>
+        <h3>Map</h3>
+        <p>AI structures observations into process maps with decision trees</p>
+      </div>
+      <div class="pipe-stage">
+        <div class="pipe-num">Step 3</div>
+        <div class="pipe-icon">📐</div>
+        <h3>Optimize</h3>
+        <p>Compares across workers to find the best-practice version</p>
+      </div>
+      <div class="pipe-stage">
+        <div class="pipe-num">Step 4</div>
+        <div class="pipe-icon">🧬</div>
+        <h3>Encode</h3>
+        <p>Converts to agent-ready format: skills, tools, and prompts</p>
+      </div>
+      <div class="pipe-stage">
+        <div class="pipe-num">Step 5</div>
+        <div class="pipe-icon">🚀</div>
+        <h3>Deploy</h3>
+        <p>Agent runs the process with human oversight, improving each cycle</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ USE CASES ════════ -->
+<section class="usecases reveal">
+  <div class="container">
+    <div class="section-label" style="text-align:center">What You Can Automate</div>
+    <h2 style="text-align:center">Real processes. Real agents. Real results.</h2>
+    <p class="lead" style="text-align:center;margin:0 auto 3rem">Go2 doesn't just theorize about automation. It watches your people work, then builds agents that can actually do it.</p>
+
+    <div class="uc-grid">
+      <div class="uc-card">
+        <div class="uc-label">Sales</div>
+        <h3>Lead Qualification Agent</h3>
+        <p>Go2 observes how your BDRs qualify leads: which data they check, what signals they look for, how they score and route. Agent handles 80% of qualification automatically.</p>
+        <div class="uc-result">Result: 3x more leads qualified per day</div>
+      </div>
+      <div class="uc-card">
+        <div class="uc-label">Operations</div>
+        <h3>Onboarding Agent</h3>
+        <p>Watches your HR team onboard 50 employees. Learns every step: account creation, system access, doc generation, training scheduling. Agent handles the repetitive 60%.</p>
+        <div class="uc-result">Result: Onboarding time cut from 3 days to 4 hours</div>
+      </div>
+      <div class="uc-card">
+        <div class="uc-label">Finance</div>
+        <h3>Invoice Processing Agent</h3>
+        <p>Observes AP team's actual workflow: extract data, match PO, verify amounts, route for approval, post to ERP. Agent processes 90% of standard invoices.</p>
+        <div class="uc-result">Result: $12/invoice drops to $0.50/invoice</div>
+      </div>
+      <div class="uc-card">
+        <div class="uc-label">Customer Success</div>
+        <h3>Ticket Triage Agent</h3>
+        <p>Learns how your support team categorizes, prioritizes, and routes tickets. Picks up patterns humans can't articulate. Handles first-touch on 70% of tickets.</p>
+        <div class="uc-result">Result: Response time from 4 hours to 4 minutes</div>
+      </div>
+      <div class="uc-card">
+        <div class="uc-label">Marketing</div>
+        <h3>Report Generation Agent</h3>
+        <p>Watches analysts pull data from 6 sources, build dashboards, write commentary. Agent replicates the exact workflow every Monday at 8am.</p>
+        <div class="uc-result">Result: 8 hours of analyst time freed weekly</div>
+      </div>
+      <div class="uc-card">
+        <div class="uc-label">Engineering</div>
+        <h3>Code Review Prep Agent</h3>
+        <p>Observes senior engineers' review patterns: what they check first, common feedback, style preferences. Agent does first-pass review, flagging issues.</p>
+        <div class="uc-result">Result: Review cycle time cut by 40%</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ AGENT TYPES ════════ -->
+<section class="agent-types reveal">
+  <div class="container">
+    <div class="section-label" style="text-align:center">Compatible Everywhere</div>
+    <h2 style="text-align:center">Go2 training data feeds every agent platform</h2>
+    <p class="lead" style="text-align:center;margin:0 auto 2rem">Go2 isn't locked to one AI vendor. Your training data becomes skills and context for any agent.</p>
+
+    <div class="at-grid">
+      <div class="at-card">
+        <div class="at-icon">🧠</div>
+        <div>
+          <h3>Claude Computer Use Agents</h3>
+          <p>Go2's process maps become CUA task definitions. Claude learns to navigate your apps exactly like your team does.</p>
+          <div class="at-status">Fully supported</div>
+        </div>
+      </div>
+      <div class="at-card">
+        <div class="at-icon">🤖</div>
+        <div>
+          <h3>OpenAI GPT Agents</h3>
+          <p>Structured workflows export as GPT Actions and function definitions. Your processes become custom GPT capabilities.</p>
+          <div class="at-status">Fully supported</div>
+        </div>
+      </div>
+      <div class="at-card">
+        <div class="at-icon">⚡</div>
+        <div>
+          <h3>Zapier / Make Automations</h3>
+          <p>Discovered workflows translate directly into multi-step Zaps and Make scenarios. No manual configuration needed.</p>
+          <div class="at-status">40+ integrations</div>
+        </div>
+      </div>
+      <div class="at-card">
+        <div class="at-icon">🔧</div>
+        <div>
+          <h3>Custom Agent Frameworks</h3>
+          <p>Export process data as structured JSON, decision trees, or natural language specs for LangChain, CrewAI, AutoGen, or any framework.</p>
+          <div class="at-status">Open format export</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ HOW TRAINING WORKS ════════ -->
+<section class="training reveal">
+  <div class="container">
+    <div class="section-label" style="text-align:center">Deep Dive</div>
+    <h2 style="text-align:center">How Go2 actually trains an agent</h2>
+
+    <div class="train-steps">
+      <div class="train-step">
+        <div class="train-num">01</div>
+        <div>
+          <h3>Observe multiple workers doing the same task</h3>
+          <p>Go2 watches 5-10 workers complete the same process. It captures every click, every app switch, every decision point. This isn't self-reporting — it's observed reality.</p>
+          <div class="train-detail">Typical observation period: 1-2 weeks</div>
+        </div>
+      </div>
+      <div class="train-step">
+        <div class="train-num">02</div>
+        <div>
+          <h3>Find the optimal path</h3>
+          <p>Go2's AI compares all observed variations. Who's fastest? Who makes fewest errors? What steps do top performers skip? It synthesizes the best-practice workflow.</p>
+          <div class="train-detail">Usually discovers 3-4 variations, picks the best</div>
+        </div>
+      </div>
+      <div class="train-step">
+        <div class="train-num">03</div>
+        <div>
+          <h3>Map decision points and exceptions</h3>
+          <p>Real work isn't linear. Go2 captures the IF-THEN logic: what happens when data is missing, when an edge case appears, when approval is needed. These branching paths are critical for agent reliability.</p>
+          <div class="train-detail">Captures 10-15 exception paths per process</div>
+        </div>
+      </div>
+      <div class="train-step">
+        <div class="train-num">04</div>
+        <div>
+          <h3>Generate agent-ready specifications</h3>
+          <p>The optimized process map converts to structured agent instructions: step definitions, tool calls, success criteria, fallback behaviors, and human escalation triggers.</p>
+          <div class="train-detail">Output: JSON + natural language + decision trees</div>
+        </div>
+      </div>
+      <div class="train-step">
+        <div class="train-num">05</div>
+        <div>
+          <h3>Deploy with continuous learning</h3>
+          <p>The agent starts handling tasks with human oversight. Go2 continues observing both human and agent performance, feeding improvements back into the training data. The agent gets better every week.</p>
+          <div class="train-detail">Agents typically reach 90% accuracy within 30 days</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ RESULTS ════════ -->
+<section class="results reveal">
+  <div class="container">
+    <div class="section-label">Proven Results</div>
+    <h2>The data network powering this</h2>
+    <p class="lead" style="text-align:center;margin:0 auto 1rem">47,000+ workers already generating the training data that makes AI agents possible.</p>
+
+    <div class="result-row">
+      <div class="result-item">
+        <div class="result-num">47K+</div>
+        <div class="result-label">Workers generating data</div>
+      </div>
+      <div class="result-item">
+        <div class="result-num">23%</div>
+        <div class="result-label">Productivity gain</div>
+      </div>
+      <div class="result-item">
+        <div class="result-num">$4,200</div>
+        <div class="result-label">Saved per employee/year</div>
+      </div>
+      <div class="result-item">
+        <div class="result-num">89%</div>
+        <div class="result-label">Worker satisfaction</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ ENDGAME ════════ -->
+<section class="endgame reveal">
+  <div class="container">
+    <div class="section-label">The Endgame</div>
+    <h2>Where this is going</h2>
+    <p style="color:var(--platinum);font-size:1rem;margin-bottom:1.5rem;text-align:center;max-width:600px;margin-left:auto;margin-right:auto">The endgame isn't replacing humans. It's building a team where human creativity directs AI execution. Go2 is the bridge.</p>
+
+    <div class="endgame-visual">
+      <div class="eg-timeline">
+        <div class="eg-phase">
+          <div class="eg-content"><h4>Today: Observe & Coach</h4><p>Go2 watches work, delivers coaching tips, helps humans improve</p></div>
+          <div class="eg-dot"></div>
+          <div class="eg-empty"></div>
+        </div>
+        <div class="eg-phase">
+          <div class="eg-empty"></div>
+          <div class="eg-dot"></div>
+          <div class="eg-content"><h4>Next: Document & Map</h4><p>Auto-generated SOPs and process maps from observed patterns</p></div>
+        </div>
+        <div class="eg-phase">
+          <div class="eg-content"><h4>Then: Train & Deploy</h4><p>AI agents learn processes from Go2 data, handle repetitive work</p></div>
+          <div class="eg-dot"></div>
+          <div class="eg-empty"></div>
+        </div>
+        <div class="eg-phase">
+          <div class="eg-empty"></div>
+          <div class="eg-dot"></div>
+          <div class="eg-content"><h4>Endgame: Human + AI Teams</h4><p>Humans focus on judgment, creativity, relationships. Agents handle everything else.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ PRIVACY ════════ -->
+<section class="privacy reveal">
+  <div class="container">
+    <div class="privacy-icon">🔐</div>
+    <div>
+      <h3>Privacy-first agent training</h3>
+      <p>Go2 captures work patterns, not personal data. Local-first processing means raw activity never leaves the device. Only structured, anonymized process patterns feed agent training. Workers control their data, can pause or delete anytime. 89% worker satisfaction proves this model works. You get powerful agent training without surveillance.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ FINAL CTA ════════ -->
+<section class="final-cta reveal">
+  <h2>Your AI agents are waiting<br>for their <span class="green">training manual.</span></h2>
+  <p>Go2 writes it automatically by watching how your team actually works. Deploy in 15 minutes. First agent-ready process maps in 2 weeks.</p>
+  <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+    <button class="btn btn-green">Make AI Actually Work</button>
+    <button class="btn btn-ghost">See a Live Demo</button>
+  </div>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2. The Agent Training Platform. <a href="#">Privacy</a> &middot; <a href="#">Security</a> &middot; <a href="#">Documentation</a></p>
+</footer>
+
+<script>
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }});
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+
+</body>
+</html>

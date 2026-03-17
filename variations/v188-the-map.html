@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Navigate the AI Wilderness</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --sand: #F4EDE4;
+    --forest: #1B3A2D;
+    --trail: #C4722B;
+    --water: #3B7EA1;
+    --peak: #D4A853;
+    --dark: #141C1A;
+    --fog: rgba(244,237,228,0.9);
+  }
+
+  body {
+    background: var(--sand);
+    color: var(--dark);
+    font-family: 'Space Grotesk', sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1.2rem 3rem;
+    background: rgba(244,237,228,0.92);
+    backdrop-filter: blur(12px);
+  }
+  nav .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.4rem; color: var(--forest);
+  }
+  nav .nav-links { display: flex; gap: 2rem; align-items: center; }
+  nav a {
+    color: var(--forest); text-decoration: none;
+    font-size: 0.8rem; letter-spacing: 0.08em;
+    text-transform: uppercase; font-weight: 500;
+  }
+  nav .nav-cta {
+    background: var(--trail); color: white !important;
+    padding: 0.6rem 1.4rem; border-radius: 4px;
+    font-weight: 600;
+  }
+
+  /* HERO - WILDERNESS */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    text-align: center;
+    padding: 6rem 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Topographic lines background */
+  .hero::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      repeating-conic-gradient(from 0deg at 20% 60%, transparent 0deg, rgba(27,58,45,0.03) 1deg, transparent 2deg, transparent 30deg),
+      repeating-conic-gradient(from 45deg at 70% 40%, transparent 0deg, rgba(27,58,45,0.03) 1deg, transparent 2deg, transparent 25deg),
+      repeating-conic-gradient(from 90deg at 50% 80%, transparent 0deg, rgba(27,58,45,0.02) 1deg, transparent 2deg, transparent 20deg);
+  }
+
+  /* Topographic contour lines */
+  .topo-lines {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    overflow: hidden; opacity: 0.12;
+  }
+  .topo-line {
+    position: absolute;
+    border: 1px solid var(--forest);
+    border-radius: 50%;
+  }
+  .topo-line:nth-child(1) { width: 600px; height: 400px; top: 10%; left: -5%; transform: rotate(-15deg); }
+  .topo-line:nth-child(2) { width: 500px; height: 350px; top: 12%; left: -3%; transform: rotate(-15deg); }
+  .topo-line:nth-child(3) { width: 400px; height: 300px; top: 14%; left: -1%; transform: rotate(-15deg); }
+  .topo-line:nth-child(4) { width: 700px; height: 500px; top: 40%; right: -10%; transform: rotate(20deg); }
+  .topo-line:nth-child(5) { width: 600px; height: 420px; top: 42%; right: -8%; transform: rotate(20deg); }
+  .topo-line:nth-child(6) { width: 500px; height: 340px; top: 44%; right: -6%; transform: rotate(20deg); }
+  .topo-line:nth-child(7) { width: 800px; height: 300px; bottom: 5%; left: 10%; transform: rotate(-5deg); }
+  .topo-line:nth-child(8) { width: 700px; height: 250px; bottom: 7%; left: 12%; transform: rotate(-5deg); }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: var(--forest); color: var(--sand);
+    padding: 0.5rem 1.2rem; border-radius: 20px;
+    font-size: 0.7rem; letter-spacing: 0.12em;
+    text-transform: uppercase; font-weight: 600;
+    margin-bottom: 2.5rem;
+    position: relative; z-index: 2;
+  }
+  .hero-badge .compass {
+    width: 16px; height: 16px;
+    border: 2px solid var(--peak);
+    border-radius: 50;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 10px; color: var(--peak);
+  }
+
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(3rem, 7vw, 6rem);
+    line-height: 1.1; font-weight: 400;
+    max-width: 900px; position: relative; z-index: 2;
+    color: var(--forest);
+  }
+  .hero h1 em { color: var(--trail); font-style: italic; }
+
+  .hero-sub {
+    font-size: 1.15rem; color: rgba(20,28,26,0.6);
+    max-width: 550px; margin-top: 2rem; line-height: 1.7;
+    position: relative; z-index: 2; font-weight: 300;
+  }
+
+  .hero-stats {
+    display: flex; gap: 3rem;
+    margin-top: 3rem; position: relative; z-index: 2;
+  }
+  .hero-stat {
+    text-align: center;
+  }
+  .hero-stat .val {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.5rem; color: var(--trail);
+  }
+  .hero-stat .lbl {
+    font-size: 0.7rem; letter-spacing: 0.1em;
+    text-transform: uppercase; color: rgba(20,28,26,0.5);
+    margin-top: 0.25rem; font-weight: 500;
+  }
+
+  /* TERRAIN MAP JOURNEY */
+  .journey {
+    padding: 6rem 2rem 4rem;
+    position: relative;
+  }
+  .journey-header {
+    text-align: center; margin-bottom: 5rem;
+  }
+  .journey-header h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2rem, 4vw, 3rem);
+    color: var(--forest);
+  }
+  .journey-header p {
+    color: rgba(20,28,26,0.5); margin-top: 1rem;
+    font-size: 1rem; max-width: 500px; margin-left: auto; margin-right: auto;
+  }
+
+  /* The trail path */
+  .trail-container {
+    max-width: 1100px; margin: 0 auto;
+    position: relative;
+  }
+
+  /* Dotted trail line */
+  .trail-path {
+    position: absolute; top: 0; bottom: 0;
+    left: 50%; width: 3px;
+    background: repeating-linear-gradient(
+      to bottom,
+      var(--trail) 0px, var(--trail) 8px,
+      transparent 8px, transparent 16px
+    );
+    transform: translateX(-50%);
+  }
+
+  .waypoint {
+    display: grid;
+    grid-template-columns: 1fr 80px 1fr;
+    align-items: center;
+    margin-bottom: 5rem;
+    position: relative;
+  }
+  .waypoint:nth-child(odd) .waypoint-content { grid-column: 1; text-align: right; padding-right: 2rem; }
+  .waypoint:nth-child(odd) .waypoint-detail { grid-column: 3; padding-left: 2rem; }
+  .waypoint:nth-child(even) .waypoint-content { grid-column: 3; text-align: left; padding-left: 2rem; }
+  .waypoint:nth-child(even) .waypoint-detail { grid-column: 1; text-align: right; padding-right: 2rem; }
+
+  .waypoint-marker {
+    grid-column: 2;
+    width: 60px; height: 60px;
+    background: var(--forest);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--peak); font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    z-index: 2;
+    box-shadow: 0 0 0 6px var(--sand), 0 0 0 8px rgba(27,58,45,0.15);
+  }
+
+  .waypoint-content h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.5rem; color: var(--forest);
+    margin-bottom: 0.5rem;
+  }
+  .waypoint-content p {
+    font-size: 0.95rem; color: rgba(20,28,26,0.6);
+    line-height: 1.7;
+  }
+
+  .waypoint-detail .terrain-tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; letter-spacing: 0.05em;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid rgba(27,58,45,0.2);
+    border-radius: 3px;
+    color: var(--forest);
+    text-transform: uppercase;
+  }
+
+  /* ELEVATION CHART */
+  .elevation {
+    background: var(--forest);
+    color: var(--sand);
+    padding: 6rem 2rem;
+    margin: 4rem 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .elevation-inner {
+    max-width: 1000px; margin: 0 auto;
+    position: relative; z-index: 2;
+  }
+
+  .elevation h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2rem, 4vw, 3rem);
+    margin-bottom: 1rem;
+  }
+  .elevation h2 em { color: var(--peak); font-style: italic; }
+  .elevation > .elevation-inner > p {
+    font-size: 1.1rem; color: rgba(244,237,228,0.6);
+    max-width: 600px; line-height: 1.8; margin-bottom: 4rem;
+  }
+
+  /* SVG Mountain Profile */
+  .mountain-chart {
+    width: 100%; height: 200px;
+    position: relative; margin-bottom: 3rem;
+  }
+  .mountain-chart svg { width: 100%; height: 100%; }
+
+  .elevation-features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+  .elev-feature {
+    padding: 2rem;
+    border: 1px solid rgba(244,237,228,0.1);
+    border-radius: 8px;
+  }
+  .elev-feature .icon {
+    font-size: 1.8rem; margin-bottom: 1rem;
+  }
+  .elev-feature h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.2rem; margin-bottom: 0.5rem;
+  }
+  .elev-feature p {
+    font-size: 0.9rem; color: rgba(244,237,228,0.5);
+    line-height: 1.7;
+  }
+
+  /* WAZE SECTION */
+  .waze-section {
+    padding: 6rem 2rem;
+    text-align: center;
+    max-width: 800px; margin: 0 auto;
+  }
+  .waze-section h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    color: var(--forest); margin-bottom: 1.5rem;
+  }
+  .waze-section h2 em { color: var(--trail); }
+  .waze-section p {
+    font-size: 1.05rem; color: rgba(20,28,26,0.6);
+    line-height: 1.8; margin-bottom: 1.5rem;
+  }
+
+  .network-visual {
+    display: flex; flex-wrap: wrap;
+    justify-content: center; gap: 1rem;
+    margin: 3rem 0;
+  }
+  .network-node {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem; font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .network-node.active {
+    background: var(--trail); color: white;
+    box-shadow: 0 4px 20px rgba(196,114,43,0.3);
+  }
+  .network-node.connected {
+    background: rgba(27,58,45,0.08); color: var(--forest);
+    border: 1px dashed rgba(27,58,45,0.2);
+  }
+
+  .big-number {
+    font-family: 'DM Serif Display', serif;
+    font-size: 5rem; color: var(--trail);
+    margin: 2rem 0 0.5rem; line-height: 1;
+  }
+  .big-label {
+    font-size: 0.8rem; letter-spacing: 0.1em;
+    text-transform: uppercase; color: rgba(20,28,26,0.4);
+    font-weight: 500;
+  }
+
+  /* SUMMIT CTA */
+  .summit {
+    background: var(--forest);
+    color: var(--sand);
+    padding: 8rem 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .summit::before {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 300px;
+    background: linear-gradient(to top,
+      rgba(212,168,83,0.1),
+      transparent
+    );
+  }
+  .summit h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    max-width: 700px; margin: 0 auto 1.5rem;
+    position: relative; z-index: 2;
+  }
+  .summit h2 em { color: var(--peak); font-style: italic; }
+  .summit p {
+    font-size: 1rem; color: rgba(244,237,228,0.5);
+    max-width: 500px; margin: 0 auto 3rem;
+    line-height: 1.7; position: relative; z-index: 2;
+  }
+  .summit .cta-btn {
+    display: inline-block;
+    background: var(--peak); color: var(--dark);
+    padding: 1rem 2.5rem;
+    text-decoration: none;
+    font-size: 0.85rem; letter-spacing: 0.1em;
+    text-transform: uppercase; font-weight: 600;
+    border-radius: 4px;
+    position: relative; z-index: 2;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  .summit .cta-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(212,168,83,0.4);
+  }
+
+  .summit-flag {
+    font-size: 3rem; margin-bottom: 2rem;
+    display: block; position: relative; z-index: 2;
+  }
+
+  footer {
+    background: var(--dark); color: rgba(244,237,228,0.3);
+    text-align: center; padding: 2rem;
+    font-size: 0.75rem; letter-spacing: 0.05em;
+  }
+
+  @media (max-width: 768px) {
+    .waypoint { grid-template-columns: 50px 1fr; gap: 1rem; }
+    .waypoint-marker { width: 40px; height: 40px; font-size: 0.7rem; grid-column: 1; grid-row: 1; }
+    .waypoint .waypoint-content,
+    .waypoint:nth-child(odd) .waypoint-content,
+    .waypoint:nth-child(even) .waypoint-content { grid-column: 2; text-align: left; padding: 0; }
+    .waypoint .waypoint-detail,
+    .waypoint:nth-child(odd) .waypoint-detail,
+    .waypoint:nth-child(even) .waypoint-detail { grid-column: 2; text-align: left; padding: 0; }
+    .trail-path { left: 20px; }
+    .hero-stats { flex-direction: column; gap: 1.5rem; }
+    .elevation-features { grid-template-columns: 1fr; }
+  }
+
+  .fade-in {
+    opacity: 0; transform: translateY(20px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .fade-in.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Go2</div>
+  <div class="nav-links">
+    <a href="#journey">The Journey</a>
+    <a href="#terrain">Terrain</a>
+    <a href="#summit" class="nav-cta">Reach the Summit</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="topo-lines">
+    <div class="topo-line"></div>
+    <div class="topo-line"></div>
+    <div class="topo-line"></div>
+    <div class="topo-line"></div>
+    <div class="topo-line"></div>
+    <div class="topo-line"></div>
+    <div class="topo-line"></div>
+    <div class="topo-line"></div>
+  </div>
+  <div class="hero-badge">
+    <span class="compass">N</span>
+    Field Report: 2026
+  </div>
+  <h1>Most Companies Are Lost in the <em>AI Wilderness</em></h1>
+  <p class="hero-sub">95% of AI pilots fail. Not because the technology isn't ready -- because companies have no map of how work actually happens. Go2 is that map.</p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="val">95%</div>
+      <div class="lbl">AI Failure Rate</div>
+    </div>
+    <div class="hero-stat">
+      <div class="val">$60M+</div>
+      <div class="lbl">Revenue Generated</div>
+    </div>
+    <div class="hero-stat">
+      <div class="val">2M+</div>
+      <div class="lbl">Workers Mapped</div>
+    </div>
+  </div>
+</section>
+
+<section class="journey" id="journey">
+  <div class="journey-header fade-in">
+    <h2>The Expedition from Wasteland to Summit</h2>
+    <p>Every company's AI journey follows the same terrain. Here's the map most never get.</p>
+  </div>
+
+  <div class="trail-container">
+    <div class="trail-path"></div>
+
+    <div class="waypoint fade-in">
+      <div class="waypoint-content">
+        <h3>The AI Wasteland</h3>
+        <p>You bought the tools. ChatGPT seats, Claude licenses, Copilot subs. Millions spent. Nothing changed. Your AI tools are brilliant minds with zero context about your business.</p>
+      </div>
+      <div class="waypoint-marker">W</div>
+      <div class="waypoint-detail">
+        <span class="terrain-tag">Elevation: 0ft</span>
+      </div>
+    </div>
+
+    <div class="waypoint fade-in">
+      <div class="waypoint-content">
+        <h3>Base Camp: Data Capture</h3>
+        <p>Cowork.ai deploys as a lightweight desktop agent for every worker. Not surveillance -- cartography. It maps how work actually happens, capturing workflows and tribal knowledge.</p>
+      </div>
+      <div class="waypoint-marker">BC</div>
+      <div class="waypoint-detail">
+        <span class="terrain-tag">Elevation: 2,000ft</span>
+      </div>
+    </div>
+
+    <div class="waypoint fade-in">
+      <div class="waypoint-content">
+        <h3>The Coaching Ridge</h3>
+        <p>Real-time AI coaching kicks in. Workers get nudges, auto-documentation, and personalized tips. 89% satisfaction because it helps, not watches. Processes auto-document themselves.</p>
+      </div>
+      <div class="waypoint-marker">CR</div>
+      <div class="waypoint-detail">
+        <span class="terrain-tag">Elevation: 5,000ft</span>
+      </div>
+    </div>
+
+    <div class="waypoint fade-in">
+      <div class="waypoint-content">
+        <h3>The Integration Pass</h3>
+        <p>Your existing AI tools -- Claude, ChatGPT, all of them -- suddenly have context. They know your processes, your edge cases, your institutional knowledge. Generic AI becomes YOUR AI.</p>
+      </div>
+      <div class="waypoint-marker">IP</div>
+      <div class="waypoint-detail">
+        <span class="terrain-tag">Elevation: 8,000ft</span>
+      </div>
+    </div>
+
+    <div class="waypoint fade-in">
+      <div class="waypoint-content">
+        <h3>The Automation Summit</h3>
+        <p>40+ hours per week of automatable work per employee, surfaced and ready. Go2 provides the training data to build automations. Open source agent training tools let you build on top.</p>
+      </div>
+      <div class="waypoint-marker">S</div>
+      <div class="waypoint-detail">
+        <span class="terrain-tag">Elevation: 14,000ft</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="elevation" id="terrain">
+  <div class="elevation-inner">
+    <h2>The terrain that separates <em>success</em> from failure</h2>
+    <p>It was never about the AI. It was about the map. Companies that succeed at AI have data about how work happens. Companies that fail don't.</p>
+
+    <div class="mountain-chart">
+      <svg viewBox="0 0 1000 200" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="mountain-fill" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#D4A853;stop-opacity:0.3"/>
+            <stop offset="100%" style="stop-color:#D4A853;stop-opacity:0"/>
+          </linearGradient>
+        </defs>
+        <path d="M0,200 L0,180 L100,160 L200,140 L280,120 L350,90 L420,70 L500,50 L580,35 L660,25 L750,20 L850,15 L950,10 L1000,8 L1000,200 Z" fill="url(#mountain-fill)"/>
+        <path d="M0,180 L100,160 L200,140 L280,120 L350,90 L420,70 L500,50 L580,35 L660,25 L750,20 L850,15 L950,10 L1000,8" fill="none" stroke="#D4A853" stroke-width="2"/>
+        <circle cx="0" cy="180" r="5" fill="#C4722B"/>
+        <circle cx="280" cy="120" r="5" fill="#C4722B"/>
+        <circle cx="500" cy="50" r="5" fill="#C4722B"/>
+        <circle cx="750" cy="20" r="5" fill="#C4722B"/>
+        <circle cx="1000" cy="8" r="5" fill="#C4722B"/>
+        <text x="10" y="175" fill="rgba(244,237,228,0.4)" font-size="10" font-family="JetBrains Mono">WASTELAND</text>
+        <text x="260" y="115" fill="rgba(244,237,228,0.4)" font-size="10" font-family="JetBrains Mono">BASE CAMP</text>
+        <text x="475" y="45" fill="rgba(244,237,228,0.4)" font-size="10" font-family="JetBrains Mono">COACHING</text>
+        <text x="720" y="15" fill="rgba(244,237,228,0.4)" font-size="10" font-family="JetBrains Mono">INTEGRATION</text>
+        <text x="920" y="5" fill="#D4A853" font-size="11" font-family="JetBrains Mono" font-weight="bold">SUMMIT</text>
+      </svg>
+    </div>
+
+    <div class="elevation-features">
+      <div class="elev-feature">
+        <div class="icon">&#9978;</div>
+        <h3>Sidecar Architecture</h3>
+        <p>Go2 doesn't replace your AI tools. It rides alongside them, feeding real workflow data into Claude, ChatGPT, and everything in your stack.</p>
+      </div>
+      <div class="elev-feature">
+        <div class="icon">&#9881;</div>
+        <h3>Open Source Training</h3>
+        <p>Agent training tools are open source. Build custom automations on real workflow data. Infrastructure this important shouldn't be proprietary.</p>
+      </div>
+      <div class="elev-feature">
+        <div class="icon">&#9733;</div>
+        <h3>Collective Intelligence</h3>
+        <p>Like Waze for work: 2M+ workers contributing data, everyone getting smarter. One company's insight improves the whole network.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="waze-section fade-in">
+  <h2>The <em>Waze</em> Effect for Work</h2>
+  <p>Waze didn't build roads. It captured how people actually drive and made every route smarter. Go2 captures how people actually work and makes every AI tool smarter.</p>
+
+  <div class="network-visual">
+    <div class="network-node active">Go2</div>
+    <div class="network-node connected">Claude</div>
+    <div class="network-node connected">GPT</div>
+    <div class="network-node connected">Copilot</div>
+    <div class="network-node connected">Custom</div>
+    <div class="network-node connected">Agents</div>
+  </div>
+
+  <div class="big-number">$60M+</div>
+  <div class="big-label">In Sales. This Isn't a Theory.</div>
+</section>
+
+<section class="summit" id="summit">
+  <span class="summit-flag">&#9873;</span>
+  <h2>Stop wandering. <em>Reach the summit.</em></h2>
+  <p>Join the companies that have stopped failing at AI and started building the map of how work actually happens.</p>
+  <a href="#" class="cta-btn">Start Your Expedition</a>
+</section>
+
+<footer>
+  &copy; 2026 Go2. The missing map for AI. All rights reserved.
+</footer>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
