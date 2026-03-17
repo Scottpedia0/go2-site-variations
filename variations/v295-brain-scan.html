@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Organizational Brain Scan | Go2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+body{font-family:'Inter',system-ui,sans-serif;background:#060610;color:#fff;overflow-x:hidden}
+
+.hero{min-height:50vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:4rem 2rem;position:relative}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 80%,rgba(139,92,246,0.1),transparent 60%)}
+.hero h1{font-size:clamp(2.5rem,5vw,4rem);font-weight:900;line-height:1.1;margin-bottom:1rem}
+.hero h1 span{background:linear-gradient(135deg,#c084fc,#818cf8,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:#64748b;font-size:1.15rem;max-width:650px}
+
+.brain-container{width:100%;height:80vh;position:relative;cursor:grab}
+.brain-container:active{cursor:grabbing}
+.brain-canvas{width:100%;height:100%}
+
+.brain-controls{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);display:flex;gap:1rem;background:rgba(10,10,20,0.9);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:0.75rem 1.5rem;z-index:50}
+.brain-btn{padding:0.5rem 1rem;border-radius:8px;font-size:0.8rem;cursor:pointer;border:none;background:rgba(255,255,255,0.06);color:#94a3b8;transition:all 0.3s;font-weight:500}
+.brain-btn:hover,.brain-btn.active{background:#6366f1;color:#fff}
+
+.stats-overlay{position:fixed;top:5rem;right:2rem;background:rgba(10,10,20,0.9);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:1.25rem;z-index:50;min-width:220px}
+.stats-title{font-size:0.75rem;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem}
+.stat-row{display:flex;justify-content:space-between;padding:0.4rem 0;font-size:0.85rem}
+.stat-row span:first-child{color:#94a3b8}
+.stat-row span:last-child{font-weight:700}
+.stat-row .green{color:#34d399}
+.stat-row .red{color:#f87171}
+.stat-row .yellow{color:#fbbf24}
+.stat-row .blue{color:#818cf8}
+
+.node-tooltip{position:fixed;background:rgba(15,15,25,0.95);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:1.25rem;z-index:100;min-width:280px;display:none;pointer-events:none}
+.tooltip-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem}
+.tooltip-dot{width:14px;height:14px;border-radius:50%}
+.tooltip-name{font-weight:700;font-size:1rem}
+.tooltip-dept{font-size:0.75rem;color:#64748b}
+.tooltip-desc{color:#94a3b8;font-size:0.82rem;line-height:1.6;margin-bottom:0.75rem}
+.tooltip-metrics{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem}
+.tooltip-metric{background:rgba(255,255,255,0.04);border-radius:8px;padding:0.5rem}
+.tooltip-metric .val{font-size:1rem;font-weight:700}
+.tooltip-metric .lbl{font-size:0.65rem;color:#64748b}
+
+.risk-section{max-width:1200px;margin:0 auto;padding:4rem 2rem}
+.risk-section h2{font-size:1.8rem;font-weight:800;margin-bottom:1rem;text-align:center}
+.risk-section>p{text-align:center;color:#64748b;margin-bottom:2rem}
+.risk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem}
+.risk-card{background:rgba(255,255,255,0.03);border-radius:16px;padding:1.25rem;border-left:3px solid;transition:all 0.3s}
+.risk-card:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,0.2)}
+.risk-card.critical{border-color:#ef4444}
+.risk-card.warning{border-color:#fbbf24}
+.risk-card.safe{border-color:#34d399}
+.risk-card h3{font-size:0.95rem;font-weight:700;margin-bottom:0.3rem}
+.risk-card .risk-type{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem}
+.risk-card.critical .risk-type{color:#ef4444}
+.risk-card.warning .risk-type{color:#fbbf24}
+.risk-card.safe .risk-type{color:#34d399}
+.risk-card p{color:#94a3b8;font-size:0.82rem;line-height:1.6}
+.risk-card .risk-bar{margin-top:0.75rem;height:4px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden}
+.risk-card .risk-fill{height:100%;border-radius:2px}
+
+.cta{text-align:center;padding:4rem 2rem}
+.cta-btn{display:inline-flex;align-items:center;gap:0.5rem;padding:1rem 2.5rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;font-size:1.1rem;font-weight:600;cursor:pointer;text-decoration:none;transition:all 0.3s;box-shadow:0 4px 24px rgba(99,102,241,0.3)}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(99,102,241,0.5)}
+</style>
+</head>
+<body>
+
+<section class="hero">
+<h1><span>Organizational</span><br>Brain Scan</h1>
+<p>Visualize your company's collective knowledge. See what's documented, what's at risk, and where tribal knowledge hides.</p>
+</section>
+
+<div class="brain-container">
+<canvas id="brainCanvas" class="brain-canvas"></canvas>
+</div>
+
+<div class="stats-overlay">
+<div class="stats-title">Knowledge Health</div>
+<div class="stat-row"><span>Total processes</span><span class="blue" id="totalNodes">0</span></div>
+<div class="stat-row"><span>Documented</span><span class="green" id="docNodes">0</span></div>
+<div class="stat-row"><span>Partially documented</span><span class="yellow" id="partNodes">0</span></div>
+<div class="stat-row"><span>Tribal knowledge</span><span class="red" id="tribalNodes">0</span></div>
+<div class="stat-row" style="border-top:1px solid rgba(255,255,255,0.06);padding-top:0.6rem;margin-top:0.4rem"><span>Health score</span><span class="green" id="healthScore">0%</span></div>
+</div>
+
+<div class="brain-controls">
+<button class="brain-btn active" onclick="setView('all')">All Knowledge</button>
+<button class="brain-btn" onclick="setView('risk')">At Risk</button>
+<button class="brain-btn" onclick="setView('documented')">Documented</button>
+<button class="brain-btn" onclick="setView('tribal')">Tribal</button>
+</div>
+
+<div class="node-tooltip" id="tooltip"></div>
+
+<section class="risk-section">
+<h2>Knowledge Risk Assessment</h2>
+<p>Critical processes that depend on tribal knowledge — document these first.</p>
+<div class="risk-grid" id="riskGrid"></div>
+</section>
+
+<section class="cta">
+<h2 style="font-size:2rem;font-weight:800;margin-bottom:1rem">Start Your Brain Scan</h2>
+<p style="color:#64748b;margin-bottom:2rem">Go2 automatically maps your organization's knowledge. Deploy in minutes.</p>
+<a href="https://go2.io" class="cta-btn">Scan Your Organization</a>
+</section>
+
+<script>
+const canvas = document.getElementById('brainCanvas');
+const ctx = canvas.getContext('2d');
+let W, H;
+
+function resize() {
+W = canvas.width = canvas.parentElement.clientWidth;
+H = canvas.height = canvas.parentElement.clientHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+const departments = ['Sales','Engineering','Operations','Finance','Support','HR','Marketing','Product'];
+const statuses = ['documented','partial','tribal'];
+const statusColors = {documented:'#34d399',partial:'#fbbf24',tribal:'#f87171'};
+
+const nodes = [];
+const connections = [];
+
+// Generate nodes
+const processNames = {
+Sales:['Lead Qualification','Pipeline Management','Pricing Strategy','Contract Negotiation','Territory Planning','Forecast Model','Commission Calc','Win/Loss Analysis','Demo Process','Proposal Creation'],
+Engineering:['Code Review','Deploy Process','Incident Response','Sprint Planning','Architecture Decisions','Tech Debt Tracking','Security Audit','Performance Testing','CI/CD Pipeline','Documentation Standards'],
+Operations:['Vendor Management','Inventory Control','Quality Assurance','Shipping Logistics','Compliance Monitoring','Process Improvement','Resource Allocation','KPI Tracking','Procurement','Facilities Mgmt'],
+Finance:['Invoice Processing','Budget Planning','Expense Approval','Tax Compliance','Revenue Recognition','Cash Flow Forecast','Audit Preparation','Payroll Processing','Financial Reporting','AP/AR Management'],
+Support:['Ticket Triage','Escalation Process','Knowledge Base','SLA Management','Customer Feedback','Bug Reporting','Refund Policy','Onboarding Support','Feature Requests','Crisis Communication'],
+HR:['Hiring Process','Onboarding','Performance Reviews','Benefits Admin','PTO Policy','Training Programs','Exit Interviews','Compensation Planning','Culture Initiatives','Compliance Training'],
+Marketing:['Content Calendar','Campaign Launch','SEO Strategy','Social Media','Brand Guidelines','Analytics Reporting','Email Marketing','Event Planning','Partner Marketing','Budget Allocation'],
+Product:['Roadmap Planning','User Research','Feature Prioritization','A/B Testing','Release Notes','Competitive Analysis','Feedback Loop','Metrics Dashboard','Beta Programs','Design System']
+};
+
+let nodeId = 0;
+departments.forEach((dept, di) => {
+const angle = (di / departments.length) * Math.PI * 2;
+const cx = W/2 + Math.cos(angle) * Math.min(W,H) * 0.28;
+const cy = H/2 + Math.sin(angle) * Math.min(W,H) * 0.28;
+
+processNames[dept].forEach((name, pi) => {
+const subAngle = angle + (pi - 4.5) * 0.15;
+const dist = Math.min(W,H) * (0.12 + Math.random() * 0.18);
+const status = statuses[Math.random() < 0.35 ? 0 : Math.random() < 0.6 ? 1 : 2];
+const importance = 3 + Math.floor(Math.random() * 8);
+nodes.push({
+id: nodeId++, name, dept, status, importance,
+x: cx + Math.cos(subAngle) * dist + (Math.random()-0.5)*40,
+y: cy + Math.sin(subAngle) * dist + (Math.random()-0.5)*40,
+vx: 0, vy: 0,
+radius: 4 + importance * 0.8,
+people: 1 + Math.floor(Math.random()*5),
+lastUpdated: ['2 days ago','1 week ago','3 weeks ago','2 months ago','6 months ago','Never'][Math.floor(Math.random()*6)],
+coverage: status==='documented'?70+Math.floor(Math.random()*30):status==='partial'?20+Math.floor(Math.random()*40):Math.floor(Math.random()*15)
+});
+});
+});
+
+// Generate connections
+nodes.forEach((n, i) => {
+const sameDepth = nodes.filter(m => m.dept === n.dept && m.id !== n.id);
+const targets = sameDepth.sort(() => Math.random()-0.5).slice(0, 1 + Math.floor(Math.random()*3));
+targets.forEach(t => {
+if (!connections.find(c => (c.a===n.id && c.b===t.id) || (c.a===t.id && c.b===n.id))) {
+connections.push({a: n.id, b: t.id});
+}
+});
+// Cross-dept connections
+if (Math.random() < 0.2) {
+const other = nodes[Math.floor(Math.random() * nodes.length)];
+if (other.dept !== n.dept) connections.push({a: n.id, b: other.id});
+}
+});
+
+// Stats
+const docCount = nodes.filter(n => n.status === 'documented').length;
+const partCount = nodes.filter(n => n.status === 'partial').length;
+const tribalCount = nodes.filter(n => n.status === 'tribal').length;
+document.getElementById('totalNodes').textContent = nodes.length;
+document.getElementById('docNodes').textContent = docCount;
+document.getElementById('partNodes').textContent = partCount;
+document.getElementById('tribalNodes').textContent = tribalCount;
+document.getElementById('healthScore').textContent = Math.round((docCount + partCount * 0.5) / nodes.length * 100) + '%';
+
+let currentView = 'all';
+let hoveredNode = null;
+let mouseX = 0, mouseY = 0;
+let time = 0;
+
+function setView(v) {
+currentView = v;
+document.querySelectorAll('.brain-btn').forEach(b => b.classList.remove('active'));
+event.target.classList.add('active');
+}
+
+function getAlpha(node) {
+if (currentView === 'all') return 1;
+if (currentView === 'risk' && (node.status === 'tribal' || node.status === 'partial')) return 1;
+if (currentView === 'documented' && node.status === 'documented') return 1;
+if (currentView === 'tribal' && node.status === 'tribal') return 1;
+return 0.05;
+}
+
+function draw() {
+ctx.clearRect(0, 0, W, H);
+time += 0.01;
+
+// Connections
+connections.forEach(c => {
+const a = nodes[c.a], b = nodes[c.b];
+const alpha = Math.min(getAlpha(a), getAlpha(b)) * 0.15;
+ctx.beginPath();
+ctx.moveTo(a.x, a.y);
+ctx.lineTo(b.x, b.y);
+ctx.strokeStyle = `rgba(99,102,241,${alpha})`;
+ctx.lineWidth = 0.5;
+ctx.stroke();
+});
+
+// Pulse through connections
+connections.forEach((c, i) => {
+const a = nodes[c.a], b = nodes[c.b];
+const alpha = Math.min(getAlpha(a), getAlpha(b));
+if (alpha < 0.1) return;
+const t = (time * 0.5 + i * 0.1) % 1;
+const px = a.x + (b.x - a.x) * t;
+const py = a.y + (b.y - a.y) * t;
+ctx.beginPath();
+ctx.arc(px, py, 1.5, 0, Math.PI * 2);
+ctx.fillStyle = `rgba(99,102,241,${alpha * 0.3})`;
+ctx.fill();
+});
+
+// Nodes
+nodes.forEach(n => {
+const alpha = getAlpha(n);
+const color = statusColors[n.status];
+const glow = n === hoveredNode ? 20 : 8;
+const r = n === hoveredNode ? n.radius * 1.5 : n.radius;
+
+// Breathing
+const breathe = 1 + Math.sin(time * 2 + n.id) * 0.05;
+
+// Glow
+ctx.beginPath();
+ctx.arc(n.x, n.y, r * breathe + glow, 0, Math.PI * 2);
+const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, r * breathe + glow);
+grad.addColorStop(0, color.replace(')', `,${alpha * 0.3})`).replace('rgb','rgba'));
+grad.addColorStop(1, 'transparent');
+ctx.fillStyle = grad;
+ctx.fill();
+
+// Core
+ctx.beginPath();
+ctx.arc(n.x, n.y, r * breathe, 0, Math.PI * 2);
+ctx.fillStyle = color.replace(')', `,${alpha * 0.8})`).replace('rgb','rgba');
+if (!color.includes('rgba')) {
+const hex = color;
+const rr = parseInt(hex.slice(1,3),16), gg = parseInt(hex.slice(3,5),16), bb = parseInt(hex.slice(5,7),16);
+ctx.fillStyle = `rgba(${rr},${gg},${bb},${alpha*0.8})`;
+}
+ctx.fill();
+});
+
+requestAnimationFrame(draw);
+}
+draw();
+
+// Hover
+canvas.addEventListener('mousemove', e => {
+const rect = canvas.getBoundingClientRect();
+mouseX = e.clientX - rect.left;
+mouseY = e.clientY - rect.top;
+hoveredNode = null;
+for (const n of nodes) {
+const dx = mouseX - n.x, dy = mouseY - n.y;
+if (dx*dx + dy*dy < (n.radius+8)*(n.radius+8)) {
+hoveredNode = n;
+break;
+}
+}
+const tooltip = document.getElementById('tooltip');
+if (hoveredNode) {
+const n = hoveredNode;
+tooltip.style.display = 'block';
+tooltip.style.left = Math.min(e.clientX + 15, window.innerWidth - 300) + 'px';
+tooltip.style.top = Math.min(e.clientY + 15, window.innerHeight - 250) + 'px';
+const color = statusColors[n.status];
+tooltip.innerHTML = `
+<div class="tooltip-header">
+<div class="tooltip-dot" style="background:${color}"></div>
+<div><div class="tooltip-name">${n.name}</div><div class="tooltip-dept">${n.dept}</div></div>
+</div>
+<div class="tooltip-desc">Status: ${n.status.charAt(0).toUpperCase()+n.status.slice(1)} | Last updated: ${n.lastUpdated}</div>
+<div class="tooltip-metrics">
+<div class="tooltip-metric"><div class="val" style="color:${color}">${n.coverage}%</div><div class="lbl">Documented</div></div>
+<div class="tooltip-metric"><div class="val">${n.people}</div><div class="lbl">People who know</div></div>
+<div class="tooltip-metric"><div class="val">${n.importance}/10</div><div class="lbl">Importance</div></div>
+<div class="tooltip-metric"><div class="val">${n.status==='tribal'?'HIGH':n.status==='partial'?'MED':'LOW'}</div><div class="lbl">Risk Level</div></div>
+</div>`;
+} else {
+tooltip.style.display = 'none';
+}
+});
+
+// Risk cards
+const riskNodes = nodes.filter(n => n.status === 'tribal' || (n.status === 'partial' && n.importance >= 7))
+.sort((a,b) => b.importance - a.importance).slice(0, 8);
+const riskGrid = document.getElementById('riskGrid');
+riskGrid.innerHTML = riskNodes.map(n => {
+const level = n.status === 'tribal' ? 'critical' : 'warning';
+return `<div class="risk-card ${level}">
+<h3>${n.name}</h3>
+<div class="risk-type">${level === 'critical' ? 'Critical Risk' : 'Warning'} &bull; ${n.dept}</div>
+<p>Known by only ${n.people} ${n.people===1?'person':'people'}. ${n.coverage}% documented. Importance: ${n.importance}/10. Last updated: ${n.lastUpdated}.</p>
+<div class="risk-bar"><div class="risk-fill" style="width:${100-n.coverage}%;background:${level==='critical'?'#ef4444':'#fbbf24'}"></div></div>
+</div>`;
+}).join('');
+</script>
+</body>
+</html>

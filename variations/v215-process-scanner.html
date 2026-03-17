@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Process Scanner</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0e17;--surface:#111827;--surface2:#1a2236;--border:#1e293b;--accent:#6366f1;--accent2:#818cf8;--green:#22c55e;--red:#ef4444;--orange:#f59e0b;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.header{border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;gap:12px}
+.logo{font-size:20px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.divider{width:1px;height:24px;background:var(--border)}
+.container{max-width:1100px;margin:0 auto;padding:32px}
+.intro{text-align:center;margin-bottom:40px}
+.intro h1{font-size:32px;font-weight:700;margin-bottom:10px}
+.intro p{color:var(--text3);font-size:16px;max-width:600px;margin:0 auto}
+/* Input Section */
+.input-section{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;margin-bottom:32px}
+.input-section h3{font-size:16px;font-weight:600;margin-bottom:4px}
+.input-section .sub{font-size:13px;color:var(--text3);margin-bottom:20px}
+.templates{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.template-chip{padding:8px 16px;border-radius:8px;font-size:13px;background:var(--surface2);color:var(--text2);cursor:pointer;border:1px solid var(--border);transition:all .15s}
+.template-chip:hover{border-color:var(--accent);color:var(--text)}
+.template-chip.active{border-color:var(--accent);background:rgba(99,102,241,.1);color:var(--accent2)}
+textarea{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:16px;border-radius:12px;font-size:14px;font-family:inherit;resize:vertical;min-height:140px;outline:none;line-height:1.7}
+textarea:focus{border-color:var(--accent)}
+textarea::placeholder{color:var(--text3)}
+.btn-row{display:flex;justify-content:flex-end;margin-top:16px;gap:12px}
+.btn{padding:12px 28px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .15s;display:inline-flex;align-items:center;gap:8px}
+.btn-accent{background:var(--accent);color:#fff}.btn-accent:hover{background:var(--accent2)}
+.btn-outline{background:transparent;color:var(--text2);border:1px solid var(--border)}.btn-outline:hover{border-color:var(--accent);color:var(--text)}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:#16a34a}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+/* Loading Animation */
+.loading-overlay{display:none;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:60px 32px;text-align:center;margin-bottom:32px}
+.loading-overlay.show{display:block}
+.scanner-animation{position:relative;width:200px;height:200px;margin:0 auto 24px}
+.scanner-ring{position:absolute;inset:0;border:2px solid var(--border);border-radius:50%}
+.scanner-ring.active{border-color:var(--accent);border-top-color:transparent;animation:spin 1s linear infinite}
+.scanner-ring:nth-child(2){inset:15px;animation-duration:1.5s;animation-direction:reverse}
+.scanner-ring:nth-child(3){inset:30px;animation-duration:2s}
+.scanner-center{position:absolute;inset:45px;border-radius:50%;background:rgba(99,102,241,.1);display:flex;align-items:center;justify-content:center;font-size:32px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:16px;font-weight:600;margin-bottom:8px}
+.loading-sub{font-size:13px;color:var(--text3)}
+.loading-steps{display:flex;flex-direction:column;gap:8px;max-width:400px;margin:20px auto 0;text-align:left}
+.loading-step{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text3);transition:color .3s}
+.loading-step.done{color:var(--green)}
+.loading-step.active{color:var(--text)}
+.loading-step .check{width:20px;height:20px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;transition:all .3s}
+.loading-step.done .check{background:var(--green);border-color:var(--green);color:#fff}
+.loading-step.active .check{border-color:var(--accent);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+/* Results Section */
+.results{display:none;margin-bottom:32px}
+.results.show{display:block}
+.results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.results-header h2{font-size:22px;font-weight:700}
+.results-actions{display:flex;gap:10px}
+/* Process Map / Flowchart */
+.flowchart-panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px;overflow-x:auto}
+.flowchart-panel h3{font-size:14px;font-weight:600;margin-bottom:16px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.flowchart{display:flex;align-items:flex-start;gap:8px;padding:16px 0;min-width:max-content}
+.flow-node{min-width:160px;border-radius:10px;padding:14px 16px;text-align:center;position:relative;border:2px solid;transition:all .3s}
+.flow-node.normal{border-color:var(--border);background:var(--surface2)}
+.flow-node.waste{border-color:var(--red);background:rgba(239,68,68,.06)}
+.flow-node.auto{border-color:var(--green);background:rgba(34,197,94,.06)}
+.flow-node .step-num{font-size:10px;color:var(--text3);margin-bottom:4px}
+.flow-node .step-name{font-size:13px;font-weight:600;margin-bottom:4px}
+.flow-node .step-time{font-size:11px;color:var(--text3)}
+.flow-node .step-tag{position:absolute;top:-10px;right:-10px;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:600}
+.flow-node.waste .step-tag{background:var(--red);color:#fff}
+.flow-node.auto .step-tag{background:var(--green);color:#fff}
+.flow-arrow{display:flex;align-items:center;color:var(--text3);font-size:18px;padding-top:20px}
+/* Analysis Grid */
+.analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.analysis-panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px}
+.analysis-panel h3{font-size:14px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.analysis-panel h3 .icon{font-size:18px}
+.metric-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(30,41,59,.3)}
+.metric-row:last-child{border:none}
+.metric-label{font-size:13px;color:var(--text2)}
+.metric-value{font-size:14px;font-weight:600}
+.metric-value.good{color:var(--green)}
+.metric-value.bad{color:var(--red)}
+.metric-value.warn{color:var(--orange)}
+.waste-item{padding:12px 0;border-bottom:1px solid rgba(30,41,59,.3)}
+.waste-item:last-child{border:none}
+.waste-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.waste-name{font-size:13px;font-weight:500}
+.waste-impact{font-size:12px;font-weight:600;color:var(--red)}
+.waste-desc{font-size:12px;color:var(--text3);line-height:1.5}
+.auto-item{padding:12px 0;border-bottom:1px solid rgba(30,41,59,.3)}
+.auto-item:last-child{border:none}
+.auto-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.auto-name{font-size:13px;font-weight:500}
+.auto-savings{font-size:12px;font-weight:600;color:var(--green)}
+.auto-desc{font-size:12px;color:var(--text3);line-height:1.5}
+.auto-confidence{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-top:4px}
+.conf-high{background:rgba(34,197,94,.12);color:#4ade80}
+.conf-med{background:rgba(245,158,11,.12);color:#fbbf24}
+/* Savings Summary */
+.savings-panel{background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(34,197,94,.1));border:1px solid var(--accent);border-radius:16px;padding:32px;text-align:center;margin-bottom:20px}
+.savings-panel h3{font-size:14px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px}
+.savings-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.savings-stat{padding:16px;background:rgba(0,0,0,.2);border-radius:10px}
+.savings-stat .val{font-size:28px;font-weight:700;color:var(--green)}
+.savings-stat .lbl{font-size:11px;color:var(--text3);margin-top:4px}
+/* SOP Modal */
+.sop-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center;padding:32px}
+.sop-overlay.show{display:flex}
+.sop-modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;max-width:700px;width:100%;max-height:80vh;overflow-y:auto;padding:32px}
+.sop-modal h2{font-size:20px;font-weight:700;margin-bottom:4px}
+.sop-modal .sub{font-size:13px;color:var(--text3);margin-bottom:20px}
+.sop-section{margin-bottom:20px}
+.sop-section h4{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--accent2);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.sop-step{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid rgba(30,41,59,.2)}
+.sop-step:last-child{border:none}
+.sop-step-num{width:28px;height:28px;border-radius:6px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--text2);flex-shrink:0}
+.sop-step-content{flex:1}
+.sop-step-name{font-size:13px;font-weight:600;margin-bottom:2px}
+.sop-step-desc{font-size:12px;color:var(--text3);line-height:1.5}
+.sop-step-owner{font-size:11px;color:var(--accent2);margin-top:4px}
+.sop-close{position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:8px;background:var(--surface2);border:none;color:var(--text3);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.sop-close:hover{color:var(--text);background:var(--border)}
+.sop-actions{display:flex;gap:12px;margin-top:24px;padding-top:16px;border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+<div class="header">
+<span class="logo">Go2</span>
+<span class="divider"></span>
+<span style="font-size:16px;font-weight:600">Process Scanner</span>
+</div>
+
+<div class="container">
+<div class="intro">
+<h1>Scan Your Processes</h1>
+<p>Describe any business process and our AI will analyze it for inefficiencies, waste, and automation opportunities.</p>
+</div>
+
+<div class="input-section" id="input-section">
+<h3>Describe Your Process</h3>
+<div class="sub">Pick a template or describe your own process step by step</div>
+<div class="templates" id="templates"></div>
+<textarea id="process-input" placeholder="Describe your process step by step. For example:&#10;&#10;1. Customer submits a return request via email&#10;2. Support agent reviews the request and checks order history&#10;3. Agent determines if return is within policy&#10;4. If approved, agent generates return shipping label&#10;5. Customer ships item back&#10;6. Warehouse receives and inspects item&#10;7. Finance processes refund&#10;8. Customer receives confirmation email"></textarea>
+<div class="btn-row">
+<button class="btn btn-outline" onclick="document.getElementById('process-input').value=''">Clear</button>
+<button class="btn btn-accent" id="scan-btn" onclick="startScan()">&#128270; Scan Process</button>
+</div>
+</div>
+
+<div class="loading-overlay" id="loading">
+<div class="scanner-animation">
+<div class="scanner-ring active"></div>
+<div class="scanner-ring active"></div>
+<div class="scanner-ring active"></div>
+<div class="scanner-center">&#128270;</div>
+</div>
+<div class="loading-text">Analyzing Your Process...</div>
+<div class="loading-sub">Our AI is breaking down each step</div>
+<div class="loading-steps" id="loading-steps">
+<div class="loading-step" data-step="0"><div class="check"></div>Parsing process steps</div>
+<div class="loading-step" data-step="1"><div class="check"></div>Mapping dependencies</div>
+<div class="loading-step" data-step="2"><div class="check"></div>Identifying waste patterns</div>
+<div class="loading-step" data-step="3"><div class="check"></div>Finding automation opportunities</div>
+<div class="loading-step" data-step="4"><div class="check"></div>Calculating potential savings</div>
+<div class="loading-step" data-step="5"><div class="check"></div>Generating process map</div>
+</div>
+</div>
+
+<div class="results" id="results">
+<div class="results-header">
+<h2>Process Analysis Results</h2>
+<div class="results-actions">
+<button class="btn btn-outline" onclick="showSOP()">&#128196; Generate SOP</button>
+<button class="btn btn-outline" onclick="resetScan()">&#8635; Scan Another</button>
+</div>
+</div>
+<div class="flowchart-panel">
+<h3>Process Map</h3>
+<div class="flowchart" id="flowchart"></div>
+</div>
+<div class="savings-panel">
+<h3>Estimated Savings with Go2</h3>
+<div class="savings-grid" id="savings-grid"></div>
+</div>
+<div class="analysis-grid">
+<div class="analysis-panel">
+<h3><span class="icon">&#9888;</span> Waste Identified</h3>
+<div id="waste-list"></div>
+</div>
+<div class="analysis-panel">
+<h3><span class="icon">&#9889;</span> Automation Opportunities</h3>
+<div id="auto-list"></div>
+</div>
+</div>
+<div class="analysis-grid">
+<div class="analysis-panel">
+<h3><span class="icon">&#128202;</span> Process Metrics</h3>
+<div id="metrics-list"></div>
+</div>
+<div class="analysis-panel">
+<h3><span class="icon">&#128161;</span> Recommendations</h3>
+<div id="recs-list"></div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="sop-overlay" id="sop-overlay" onclick="if(event.target===this)this.classList.remove('show')">
+<div class="sop-modal" id="sop-modal" style="position:relative"></div>
+</div>
+
+<script>
+const templates=[
+{name:'Customer Returns',text:'1. Customer submits a return request via email or web form\n2. Support agent reviews the request and checks order history in the system\n3. Agent verifies return is within the 30-day return policy\n4. If approved, agent manually generates a return shipping label\n5. Agent emails the label to the customer\n6. Customer ships item back using the label\n7. Warehouse receives package and inspects the item condition\n8. Warehouse logs the return in the inventory system\n9. Finance team processes the refund in the payment system\n10. Customer receives a refund confirmation email'},
+{name:'Employee Onboarding',text:'1. HR receives signed offer letter\n2. HR manually creates accounts in email, Slack, and project management tools\n3. HR orders laptop and equipment from IT\n4. HR creates a welcome document with first-week schedule\n5. Manager schedules onboarding meetings with team members\n6. IT sets up the workstation and installs required software\n7. New hire arrives and receives access credentials\n8. HR conducts orientation session covering policies and benefits\n9. Manager assigns first tasks and pairs with a buddy\n10. HR schedules 30-day check-in and sends feedback survey'},
+{name:'Invoice Approval',text:'1. Vendor submits invoice via email\n2. Accounts payable clerk downloads and saves the invoice PDF\n3. Clerk manually enters invoice details into the accounting system\n4. Clerk looks up the corresponding purchase order\n5. Clerk compares invoice amounts to PO amounts line by line\n6. If amounts match, clerk routes to department manager for approval\n7. Manager reviews and approves or rejects via email\n8. If approved, clerk schedules payment based on vendor terms\n9. Payment is processed on the scheduled date\n10. Clerk files the invoice and updates the ledger'},
+{name:'Content Publishing',text:'1. Writer creates first draft in Google Docs\n2. Editor reviews draft and leaves comments\n3. Writer revises based on feedback\n4. SEO specialist optimizes headings, meta description, and keywords\n5. Designer creates featured image and inline graphics\n6. Content manager reviews final version for brand consistency\n7. Content manager manually copies content into the CMS\n8. Content manager formats the post, adds images, and sets categories\n9. Marketing lead gives final approval\n10. Content manager schedules publication and social media posts\n11. After publishing, analyst manually pulls performance metrics into a spreadsheet'},
+{name:'Bug Report to Fix',text:'1. User reports a bug via support ticket or Slack\n2. Support agent reproduces the issue and documents steps\n3. Support agent creates a bug ticket in Jira with details\n4. Engineering lead triages and assigns priority during weekly review\n5. Developer picks up the ticket and investigates the root cause\n6. Developer writes a fix and creates a pull request\n7. Another developer reviews the code changes\n8. Developer addresses review comments and updates the PR\n9. PR is merged and deployed to staging environment\n10. QA tests the fix on staging\n11. If QA passes, the fix is deployed to production\n12. Support agent notifies the original reporter that the bug is fixed'},
+{name:'Sales Order Processing',text:'1. Sales rep receives a new order via email from a customer\n2. Sales rep manually enters order details into the ERP system\n3. Sales rep checks inventory availability in a separate system\n4. If in stock, sales rep creates a pick list document\n5. Sales rep emails the pick list to the warehouse team\n6. Warehouse picks and packs the items\n7. Warehouse creates a shipping label using the carrier website\n8. Shipping coordinator schedules pickup with the carrier\n9. Sales rep manually updates the order status in the ERP\n10. Sales rep sends tracking information to the customer via email\n11. After delivery, sales rep follows up with customer satisfaction survey'}
+];
+
+let parsedSteps=[];
+
+function init(){
+const tpl=document.getElementById('templates');
+templates.forEach(t=>{
+const chip=document.createElement('div');chip.className='template-chip';chip.textContent=t.name;
+chip.onclick=()=>{
+document.querySelectorAll('.template-chip').forEach(c=>c.classList.remove('active'));
+chip.classList.add('active');
+document.getElementById('process-input').value=t.text;
+};
+tpl.appendChild(chip);
+});
+}
+
+function parseProcess(text){
+const lines=text.split('\n').filter(l=>l.trim());
+return lines.map((line,i)=>{
+let name=line.replace(/^\d+[\.\)]\s*/,'').trim();
+const isWaste=/(manual|check|review|compare|look up|search|copy|enter|download|file|log|update.*status|email.*to)/i.test(name);
+const isAuto=/(manual|auto|enter|extract|generate|send|create|schedule|route|check|verify|compare|email|copy|format|pull|log|update)/i.test(name);
+const time=estimateTime(name);
+return{num:i+1,name,time,isWaste:isWaste&&Math.random()>.3,isAuto:isAuto&&Math.random()>.25,wasteReason:getWasteReason(name),autoDesc:getAutoDesc(name)};
+});
+}
+
+function estimateTime(step){
+if(/(review|inspect|investigate|analyze)/i.test(step))return Math.floor(15+Math.random()*30);
+if(/(enter|create|generate|write|format|copy)/i.test(step))return Math.floor(10+Math.random()*20);
+if(/(email|send|notify|schedule)/i.test(step))return Math.floor(3+Math.random()*8);
+if(/(check|verify|compare|look up)/i.test(step))return Math.floor(5+Math.random()*15);
+if(/(receive|arrive|submit)/i.test(step))return Math.floor(1+Math.random()*5);
+return Math.floor(5+Math.random()*20);
+}
+
+function getWasteReason(step){
+if(/(manual)/i.test(step))return'Manual process that could be automated';
+if(/(check|verify|compare)/i.test(step))return'Verification step adds latency without proportional value';
+if(/(email|send)/i.test(step))return'Communication bottleneck — depends on recipient availability';
+if(/(enter|copy|log|update)/i.test(step))return'Redundant data entry across multiple systems';
+if(/(review|approval)/i.test(step))return'Approval bottleneck — average wait time exceeds task time';
+if(/(search|look up|find)/i.test(step))return'Information retrieval — data scattered across systems';
+return'Process step with optimization potential';
+}
+
+function getAutoDesc(step){
+if(/(enter|extract|create|generate)/i.test(step))return'AI can auto-extract/generate this data with 99%+ accuracy';
+if(/(email|send|notify)/i.test(step))return'Automated notifications triggered by workflow events';
+if(/(check|verify|compare)/i.test(step))return'Rule-based validation can handle standard cases automatically';
+if(/(route|assign|schedule)/i.test(step))return'ML-based routing based on historical patterns';
+if(/(review|approval)/i.test(step))return'Auto-approve within policy, flag exceptions for human review';
+if(/(copy|format|log|update)/i.test(step))return'System integration eliminates manual data transfer';
+return'Process mining identifies automation pattern for this step';
+}
+
+function startScan(){
+const text=document.getElementById('process-input').value.trim();
+if(!text){document.getElementById('process-input').focus();return}
+parsedSteps=parseProcess(text);
+
+document.getElementById('input-section').style.display='none';
+const loading=document.getElementById('loading');loading.classList.add('show');
+
+const steps=document.querySelectorAll('.loading-step');
+let i=0;
+const interval=setInterval(()=>{
+if(i>0)steps[i-1].classList.remove('active'),steps[i-1].classList.add('done'),steps[i-1].querySelector('.check').textContent='&#10003;';
+if(i<steps.length){steps[i].classList.add('active')}
+else{clearInterval(interval);setTimeout(showResults,500)}
+i++;
+},600);
+}
+
+function showResults(){
+document.getElementById('loading').classList.remove('show');
+const results=document.getElementById('results');results.classList.add('show');
+
+// Flowchart
+const fc=document.getElementById('flowchart');fc.innerHTML='';
+parsedSteps.forEach((s,i)=>{
+const cls=s.isWaste?'waste':s.isAuto?'auto':'normal';
+const tag=s.isWaste?'<span class="step-tag">WASTE</span>':s.isAuto?'<span class="step-tag">AUTOMATE</span>':'';
+const node=document.createElement('div');node.className=`flow-node ${cls}`;
+node.innerHTML=`${tag}<div class="step-num">Step ${s.num}</div><div class="step-name">${s.name.length>35?s.name.slice(0,35)+'...':s.name}</div><div class="step-time">${s.time} min</div>`;
+node.title=s.name;
+fc.appendChild(node);
+if(i<parsedSteps.length-1){const arrow=document.createElement('div');arrow.className='flow-arrow';arrow.innerHTML='&#8594;';fc.appendChild(arrow)}
+});
+
+// Savings
+const totalTime=parsedSteps.reduce((s,p)=>s+p.time,0);
+const autoTime=parsedSteps.filter(p=>p.isAuto).reduce((s,p)=>s+p.time,0);
+const wasteTime=parsedSteps.filter(p=>p.isWaste).reduce((s,p)=>s+Math.round(p.time*0.4),0);
+const savingsPerExec=autoTime+wasteTime;
+const execsPerWeek=Math.floor(5+Math.random()*15);
+const monthlySavingsHrs=Math.round(savingsPerExec*execsPerWeek*4.3/60);
+const dollarSavings=monthlySavingsHrs*45;
+
+const sg=document.getElementById('savings-grid');
+sg.innerHTML=`
+<div class="savings-stat"><div class="val">${savingsPerExec} min</div><div class="lbl">Saved Per Execution</div></div>
+<div class="savings-stat"><div class="val">${Math.round(savingsPerExec/totalTime*100)}%</div><div class="lbl">Time Reduction</div></div>
+<div class="savings-stat"><div class="val">${monthlySavingsHrs}h</div><div class="lbl">Monthly Hours Saved</div></div>
+<div class="savings-stat"><div class="val">$${dollarSavings.toLocaleString()}</div><div class="lbl">Monthly Cost Savings</div></div>`;
+
+// Waste list
+const wl=document.getElementById('waste-list');wl.innerHTML='';
+parsedSteps.filter(p=>p.isWaste).forEach(p=>{
+wl.innerHTML+=`<div class="waste-item"><div class="waste-header"><div class="waste-name">Step ${p.num}: ${p.name.slice(0,40)}${p.name.length>40?'...':''}</div><div class="waste-impact">-${Math.round(p.time*0.4)} min</div></div><div class="waste-desc">${p.wasteReason}</div></div>`;
+});
+if(!wl.innerHTML)wl.innerHTML='<div style="padding:16px;color:var(--text3);font-size:13px">No significant waste detected in this process.</div>';
+
+// Auto list
+const al=document.getElementById('auto-list');al.innerHTML='';
+parsedSteps.filter(p=>p.isAuto).forEach(p=>{
+const conf=Math.random()>.4?'high':'med';
+al.innerHTML+=`<div class="auto-item"><div class="auto-header"><div class="auto-name">Step ${p.num}: ${p.name.slice(0,40)}${p.name.length>40?'...':''}</div><div class="auto-savings">-${p.time} min</div></div><div class="auto-desc">${p.autoDesc}</div><span class="auto-confidence conf-${conf}">${conf==='high'?'High':'Medium'} Confidence</span></div>`;
+});
+
+// Metrics
+const ml=document.getElementById('metrics-list');
+const autoSteps=parsedSteps.filter(p=>p.isAuto).length;
+const wasteSteps=parsedSteps.filter(p=>p.isWaste).length;
+ml.innerHTML=`
+<div class="metric-row"><div class="metric-label">Total Steps</div><div class="metric-value">${parsedSteps.length}</div></div>
+<div class="metric-row"><div class="metric-label">Total Process Time</div><div class="metric-value">${totalTime} min</div></div>
+<div class="metric-row"><div class="metric-label">Automatable Steps</div><div class="metric-value good">${autoSteps}/${parsedSteps.length}</div></div>
+<div class="metric-row"><div class="metric-label">Waste Steps</div><div class="metric-value bad">${wasteSteps}</div></div>
+<div class="metric-row"><div class="metric-label">Process Efficiency</div><div class="metric-value ${totalTime-savingsPerExec<totalTime*0.6?'warn':'good'}">${Math.round((1-savingsPerExec/totalTime)*100)}%</div></div>
+<div class="metric-row"><div class="metric-label">Automation Potential</div><div class="metric-value good">${Math.round(autoTime/totalTime*100)}%</div></div>`;
+
+// Recommendations
+const rl=document.getElementById('recs-list');
+const recs=[
+{icon:'&#9889;',text:`Automate ${autoSteps} steps using Go2 AI agents to reduce process time by ${Math.round(autoTime/totalTime*100)}%.`},
+{icon:'&#128736;',text:`Eliminate ${wasteSteps} waste points to remove ${wasteTime} minutes of non-value-added time per execution.`},
+{icon:'&#128202;',text:`At ${execsPerWeek}x weekly executions, automation would save ${monthlySavingsHrs} hours/month ($${dollarSavings.toLocaleString()} at $45/hr).`},
+{icon:'&#128161;',text:'Deploy process monitoring to identify bottlenecks in real-time and trigger coaching nudges.'},
+{icon:'&#127919;',text:'Train an AI agent on this workflow data to handle the automated steps with 99%+ accuracy.'}
+];
+rl.innerHTML=recs.map(r=>`<div class="metric-row" style="border-bottom:1px solid rgba(30,41,59,.3)"><div class="metric-label" style="display:flex;gap:8px;align-items:start"><span>${r.icon}</span><span>${r.text}</span></div></div>`).join('');
+}
+
+function showSOP(){
+const modal=document.getElementById('sop-modal');
+const overlay=document.getElementById('sop-overlay');
+const processName=document.querySelector('.template-chip.active')?.textContent||'Custom Process';
+modal.innerHTML=`
+<button class="sop-close" onclick="document.getElementById('sop-overlay').classList.remove('show')">&times;</button>
+<h2>${processName} — Standard Operating Procedure</h2>
+<div class="sub">Auto-generated by Go2 Process Scanner</div>
+<div class="sop-section">
+<h4>Process Overview</h4>
+<p style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:8px">This SOP covers the ${processName.toLowerCase()} process consisting of ${parsedSteps.length} steps. Total estimated time: ${parsedSteps.reduce((s,p)=>s+p.time,0)} minutes. ${parsedSteps.filter(p=>p.isAuto).length} steps are candidates for automation.</p>
+</div>
+<div class="sop-section">
+<h4>Process Steps</h4>
+${parsedSteps.map(s=>`
+<div class="sop-step">
+<div class="sop-step-num" style="${s.isAuto?'background:rgba(34,197,94,.15);color:var(--green)':s.isWaste?'background:rgba(239,68,68,.15);color:var(--red)':''}">${s.num}</div>
+<div class="sop-step-content">
+<div class="sop-step-name">${s.name}</div>
+<div class="sop-step-desc">Estimated time: ${s.time} min. ${s.isAuto?'[AUTOMATION CANDIDATE] '+s.autoDesc:''} ${s.isWaste?'[WASTE IDENTIFIED] '+s.wasteReason:''}</div>
+<div class="sop-step-owner">Owner: ${s.isAuto?'AI Agent (automated)':'Team Member'}</div>
+</div>
+</div>`).join('')}
+</div>
+<div class="sop-section">
+<h4>Automation Notes</h4>
+<p style="font-size:13px;color:var(--text2);line-height:1.7">${parsedSteps.filter(p=>p.isAuto).length} of ${parsedSteps.length} steps can be automated using Go2 AI agents. Estimated time savings: ${parsedSteps.filter(p=>p.isAuto).reduce((s,p)=>s+p.time,0)} minutes per execution. Recommended approach: phased rollout starting with highest-confidence automation candidates.</p>
+</div>
+<div class="sop-actions">
+<button class="btn btn-accent" onclick="navigator.clipboard&&navigator.clipboard.writeText(document.getElementById('sop-modal').innerText);this.textContent='Copied!'">&#128203; Copy to Clipboard</button>
+<button class="btn btn-outline" onclick="document.getElementById('sop-overlay').classList.remove('show')">Close</button>
+</div>`;
+overlay.classList.add('show');
+}
+
+function resetScan(){
+document.getElementById('results').classList.remove('show');
+document.getElementById('input-section').style.display='block';
+document.querySelectorAll('.loading-step').forEach(s=>{s.classList.remove('done','active');s.querySelector('.check').textContent=''});
+}
+
+init();
+</script>
+</body>
+</html>
