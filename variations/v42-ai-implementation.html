@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Actually Implement AI in Your Business</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --warm-bg: #FFFAF5;
+  --warm-100: #FFF3E8;
+  --warm-200: #FFE4CC;
+  --warm-300: #FFD0A8;
+  --accent: #E86A33;
+  --accent-dark: #C4521E;
+  --text: #2D2926;
+  --text-light: #6B6560;
+  --green: #22A06B;
+  --green-bg: #E3FCEF;
+  --red: #DE350B;
+  --red-bg: #FFEBE6;
+  --blue: #0065FF;
+  --blue-bg: #DEEBFF;
+  --shadow-sm: 0 1px 3px rgba(45,41,38,.08);
+  --shadow-md: 0 4px 16px rgba(45,41,38,.1);
+  --shadow-lg: 0 8px 32px rgba(45,41,38,.12);
+  --radius: 12px;
+  --radius-lg: 20px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  color: var(--text);
+  background: var(--warm-bg);
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+/* NAV */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(255,250,245,.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(0,0,0,.06);
+  padding: 16px 0;
+}
+nav .container {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.logo {
+  font-size: 1.5rem; font-weight: 800; color: var(--accent);
+  letter-spacing: -0.5px;
+}
+.logo span { color: var(--text); }
+nav a.cta-link {
+  color: var(--accent); font-weight: 600; text-decoration: none;
+  font-size: .95rem; transition: color .2s;
+}
+nav a.cta-link:hover { color: var(--accent-dark); }
+
+/* HERO */
+.hero {
+  padding: 140px 0 80px;
+  text-align: center;
+  background: linear-gradient(180deg, #FFFAF5 0%, #FFF3E8 100%);
+}
+.hero-eyebrow {
+  display: inline-block;
+  background: var(--warm-200);
+  color: var(--accent-dark);
+  font-size: .85rem;
+  font-weight: 600;
+  padding: 6px 16px;
+  border-radius: 100px;
+  margin-bottom: 24px;
+  letter-spacing: .3px;
+}
+.hero h1 {
+  font-size: clamp(2.2rem, 5.5vw, 3.6rem);
+  font-weight: 800;
+  line-height: 1.15;
+  max-width: 800px;
+  margin: 0 auto 24px;
+  letter-spacing: -1.5px;
+  color: var(--text);
+}
+.hero h1 em {
+  font-style: normal;
+  color: var(--accent);
+}
+.hero-sub {
+  font-size: clamp(1.05rem, 2.5vw, 1.25rem);
+  color: var(--text-light);
+  max-width: 600px;
+  margin: 0 auto 40px;
+  line-height: 1.7;
+}
+.hero-cta {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 16px 36px;
+  border-radius: 100px;
+  text-decoration: none;
+  transition: all .25s;
+  box-shadow: 0 4px 20px rgba(232,106,51,.3);
+}
+.hero-cta:hover {
+  background: var(--accent-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 28px rgba(232,106,51,.4);
+}
+.hero-cta svg { width: 20px; height: 20px; }
+.hero-proof {
+  margin-top: 32px;
+  font-size: .9rem;
+  color: var(--text-light);
+}
+.hero-proof strong { color: var(--text); }
+
+/* ANXIETY SECTION */
+.anxiety {
+  padding: 80px 0;
+}
+.anxiety-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 48px;
+}
+.anxiety-card {
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.06);
+  border-radius: var(--radius);
+  padding: 28px;
+  box-shadow: var(--shadow-sm);
+  transition: transform .2s, box-shadow .2s;
+}
+.anxiety-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+.anxiety-icon {
+  font-size: 1.6rem;
+  margin-bottom: 12px;
+  display: block;
+}
+.anxiety-card h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.anxiety-card p {
+  font-size: .93rem;
+  color: var(--text-light);
+  line-height: 1.6;
+}
+
+.section-label {
+  font-size: .8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+.section-title {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1.2;
+  margin-bottom: 16px;
+}
+.section-sub {
+  font-size: 1.05rem;
+  color: var(--text-light);
+  max-width: 600px;
+  line-height: 1.7;
+}
+.text-center { text-align: center; }
+.text-center .section-sub { margin: 0 auto; }
+
+/* COMPLEXITY METER */
+.meter-section {
+  padding: 80px 0;
+  background: linear-gradient(180deg, var(--warm-bg) 0%, #fff 100%);
+}
+.meter-wrapper {
+  max-width: 800px;
+  margin: 48px auto 0;
+}
+.meter-row {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: 32px 36px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(0,0,0,.05);
+}
+.meter-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.meter-label h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.meter-tag {
+  font-size: .78rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 100px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.meter-tag.hard {
+  background: var(--red-bg);
+  color: var(--red);
+}
+.meter-tag.easy {
+  background: var(--green-bg);
+  color: var(--green);
+}
+.meter-bar {
+  height: 14px;
+  border-radius: 100px;
+  background: #f0ede9;
+  overflow: hidden;
+  position: relative;
+}
+.meter-fill {
+  height: 100%;
+  border-radius: 100px;
+  transition: width 1.2s cubic-bezier(.22,1,.36,1);
+  width: 0;
+}
+.meter-fill.red {
+  background: linear-gradient(90deg, #FF8B6A, var(--red));
+}
+.meter-fill.green {
+  background: linear-gradient(90deg, #57D9A3, var(--green));
+}
+.meter-details {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+.meter-detail {
+  font-size: .82rem;
+  color: var(--text-light);
+}
+.meter-detail strong {
+  display: block;
+  font-size: .95rem;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+/* HOW IT WORKS */
+.how-section {
+  padding: 80px 0;
+}
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  margin-top: 56px;
+  position: relative;
+}
+.steps::before {
+  content: '';
+  position: absolute;
+  top: 44px;
+  left: 16.66%;
+  right: 16.66%;
+  height: 2px;
+  background: var(--warm-200);
+}
+.step {
+  text-align: center;
+  padding: 0 24px;
+  position: relative;
+}
+.step-num {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 800;
+  margin-bottom: 20px;
+  position: relative;
+  z-index: 2;
+}
+.step:nth-child(1) .step-num { background: var(--warm-200); color: var(--accent); }
+.step:nth-child(2) .step-num { background: var(--warm-200); color: var(--accent); }
+.step:nth-child(3) .step-num { background: var(--accent); color: #fff; }
+.step h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.step p {
+  font-size: .9rem;
+  color: var(--text-light);
+  line-height: 1.6;
+}
+.step-time {
+  display: inline-block;
+  background: var(--warm-100);
+  color: var(--accent);
+  font-size: .75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 100px;
+  margin-top: 12px;
+}
+
+/* WHAT EMPLOYEES GET */
+.employees-section {
+  padding: 80px 0;
+  background: #fff;
+}
+.emp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-top: 48px;
+}
+.emp-card {
+  background: var(--warm-bg);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  border: 1px solid rgba(0,0,0,.04);
+}
+.emp-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.emp-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+}
+.emp-card:nth-child(1) .emp-avatar { background: #6554C0; }
+.emp-card:nth-child(2) .emp-avatar { background: var(--accent); }
+.emp-card:nth-child(3) .emp-avatar { background: var(--green); }
+.emp-card-header div h4 { font-size: .95rem; font-weight: 700; }
+.emp-card-header div span { font-size: .8rem; color: var(--text-light); }
+.emp-tip {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  border-left: 3px solid var(--accent);
+}
+.emp-tip-label {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.emp-tip p {
+  font-size: .88rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+.emp-result {
+  font-size: .82rem;
+  color: var(--green);
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+/* WHAT MANAGERS GET */
+.managers-section {
+  padding: 80px 0;
+}
+.mgr-dashboard {
+  max-width: 800px;
+  margin: 48px auto 0;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  border: 1px solid rgba(0,0,0,.06);
+}
+.mgr-dash-header {
+  background: linear-gradient(135deg, #2D2926, #4A4340);
+  color: #fff;
+  padding: 20px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.mgr-dash-header h3 { font-size: 1rem; font-weight: 600; }
+.mgr-dash-header span { font-size: .8rem; opacity: .7; }
+.mgr-dash-body { padding: 28px; }
+.mgr-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.mgr-metric {
+  background: var(--warm-bg);
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: center;
+}
+.mgr-metric-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+.mgr-metric-label {
+  font-size: .78rem;
+  color: var(--text-light);
+  margin-top: 4px;
+}
+.mgr-metric-change {
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--green);
+  margin-top: 4px;
+}
+.mgr-insights { border-top: 1px solid rgba(0,0,0,.06); padding-top: 20px; }
+.mgr-insights h4 {
+  font-size: .82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-light);
+  margin-bottom: 16px;
+}
+.mgr-insight-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(0,0,0,.04);
+}
+.mgr-insight-row:last-child { border-bottom: none; }
+.mgr-insight-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .9rem;
+  flex-shrink: 0;
+}
+.mgr-insight-icon.blue { background: var(--blue-bg); }
+.mgr-insight-icon.green { background: var(--green-bg); }
+.mgr-insight-icon.orange { background: var(--warm-200); }
+.mgr-insight-text { font-size: .88rem; color: var(--text); line-height: 1.5; }
+.mgr-insight-text strong { font-weight: 600; }
+.mgr-note {
+  margin-top: 20px;
+  padding: 12px 16px;
+  background: var(--blue-bg);
+  border-radius: var(--radius);
+  font-size: .82rem;
+  color: #172B4D;
+  text-align: center;
+}
+
+/* COMPARISON */
+.compare-section {
+  padding: 80px 0;
+  background: linear-gradient(180deg, #fff 0%, var(--warm-bg) 100%);
+}
+.compare-table {
+  max-width: 800px;
+  margin: 48px auto 0;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+.compare-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  background: #F7F5F2;
+  border-bottom: 2px solid rgba(0,0,0,.06);
+}
+.compare-header div {
+  padding: 16px 20px;
+  font-size: .78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-light);
+  text-align: center;
+}
+.compare-header div:first-child { text-align: left; }
+.compare-header div:last-child { color: var(--accent); }
+.compare-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  border-bottom: 1px solid rgba(0,0,0,.04);
+  align-items: center;
+}
+.compare-row:last-child { border-bottom: none; }
+.compare-row div {
+  padding: 14px 20px;
+  font-size: .88rem;
+  text-align: center;
+}
+.compare-row div:first-child {
+  text-align: left;
+  font-weight: 600;
+  color: var(--text);
+}
+.compare-check { color: var(--green); font-weight: 700; }
+.compare-x { color: #ccc; }
+.compare-partial { color: var(--text-light); font-size: .8rem; }
+.compare-footer {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  background: var(--warm-100);
+  border-top: 2px solid var(--warm-200);
+}
+.compare-footer div {
+  padding: 16px 20px;
+  text-align: center;
+  font-size: .9rem;
+}
+.compare-footer div:first-child {
+  text-align: left;
+  font-weight: 700;
+  color: var(--text);
+}
+.compare-footer div:last-child {
+  font-weight: 800;
+  color: var(--accent);
+}
+
+/* PRICING */
+.pricing-section {
+  padding: 80px 0;
+}
+.pricing-card {
+  max-width: 560px;
+  margin: 48px auto 0;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 2px solid var(--warm-200);
+  overflow: hidden;
+}
+.pricing-header {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #fff;
+  padding: 32px 36px;
+  text-align: center;
+}
+.pricing-header h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.pricing-header p {
+  font-size: .9rem;
+  opacity: .9;
+}
+.pricing-body { padding: 36px; }
+.pricing-price {
+  text-align: center;
+  margin-bottom: 28px;
+}
+.pricing-price .amount {
+  font-size: 3.2rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -2px;
+}
+.pricing-price .period {
+  font-size: 1rem;
+  color: var(--text-light);
+}
+.pricing-price .note {
+  font-size: .85rem;
+  color: var(--text-light);
+  margin-top: 4px;
+}
+.pricing-features {
+  list-style: none;
+  margin-bottom: 28px;
+}
+.pricing-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: .92rem;
+  color: var(--text);
+}
+.pricing-features li::before {
+  content: '\2713';
+  color: var(--green);
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.pricing-cta {
+  display: block;
+  text-align: center;
+  background: var(--accent);
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  padding: 16px;
+  border-radius: 100px;
+  text-decoration: none;
+  transition: all .25s;
+  box-shadow: 0 4px 20px rgba(232,106,51,.3);
+}
+.pricing-cta:hover {
+  background: var(--accent-dark);
+  transform: translateY(-2px);
+}
+.pricing-compare {
+  text-align: center;
+  margin-top: 24px;
+  padding: 20px;
+  background: var(--warm-100);
+  border-radius: var(--radius);
+}
+.pricing-compare p {
+  font-size: .88rem;
+  color: var(--text-light);
+  line-height: 1.6;
+}
+.pricing-compare strong { color: var(--text); }
+
+/* FAQ */
+.faq-section {
+  padding: 80px 0;
+  background: #fff;
+}
+.faq-list {
+  max-width: 700px;
+  margin: 48px auto 0;
+}
+.faq-item {
+  border-bottom: 1px solid rgba(0,0,0,.06);
+}
+.faq-q {
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 20px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: inherit;
+  line-height: 1.4;
+}
+.faq-q:hover { color: var(--accent); }
+.faq-arrow {
+  font-size: 1.2rem;
+  transition: transform .3s;
+  flex-shrink: 0;
+  margin-left: 16px;
+  color: var(--text-light);
+}
+.faq-item.open .faq-arrow { transform: rotate(180deg); }
+.faq-a {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .35s ease, padding .35s ease;
+}
+.faq-item.open .faq-a {
+  max-height: 300px;
+  padding-bottom: 20px;
+}
+.faq-a p {
+  font-size: .92rem;
+  color: var(--text-light);
+  line-height: 1.7;
+}
+
+/* FINAL CTA */
+.final-cta {
+  padding: 80px 0;
+  text-align: center;
+  background: linear-gradient(180deg, var(--warm-bg) 0%, var(--warm-100) 100%);
+}
+.final-cta h2 {
+  font-size: clamp(1.8rem, 4.5vw, 2.8rem);
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin-bottom: 16px;
+}
+.final-cta p {
+  font-size: 1.1rem;
+  color: var(--text-light);
+  max-width: 560px;
+  margin: 0 auto 32px;
+  line-height: 1.7;
+}
+
+/* FOOTER */
+footer {
+  padding: 40px 0;
+  text-align: center;
+  font-size: .82rem;
+  color: var(--text-light);
+  border-top: 1px solid rgba(0,0,0,.06);
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .steps {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .steps::before { display: none; }
+  .compare-header, .compare-row, .compare-footer {
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    font-size: .75rem;
+  }
+  .compare-header div, .compare-row div, .compare-footer div {
+    padding: 10px 8px;
+    font-size: .75rem;
+  }
+  .mgr-metrics {
+    grid-template-columns: 1fr;
+  }
+  .meter-details {
+    grid-template-columns: 1fr;
+  }
+  .meter-row { padding: 24px 20px; }
+}
+
+@media (max-width: 480px) {
+  .hero { padding: 120px 0 60px; }
+  .section-title { font-size: 1.6rem; }
+  .emp-grid { grid-template-columns: 1fr; }
+}
+
+/* ANIMATIONS */
+.fade-up {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity .6s ease, transform .6s ease;
+}
+.fade-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="container">
+    <div class="logo">go<span>2</span></div>
+    <a href="#pricing" class="cta-link">Get Started &rarr;</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-eyebrow">For teams of 15-50</div>
+    <h1>Everyone's talking about AI.<br>Nobody's told you <em>how to actually use it.</em></h1>
+    <p class="hero-sub">Go2 installs in five minutes and gives every employee frontier AI that's already trained on how your company works. No consultants. No prompt engineering. No six-month rollout.</p>
+    <a href="#pricing" class="hero-cta">
+      Start your AI implementation
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"/></svg>
+    </a>
+    <p class="hero-proof">Built on <strong>7+ years</strong> of workforce data from <strong>~1M workers</strong></p>
+  </div>
+</section>
+
+<!-- ANXIETY -->
+<section class="anxiety">
+  <div class="container text-center">
+    <div class="section-label">Sound familiar?</div>
+    <h2 class="section-title">The AI anxiety every business owner feels</h2>
+    <p class="section-sub">You're not behind. You just haven't found the right on-ramp yet.</p>
+    <div class="anxiety-grid">
+      <div class="anxiety-card fade-up">
+        <span class="anxiety-icon">&#128240;</span>
+        <h3>"There's a new AI tool every week"</h3>
+        <p>ChatGPT, Claude, Gemini, Copilot, Jasper, Notion AI... the list grows daily. Which ones matter? Which ones are hype? You don't have time to evaluate all of them.</p>
+      </div>
+      <div class="anxiety-card fade-up">
+        <span class="anxiety-icon">&#128176;</span>
+        <h3>"Am I supposed to hire an AI person?"</h3>
+        <p>AI consultants charge $200+/hour. AI engineers want $300K salaries. You're running a 30-person company, not Google. The "experts" feel designed for enterprises, not you.</p>
+      </div>
+      <div class="anxiety-card fade-up">
+        <span class="anxiety-icon">&#128561;</span>
+        <h3>"My competitors are figuring this out"</h3>
+        <p>Every conference, every LinkedIn post, every industry newsletter says AI is transforming everything. You know you need to act. You just don't know what action to take.</p>
+      </div>
+      <div class="anxiety-card fade-up">
+        <span class="anxiety-icon">&#128104;&#8205;&#128187;</span>
+        <h3>"My team tried ChatGPT. Nothing stuck."</h3>
+        <p>A few people played with it for a week. But generic AI doesn't know your processes, your customers, or your industry. So everyone went back to doing things the old way.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPLEXITY METER -->
+<section class="meter-section">
+  <div class="container text-center">
+    <div class="section-label">The real problem</div>
+    <h2 class="section-title">AI implementation is absurdly hard.<br>Unless someone does it for you.</h2>
+    <div class="meter-wrapper">
+      <div class="meter-row fade-up">
+        <div class="meter-label">
+          <h3>DIY AI Implementation</h3>
+          <span class="meter-tag hard">Painful</span>
+        </div>
+        <div class="meter-bar">
+          <div class="meter-fill red" data-width="92"></div>
+        </div>
+        <div class="meter-details">
+          <div class="meter-detail">
+            <strong>$50K-$200K</strong>
+            Consultants & tools
+          </div>
+          <div class="meter-detail">
+            <strong>6-12 months</strong>
+            Before any results
+          </div>
+          <div class="meter-detail">
+            <strong>High risk</strong>
+            Most initiatives fail
+          </div>
+        </div>
+      </div>
+      <div class="meter-row fade-up">
+        <div class="meter-label">
+          <h3>Go2</h3>
+          <span class="meter-tag easy">Easy</span>
+        </div>
+        <div class="meter-bar">
+          <div class="meter-fill green" data-width="18"></div>
+        </div>
+        <div class="meter-details">
+          <div class="meter-detail">
+            <strong>$69/user/mo</strong>
+            All-inclusive
+          </div>
+          <div class="meter-detail">
+            <strong>1 week</strong>
+            To first insights
+          </div>
+          <div class="meter-detail">
+            <strong>Zero risk</strong>
+            Cancel anytime
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-section">
+  <div class="container text-center">
+    <div class="section-label">How it works</div>
+    <h2 class="section-title">One install. AI that knows your business.</h2>
+    <p class="section-sub">Go2 watches how your team actually works, then uses frontier AI models to make everyone better.</p>
+    <div class="steps">
+      <div class="step fade-up">
+        <div class="step-num">1</div>
+        <h3>Install the lightweight agent</h3>
+        <p>A small desktop app goes on each employee's computer. It quietly observes workflows, tools, and patterns. No disruption.</p>
+        <span class="step-time">5 minutes</span>
+      </div>
+      <div class="step fade-up">
+        <div class="step-num">2</div>
+        <h3>AI learns your company</h3>
+        <p>Go2 feeds real work data into Claude, GPT, and Gemini. The AI builds a deep understanding of your processes, not generic advice.</p>
+        <span class="step-time">1 week</span>
+      </div>
+      <div class="step fade-up">
+        <div class="step-num">3</div>
+        <h3>Everyone gets smarter</h3>
+        <p>Each employee gets personal AI coaching. Managers get team-level insights. You get a roadmap of what to automate first.</p>
+        <span class="step-time">Ongoing</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT EMPLOYEES GET -->
+<section class="employees-section">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">For every employee</div>
+      <h2 class="section-title">AI coaching that's specific, not generic</h2>
+      <p class="section-sub">ChatGPT gives generic answers. Go2 gives advice based on how each person actually works.</p>
+    </div>
+    <div class="emp-grid">
+      <div class="emp-card fade-up">
+        <div class="emp-card-header">
+          <div class="emp-avatar">S</div>
+          <div>
+            <h4>Sarah, Sales Rep</h4>
+            <span>Uses CRM + Email + Slack</span>
+          </div>
+        </div>
+        <div class="emp-tip">
+          <div class="emp-tip-label">Go2 AI Tip</div>
+          <p>"You're spending 2.3 hours/day on proposal formatting. Here's a template system that cuts it to 20 minutes. Want me to set it up?"</p>
+        </div>
+        <div class="emp-result">Result: 11 hours/week saved</div>
+      </div>
+      <div class="emp-card fade-up">
+        <div class="emp-card-header">
+          <div class="emp-avatar">M</div>
+          <div>
+            <h4>Marcus, Project Manager</h4>
+            <span>Uses Asana + Docs + Zoom</span>
+          </div>
+        </div>
+        <div class="emp-tip">
+          <div class="emp-tip-label">Go2 AI Tip</div>
+          <p>"Your status update meetings average 47 minutes but only generate 6 action items. Here's an async format that takes 5 minutes."</p>
+        </div>
+        <div class="emp-result">Result: 3.5 hours/week reclaimed</div>
+      </div>
+      <div class="emp-card fade-up">
+        <div class="emp-card-header">
+          <div class="emp-avatar">L</div>
+          <div>
+            <h4>Lisa, Customer Support</h4>
+            <span>Uses Zendesk + Knowledge Base</span>
+          </div>
+        </div>
+        <div class="emp-tip">
+          <div class="emp-tip-label">Go2 AI Tip</div>
+          <p>"68% of your tickets follow 4 patterns. Here are draft responses for each. Review and send instead of writing from scratch."</p>
+        </div>
+        <div class="emp-result">Result: 2x ticket throughput</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT MANAGERS GET -->
+<section class="managers-section">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">For managers</div>
+      <h2 class="section-title">Team insights, not individual surveillance</h2>
+      <p class="section-sub">See what's working across your team. Spot bottlenecks. Find automation opportunities. All aggregated, never individual tracking.</p>
+    </div>
+    <div class="mgr-dashboard fade-up">
+      <div class="mgr-dash-header">
+        <h3>Go2 Team Dashboard</h3>
+        <span>Week of March 10, 2026</span>
+      </div>
+      <div class="mgr-dash-body">
+        <div class="mgr-metrics">
+          <div class="mgr-metric">
+            <div class="mgr-metric-value">23.4</div>
+            <div class="mgr-metric-label">Hours saved this week</div>
+            <div class="mgr-metric-change">+18% vs last week</div>
+          </div>
+          <div class="mgr-metric">
+            <div class="mgr-metric-value">89%</div>
+            <div class="mgr-metric-label">AI tip adoption rate</div>
+            <div class="mgr-metric-change">+7% vs last week</div>
+          </div>
+          <div class="mgr-metric">
+            <div class="mgr-metric-value">6</div>
+            <div class="mgr-metric-label">Automation opportunities</div>
+            <div class="mgr-metric-change">3 new this week</div>
+          </div>
+        </div>
+        <div class="mgr-insights">
+          <h4>AI-Generated Insights</h4>
+          <div class="mgr-insight-row">
+            <div class="mgr-insight-icon blue">&#128269;</div>
+            <div class="mgr-insight-text"><strong>Workflow bottleneck detected:</strong> Invoice approval takes an average of 3.2 days. 78% of that time is waiting, not working. Consider an auto-approval threshold under $500.</div>
+          </div>
+          <div class="mgr-insight-row">
+            <div class="mgr-insight-icon green">&#9889;</div>
+            <div class="mgr-insight-text"><strong>Quick win available:</strong> Your team copies data between Sheets and your CRM 140 times/week. A simple integration could eliminate this entirely.</div>
+          </div>
+          <div class="mgr-insight-row">
+            <div class="mgr-insight-icon orange">&#128161;</div>
+            <div class="mgr-insight-text"><strong>Training opportunity:</strong> Team members who use keyboard shortcuts in your CRM complete tasks 34% faster. Consider a 15-minute tips session.</div>
+          </div>
+        </div>
+        <div class="mgr-note">
+          All insights are aggregated across teams. Go2 never shows individual employee activity to managers.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON -->
+<section class="compare-section">
+  <div class="container text-center">
+    <div class="section-label">The honest comparison</div>
+    <h2 class="section-title">ChatGPT knows everything about the internet.<br>Go2 knows everything about <em>your business</em>.</h2>
+    <div class="compare-table fade-up">
+      <div class="compare-header">
+        <div></div>
+        <div>ChatGPT</div>
+        <div>AI Consultant</div>
+        <div>Go2</div>
+      </div>
+      <div class="compare-row">
+        <div>Knows your workflows</div>
+        <div class="compare-x">&#10005;</div>
+        <div class="compare-partial">Partially</div>
+        <div class="compare-check">&#10003;</div>
+      </div>
+      <div class="compare-row">
+        <div>Personalized per employee</div>
+        <div class="compare-x">&#10005;</div>
+        <div class="compare-x">&#10005;</div>
+        <div class="compare-check">&#10003;</div>
+      </div>
+      <div class="compare-row">
+        <div>Finds automation opportunities</div>
+        <div class="compare-x">&#10005;</div>
+        <div class="compare-check">&#10003;</div>
+        <div class="compare-check">&#10003;</div>
+      </div>
+      <div class="compare-row">
+        <div>No learning curve</div>
+        <div class="compare-x">&#10005;</div>
+        <div class="compare-check">&#10003;</div>
+        <div class="compare-check">&#10003;</div>
+      </div>
+      <div class="compare-row">
+        <div>Improves continuously</div>
+        <div class="compare-x">&#10005;</div>
+        <div class="compare-x">&#10005;</div>
+        <div class="compare-check">&#10003;</div>
+      </div>
+      <div class="compare-row">
+        <div>Works day one</div>
+        <div class="compare-check">&#10003;</div>
+        <div class="compare-x">&#10005;</div>
+        <div class="compare-check">&#10003;</div>
+      </div>
+      <div class="compare-footer">
+        <div>Monthly cost (30 users)</div>
+        <div>$600</div>
+        <div>$5,000+</div>
+        <div>$2,070</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing-section" id="pricing">
+  <div class="container text-center">
+    <div class="section-label">Simple pricing</div>
+    <h2 class="section-title">Your AI implementation, done.</h2>
+    <p class="section-sub">Everything your team needs to actually use AI. No add-ons, no tiers, no surprises.</p>
+    <div class="pricing-card fade-up">
+      <div class="pricing-header">
+        <h3>Go2 for Teams</h3>
+        <p>Everything included. Every employee covered.</p>
+      </div>
+      <div class="pricing-body">
+        <div class="pricing-price">
+          <span class="amount">$69</span>
+          <span class="period">/user/month</span>
+          <div class="note">Minimum 10 users. Billed monthly.</div>
+        </div>
+        <ul class="pricing-features">
+          <li>Lightweight desktop agent for every employee</li>
+          <li>Frontier AI models (Claude, GPT, Gemini) included</li>
+          <li>Personal AI coaching for each team member</li>
+          <li>Aggregated team dashboard for managers</li>
+          <li>Automation opportunity identification</li>
+          <li>Workflow mapping and optimization</li>
+          <li>Dedicated onboarding support</li>
+          <li>SOC 2 compliant, data encrypted at rest and in transit</li>
+        </ul>
+        <a href="#" class="pricing-cta">Start your free pilot &rarr;</a>
+        <div class="pricing-compare">
+          <p>ChatGPT costs <strong>$20/user</strong> and knows nothing about your business.<br>Go2 costs <strong>$69/user</strong> and knows everything.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">Common questions</div>
+      <h2 class="section-title">Straight answers</h2>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q">
+          What exactly does the desktop agent capture?
+          <span class="faq-arrow">&#9660;</span>
+        </button>
+        <div class="faq-a">
+          <p>The agent observes workflows, app usage patterns, and work processes. It captures enough context for AI models to understand how your team works and where they can improve. All data is encrypted, SOC 2 compliant, and used only to generate coaching and insights. Managers never see individual employee activity.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">
+          Will my employees feel like they're being watched?
+          <span class="faq-arrow">&#9660;</span>
+        </button>
+        <div class="faq-a">
+          <p>Go2 is designed as a coaching tool, not a surveillance tool. Employees receive direct benefits (personal AI tips that save them hours), and managers only see aggregated team data. Most teams report that employees actively appreciate the tips within the first week. We provide communication templates to introduce Go2 positively.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">
+          How is this different from just buying ChatGPT for my team?
+          <span class="faq-arrow">&#9660;</span>
+        </button>
+        <div class="faq-a">
+          <p>ChatGPT is a general-purpose tool that knows nothing about your business. Your team has to learn prompt engineering, figure out use cases, and hope they stick with it. Go2 automatically learns your workflows and delivers specific, actionable coaching without any effort from your employees. It's the difference between giving someone a library card and giving them a personal tutor.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">
+          How long before we see results?
+          <span class="faq-arrow">&#9660;</span>
+        </button>
+        <div class="faq-a">
+          <p>The agent starts learning immediately. Within the first week, employees begin receiving personalized tips. By week two, you'll have your first team-level insights and automation recommendations. Most teams report measurable time savings within the first month.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">
+          What if we already use some AI tools?
+          <span class="faq-arrow">&#9660;</span>
+        </button>
+        <div class="faq-a">
+          <p>Great, Go2 works alongside any existing tools. In fact, it often identifies which AI tools your team is actually using effectively and which are shelfware. It can recommend when to double down on a tool and when to drop one. Think of Go2 as the layer that makes all your AI investments actually work.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">
+          Is our data safe?
+          <span class="faq-arrow">&#9660;</span>
+        </button>
+        <div class="faq-a">
+          <p>Absolutely. All data is encrypted at rest and in transit. We're SOC 2 compliant. Data is processed through frontier AI models using enterprise-grade API agreements (not the consumer versions). Your data is never used to train third-party models and you can request full deletion at any time.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta">
+  <div class="container">
+    <h2>Stop wondering about AI.<br>Start using it.</h2>
+    <p>One install. Frontier AI trained on your business. Every employee gets smarter, every week. That's it. That's the whole thing.</p>
+    <a href="#pricing" class="hero-cta">
+      Get started with Go2
+      <svg viewBox="0 0 20 20" fill="currentColor" style="width:20px;height:20px"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"/></svg>
+    </a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <p>&copy; 2026 Go2. All rights reserved. &nbsp;|&nbsp; go2.io</p>
+  </div>
+</footer>
+
+<script>
+// FAQ accordion
+document.querySelectorAll('.faq-q').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const item = btn.parentElement;
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  });
+});
+
+// Scroll animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      // Animate meter fills
+      const fills = entry.target.querySelectorAll('.meter-fill');
+      if (fills.length === 0 && entry.target.classList.contains('meter-fill')) {
+        // handled below
+      }
+      fills.forEach(fill => {
+        setTimeout(() => {
+          fill.style.width = fill.dataset.width + '%';
+        }, 200);
+      });
+    }
+  });
+}, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// Also observe meter rows for fill animation
+document.querySelectorAll('.meter-row').forEach(row => {
+  observer.observe(row);
+});
+
+// Smooth scroll for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+</script>
+</body>
+</html>

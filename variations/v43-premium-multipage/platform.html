@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Platform — Go2</title>
+<style>
+:root {
+  --bg: #0a0a0b;
+  --bg-elevated: #111113;
+  --bg-hover: #18181b;
+  --surface: #1c1c1f;
+  --border: #27272a;
+  --border-subtle: #1e1e21;
+  --text: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #71717a;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --accent-glow: rgba(59, 130, 246, 0.15);
+  --accent-subtle: rgba(59, 130, 246, 0.08);
+  --green: #22c55e;
+  --amber: #f59e0b;
+  --purple: #a78bfa;
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 16px;
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 10, 11, 0.8);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.nav-inner {
+  max-width: 1200px; margin: 0 auto;
+  padding: 0 24px; height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.logo { font-size: 20px; font-weight: 700; color: var(--text); text-decoration: none; letter-spacing: -0.5px; }
+.logo span { color: var(--accent); }
+.nav-links { display: flex; gap: 32px; align-items: center; }
+.nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 500; transition: color var(--transition); }
+.nav-links a:hover { color: var(--text); }
+.nav-links a.active { color: var(--text); }
+.nav-cta { background: var(--accent) !important; color: var(--text) !important; padding: 8px 16px; border-radius: var(--radius-sm); font-weight: 600 !important; transition: background var(--transition) !important; }
+.nav-cta:hover { background: var(--accent-hover) !important; }
+.mobile-toggle { display: none; background: none; border: none; color: var(--text); cursor: pointer; }
+
+section { padding: 120px 24px; }
+.container { max-width: 1200px; margin: 0 auto; }
+
+/* PAGE HERO */
+.page-hero { padding-top: 160px; padding-bottom: 80px; text-align: center; position: relative; }
+
+.page-hero::before {
+  content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse at center, var(--accent-glow) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.page-eyebrow {
+  font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--accent); font-weight: 600; margin-bottom: 16px;
+}
+
+.page-hero h1 {
+  font-size: clamp(36px, 5vw, 56px); font-weight: 700;
+  line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 20px;
+}
+
+.page-hero p {
+  font-size: 18px; color: var(--text-secondary);
+  max-width: 600px; margin: 0 auto;
+}
+
+/* SECTION HEADERS */
+.section-header { margin-bottom: 64px; }
+.section-eyebrow { font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); font-weight: 600; margin-bottom: 16px; }
+.section-title { font-size: clamp(28px, 4vw, 40px); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 16px; }
+.section-sub { font-size: 17px; color: var(--text-secondary); max-width: 560px; }
+
+/* PILLAR SECTIONS */
+.pillar { border-top: 1px solid var(--border-subtle); }
+.pillar:nth-child(even) { background: var(--bg-elevated); }
+
+.pillar-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 64px; align-items: center;
+}
+
+.pillar-grid.reverse { direction: rtl; }
+.pillar-grid.reverse > * { direction: ltr; }
+
+.pillar-content .pillar-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 999px; font-size: 12px;
+  font-weight: 600; margin-bottom: 20px;
+}
+
+.tag-blue { background: rgba(59, 130, 246, 0.1); color: var(--accent); border: 1px solid rgba(59, 130, 246, 0.2); }
+.tag-green { background: rgba(34, 197, 94, 0.1); color: var(--green); border: 1px solid rgba(34, 197, 94, 0.2); }
+.tag-purple { background: rgba(167, 139, 250, 0.1); color: var(--purple); border: 1px solid rgba(167, 139, 250, 0.2); }
+
+.pillar-content h2 {
+  font-size: 32px; font-weight: 700; letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+.pillar-content p {
+  font-size: 16px; color: var(--text-secondary); line-height: 1.7;
+  margin-bottom: 24px;
+}
+
+.pillar-features { display: flex; flex-direction: column; gap: 12px; }
+
+.feature-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  font-size: 15px; color: var(--text-secondary);
+}
+
+.feature-item svg { flex-shrink: 0; margin-top: 2px; color: var(--green); }
+
+/* MOCK UI CARDS */
+.mock-ui {
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); overflow: hidden;
+}
+
+.mock-titlebar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface);
+}
+
+.mock-dot { width: 8px; height: 8px; border-radius: 50%; }
+.mock-dot.r { background: #ef4444; }
+.mock-dot.y { background: #eab308; }
+.mock-dot.g { background: #22c55e; }
+.mock-titlebar span { font-size: 12px; color: var(--text-tertiary); margin-left: 8px; }
+
+.mock-body { padding: 20px; }
+
+/* COACHING EXAMPLE */
+.coaching-msg {
+  background: var(--accent-subtle); border: 1px solid rgba(59, 130, 246, 0.15);
+  border-radius: var(--radius-sm); padding: 16px; margin-bottom: 12px;
+}
+
+.coaching-msg .msg-label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--accent); font-weight: 700; margin-bottom: 6px;
+}
+
+.coaching-msg p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin: 0; }
+.coaching-msg .highlight-text { color: var(--text); font-weight: 500; }
+
+.coaching-meta {
+  display: flex; gap: 16px; font-size: 12px; color: var(--text-tertiary);
+  padding-top: 8px;
+}
+
+/* DASHBOARD MOCK */
+.dash-row { display: flex; gap: 12px; margin-bottom: 12px; }
+
+.dash-metric {
+  flex: 1; background: var(--surface); border-radius: var(--radius-sm);
+  padding: 14px;
+}
+
+.dash-metric .dm-label { font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; }
+.dash-metric .dm-value { font-size: 22px; font-weight: 700; }
+.dash-metric .dm-delta { font-size: 12px; color: var(--green); margin-top: 2px; }
+
+.dash-bar-group { display: flex; flex-direction: column; gap: 8px; }
+
+.dash-bar-item {
+  display: flex; align-items: center; gap: 10px; font-size: 13px;
+}
+
+.dash-bar-item .bar-label { width: 120px; color: var(--text-secondary); flex-shrink: 0; }
+
+.dash-bar-item .bar-track {
+  flex: 1; height: 6px; background: var(--surface); border-radius: 3px;
+  overflow: hidden;
+}
+
+.dash-bar-item .bar-fill { height: 100%; border-radius: 3px; }
+.bar-fill.blue { background: var(--accent); }
+.bar-fill.amber { background: var(--amber); }
+.bar-fill.green { background: var(--green); }
+
+.dash-bar-item .bar-value { font-size: 12px; color: var(--text-tertiary); width: 40px; text-align: right; }
+
+/* AUTOMATION MOCK */
+.auto-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px; background: var(--surface); border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+}
+
+.auto-item .auto-icon {
+  width: 36px; height: 36px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+
+.auto-item .auto-text { flex: 1; }
+.auto-item .auto-text strong { font-size: 14px; font-weight: 600; display: block; }
+.auto-item .auto-text span { font-size: 12px; color: var(--text-secondary); }
+
+.auto-item .auto-save {
+  font-size: 13px; font-weight: 700; color: var(--green);
+  white-space: nowrap;
+}
+
+/* TECH STRIP */
+.tech-strip {
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: center;
+}
+
+.tech-models {
+  display: flex; justify-content: center; gap: 48px;
+  flex-wrap: wrap; margin-top: 32px;
+}
+
+.tech-model {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+
+.tech-model .tm-icon {
+  width: 56px; height: 56px; border-radius: var(--radius);
+  background: var(--surface); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+}
+
+.tech-model .tm-name { font-size: 14px; font-weight: 600; }
+.tech-model .tm-desc { font-size: 12px; color: var(--text-tertiary); }
+
+/* BOTTOM CTA */
+.bottom-cta { text-align: center; }
+
+.bottom-cta h2 {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 700;
+  letter-spacing: -0.02em; margin-bottom: 16px;
+}
+
+.bottom-cta p {
+  font-size: 17px; color: var(--text-secondary);
+  max-width: 480px; margin: 0 auto 36px;
+}
+
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 14px 28px; background: var(--accent);
+  color: var(--text); border: none; border-radius: var(--radius-sm);
+  font-size: 15px; font-weight: 600; cursor: pointer;
+  text-decoration: none; transition: all var(--transition);
+}
+
+.btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+
+footer {
+  padding: 48px 24px; border-top: 1px solid var(--border-subtle); background: var(--bg);
+}
+
+.footer-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: flex; justify-content: space-between; align-items: center;
+}
+
+.footer-links { display: flex; gap: 24px; }
+.footer-links a { color: var(--text-tertiary); text-decoration: none; font-size: 13px; transition: color var(--transition); }
+.footer-links a:hover { color: var(--text-secondary); }
+.footer-copy { font-size: 13px; color: var(--text-tertiary); }
+
+@media (max-width: 900px) {
+  .pillar-grid, .pillar-grid.reverse { grid-template-columns: 1fr; direction: ltr; }
+  .pillar-grid.reverse > * { direction: ltr; }
+  .tech-models { gap: 32px; }
+}
+
+@media (max-width: 640px) {
+  section { padding: 80px 20px; }
+  .page-hero { padding-top: 140px; }
+  .nav-links { display: none; }
+  .mobile-toggle { display: block; }
+  .footer-inner { flex-direction: column; gap: 16px; }
+  .dash-row { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="logo">go2<span>.</span></a>
+    <div class="nav-links">
+      <a href="platform.html" class="active">Platform</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="results.html">Results</a>
+      <a href="#" class="nav-cta">Get Started</a>
+    </div>
+    <button class="mobile-toggle" aria-label="Menu">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+  </div>
+</nav>
+
+<section class="page-hero">
+  <div class="container">
+    <div class="page-eyebrow">Platform</div>
+    <h1>Frontier AI, embedded in every workflow</h1>
+    <p>Go2 installs a lightweight agent that learns how your team works, then uses Claude, GPT, and Gemini to make everyone better. Not rules. Not dashboards. Actual intelligence.</p>
+  </div>
+</section>
+
+<!-- PILLAR 1: AI COACHING -->
+<section class="pillar">
+  <div class="container">
+    <div class="pillar-grid">
+      <div class="pillar-content">
+        <span class="pillar-tag tag-blue">For Employees</span>
+        <h2>AI coaching that meets people where they work</h2>
+        <p>Every employee gets a personal AI coach that understands their specific tools, workflows, and habits. Not generic tips from a knowledge base. Specific, contextual suggestions delivered in the moment they matter.</p>
+        <div class="pillar-features">
+          <div class="feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Real-time workflow suggestions as employees work
+          </div>
+          <div class="feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Keyboard shortcut and tool-specific tips
+          </div>
+          <div class="feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Context-switch alerts with recovery suggestions
+          </div>
+          <div class="feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Weekly progress reports showing time saved
+          </div>
+        </div>
+      </div>
+      <div class="mock-ui">
+        <div class="mock-titlebar">
+          <div class="mock-dot r"></div>
+          <div class="mock-dot y"></div>
+          <div class="mock-dot g"></div>
+          <span>Go2 Coach</span>
+        </div>
+        <div class="mock-body">
+          <div class="coaching-msg">
+            <div class="msg-label">Workflow Tip</div>
+            <p>You've switched between <span class="highlight-text">Slack and your spreadsheet 8 times</span> in the last 20 minutes. Try pinning the Slack thread and using split-screen to keep both visible. This pattern typically saves 12 min/day.</p>
+          </div>
+          <div class="coaching-msg">
+            <div class="msg-label">Shortcut Detected</div>
+            <p>You're manually formatting cells in Google Sheets. The shortcut <span class="highlight-text">Ctrl+Shift+1</span> applies number formatting instantly. You do this ~15 times per session.</p>
+          </div>
+          <div class="coaching-msg">
+            <div class="msg-label">Process Insight</div>
+            <p>Your end-of-day report takes 34 minutes on average. <span class="highlight-text">I can pre-populate 80% of it</span> from your activity today. Want me to generate a draft?</p>
+          </div>
+          <div class="coaching-meta">
+            <span>3 tips today</span>
+            <span>~18 min saved</span>
+            <span>Powered by Claude</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PILLAR 2: OPERATIONS INTELLIGENCE -->
+<section class="pillar">
+  <div class="container">
+    <div class="pillar-grid reverse">
+      <div class="pillar-content">
+        <span class="pillar-tag tag-green">For Managers</span>
+        <h2>Team-level intelligence, not individual surveillance</h2>
+        <p>Managers see aggregated patterns and trends. Where the team loses time. Which processes need fixing. How efficiency trends over time. Never individual tracking. Always team-level insight.</p>
+        <div class="pillar-features">
+          <div class="feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Aggregated team efficiency dashboards
+          </div>
+          <div class="feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Bottleneck identification across workflows
+          </div>
+          <div class="feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Tool usage and overlap analysis
+          </div>
+          <div class="feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Weekly trend reports with action items
+          </div>
+        </div>
+      </div>
+      <div class="mock-ui">
+        <div class="mock-titlebar">
+          <div class="mock-dot r"></div>
+          <div class="mock-dot y"></div>
+          <div class="mock-dot g"></div>
+          <span>Operations Dashboard</span>
+        </div>
+        <div class="mock-body">
+          <div class="dash-row">
+            <div class="dash-metric">
+              <div class="dm-label">Team Efficiency</div>
+              <div class="dm-value">73%</div>
+              <div class="dm-delta">+8% vs last month</div>
+            </div>
+            <div class="dash-metric">
+              <div class="dm-label">Hours Recovered</div>
+              <div class="dm-value">214</div>
+              <div class="dm-delta">Across 18 team members</div>
+            </div>
+            <div class="dash-metric">
+              <div class="dm-label">Top Bottleneck</div>
+              <div class="dm-value" style="font-size: 14px; padding-top: 4px;">Report Generation</div>
+              <div class="dm-delta" style="color: var(--amber);">4.2 hrs/week lost</div>
+            </div>
+          </div>
+          <div style="font-size: 12px; color: var(--text-tertiary); margin-bottom: 10px; font-weight: 600;">TIME ALLOCATION (TEAM AVERAGE)</div>
+          <div class="dash-bar-group">
+            <div class="dash-bar-item">
+              <span class="bar-label">Core work</span>
+              <div class="bar-track"><div class="bar-fill blue" style="width: 48%;"></div></div>
+              <span class="bar-value">48%</span>
+            </div>
+            <div class="dash-bar-item">
+              <span class="bar-label">Communication</span>
+              <div class="bar-track"><div class="bar-fill amber" style="width: 22%;"></div></div>
+              <span class="bar-value">22%</span>
+            </div>
+            <div class="dash-bar-item">
+              <span class="bar-label">Context switching</span>
+              <div class="bar-track"><div class="bar-fill amber" style="width: 18%;"></div></div>
+              <span class="bar-value">18%</span>
+            </div>
+            <div class="dash-bar-item">
+              <span class="bar-label">Info searching</span>
+              <div class="bar-track"><div class="bar-fill green" style="width: 12%;"></div></div>
+              <span class="bar-value">12%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PILLAR 3: AUTOMATION DISCOVERY -->
+<section class="pillar">
+  <div class="container">
+    <div class="pillar-grid">
+      <div class="pillar-content">
+        <span class="pillar-tag tag-purple">For the Company</span>
+        <h2>Automation opportunities you can't see from the outside</h2>
+        <p>Consultants guess. Go2 watches. By observing real workflows across your entire team, Go2 identifies specific, high-impact automation opportunities ranked by hours saved. Then, on the Transform plan, deploys AI agents to handle them.</p>
+        <div class="pillar-features">
+          <div class="feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Automated workflow mapping across all tools
+          </div>
+          <div class="feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            ROI-ranked automation opportunities
+          </div>
+          <div class="feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Institutional knowledge capture and documentation
+          </div>
+          <div class="feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            AI agent deployment for repetitive tasks (Transform plan)
+          </div>
+        </div>
+      </div>
+      <div class="mock-ui">
+        <div class="mock-titlebar">
+          <div class="mock-dot r"></div>
+          <div class="mock-dot y"></div>
+          <div class="mock-dot g"></div>
+          <span>Automation Discovery</span>
+        </div>
+        <div class="mock-body">
+          <div style="font-size: 12px; color: var(--text-tertiary); margin-bottom: 12px; font-weight: 600;">TOP OPPORTUNITIES BY HOURS SAVED</div>
+          <div class="auto-item">
+            <div class="auto-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--accent);">&#x1f4cb;</div>
+            <div class="auto-text">
+              <strong>Weekly status report compilation</strong>
+              <span>12 people spend 35 min each pulling data from 4 tools</span>
+            </div>
+            <div class="auto-save">7 hrs/wk</div>
+          </div>
+          <div class="auto-item">
+            <div class="auto-icon" style="background: rgba(34, 197, 94, 0.1); color: var(--green);">&#x1f4e7;</div>
+            <div class="auto-text">
+              <strong>Client onboarding email sequences</strong>
+              <span>Same 6 emails sent manually with minor customization</span>
+            </div>
+            <div class="auto-save">5.2 hrs/wk</div>
+          </div>
+          <div class="auto-item">
+            <div class="auto-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--amber);">&#x1f504;</div>
+            <div class="auto-text">
+              <strong>CRM data entry from call notes</strong>
+              <span>Manually copying details from call transcripts to CRM</span>
+            </div>
+            <div class="auto-save">4.8 hrs/wk</div>
+          </div>
+          <div class="auto-item">
+            <div class="auto-icon" style="background: rgba(167, 139, 250, 0.1); color: var(--purple);">&#x1f4c4;</div>
+            <div class="auto-text">
+              <strong>Invoice reconciliation</strong>
+              <span>Cross-checking invoices against POs in two systems</span>
+            </div>
+            <div class="auto-save">3.5 hrs/wk</div>
+          </div>
+          <div style="text-align: center; padding: 12px; font-size: 13px; color: var(--text-tertiary);">
+            23 total opportunities identified &middot; 42.6 hrs/week recoverable
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TECH STACK -->
+<section class="tech-strip">
+  <div class="container">
+    <div class="section-header" style="text-align: center;">
+      <div class="section-eyebrow">Technology</div>
+      <h2 class="section-title">Powered by frontier AI, not rules</h2>
+      <p class="section-sub" style="margin: 0 auto;">Go2 routes tasks to the best model for the job. Not a single model. Not rule-based automation. Genuine intelligence applied to your operations.</p>
+    </div>
+    <div class="tech-models">
+      <div class="tech-model">
+        <div class="tm-icon">&#x1f7e3;</div>
+        <span class="tm-name">Claude</span>
+        <span class="tm-desc">Deep analysis &amp; coaching</span>
+      </div>
+      <div class="tech-model">
+        <div class="tm-icon">&#x1f7e2;</div>
+        <span class="tm-name">GPT</span>
+        <span class="tm-desc">Code &amp; workflow generation</span>
+      </div>
+      <div class="tech-model">
+        <div class="tm-icon">&#x1f535;</div>
+        <span class="tm-name">Gemini</span>
+        <span class="tm-desc">Multimodal understanding</span>
+      </div>
+      <div class="tech-model">
+        <div class="tm-icon">&#x2699;&#xfe0f;</div>
+        <span class="tm-name">Go2 Orchestrator</span>
+        <span class="tm-desc">Routes to the right model</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="bottom-cta" style="background: var(--bg-elevated); border-top: 1px solid var(--border-subtle);">
+  <div class="container">
+    <h2>Ready to see your operations clearly?</h2>
+    <p>Install in minutes. First coaching tip within 4 hours. Full operational intelligence within a week.</p>
+    <a href="pricing.html" class="btn-primary">See pricing <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <span class="footer-copy">&copy; 2026 Go2. All rights reserved.</span>
+    <div class="footer-links">
+      <a href="platform.html">Platform</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="results.html">Results</a>
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

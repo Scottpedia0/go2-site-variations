@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The AI Management Layer for Growing Teams</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --navy: #0f1a2e;
+  --navy-light: #1a2a4a;
+  --navy-mid: #243656;
+  --gold: #c9a84c;
+  --gold-light: #e8d48b;
+  --gold-subtle: rgba(201, 168, 76, 0.12);
+  --white: #ffffff;
+  --off-white: #f7f8fa;
+  --gray-100: #eef0f4;
+  --gray-200: #d8dce6;
+  --gray-400: #8a92a6;
+  --gray-600: #5a6378;
+  --gray-800: #2d3448;
+  --text: #1a1f2e;
+  --text-muted: #5a6378;
+  --radius: 12px;
+  --radius-lg: 20px;
+  --shadow: 0 1px 3px rgba(15,26,46,0.06), 0 6px 16px rgba(15,26,46,0.04);
+  --shadow-lg: 0 4px 12px rgba(15,26,46,0.08), 0 16px 40px rgba(15,26,46,0.06);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color: var(--text);
+  background: var(--white);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Sidebar Nav ── */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 240px;
+  height: 100vh;
+  background: var(--navy);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  padding: 32px 0;
+  transition: transform 0.3s ease;
+}
+
+.sidebar-logo {
+  padding: 0 28px;
+  margin-bottom: 40px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-logo .logo-mark {
+  width: 36px;
+  height: 36px;
+  background: var(--gold);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--navy);
+  letter-spacing: -0.5px;
+}
+
+.sidebar-logo .logo-text {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: -0.5px;
+}
+
+.sidebar-logo .logo-domain {
+  font-size: 11px;
+  color: var(--gray-400);
+  margin-left: auto;
+  font-weight: 500;
+}
+
+.sidebar-nav { flex: 1; }
+
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 28px;
+  color: var(--gray-400);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+}
+
+.sidebar-nav a:hover,
+.sidebar-nav a.active {
+  color: var(--white);
+  background: rgba(255,255,255,0.04);
+  border-left-color: var(--gold);
+}
+
+.sidebar-nav a svg {
+  width: 18px;
+  height: 18px;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.sidebar-nav a:hover svg,
+.sidebar-nav a.active svg { opacity: 1; }
+
+.sidebar-nav .nav-section {
+  padding: 20px 28px 8px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--gray-600);
+  font-weight: 600;
+}
+
+.sidebar-cta {
+  padding: 20px 24px;
+  margin: 0 16px;
+  background: var(--navy-light);
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+.sidebar-cta p {
+  color: var(--gray-400);
+  font-size: 12px;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.sidebar-cta a {
+  display: inline-block;
+  background: var(--gold);
+  color: var(--navy);
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.sidebar-cta a:hover { background: var(--gold-light); }
+
+/* Mobile hamburger */
+.mobile-header {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: var(--navy);
+  z-index: 101;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+}
+
+.mobile-header .logo-text {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--white);
+}
+
+.hamburger {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.hamburger span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--white);
+  margin: 5px 0;
+  transition: all 0.3s;
+  border-radius: 2px;
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 99;
+}
+
+/* ── Main Content ── */
+.main {
+  margin-left: 240px;
+  min-height: 100vh;
+}
+
+/* ── Hero ── */
+.hero {
+  padding: 100px 60px 80px;
+  max-width: 900px;
+}
+
+.hero-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--gold-subtle);
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  margin-bottom: 28px;
+  border: 1px solid rgba(201,168,76,0.2);
+}
+
+.hero h1 {
+  font-size: clamp(36px, 4.5vw, 56px);
+  font-weight: 800;
+  line-height: 1.12;
+  color: var(--navy);
+  letter-spacing: -1.5px;
+  margin-bottom: 24px;
+}
+
+.hero h1 em {
+  font-style: normal;
+  color: var(--gold);
+  position: relative;
+}
+
+.hero .subtitle {
+  font-size: 20px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  max-width: 640px;
+  margin-bottom: 36px;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--navy);
+  color: var(--white);
+  padding: 15px 32px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 15px;
+  text-decoration: none;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: var(--navy-light);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--navy);
+  padding: 15px 32px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 15px;
+  text-decoration: none;
+  border: 2px solid var(--gray-200);
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  border-color: var(--navy);
+}
+
+.hero-proof {
+  margin-top: 48px;
+  display: flex;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.hero-proof .stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-proof .stat-number {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--navy);
+  letter-spacing: -1px;
+}
+
+.hero-proof .stat-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ── Sections ── */
+section {
+  padding: 80px 60px;
+}
+
+section:nth-child(even) {
+  background: var(--off-white);
+}
+
+.section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: var(--gold);
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: clamp(28px, 3vw, 40px);
+  font-weight: 800;
+  color: var(--navy);
+  letter-spacing: -1px;
+  line-height: 1.2;
+  margin-bottom: 16px;
+  max-width: 700px;
+}
+
+.section-desc {
+  font-size: 17px;
+  color: var(--text-muted);
+  max-width: 600px;
+  line-height: 1.65;
+  margin-bottom: 48px;
+}
+
+/* ── Problem ── */
+.problem-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  max-width: 1000px;
+}
+
+.problem-card {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 32px;
+  transition: all 0.2s;
+}
+
+.problem-card:hover {
+  box-shadow: var(--shadow);
+  border-color: transparent;
+}
+
+.problem-card .icon {
+  width: 44px;
+  height: 44px;
+  background: rgba(220, 53, 69, 0.08);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-bottom: 20px;
+}
+
+.problem-card h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 10px;
+}
+
+.problem-card p {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
+/* ── Solution ── */
+.solution-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: start;
+  max-width: 1000px;
+}
+
+.solution-features { display: flex; flex-direction: column; gap: 28px; }
+
+.solution-feature {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.solution-feature .feat-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--gold-subtle);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.solution-feature h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 6px;
+}
+
+.solution-feature p {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* Dashboard mock */
+.dashboard-mock {
+  background: var(--navy);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-lg);
+}
+
+.dash-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.dash-header h4 {
+  color: var(--white);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.dash-header .dash-badge {
+  background: rgba(76, 175, 80, 0.15);
+  color: #66bb6a;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.dash-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.dash-metric {
+  background: var(--navy-light);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.dash-metric .label {
+  font-size: 11px;
+  color: var(--gray-400);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dash-metric .value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--white);
+}
+
+.dash-metric .change {
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.dash-metric .change.up { color: #66bb6a; }
+.dash-metric .change.down { color: #ef5350; }
+
+.dash-insights {
+  background: var(--navy-light);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.dash-insights h5 {
+  color: var(--gold);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.dash-insight-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.dash-insight-item:last-child { border: none; }
+
+.dash-insight-item .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.dash-insight-item .dot.gold { background: var(--gold); }
+.dash-insight-item .dot.green { background: #66bb6a; }
+.dash-insight-item .dot.blue { background: #42a5f5; }
+
+.dash-insight-item p {
+  font-size: 12px;
+  color: var(--gray-400);
+  line-height: 1.5;
+}
+
+/* ── How It Works ── */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 32px;
+  max-width: 1000px;
+}
+
+.step {
+  position: relative;
+  padding: 32px;
+  background: var(--white);
+  border-radius: var(--radius);
+  border: 1px solid var(--gray-200);
+}
+
+.step .step-num {
+  width: 32px;
+  height: 32px;
+  background: var(--navy);
+  color: var(--white);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.step h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 10px;
+}
+
+.step p {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.step .step-time {
+  margin-top: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Three Layers ── */
+.layers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  max-width: 1000px;
+}
+
+.layer-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+  overflow: hidden;
+  transition: all 0.25s;
+}
+
+.layer-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+}
+
+.layer-header {
+  padding: 28px 28px 0;
+}
+
+.layer-header .layer-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  margin-bottom: 16px;
+}
+
+.layer-card:nth-child(1) .layer-icon { background: rgba(66,165,245,0.1); }
+.layer-card:nth-child(2) .layer-icon { background: rgba(201,168,76,0.12); }
+.layer-card:nth-child(3) .layer-icon { background: rgba(76,175,80,0.1); }
+
+.layer-header h3 {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 8px;
+}
+
+.layer-header p {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.layer-list {
+  padding: 20px 28px 28px;
+  list-style: none;
+}
+
+.layer-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 14px;
+  color: var(--gray-800);
+}
+
+.layer-list li::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  background: var(--gold);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Comparison ── */
+.comparison-table {
+  max-width: 900px;
+  overflow-x: auto;
+}
+
+.comparison-table table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+.comparison-table thead th {
+  padding: 16px 20px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid var(--gray-200);
+}
+
+.comparison-table thead th:last-child {
+  background: var(--gold-subtle);
+  color: var(--gold);
+  border-radius: 12px 12px 0 0;
+}
+
+.comparison-table tbody td {
+  padding: 16px 20px;
+  font-size: 14px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.comparison-table tbody td:first-child {
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.comparison-table tbody td:last-child {
+  background: var(--gold-subtle);
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.comparison-table tbody tr:last-child td { border-bottom: none; }
+.comparison-table tbody tr:last-child td:last-child { border-radius: 0 0 12px 12px; }
+
+.comparison-table .check { color: #66bb6a; font-weight: 700; }
+.comparison-table .x-mark { color: var(--gray-400); }
+
+/* ── Quote ── */
+.founder-quote {
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: center;
+  padding: 80px 60px;
+}
+
+.founder-quote .quote-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--gold-subtle);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 28px;
+  font-size: 24px;
+  color: var(--gold);
+}
+
+.founder-quote blockquote {
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--navy);
+  line-height: 1.55;
+  font-style: italic;
+  margin-bottom: 24px;
+}
+
+.founder-quote .attribution {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.founder-quote .attribution strong {
+  color: var(--navy);
+}
+
+/* ── ROI ── */
+.roi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  max-width: 900px;
+  margin-bottom: 40px;
+}
+
+.roi-card {
+  background: var(--navy);
+  border-radius: var(--radius);
+  padding: 28px;
+  text-align: center;
+}
+
+.roi-card .roi-amount {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--gold);
+  letter-spacing: -1px;
+  margin-bottom: 4px;
+}
+
+.roi-card .roi-label {
+  font-size: 13px;
+  color: var(--gray-400);
+  line-height: 1.5;
+}
+
+.roi-explanation {
+  max-width: 700px;
+  background: var(--white);
+  border-radius: var(--radius);
+  border: 1px solid var(--gray-200);
+  padding: 32px;
+}
+
+.roi-explanation h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 16px;
+}
+
+.roi-explanation ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.roi-explanation li {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.roi-explanation li .calc-label {
+  font-weight: 600;
+  color: var(--navy);
+  white-space: nowrap;
+}
+
+/* ── Testimonials ── */
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  max-width: 1000px;
+}
+
+.testimonial {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 32px;
+}
+
+.testimonial .stars {
+  color: var(--gold);
+  font-size: 14px;
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+}
+
+.testimonial p {
+  font-size: 15px;
+  color: var(--gray-800);
+  line-height: 1.65;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+.testimonial .author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.testimonial .avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.testimonial .author-info .name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.testimonial .author-info .role {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ── Privacy ── */
+.privacy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  max-width: 1000px;
+}
+
+.privacy-item {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 24px;
+  background: var(--white);
+  border-radius: var(--radius);
+  border: 1px solid var(--gray-200);
+}
+
+.privacy-item .p-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--navy);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 18px;
+}
+
+.privacy-item h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 4px;
+}
+
+.privacy-item p {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+/* ── Pricing ── */
+.pricing-section {
+  text-align: center;
+}
+
+.pricing-card {
+  max-width: 520px;
+  margin: 0 auto;
+  background: var(--white);
+  border: 2px solid var(--navy);
+  border-radius: var(--radius-lg);
+  padding: 48px 40px;
+  box-shadow: var(--shadow-lg);
+}
+
+.pricing-card .price-amount {
+  font-size: 56px;
+  font-weight: 800;
+  color: var(--navy);
+  letter-spacing: -2px;
+}
+
+.pricing-card .price-period {
+  font-size: 16px;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.pricing-card .price-note {
+  font-size: 13px;
+  color: var(--gray-400);
+  margin-bottom: 28px;
+}
+
+.pricing-includes {
+  text-align: left;
+  list-style: none;
+  margin-bottom: 32px;
+}
+
+.pricing-includes li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  font-size: 15px;
+  color: var(--gray-800);
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.pricing-includes li:last-child { border: none; }
+
+.pricing-includes li .incl-check {
+  color: #66bb6a;
+  font-weight: 700;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.pricing-card .btn-primary {
+  width: 100%;
+  justify-content: center;
+  padding: 17px 32px;
+  font-size: 16px;
+}
+
+.pricing-context {
+  max-width: 700px;
+  margin: 40px auto 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.pricing-compare {
+  text-align: center;
+  padding: 20px;
+  background: var(--off-white);
+  border-radius: var(--radius);
+}
+
+.pricing-compare .old-cost {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--navy);
+  text-decoration: line-through;
+  text-decoration-color: #ef5350;
+}
+
+.pricing-compare .compare-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ── CTA ── */
+.final-cta {
+  background: var(--navy);
+  padding: 80px 60px;
+  text-align: center;
+}
+
+.final-cta h2 {
+  font-size: clamp(28px, 3vw, 40px);
+  font-weight: 800;
+  color: var(--white);
+  letter-spacing: -1px;
+  margin-bottom: 16px;
+}
+
+.final-cta p {
+  font-size: 17px;
+  color: var(--gray-400);
+  max-width: 540px;
+  margin: 0 auto 36px;
+  line-height: 1.6;
+}
+
+.final-cta .btn-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--gold);
+  color: var(--navy);
+  padding: 17px 40px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 16px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.final-cta .btn-gold:hover {
+  background: var(--gold-light);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(201,168,76,0.3);
+}
+
+.final-cta .cta-sub {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--gray-600);
+}
+
+/* ── Footer ── */
+footer {
+  padding: 40px 60px;
+  border-top: 1px solid var(--gray-100);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+footer .footer-brand {
+  font-weight: 700;
+  color: var(--navy);
+  font-size: 16px;
+}
+
+footer .footer-links {
+  display: flex;
+  gap: 24px;
+}
+
+footer .footer-links a {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+footer .footer-links a:hover { color: var(--navy); }
+
+footer .footer-copy {
+  font-size: 12px;
+  color: var(--gray-400);
+  width: 100%;
+  text-align: center;
+  margin-top: 12px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .solution-layout { grid-template-columns: 1fr; }
+  .layers { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-overlay.open { display: block; }
+  .mobile-header { display: flex; }
+  .main { margin-left: 0; }
+  .hero { padding: 90px 24px 60px; }
+  section { padding: 60px 24px; }
+  .hero-proof { gap: 24px; }
+  .pricing-context { grid-template-columns: 1fr; }
+  .founder-quote { padding: 60px 24px; }
+  .final-cta { padding: 60px 24px; }
+  footer { padding: 30px 24px; }
+  .comparison-table { margin: 0 -24px; padding: 0 24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Mobile Header -->
+<div class="mobile-header">
+  <span class="logo-text">Go2</span>
+  <button class="hamburger" onclick="toggleSidebar()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</div>
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Sidebar -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">G2</div>
+    <span class="logo-text">Go2</span>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <a href="#hero" class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Home
+    </a>
+    <a href="#problem">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      The Problem
+    </a>
+    <a href="#solution">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Solution
+    </a>
+    <div class="nav-section">Product</div>
+    <a href="#how-it-works">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      How It Works
+    </a>
+    <a href="#three-layers">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+      Three Layers
+    </a>
+    <a href="#roi">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      ROI
+    </a>
+    <div class="nav-section">Proof</div>
+    <a href="#comparison">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+      Comparison
+    </a>
+    <a href="#testimonials">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Testimonials
+    </a>
+    <a href="#pricing">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      Pricing
+    </a>
+  </div>
+  <div class="sidebar-cta">
+    <p>See Go2 in action with your own team data.</p>
+    <a href="#pricing">Start Free Trial</a>
+  </div>
+</nav>
+
+<!-- Main Content -->
+<main class="main">
+
+  <!-- Hero -->
+  <section class="hero" id="hero">
+    <div class="hero-label">AI Management Layer</div>
+    <h1>Too big to see everything.<br>Too small for middle management.<br><em>Go2 fills the gap.</em></h1>
+    <p class="subtitle">A VP of Operations that costs $79/month per person. Not $150,000/year. Go2 gives growing teams management-level visibility without management-level headcount.</p>
+    <div class="hero-actions">
+      <a href="#pricing" class="btn-primary">Start 14-Day Free Trial &rarr;</a>
+      <a href="#solution" class="btn-secondary">See How It Works</a>
+    </div>
+    <div class="hero-proof">
+      <div class="stat">
+        <span class="stat-number">1M+</span>
+        <span class="stat-label">Workers analyzed</span>
+      </div>
+      <div class="stat">
+        <span class="stat-number">7+</span>
+        <span class="stat-label">Years of workforce data</span>
+      </div>
+      <div class="stat">
+        <span class="stat-number">14 hrs</span>
+        <span class="stat-label">Saved per person/week</span>
+      </div>
+      <div class="stat">
+        <span class="stat-number">23%</span>
+        <span class="stat-label">Avg. productivity gain</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Problem -->
+  <section id="problem">
+    <div class="section-label">The Management Gap</div>
+    <h2 class="section-title">You built this company. Now you can't see inside it.</h2>
+    <p class="section-desc">At 15-50 people, you're in a dead zone. Too many people to manage yourself. Not enough to justify three layers of management. So things fall through the cracks.</p>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="icon">&#128683;</div>
+        <h3>Invisible Bottlenecks</h3>
+        <p>Your best developer is spending 40% of their time on manual reporting. You have no idea because you're not in every standup, every Slack thread, every commit log.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">&#128165;</div>
+        <h3>Coaching That Never Happens</h3>
+        <p>You know your team needs feedback. But weekly 1-on-1s with 30 people? That's 15 hours a week you don't have. So nobody gets coached until the performance review nobody wants.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">&#128176;</div>
+        <h3>The Manager Tax</h3>
+        <p>Hiring a manager costs $80K-$120K/year. Two managers: $200K+. Plus they need time to ramp, and they can only see what people show them.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">&#128260;</div>
+        <h3>Process Drift</h3>
+        <p>You set up great workflows six months ago. Since then, everyone's developed workarounds, shortcuts, and habits you've never seen. Some are genius. Some are killing productivity.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">&#128337;</div>
+        <h3>The Founder's Dilemma</h3>
+        <p>You're either in the weeds managing people or you're flying blind at 30,000 feet. There's no middle ground. You can't be in every Zoom, every Slack, every workflow.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">&#128200;</div>
+        <h3>Data Without Insight</h3>
+        <p>You have project management tools, time trackers, Slack analytics. None of them tell you what you actually need to know: who needs help, what's broken, and what to fix first.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Solution -->
+  <section id="solution">
+    <div class="section-label">Your AI Chief of Staff</div>
+    <h2 class="section-title">Management-level insight without management-level headcount.</h2>
+    <p class="section-desc">Go2 installs a lightweight desktop agent on each employee's machine. It quietly observes workflows, then feeds frontier AI models to generate the insights a great manager would give you.</p>
+    <div class="solution-layout">
+      <div class="solution-features">
+        <div class="solution-feature">
+          <div class="feat-icon">&#127919;</div>
+          <div>
+            <h4>Individual Coaching, Automatically</h4>
+            <p>Each team member gets personalized tips based on their actual work patterns. "You're context-switching 12 times per hour between Slack and your IDE. Try batching messages at :00 and :30." No manager required.</p>
+          </div>
+        </div>
+        <div class="solution-feature">
+          <div class="feat-icon">&#128202;</div>
+          <div>
+            <h4>Team-Level Insights for You</h4>
+            <p>You see aggregated patterns, not individual surveillance. "Your engineering team spends 34% of their time in meetings. That's 11% above industry benchmark. Here are the three meetings to cut."</p>
+          </div>
+        </div>
+        <div class="solution-feature">
+          <div class="feat-icon">&#9881;&#65039;</div>
+          <div>
+            <h4>Workflow Automation Opportunities</h4>
+            <p>Go2 maps your team's actual processes and identifies what can be automated. "Your onboarding coordinator repeats these 23 steps for every new hire. Here's a workflow that does it in 4 clicks."</p>
+          </div>
+        </div>
+        <div class="solution-feature">
+          <div class="feat-icon">&#128161;</div>
+          <div>
+            <h4>Early Warning System</h4>
+            <p>Spot burnout patterns, engagement drops, and skill gaps before they become resignations. The insights a seasoned VP of Ops would catch, delivered to your dashboard weekly.</p>
+          </div>
+        </div>
+      </div>
+      <div class="dashboard-mock">
+        <div class="dash-header">
+          <h4>Team Health Dashboard</h4>
+          <span class="dash-badge">Live</span>
+        </div>
+        <div class="dash-metrics">
+          <div class="dash-metric">
+            <div class="label">Focus Time</div>
+            <div class="value">68%</div>
+            <div class="change up">+12% vs last month</div>
+          </div>
+          <div class="dash-metric">
+            <div class="label">Process Efficiency</div>
+            <div class="value">74%</div>
+            <div class="change up">+8% vs last month</div>
+          </div>
+          <div class="dash-metric">
+            <div class="label">Automation Saved</div>
+            <div class="value">47 hrs</div>
+            <div class="change up">this week</div>
+          </div>
+          <div class="dash-metric">
+            <div class="label">Team Engagement</div>
+            <div class="value">High</div>
+            <div class="change up">stable 3 weeks</div>
+          </div>
+        </div>
+        <div class="dash-insights">
+          <h5>AI Chief of Staff Insights</h5>
+          <div class="dash-insight-item">
+            <span class="dot gold"></span>
+            <p>Support team spending 3.2 hrs/day on ticket categorization. Automatable with existing tools&mdash;est. savings: $4,200/mo.</p>
+          </div>
+          <div class="dash-insight-item">
+            <span class="dot green"></span>
+            <p>Engineering deep focus time up 22% after implementing batched Slack windows. Recommend extending to design team.</p>
+          </div>
+          <div class="dash-insight-item">
+            <span class="dot blue"></span>
+            <p>Sales team's proposal turnaround improved from 4.2 days to 1.8 days. Top coaching recommendation adopted by 80% of reps.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section id="how-it-works">
+    <div class="section-label">Getting Started</div>
+    <h2 class="section-title">Running in 15 minutes. Insights by end of week one.</h2>
+    <p class="section-desc">No IT team needed. No complex integration. Just install, observe, and act on what you learn.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Install the Agent</h3>
+        <p>A lightweight desktop app your team installs in one click. Runs quietly in the background. Uses less than 1% CPU. Mac, Windows, Linux.</p>
+        <div class="step-time">&#9201; 5 minutes per person</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>AI Learns Your Workflows</h3>
+        <p>Go2 observes how your team actually works&mdash;apps used, workflows followed, communication patterns, meeting load. No surveys, no self-reporting.</p>
+        <div class="step-time">&#9201; 3-5 days to baseline</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Coaching Begins</h3>
+        <p>Each person gets personalized, actionable tips. You get a team-level dashboard with prioritized insights. The AI gets smarter every week.</p>
+        <div class="step-time">&#9201; First insights in 48 hours</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <h3>Automate & Optimize</h3>
+        <p>Go2 identifies repetitive processes and recommends automations. Implement with a click or route to your team. Continuous improvement on autopilot.</p>
+        <div class="step-time">&#9201; Ongoing, compounding</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Three Layers -->
+  <section id="three-layers">
+    <div class="section-label">The Product</div>
+    <h2 class="section-title">Three layers of intelligence your team is missing.</h2>
+    <p class="section-desc">Go2 doesn't just track time or count keystrokes. It understands work the way a great manager does&mdash;then scales that understanding across your entire team.</p>
+    <div class="layers">
+      <div class="layer-card">
+        <div class="layer-header">
+          <div class="layer-icon">&#129302;</div>
+          <h3>Individual Coaching</h3>
+          <p>Every team member gets their own AI coach that observes their work patterns and delivers specific, actionable tips.</p>
+        </div>
+        <ul class="layer-list">
+          <li>Focus time optimization</li>
+          <li>Context-switching reduction</li>
+          <li>Tool proficiency tips</li>
+          <li>Communication habit improvements</li>
+          <li>Personalized productivity score</li>
+        </ul>
+      </div>
+      <div class="layer-card">
+        <div class="layer-header">
+          <div class="layer-icon">&#128203;</div>
+          <h3>Team Insights</h3>
+          <p>Aggregated, anonymized intelligence that gives you the visibility a VP of Operations would provide.</p>
+        </div>
+        <ul class="layer-list">
+          <li>Meeting load analysis</li>
+          <li>Cross-team collaboration patterns</li>
+          <li>Skill gap identification</li>
+          <li>Engagement and burnout signals</li>
+          <li>Benchmarks vs. industry norms</li>
+        </ul>
+      </div>
+      <div class="layer-card">
+        <div class="layer-header">
+          <div class="layer-icon">&#9889;</div>
+          <h3>Process Automation</h3>
+          <p>AI maps your real workflows and identifies what can be automated, streamlined, or eliminated entirely.</p>
+        </div>
+        <ul class="layer-list">
+          <li>Repetitive task detection</li>
+          <li>Workflow mapping and visualization</li>
+          <li>One-click automation templates</li>
+          <li>ROI estimates per automation</li>
+          <li>Continuous process improvement</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison -->
+  <section id="comparison">
+    <div class="section-label">Why Go2</div>
+    <h2 class="section-title">The management alternatives, compared honestly.</h2>
+    <p class="section-desc">You need management-level visibility. Here's what each option actually costs and delivers.</p>
+    <div class="comparison-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Capability</th>
+            <th>Hire a Manager</th>
+            <th>Hire a Consultant</th>
+            <th>Go2</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Annual cost (25 people)</td>
+            <td>$80K-$120K/yr</td>
+            <td>$150K engagement</td>
+            <td>$23,700/yr</td>
+          </tr>
+          <tr>
+            <td>Time to first insight</td>
+            <td>60-90 days</td>
+            <td>4-6 weeks</td>
+            <td>48 hours</td>
+          </tr>
+          <tr>
+            <td>Individual coaching</td>
+            <td>Limited by time</td>
+            <td class="x-mark">Not included</td>
+            <td><span class="check">Automatic, daily</span></td>
+          </tr>
+          <tr>
+            <td>Sees actual workflows</td>
+            <td>Only what's shown</td>
+            <td>Interview-based</td>
+            <td><span class="check">Observes everything</span></td>
+          </tr>
+          <tr>
+            <td>Process automation</td>
+            <td class="x-mark">Not their job</td>
+            <td>Recommends only</td>
+            <td><span class="check">Identifies + implements</span></td>
+          </tr>
+          <tr>
+            <td>Scales with team</td>
+            <td>Need more managers</td>
+            <td>Need more engagements</td>
+            <td><span class="check">Unlimited, $79/user</span></td>
+          </tr>
+          <tr>
+            <td>Always on</td>
+            <td>40 hrs/week</td>
+            <td>Project-based</td>
+            <td><span class="check">24/7, improving weekly</span></td>
+          </tr>
+          <tr>
+            <td>Data-driven decisions</td>
+            <td>Subjective/anecdotal</td>
+            <td>Point-in-time snapshot</td>
+            <td><span class="check">Real-time, continuous</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Founder Quote -->
+  <div class="founder-quote" id="founder-quote">
+    <div class="quote-icon">&ldquo;</div>
+    <blockquote>&ldquo;I built a 30-person company and realized I couldn't see inside it anymore. I was either micromanaging or flying blind. Go2 gave me the visibility of having a VP of Ops without the $150K salary. Within two weeks, it found $8,000/month in wasted process time I had no idea existed.&rdquo;</blockquote>
+    <div class="attribution"><strong>[Customer Name]</strong> &mdash; CEO, 32-person SaaS company</div>
+  </div>
+
+  <!-- ROI -->
+  <section id="roi">
+    <div class="section-label">The Math</div>
+    <h2 class="section-title">The ROI isn't hypothetical. It's arithmetic.</h2>
+    <p class="section-desc">For a 25-person team at an average loaded cost of $65,000/year per person, the numbers speak for themselves.</p>
+    <div class="roi-grid">
+      <div class="roi-card">
+        <div class="roi-amount">$23,700</div>
+        <div class="roi-label">Go2 annual cost<br>(25 users &times; $79/mo)</div>
+      </div>
+      <div class="roi-card">
+        <div class="roi-amount">$455K</div>
+        <div class="roi-label">Value of 14 hrs saved<br>per person per week</div>
+      </div>
+      <div class="roi-card">
+        <div class="roi-amount">19:1</div>
+        <div class="roi-label">Return on<br>investment</div>
+      </div>
+      <div class="roi-card">
+        <div class="roi-amount">$96K</div>
+        <div class="roi-label">Saved vs. hiring<br>one manager</div>
+      </div>
+    </div>
+    <div class="roi-explanation">
+      <h4>How we calculate this</h4>
+      <ul>
+        <li><span class="calc-label">Wasted time:</span> Industry research shows knowledge workers waste ~14 hrs/week on avoidable interruptions, redundant processes, and tool friction.</li>
+        <li><span class="calc-label">Hourly cost:</span> $65K/yr loaded cost &divide; 2,080 hrs = $31.25/hr per person.</li>
+        <li><span class="calc-label">Annual waste:</span> 14 hrs &times; $31.25 &times; 52 weeks &times; 25 people = $568,750 in recoverable time.</li>
+        <li><span class="calc-label">Conservative capture:</span> Go2 customers typically recover 20-40% of wasted time in year one. At 80% (conservative), that's $455K.</li>
+        <li><span class="calc-label">Plus:</span> Savings from avoided manager hires, consultant engagements, and reduced turnover from better coaching.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section id="testimonials">
+    <div class="section-label">What Founders Say</div>
+    <h2 class="section-title">They needed managers. They got Go2 instead.</h2>
+    <p class="section-desc">Hear from founders who were stuck in the management gap&mdash;and how Go2 changed the equation.</p>
+    <div class="testimonials-grid">
+      <div class="testimonial">
+        <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p>&ldquo;We were about to hire two team leads at $90K each. Go2 showed us our teams were actually performing well&mdash;they just needed better meeting hygiene and tool training. Saved us $180K and got a 20% productivity lift instead.&rdquo;</p>
+        <div class="author">
+          <div class="avatar">CN</div>
+          <div class="author-info">
+            <div class="name">[Customer Name]</div>
+            <div class="role">Founder, 28-person marketing agency</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial">
+        <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p>&ldquo;The AI coaching is what sold my team on it. Nobody feels watched. They feel supported. One engineer told me the focus-time tips alone saved him 6 hours a week. I've never gotten that feedback about any management tool.&rdquo;</p>
+        <div class="author">
+          <div class="avatar">CN</div>
+          <div class="author-info">
+            <div class="name">[Customer Name]</div>
+            <div class="role">CTO, 42-person fintech startup</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial">
+        <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p>&ldquo;I was paying a consultant $15K/month to tell me what Go2 shows me in real-time. And Go2 actually sees the real workflows&mdash;not what people describe in interviews. It found three broken processes in week one that the consultant missed in three months.&rdquo;</p>
+        <div class="author">
+          <div class="avatar">CN</div>
+          <div class="author-info">
+            <div class="name">[Customer Name]</div>
+            <div class="role">CEO, 19-person e-commerce company</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Privacy -->
+  <section id="privacy">
+    <div class="section-label">Trust & Privacy</div>
+    <h2 class="section-title">Built for transparency, not surveillance.</h2>
+    <p class="section-desc">Go2 is designed so your team welcomes it. Individual data stays individual. You see team patterns, not personal browser history.</p>
+    <div class="privacy-grid">
+      <div class="privacy-item">
+        <div class="p-icon">&#128274;</div>
+        <div>
+          <h4>Individual Data Stays Private</h4>
+          <p>Managers see aggregated team insights only. Individual coaching goes directly to the employee. No one else sees their personal data.</p>
+        </div>
+      </div>
+      <div class="privacy-item">
+        <div class="p-icon">&#128065;</div>
+        <div>
+          <h4>Full Transparency</h4>
+          <p>Employees can see exactly what Go2 observes. Dashboard shows them their own data, their own insights, their own coaching tips.</p>
+        </div>
+      </div>
+      <div class="privacy-item">
+        <div class="p-icon">&#128737;</div>
+        <div>
+          <h4>Enterprise-Grade Security</h4>
+          <p>SOC 2 Type II compliant. End-to-end encryption. Data processed in real-time, raw captures are not stored permanently. Your data never trains public models.</p>
+        </div>
+      </div>
+      <div class="privacy-item">
+        <div class="p-icon">&#9989;</div>
+        <div>
+          <h4>Employee-First Design</h4>
+          <p>Go2 coaches, it doesn't tattletale. The AI is on your team's side. Better tools, better habits, better work-life balance. That's why adoption rates exceed 90%.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section id="pricing" class="pricing-section">
+    <div class="section-label">Simple Pricing</div>
+    <h2 class="section-title" style="margin-left:auto;margin-right:auto;">One plan. Everything included.</h2>
+    <p class="section-desc" style="margin-left:auto;margin-right:auto;text-align:center;">No tiers, no upsells, no "contact sales for the feature you actually need." Every team gets everything.</p>
+    <div class="pricing-card">
+      <div class="price-amount">$79</div>
+      <div class="price-period">per user / month</div>
+      <div class="price-note">Billed monthly. Cancel anytime. 14-day free trial.</div>
+      <ul class="pricing-includes">
+        <li><span class="incl-check">&#10003;</span> AI coaching for every team member</li>
+        <li><span class="incl-check">&#10003;</span> Team-level insights dashboard</li>
+        <li><span class="incl-check">&#10003;</span> Workflow mapping and automation</li>
+        <li><span class="incl-check">&#10003;</span> Meeting load analysis</li>
+        <li><span class="incl-check">&#10003;</span> Burnout and engagement signals</li>
+        <li><span class="incl-check">&#10003;</span> Industry benchmarking</li>
+        <li><span class="incl-check">&#10003;</span> Unlimited history and reporting</li>
+        <li><span class="incl-check">&#10003;</span> Dedicated onboarding support</li>
+      </ul>
+      <a href="#" class="btn-primary">Start Your 14-Day Free Trial &rarr;</a>
+    </div>
+    <div class="pricing-context">
+      <div class="pricing-compare">
+        <div class="old-cost">$120K/yr</div>
+        <div class="compare-label">Hiring one manager</div>
+      </div>
+      <div class="pricing-compare">
+        <div class="old-cost">$150K</div>
+        <div class="compare-label">Management consultant</div>
+      </div>
+      <div class="pricing-compare">
+        <div class="old-cost">$568K/yr</div>
+        <div class="compare-label">Wasted time (25 ppl)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA -->
+  <section class="final-cta">
+    <h2>Your team deserves better management.<br>So do you.</h2>
+    <p>Stop choosing between flying blind and hiring expensive. Go2 gives you the management layer your growing team needs at a price that makes sense.</p>
+    <a href="#" class="btn-gold">Start Free Trial &mdash; 14 Days, No Card Required &rarr;</a>
+    <div class="cta-sub">Set up in 15 minutes. First insights in 48 hours. Cancel anytime.</div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <span class="footer-brand">Go2</span>
+    <div class="footer-links">
+      <a href="#">Product</a>
+      <a href="#">Pricing</a>
+      <a href="#">Security</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms</a>
+      <a href="#">Contact</a>
+    </div>
+    <div class="footer-copy">&copy; 2026 Go2 (go2.io). All rights reserved.</div>
+  </footer>
+
+</main>
+
+<script>
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.querySelector('.sidebar-overlay').classList.toggle('open');
+}
+
+// Active nav tracking
+const sections = document.querySelectorAll('section[id], .founder-quote[id], .hero[id]');
+const navLinks = document.querySelectorAll('.sidebar-nav a[href^="#"]');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      navLinks.forEach(link => link.classList.remove('active'));
+      const activeLink = document.querySelector(`.sidebar-nav a[href="#${entry.target.id}"]`);
+      if (activeLink) activeLink.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+
+sections.forEach(section => observer.observe(section));
+
+// Close sidebar on nav click (mobile)
+navLinks.forEach(link => {
+  link.addEventListener('click', () => {
+    document.getElementById('sidebar').classList.remove('open');
+    document.querySelector('.sidebar-overlay').classList.remove('open');
+  });
+});
+</script>
+
+</body>
+</html>

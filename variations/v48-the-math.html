@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Just The Math</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --mono: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', 'Courier New', monospace;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --black: #0a0a0a;
+  --dark: #1a1a1a;
+  --mid: #666;
+  --light: #999;
+  --border: #e0e0e0;
+  --accent: #0066ff;
+  --accent-dark: #0052cc;
+  --red: #dc2626;
+  --green: #16a34a;
+  --bg: #ffffff;
+  --bg-alt: #fafafa;
+}
+
+html { scroll-behavior: smooth; font-size: 16px; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--black);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.mono { font-family: var(--mono); }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 24px;
+  text-align: center;
+}
+
+.hero-logo {
+  font-family: var(--mono);
+  font-size: 1rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--light);
+  margin-bottom: 60px;
+}
+
+.hero h1 {
+  font-family: var(--mono);
+  font-size: clamp(1.8rem, 5vw, 3.5rem);
+  font-weight: 700;
+  line-height: 1.2;
+  max-width: 800px;
+  margin-bottom: 32px;
+}
+
+.hero h1 .red { color: var(--red); }
+
+.hero-sub {
+  font-family: var(--mono);
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
+  color: var(--mid);
+  max-width: 560px;
+  line-height: 1.7;
+  margin-bottom: 48px;
+}
+
+.scroll-hint {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--light);
+  letter-spacing: 0.15em;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.scroll-hint span {
+  display: block;
+  margin-top: 8px;
+  font-size: 1.2rem;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* ── EQUATION SECTIONS ── */
+.eq-section {
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 80px 24px;
+  border-top: 1px solid var(--border);
+  position: relative;
+}
+
+.eq-section:nth-child(even) { background: var(--bg-alt); }
+
+.eq-step {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--light);
+  margin-bottom: 32px;
+}
+
+.eq-main {
+  font-family: var(--mono);
+  font-size: clamp(1.4rem, 4vw, 2.8rem);
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  max-width: 900px;
+  margin-bottom: 24px;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.eq-main.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.eq-main .highlight { color: var(--red); }
+.eq-main .green { color: var(--green); }
+.eq-main .accent { color: var(--accent); }
+.eq-main .dim { color: var(--light); font-weight: 400; }
+
+.eq-note {
+  font-family: var(--mono);
+  font-size: clamp(0.85rem, 1.5vw, 1rem);
+  color: var(--mid);
+  text-align: center;
+  max-width: 600px;
+  line-height: 1.7;
+  margin-top: 8px;
+}
+
+.eq-source {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--light);
+  margin-top: 20px;
+  letter-spacing: 0.05em;
+}
+
+/* ── DIVIDER ── */
+.divider {
+  text-align: center;
+  padding: 60px 24px;
+  border-top: 1px solid var(--border);
+}
+
+.divider-text {
+  font-family: var(--mono);
+  font-size: clamp(1rem, 2.5vw, 1.4rem);
+  color: var(--mid);
+  letter-spacing: 0.1em;
+}
+
+/* ── SUMMARY TABLE ── */
+.summary-section {
+  padding: 100px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: center;
+}
+
+.summary-table {
+  width: 100%;
+  max-width: 720px;
+  border-collapse: collapse;
+  font-family: var(--mono);
+}
+
+.summary-table th {
+  text-align: left;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--light);
+  padding: 0 0 16px 0;
+  border-bottom: 2px solid var(--black);
+}
+
+.summary-table th:last-child { text-align: right; }
+
+.summary-table td {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+}
+
+.summary-table td:last-child {
+  text-align: right;
+  font-weight: 700;
+  font-size: clamp(1rem, 2vw, 1.3rem);
+}
+
+.summary-table tr.total td {
+  border-bottom: none;
+  border-top: 2px solid var(--black);
+  padding-top: 20px;
+  font-weight: 700;
+}
+
+.summary-table tr.total td:last-child {
+  font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+  color: var(--green);
+}
+
+/* ── CALCULATOR ── */
+.calc-section {
+  padding: 100px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-alt);
+}
+
+.calc-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.calc-header h2 {
+  font-family: var(--mono);
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.calc-header p {
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  color: var(--mid);
+}
+
+.calc-container {
+  max-width: 800px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 48px;
+}
+
+.calc-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.slider-group label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--mid);
+  margin-bottom: 12px;
+}
+
+.slider-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--black);
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: var(--black);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: var(--black);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.calc-results {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 40px;
+}
+
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono);
+}
+
+.result-row:last-child { border-bottom: none; }
+
+.result-label {
+  font-size: 0.85rem;
+  color: var(--mid);
+}
+
+.result-number {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.result-row.waste .result-number { color: var(--red); }
+.result-row.cost .result-number { color: var(--black); }
+.result-row.recovery .result-number { color: var(--green); }
+
+.result-row.roi {
+  border-top: 2px solid var(--black);
+  border-bottom: none;
+  margin-top: 8px;
+  padding-top: 20px;
+}
+
+.result-row.roi .result-number {
+  font-size: 1.6rem;
+  color: var(--green);
+}
+
+.result-row.breakeven .result-number {
+  color: var(--accent);
+}
+
+/* ── CTA ── */
+.cta-section {
+  padding: 120px 24px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+}
+
+.cta-equation {
+  font-family: var(--mono);
+  font-size: clamp(1.2rem, 3vw, 2rem);
+  font-weight: 700;
+  margin-bottom: 48px;
+  line-height: 1.5;
+}
+
+.cta-equation .green { color: var(--green); }
+
+.cta-price {
+  font-family: var(--mono);
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.cta-price-note {
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  color: var(--mid);
+  margin-bottom: 48px;
+}
+
+.cta-button {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 18px 48px;
+  background: var(--black);
+  color: white;
+  text-decoration: none;
+  letter-spacing: 0.05em;
+  transition: background 0.2s ease;
+}
+
+.cta-button:hover { background: var(--accent); }
+
+.cta-fine {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--light);
+  margin-top: 20px;
+}
+
+/* ── FOOTER ── */
+footer {
+  padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+footer p {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--light);
+  letter-spacing: 0.05em;
+}
+
+footer a {
+  color: var(--mid);
+  text-decoration: none;
+}
+
+footer a:hover { color: var(--black); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .hero { padding: 40px 20px; }
+  .eq-section { min-height: 60vh; padding: 60px 20px; }
+  .calc-results { padding: 24px; }
+  .cta-section { padding: 80px 20px; }
+  .result-row { flex-direction: column; gap: 4px; }
+  .result-number { text-align: left; }
+}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-logo">go2.io</div>
+  <h1>Your remote team costs more than you think.<br>Here's the <span class="red">exact math</span>.</h1>
+  <p class="hero-sub">No stories. No analogies. No emotional appeals.<br>Just the numbers. You decide.</p>
+  <div class="scroll-hint">SCROLL TO SEE THE PROOF<span>&darr;</span></div>
+</section>
+
+<!-- STEP 1 -->
+<section class="eq-section">
+  <div class="eq-step">Step 1 &mdash; The Baseline</div>
+  <div class="eq-main">
+    40 <span class="dim">hrs paid</span>
+    &minus; 26 <span class="dim">hrs productive</span>
+    = <span class="highlight">14 hrs lost</span>
+  </div>
+  <p class="eq-note">The average remote worker is productive 65% of paid time. The other 35% is context switching, unclear priorities, tool friction, and unstructured breaks.</p>
+  <p class="eq-source">Sources: Harvard Business Review, Prodoscore, RescueTime aggregate data</p>
+</section>
+
+<!-- STEP 2 -->
+<section class="eq-section">
+  <div class="eq-step">Step 2 &mdash; The Cost Per Person</div>
+  <div class="eq-main">
+    14 <span class="dim">hrs</span>
+    &times; $45<span class="dim">/hr avg</span>
+    = <span class="highlight">$630/week wasted</span>
+  </div>
+  <p class="eq-note">$45/hr is a blended cost including salary, benefits, equipment, and overhead for a typical SMB remote employee.</p>
+</section>
+
+<!-- STEP 3 -->
+<section class="eq-section">
+  <div class="eq-step">Step 3 &mdash; Your Team</div>
+  <div class="eq-main">
+    30 <span class="dim">employees</span>
+    &times; $630<span class="dim">/week</span>
+    = <span class="highlight">$18,900/week</span>
+  </div>
+  <p class="eq-note">For a 30-person team. Scale linearly for your actual headcount.</p>
+</section>
+
+<!-- STEP 4 -->
+<section class="eq-section">
+  <div class="eq-step">Step 4 &mdash; The Annual Damage</div>
+  <div class="eq-main">
+    $18,900<span class="dim">/week</span>
+    &times; 52 <span class="dim">weeks</span>
+    = <span class="highlight">$982,800/year</span>
+  </div>
+  <p class="eq-note">That is how much productivity you are paying for and not receiving. Every year.</p>
+</section>
+
+<!-- DIVIDER -->
+<div class="divider">
+  <p class="divider-text">&mdash;&mdash; now, the other side &mdash;&mdash;</p>
+</div>
+
+<!-- STEP 5 -->
+<section class="eq-section">
+  <div class="eq-step">Step 5 &mdash; What Go2 Costs</div>
+  <div class="eq-main">
+    $59<span class="dim">/user</span>
+    &times; 30 <span class="dim">users</span>
+    = $1,770<span class="dim">/month</span>
+    = <span class="accent">$21,240/year</span>
+  </div>
+  <p class="eq-note">One price. No tiers. No setup fees. No contracts. Cancel anytime.</p>
+</section>
+
+<!-- STEP 6 -->
+<section class="eq-section">
+  <div class="eq-step">Step 6 &mdash; What Go2 Recovers</div>
+  <div class="eq-main">
+    Typical recovery:<br><span class="green">6&ndash;8 hours/week</span> <span class="dim">per person</span>
+  </div>
+  <p class="eq-note">AI coaching identifies each worker's specific friction points. Personalized, actionable tips. Not surveillance. Not micromanagement. Just targeted help.</p>
+</section>
+
+<!-- STEP 7 -->
+<section class="eq-section">
+  <div class="eq-step">Step 7 &mdash; The Recovery Math</div>
+  <div class="eq-main">
+    6 <span class="dim">hrs</span>
+    &times; $45
+    &times; 30 <span class="dim">people</span>
+    &times; 52 <span class="dim">weeks</span>
+    = <span class="green">$421,200</span>
+  </div>
+  <p class="eq-note">Conservative estimate using the low end of the 6&ndash;8 hour recovery range.</p>
+</section>
+
+<!-- STEP 8 -->
+<section class="eq-section">
+  <div class="eq-step">Step 8 &mdash; The ROI</div>
+  <div class="eq-main" style="line-height: 1.8;">
+    Investment: <span class="accent">$21,240</span><br>
+    Return: <span class="green">$421,200</span><br>
+    ROI: <span class="green">1,983%</span>
+  </div>
+  <p class="eq-note">For every $1 you spend on Go2, you get $19.83 back in recovered productivity.</p>
+</section>
+
+<!-- STEP 9 -->
+<section class="eq-section">
+  <div class="eq-step">Step 9 &mdash; Time To Breakeven</div>
+  <div class="eq-main">
+    Breakeven: <span class="accent">12 days</span>
+  </div>
+  <p class="eq-note">$1,770 monthly cost &divide; ($8,100 monthly recovery) = 0.22 months = ~6.5 business days. We round to 12 calendar days to be conservative.</p>
+</section>
+
+<!-- SUMMARY TABLE -->
+<section class="summary-section">
+  <table class="summary-table">
+    <thead>
+      <tr>
+        <th>Metric</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Productivity lost per person per week</td>
+        <td>14 hrs</td>
+      </tr>
+      <tr>
+        <td>Annual waste (30 people)</td>
+        <td style="color: var(--red);">$982,800</td>
+      </tr>
+      <tr>
+        <td>Go2 annual cost (30 users)</td>
+        <td>$21,240</td>
+      </tr>
+      <tr>
+        <td>Recovered productivity per person per week</td>
+        <td>6 hrs</td>
+      </tr>
+      <tr>
+        <td>Annual recovery value (30 people)</td>
+        <td style="color: var(--green);">$421,200</td>
+      </tr>
+      <tr class="total">
+        <td>Net annual gain</td>
+        <td>+$399,960</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- CALCULATOR -->
+<section class="calc-section" id="calculator">
+  <div class="calc-header">
+    <h2>Run Your Numbers</h2>
+    <p>Plug in your team. See your math.</p>
+  </div>
+  <div class="calc-container">
+    <div class="calc-inputs">
+      <div class="slider-group">
+        <label>
+          <span>Team size</span>
+          <span class="slider-value mono" id="val-team">30</span>
+        </label>
+        <input type="range" id="slider-team" min="5" max="100" value="30" step="1">
+      </div>
+      <div class="slider-group">
+        <label>
+          <span>Avg hourly cost (fully loaded)</span>
+          <span class="slider-value mono" id="val-rate">$45</span>
+        </label>
+        <input type="range" id="slider-rate" min="20" max="100" value="45" step="1">
+      </div>
+      <div class="slider-group">
+        <label>
+          <span>Productive hours per week (of 40)</span>
+          <span class="slider-value mono" id="val-hours">26</span>
+        </label>
+        <input type="range" id="slider-hours" min="15" max="35" value="26" step="1">
+      </div>
+    </div>
+
+    <div class="calc-results" id="calc-results">
+      <div class="result-row waste">
+        <span class="result-label">Hours wasted per person per week</span>
+        <span class="result-number" id="r-waste-hrs">14</span>
+      </div>
+      <div class="result-row waste">
+        <span class="result-label">Weekly waste (entire team)</span>
+        <span class="result-number" id="r-waste-week">$18,900</span>
+      </div>
+      <div class="result-row waste">
+        <span class="result-label">Annual waste</span>
+        <span class="result-number" id="r-waste-year">$982,800</span>
+      </div>
+      <div class="result-row cost">
+        <span class="result-label">Go2 annual cost</span>
+        <span class="result-number" id="r-go2-cost">$21,240</span>
+      </div>
+      <div class="result-row recovery">
+        <span class="result-label">Hours recovered per person per week</span>
+        <span class="result-number" id="r-recov-hrs">6</span>
+      </div>
+      <div class="result-row recovery">
+        <span class="result-label">Annual recovered value</span>
+        <span class="result-number" id="r-recov-value">$421,200</span>
+      </div>
+      <div class="result-row roi">
+        <span class="result-label">ROI</span>
+        <span class="result-number" id="r-roi">1,983%</span>
+      </div>
+      <div class="result-row breakeven">
+        <span class="result-label">Breakeven</span>
+        <span class="result-number" id="r-breakeven">12 days</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <p class="cta-equation">
+    Spend <span class="accent" id="cta-cost">$21,240</span>. Recover <span class="green" id="cta-recover">$421,200</span>.
+  </p>
+  <div class="cta-price">$59<span style="font-size: 0.4em; color: var(--mid);">/user/month</span></div>
+  <p class="cta-price-note">No tiers. No complexity. Just the number.</p>
+  <a href="https://go2.io" class="cta-button">START THE MATH &rarr;</a>
+  <p class="cta-fine">14-day free trial. No credit card required. Cancel anytime.</p>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p><a href="https://go2.io">go2.io</a> &nbsp;&middot;&nbsp; The math doesn't lie.</p>
+</footer>
+
+<script>
+(function() {
+  // Scroll-triggered fade-in for equation sections
+  const equations = document.querySelectorAll('.eq-main');
+  const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.3 });
+  equations.forEach(function(eq) { observer.observe(eq); });
+
+  // Calculator
+  const sliderTeam = document.getElementById('slider-team');
+  const sliderRate = document.getElementById('slider-rate');
+  const sliderHours = document.getElementById('slider-hours');
+
+  const valTeam = document.getElementById('val-team');
+  const valRate = document.getElementById('val-rate');
+  const valHours = document.getElementById('val-hours');
+
+  function fmt(n) {
+    return '$' + Math.round(n).toLocaleString('en-US');
+  }
+
+  function calculate() {
+    var team = parseInt(sliderTeam.value);
+    var rate = parseInt(sliderRate.value);
+    var productive = parseInt(sliderHours.value);
+
+    valTeam.textContent = team;
+    valRate.textContent = '$' + rate;
+    valHours.textContent = productive;
+
+    var wastedHrs = 40 - productive;
+    var weeklyWastePerPerson = wastedHrs * rate;
+    var weeklyWasteTeam = weeklyWastePerPerson * team;
+    var annualWaste = weeklyWasteTeam * 52;
+
+    var go2Monthly = 59 * team;
+    var go2Annual = go2Monthly * 12;
+
+    // Recovery: roughly 43% of wasted hours (6/14 from baseline), minimum 2 hrs
+    var recoveryRatio = 0.43;
+    var recoveredHrs = Math.max(2, Math.round(wastedHrs * recoveryRatio));
+    var annualRecovery = recoveredHrs * rate * team * 52;
+
+    var roi = ((annualRecovery - go2Annual) / go2Annual * 100);
+    var monthlyRecovery = annualRecovery / 12;
+    var breakevenMonths = go2Monthly / monthlyRecovery;
+    var breakevenDays = Math.ceil(breakevenMonths * 30);
+
+    document.getElementById('r-waste-hrs').textContent = wastedHrs;
+    document.getElementById('r-waste-week').textContent = fmt(weeklyWasteTeam);
+    document.getElementById('r-waste-year').textContent = fmt(annualWaste);
+    document.getElementById('r-go2-cost').textContent = fmt(go2Annual);
+    document.getElementById('r-recov-hrs').textContent = recoveredHrs;
+    document.getElementById('r-recov-value').textContent = fmt(annualRecovery);
+    document.getElementById('r-roi').textContent = Math.round(roi).toLocaleString('en-US') + '%';
+    document.getElementById('r-breakeven').textContent = breakevenDays + ' days';
+
+    document.getElementById('cta-cost').textContent = fmt(go2Annual);
+    document.getElementById('cta-recover').textContent = fmt(annualRecovery);
+  }
+
+  sliderTeam.addEventListener('input', calculate);
+  sliderRate.addEventListener('input', calculate);
+  sliderHours.addEventListener('input', calculate);
+
+  // Initial calculation
+  calculate();
+})();
+</script>
+
+</body>
+</html>

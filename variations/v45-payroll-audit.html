@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The Payroll Audit That Never Stops</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --green: #0a8754;
+    --green-light: #e6f5ee;
+    --green-bg: #f0faf5;
+    --red: #c0392b;
+    --red-light: #fdecea;
+    --dark: #1a1a2e;
+    --gray-900: #212529;
+    --gray-700: #495057;
+    --gray-500: #6c757d;
+    --gray-300: #dee2e6;
+    --gray-100: #f8f9fa;
+    --white: #ffffff;
+    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  }
+
+  html { scroll-behavior: smooth; font-size: 16px; }
+
+  body {
+    font-family: var(--font);
+    color: var(--gray-900);
+    background: var(--white);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--gray-300);
+    padding: 0 2rem;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-logo { font-size: 1.5rem; font-weight: 800; color: var(--dark); text-decoration: none; letter-spacing: -0.5px; }
+  .nav-logo span { color: var(--green); }
+  .nav-links { display: flex; gap: 2rem; align-items: center; }
+  .nav-links a { text-decoration: none; color: var(--gray-700); font-size: 0.9rem; font-weight: 500; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--green); }
+  .nav-cta {
+    background: var(--green); color: var(--white) !important; padding: 0.5rem 1.25rem;
+    border-radius: 6px; font-weight: 600 !important; transition: background 0.2s;
+  }
+  .nav-cta:hover { background: #07704a; }
+
+  /* HERO */
+  .hero {
+    padding: 8rem 2rem 5rem;
+    text-align: center;
+    background: linear-gradient(180deg, var(--white) 0%, var(--gray-100) 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 39px, var(--gray-300) 39px, var(--gray-300) 40px);
+    opacity: 0.15;
+    pointer-events: none;
+  }
+  .hero-eyebrow {
+    display: inline-block;
+    background: var(--red-light); color: var(--red);
+    padding: 0.35rem 1rem; border-radius: 20px;
+    font-size: 0.85rem; font-weight: 600;
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.02em;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.15;
+    max-width: 900px;
+    margin: 0 auto 1.5rem;
+    color: var(--dark);
+    letter-spacing: -1px;
+  }
+  .hero h1 .waste { color: var(--red); }
+  .hero h1 .recover { color: var(--green); }
+  .hero-sub {
+    font-size: 1.2rem;
+    color: var(--gray-700);
+    max-width: 640px;
+    margin: 0 auto 2.5rem;
+    line-height: 1.7;
+  }
+  .hero-math {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 3rem;
+    font-family: var(--mono);
+    font-size: 0.95rem;
+  }
+  .math-chip {
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .math-chip.payroll { background: var(--gray-100); border: 1px solid var(--gray-300); color: var(--gray-900); }
+  .math-chip.waste { background: var(--red-light); border: 1px solid #f5c6cb; color: var(--red); }
+  .math-chip.found { background: var(--green-light); border: 1px solid #b7e4c7; color: var(--green); }
+  .math-operator { font-size: 1.4rem; color: var(--gray-500); display: flex; align-items: center; font-weight: 300; }
+
+  .hero-ctas { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.85rem 2rem; border-radius: 8px;
+    font-size: 1rem; font-weight: 600;
+    text-decoration: none; border: none; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: var(--green); color: var(--white); }
+  .btn-primary:hover { background: #07704a; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(10,135,84,0.3); }
+  .btn-secondary { background: var(--white); color: var(--gray-900); border: 1px solid var(--gray-300); }
+  .btn-secondary:hover { border-color: var(--gray-500); background: var(--gray-100); }
+
+  /* SECTIONS */
+  section { padding: 5rem 2rem; }
+  .container { max-width: 1100px; margin: 0 auto; }
+  .section-label {
+    display: inline-block;
+    font-size: 0.75rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--green);
+    margin-bottom: 0.75rem;
+  }
+  .section-title {
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
+    font-weight: 800;
+    color: var(--dark);
+    margin-bottom: 1rem;
+    letter-spacing: -0.5px;
+  }
+  .section-sub {
+    font-size: 1.1rem;
+    color: var(--gray-700);
+    max-width: 640px;
+    line-height: 1.7;
+  }
+
+  /* WASTE BREAKDOWN */
+  .waste-section { background: var(--gray-100); }
+  .waste-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 3rem;
+  }
+  .waste-card {
+    background: var(--white);
+    border: 1px solid var(--gray-300);
+    border-radius: 12px;
+    padding: 2rem;
+    transition: box-shadow 0.2s;
+  }
+  .waste-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+  .waste-card .amount {
+    font-size: 2rem;
+    font-weight: 800;
+    font-family: var(--mono);
+    margin-bottom: 0.5rem;
+  }
+  .waste-card .amount.red { color: var(--red); }
+  .waste-card .amount.green { color: var(--green); }
+  .waste-card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--dark); }
+  .waste-card p { color: var(--gray-700); font-size: 0.95rem; line-height: 1.6; }
+  .waste-card .tag {
+    display: inline-block;
+    margin-top: 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .tag-red { background: var(--red-light); color: var(--red); }
+  .tag-green { background: var(--green-light); color: var(--green); }
+
+  /* ROI CALCULATOR */
+  .calc-section { background: var(--white); }
+  .calculator {
+    background: var(--dark);
+    border-radius: 16px;
+    padding: 3rem;
+    margin-top: 3rem;
+    color: var(--white);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+  }
+  @media (max-width: 768px) { .calculator { grid-template-columns: 1fr; padding: 2rem; } }
+  .calc-inputs h3 { font-size: 1.25rem; font-weight: 700; margin-bottom: 2rem; }
+  .slider-group { margin-bottom: 2rem; }
+  .slider-label {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 0.75rem;
+  }
+  .slider-label span { font-size: 0.9rem; color: rgba(255,255,255,0.7); }
+  .slider-label strong { font-family: var(--mono); font-size: 1.1rem; color: var(--white); }
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 6px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 3px; outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 22px; height: 22px;
+    background: var(--green);
+    border-radius: 50%; cursor: pointer;
+    border: 3px solid var(--white);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 22px; height: 22px;
+    background: var(--green);
+    border-radius: 50%; cursor: pointer;
+    border: 3px solid var(--white);
+  }
+  .calc-results { display: flex; flex-direction: column; justify-content: center; }
+  .calc-results h3 { font-size: 1.25rem; font-weight: 700; margin-bottom: 2rem; }
+  .result-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .result-row:last-child { border-bottom: none; }
+  .result-label { font-size: 0.9rem; color: rgba(255,255,255,0.7); }
+  .result-value { font-family: var(--mono); font-size: 1.1rem; font-weight: 700; }
+  .result-value.red { color: #e74c3c; }
+  .result-value.green { color: #2ecc71; }
+  .result-value.big { font-size: 1.5rem; }
+  .result-highlight {
+    background: rgba(46,204,113,0.1);
+    border: 1px solid rgba(46,204,113,0.3);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-top: 1.5rem;
+    text-align: center;
+  }
+  .result-highlight .roi-number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    font-family: var(--mono);
+    color: #2ecc71;
+  }
+  .result-highlight .roi-label {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.6);
+    margin-top: 0.25rem;
+  }
+
+  /* WATERFALL CHART */
+  .waterfall {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+  }
+  .waterfall h4 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.5); margin-bottom: 1rem; }
+  .wf-bar-group { margin-bottom: 0.75rem; }
+  .wf-bar-label { font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-bottom: 0.25rem; }
+  .wf-bar-track { height: 24px; background: rgba(255,255,255,0.08); border-radius: 4px; position: relative; overflow: hidden; }
+  .wf-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; display: flex; align-items: center; padding-left: 8px; font-size: 0.75rem; font-weight: 700; font-family: var(--mono); }
+  .wf-bar-fill.full { background: rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); }
+  .wf-bar-fill.waste { background: #e74c3c; color: white; }
+  .wf-bar-fill.recovered { background: #2ecc71; color: white; }
+  .wf-bar-fill.cost { background: #f39c12; color: white; }
+
+  /* HOW IT WORKS */
+  .how-section { background: var(--gray-100); }
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 2rem;
+    margin-top: 3rem;
+  }
+  .step {
+    text-align: center;
+    padding: 2rem 1.5rem;
+    background: var(--white);
+    border-radius: 12px;
+    border: 1px solid var(--gray-300);
+  }
+  .step-num {
+    width: 48px; height: 48px;
+    background: var(--green-light);
+    color: var(--green);
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .step h3 { font-size: 1.05rem; margin-bottom: 0.5rem; color: var(--dark); }
+  .step p { font-size: 0.9rem; color: var(--gray-700); line-height: 1.6; }
+
+  /* COMPARISON TABLE */
+  .compare-section { background: var(--white); }
+  .compare-table-wrap { overflow-x: auto; margin-top: 2.5rem; }
+  .compare-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.95rem;
+  }
+  .compare-table th, .compare-table td {
+    padding: 1rem 1.25rem; text-align: left;
+    border-bottom: 1px solid var(--gray-300);
+  }
+  .compare-table th {
+    font-weight: 700; font-size: 0.8rem;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--gray-500);
+    background: var(--gray-100);
+  }
+  .compare-table td:first-child { font-weight: 600; color: var(--dark); }
+  .compare-table .check { color: var(--green); font-weight: 700; }
+  .compare-table .x { color: var(--red); font-weight: 700; }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: var(--green-bg); }
+
+  /* TESTIMONIALS */
+  .testimonials { background: var(--gray-100); }
+  .testi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+    margin-top: 3rem;
+  }
+  .testi-card {
+    background: var(--white);
+    border: 1px solid var(--gray-300);
+    border-radius: 12px;
+    padding: 2rem;
+  }
+  .testi-metric {
+    font-family: var(--mono);
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--green);
+    margin-bottom: 0.75rem;
+  }
+  .testi-quote {
+    font-size: 1rem;
+    color: var(--gray-700);
+    line-height: 1.7;
+    margin-bottom: 1rem;
+    font-style: italic;
+  }
+  .testi-attr {
+    font-size: 0.85rem;
+    color: var(--gray-500);
+    font-weight: 600;
+  }
+
+  /* FAQ */
+  .faq-section { background: var(--white); }
+  .faq-list { max-width: 720px; margin: 2.5rem auto 0; }
+  .faq-item {
+    border-bottom: 1px solid var(--gray-300);
+  }
+  .faq-q {
+    width: 100%; background: none; border: none;
+    text-align: left; padding: 1.25rem 0;
+    font-size: 1.05rem; font-weight: 600;
+    color: var(--dark); cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--font);
+  }
+  .faq-q::after {
+    content: '+'; font-size: 1.5rem; font-weight: 300;
+    color: var(--gray-500); transition: transform 0.2s;
+    flex-shrink: 0; margin-left: 1rem;
+  }
+  .faq-item.open .faq-q::after { content: '\2212'; }
+  .faq-a {
+    max-height: 0; overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+  }
+  .faq-item.open .faq-a { max-height: 300px; padding-bottom: 1.25rem; }
+  .faq-a p { color: var(--gray-700); font-size: 0.95rem; line-height: 1.7; }
+
+  /* CTA */
+  .final-cta {
+    background: var(--dark);
+    color: var(--white);
+    text-align: center;
+    padding: 5rem 2rem;
+  }
+  .final-cta h2 {
+    font-size: clamp(1.5rem, 3.5vw, 2.5rem);
+    font-weight: 800;
+    margin-bottom: 1rem;
+    letter-spacing: -0.5px;
+  }
+  .final-cta p {
+    color: rgba(255,255,255,0.7);
+    font-size: 1.1rem;
+    max-width: 560px;
+    margin: 0 auto 2rem;
+    line-height: 1.7;
+  }
+  .final-cta .price-tag {
+    font-family: var(--mono);
+    font-size: 1.25rem;
+    color: #2ecc71;
+    margin-bottom: 2rem;
+    font-weight: 700;
+  }
+
+  /* FOOTER */
+  footer {
+    background: var(--dark);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding: 2rem;
+    text-align: center;
+    color: rgba(255,255,255,0.4);
+    font-size: 0.85rem;
+  }
+  footer a { color: rgba(255,255,255,0.6); text-decoration: none; }
+
+  /* MOBILE NAV */
+  .nav-toggle { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--dark); }
+  @media (max-width: 768px) {
+    .nav-links { display: none; flex-direction: column; position: absolute; top: 64px; left: 0; right: 0; background: var(--white); border-bottom: 1px solid var(--gray-300); padding: 1rem 2rem; gap: 1rem; }
+    .nav-links.open { display: flex; }
+    .nav-toggle { display: block; }
+    .hero { padding: 7rem 1.5rem 3.5rem; }
+    .hero h1 { font-size: 1.75rem; }
+    .hero-math { flex-direction: column; align-items: center; }
+    .calculator { padding: 1.5rem; gap: 2rem; }
+    section { padding: 3.5rem 1.5rem; }
+  }
+
+  /* ANIMATIONS */
+  .fade-up { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">go<span>2</span></a>
+  <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">&#9776;</button>
+  <div class="nav-links">
+    <a href="#calculator">ROI Calculator</a>
+    <a href="#how">How It Works</a>
+    <a href="#compare">Compare</a>
+    <a href="#faq">FAQ</a>
+    <a href="#start" class="nav-cta">Get Your Audit</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-eyebrow">Your biggest expense has never been audited</div>
+    <h1>
+      You're paying <span class="waste">$2.4M</span> in payroll.<br>
+      You're getting $1.6M in work.<br>
+      Go2 finds the <span class="recover">$800K</span>.
+    </h1>
+    <p class="hero-sub">
+      Every company audits their books. Almost none audit their operations.
+      Go2 is a continuous payroll audit powered by AI &mdash; it finds where
+      your labor dollars disappear, and helps you recover them.
+    </p>
+    <div class="hero-math">
+      <div class="math-chip payroll">$2.4M payroll</div>
+      <span class="math-operator">&minus;</span>
+      <div class="math-chip waste">$873K waste</div>
+      <span class="math-operator">+</span>
+      <div class="math-chip found">Go2 recovery</div>
+      <span class="math-operator">=</span>
+      <div class="math-chip found">40:1 ROI</div>
+    </div>
+    <div class="hero-ctas">
+      <a href="#calculator" class="btn btn-primary">Calculate Your Waste &darr;</a>
+      <a href="#how" class="btn btn-secondary">See How It Works</a>
+    </div>
+  </div>
+</section>
+
+<!-- WASTE BREAKDOWN -->
+<section class="waste-section">
+  <div class="container">
+    <span class="section-label">Where the money goes</span>
+    <h2 class="section-title">The anatomy of payroll waste</h2>
+    <p class="section-sub">Based on data from 1M+ workers over 7 years, here's where a typical 30-person remote team loses money every year.</p>
+    <div class="waste-grid">
+      <div class="waste-card fade-up">
+        <div class="amount red">$312K</div>
+        <h3>Process Friction</h3>
+        <p>Employees waiting on approvals, searching for files, re-doing work because of unclear specs. Not laziness &mdash; bad systems.</p>
+        <span class="tag tag-red">Invisible to managers</span>
+      </div>
+      <div class="waste-card fade-up">
+        <div class="amount red">$218K</div>
+        <h3>Context Switching</h3>
+        <p>Constant app-hopping, meeting interruptions, and notification overload. Each switch costs 23 minutes of recovery.</p>
+        <span class="tag tag-red">14 hrs/week per person</span>
+      </div>
+      <div class="waste-card fade-up">
+        <div class="amount red">$187K</div>
+        <h3>Duplicate Work</h3>
+        <p>Three people building the same spreadsheet. Two teams solving the same problem. No one knows because no one can see it.</p>
+        <span class="tag tag-red">Compounds over time</span>
+      </div>
+      <div class="waste-card fade-up">
+        <div class="amount red">$156K</div>
+        <h3>Tool &amp; Workflow Gaps</h3>
+        <p>Manual processes that should be automated. Workers spending $40/hr on tasks a $5/hr script could handle.</p>
+        <span class="tag tag-red">Easy wins, once found</span>
+      </div>
+      <div class="waste-card fade-up">
+        <div class="amount green">$21K/yr</div>
+        <h3>Cost of Go2</h3>
+        <p>$59/user/mo &times; 30 people. That's your entire investment to find and fix the $873K problem above.</p>
+        <span class="tag tag-green">2.4% of waste recovered</span>
+      </div>
+      <div class="waste-card fade-up">
+        <div class="amount green">$852K</div>
+        <h3>Net Annual Recovery</h3>
+        <p>Conservative estimate. Most teams see 30-50% of identified waste eliminated in the first 90 days through coaching and automation.</p>
+        <span class="tag tag-green">40:1 return on investment</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ROI CALCULATOR -->
+<section class="calc-section" id="calculator">
+  <div class="container">
+    <span class="section-label">ROI Calculator</span>
+    <h2 class="section-title">See your numbers</h2>
+    <p class="section-sub">Drag the sliders. Watch the waste add up. Then ask yourself: can you afford not to know?</p>
+
+    <div class="calculator">
+      <div class="calc-inputs">
+        <h3>Your Team</h3>
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Team Size</span>
+            <strong id="val-team">30</strong>
+          </div>
+          <input type="range" id="slider-team" min="5" max="100" value="30" step="1">
+        </div>
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Avg. Annual Salary</span>
+            <strong id="val-salary">$80,000</strong>
+          </div>
+          <input type="range" id="slider-salary" min="30000" max="200000" value="80000" step="5000">
+        </div>
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Estimated Waste %</span>
+            <strong id="val-waste">35%</strong>
+          </div>
+          <input type="range" id="slider-waste" min="15" max="55" value="35" step="1">
+        </div>
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Waste Recovered with Go2</span>
+            <strong id="val-recovery">40%</strong>
+          </div>
+          <input type="range" id="slider-recovery" min="15" max="65" value="40" step="1">
+        </div>
+
+        <!-- WATERFALL CHART -->
+        <div class="waterfall" id="waterfall-chart">
+          <h4>Payroll Breakdown</h4>
+          <div class="wf-bar-group">
+            <div class="wf-bar-label">Total Payroll</div>
+            <div class="wf-bar-track"><div class="wf-bar-fill full" id="wf-payroll" style="width:100%"></div></div>
+          </div>
+          <div class="wf-bar-group">
+            <div class="wf-bar-label">Identified Waste</div>
+            <div class="wf-bar-track"><div class="wf-bar-fill waste" id="wf-waste" style="width:35%"></div></div>
+          </div>
+          <div class="wf-bar-group">
+            <div class="wf-bar-label">Recovered by Go2</div>
+            <div class="wf-bar-track"><div class="wf-bar-fill recovered" id="wf-recovered" style="width:14%"></div></div>
+          </div>
+          <div class="wf-bar-group">
+            <div class="wf-bar-label">Go2 Cost</div>
+            <div class="wf-bar-track"><div class="wf-bar-fill cost" id="wf-cost" style="width:1%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="calc-results">
+        <h3>Your Payroll Audit</h3>
+        <div class="result-row">
+          <span class="result-label">Annual Payroll</span>
+          <span class="result-value" id="r-payroll">$2,400,000</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Estimated Annual Waste</span>
+          <span class="result-value red" id="r-waste">-$840,000</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Waste Recovered by Go2</span>
+          <span class="result-value green" id="r-recovered">+$336,000</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Go2 Cost ($59/user/mo)</span>
+          <span class="result-value" id="r-go2cost">-$21,240</span>
+        </div>
+        <div class="result-row" style="border-top:1px solid rgba(255,255,255,0.2);padding-top:1.25rem;">
+          <span class="result-label" style="color:var(--white);font-weight:600;">Net Annual Savings</span>
+          <span class="result-value green big" id="r-net">+$314,760</span>
+        </div>
+        <div class="result-highlight">
+          <div class="roi-number" id="r-roi">15:1</div>
+          <div class="roi-label">Return on Investment</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-section" id="how">
+  <div class="container">
+    <span class="section-label">How it works</span>
+    <h2 class="section-title">From invisible waste to recovered dollars</h2>
+    <p class="section-sub">A lightweight desktop agent observes workflows, AI identifies the waste, and coaching closes the gap &mdash; without surveillance culture.</p>
+    <div class="steps">
+      <div class="step fade-up">
+        <div class="step-num">1</div>
+        <h3>Install the Agent</h3>
+        <p>A lightweight desktop agent deploys in minutes. Captures workflows, apps, and patterns. Runs silently &mdash; no performance impact.</p>
+      </div>
+      <div class="step fade-up">
+        <div class="step-num">2</div>
+        <h3>AI Maps the Waste</h3>
+        <p>Frontier AI models (Claude, GPT, Gemini) analyze every workflow. Identify process friction, duplicate work, and automation opportunities &mdash; in dollar terms.</p>
+      </div>
+      <div class="step fade-up">
+        <div class="step-num">3</div>
+        <h3>Workers Get Coached</h3>
+        <p>Each person receives private, specific tips. "You spend 6 hrs/week in spreadsheets &mdash; here's a formula that cuts it to 2." No one sees individual data but them.</p>
+      </div>
+      <div class="step fade-up">
+        <div class="step-num">4</div>
+        <h3>Managers See the Money</h3>
+        <p>Team-level dashboard shows aggregated insights in dollars. Where the biggest waste pools are, which processes to fix first, and the savings from each fix.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON -->
+<section class="compare-section" id="compare">
+  <div class="container">
+    <span class="section-label">Comparison</span>
+    <h2 class="section-title">You'd audit your books. Why not your operations?</h2>
+    <p class="section-sub">Traditional monitoring watches people. Go2 audits the money.</p>
+    <div class="compare-table-wrap">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Traditional Monitoring</th>
+            <th>Annual Performance Review</th>
+            <th style="color:var(--green);">Go2 Payroll Audit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Shows waste in dollar terms</td>
+            <td class="x">&#10005;</td>
+            <td class="x">&#10005;</td>
+            <td class="check">&#10003;</td>
+          </tr>
+          <tr>
+            <td>Identifies process waste, not people</td>
+            <td class="x">&#10005;</td>
+            <td class="x">&#10005;</td>
+            <td class="check">&#10003;</td>
+          </tr>
+          <tr>
+            <td>Coaches workers individually</td>
+            <td class="x">&#10005;</td>
+            <td>Once/year</td>
+            <td class="check">Continuous</td>
+          </tr>
+          <tr>
+            <td>Maps automation opportunities</td>
+            <td class="x">&#10005;</td>
+            <td class="x">&#10005;</td>
+            <td class="check">&#10003;</td>
+          </tr>
+          <tr>
+            <td>Protects individual privacy</td>
+            <td class="x">&#10005;</td>
+            <td class="check">&#10003;</td>
+            <td class="check">&#10003;</td>
+          </tr>
+          <tr>
+            <td>Runs continuously</td>
+            <td class="check">&#10003;</td>
+            <td class="x">&#10005;</td>
+            <td class="check">&#10003;</td>
+          </tr>
+          <tr>
+            <td>ROI measurable in 30 days</td>
+            <td class="x">&#10005;</td>
+            <td class="x">&#10005;</td>
+            <td class="check">&#10003;</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials">
+  <div class="container">
+    <span class="section-label">Results</span>
+    <h2 class="section-title">The numbers speak for themselves</h2>
+    <div class="testi-grid">
+      <div class="testi-card fade-up">
+        <div class="testi-metric">$412K recovered</div>
+        <p class="testi-quote">"We thought utilization was around 80%. Go2 showed it was 62%. Within 90 days, three process changes recovered over $400K in annual productivity."</p>
+        <div class="testi-attr">[Customer Name] &mdash; CEO, [Marketing Agency, 28 employees]</div>
+      </div>
+      <div class="testi-card fade-up">
+        <div class="testi-metric">23:1 ROI</div>
+        <p class="testi-quote">"The coaching alone was worth it. Our devs were losing 2 hours/day to context switching. Go2 identified the pattern and suggested async blocks. We shipped 31% more features the next quarter."</p>
+        <div class="testi-attr">[Customer Name] &mdash; VP Engineering, [SaaS Company, 42 employees]</div>
+      </div>
+      <div class="testi-card fade-up">
+        <div class="testi-metric">$89K in automation</div>
+        <p class="testi-quote">"Go2 found that 4 people were spending 15 hours/week each on manual data entry that could be fully automated. That one finding paid for 3 years of Go2."</p>
+        <div class="testi-attr">[Customer Name] &mdash; Owner, [Logistics Firm, 35 employees]</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section" id="faq">
+  <div class="container">
+    <span class="section-label">FAQ</span>
+    <h2 class="section-title">Common questions</h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q">Is this employee surveillance?</button>
+        <div class="faq-a"><p>No. Go2 audits processes, not people. Individual workers receive private coaching only they can see. Managers get team-level, aggregated insights &mdash; they never see individual activity data. Think of it as auditing your operations, the same way you audit your finances.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Where does the 35% waste figure come from?</button>
+        <div class="faq-a"><p>From analyzing data across 1M+ workers over 7 years of staffing operations. The number varies by industry and role &mdash; some teams are at 20%, others over 50%. The calculator lets you adjust this to match your estimate. Most are surprised to find the real number is higher than they assumed.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">How fast will I see results?</button>
+        <div class="faq-a"><p>The AI needs about 2 weeks of data to produce its first waste audit. Most teams see their first recovered dollars within 30 days through quick coaching wins. Larger process and automation changes typically land in the 60-90 day range.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">What exactly does the desktop agent capture?</button>
+        <div class="faq-a"><p>The agent observes application usage, workflow patterns, screen content, keystrokes, and audio. All data is processed by AI models (Claude, GPT, Gemini) to identify process waste and coaching opportunities. Individual data is never exposed to managers &mdash; only the worker sees their own coaching tips.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">What if my team pushes back?</button>
+        <div class="faq-a"><p>Frame it correctly and they won't. Workers get a private AI coach that helps them work smarter, avoid frustration, and eliminate tedious tasks. In our experience, most employees actively value the coaching once they see it &mdash; it's like having a personal productivity consultant.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">How does $59/user/month deliver a 40:1 ROI?</button>
+        <div class="faq-a"><p>The math: 14 wasted hours/week &times; $40/hour &times; 52 weeks = $29,120 in waste per employee per year. Even recovering just 15% of that waste ($4,368) against a $708 annual Go2 cost gives you a 6:1 return. At 40% recovery, you're at 16:1+. The 40:1 figure is for teams that act aggressively on automation opportunities Go2 identifies.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta" id="start">
+  <div class="container">
+    <h2>Stop guessing where the money goes.</h2>
+    <p>Your payroll is your biggest expense. Every week without an audit is another $16,000+ in invisible waste. Go2 finds it, quantifies it, and helps you fix it.</p>
+    <div class="price-tag">$59/user/mo &mdash; Pays for itself in the first week.</div>
+    <a href="#calculator" class="btn btn-primary" style="font-size:1.1rem;padding:1rem 2.5rem;">Start Your Payroll Audit</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>&copy; 2026 Go2 &bull; <a href="https://go2.io">go2.io</a> &bull; The payroll audit that never stops.</p>
+</footer>
+
+<script>
+// ===== ROI Calculator =====
+const sliders = {
+  team: document.getElementById('slider-team'),
+  salary: document.getElementById('slider-salary'),
+  waste: document.getElementById('slider-waste'),
+  recovery: document.getElementById('slider-recovery'),
+};
+const vals = {
+  team: document.getElementById('val-team'),
+  salary: document.getElementById('val-salary'),
+  waste: document.getElementById('val-waste'),
+  recovery: document.getElementById('val-recovery'),
+};
+const results = {
+  payroll: document.getElementById('r-payroll'),
+  waste: document.getElementById('r-waste'),
+  recovered: document.getElementById('r-recovered'),
+  go2cost: document.getElementById('r-go2cost'),
+  net: document.getElementById('r-net'),
+  roi: document.getElementById('r-roi'),
+};
+const wf = {
+  payroll: document.getElementById('wf-payroll'),
+  waste: document.getElementById('wf-waste'),
+  recovered: document.getElementById('wf-recovered'),
+  cost: document.getElementById('wf-cost'),
+};
+
+function fmt(n) {
+  if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return '$' + Math.round(n).toLocaleString();
+  return '$' + Math.round(n);
+}
+
+function update() {
+  const team = +sliders.team.value;
+  const salary = +sliders.salary.value;
+  const wasteP = +sliders.waste.value / 100;
+  const recovP = +sliders.recovery.value / 100;
+
+  const payroll = team * salary;
+  const waste = payroll * wasteP;
+  const recovered = waste * recovP;
+  const go2cost = team * 59 * 12;
+  const net = recovered - go2cost;
+  const roi = go2cost > 0 ? recovered / go2cost : 0;
+
+  // Update labels
+  vals.team.textContent = team;
+  vals.salary.textContent = fmt(salary);
+  vals.waste.textContent = Math.round(wasteP * 100) + '%';
+  vals.recovery.textContent = Math.round(recovP * 100) + '%';
+
+  // Update results
+  results.payroll.textContent = fmt(payroll);
+  results.waste.textContent = '-' + fmt(waste);
+  results.recovered.textContent = '+' + fmt(recovered);
+  results.go2cost.textContent = '-' + fmt(go2cost);
+  results.net.textContent = (net >= 0 ? '+' : '-') + fmt(Math.abs(net));
+  results.net.className = 'result-value big ' + (net >= 0 ? 'green' : 'red');
+  results.roi.textContent = Math.round(roi) + ':1';
+
+  // Update waterfall bars
+  wf.payroll.style.width = '100%';
+  wf.payroll.textContent = fmt(payroll);
+  wf.waste.style.width = Math.round(wasteP * 100) + '%';
+  wf.waste.textContent = fmt(waste);
+  wf.recovered.style.width = Math.round(wasteP * recovP * 100) + '%';
+  wf.recovered.textContent = fmt(recovered);
+  const costPct = Math.max(1, Math.round((go2cost / payroll) * 100));
+  wf.cost.style.width = costPct + '%';
+  wf.cost.textContent = fmt(go2cost);
+}
+
+Object.values(sliders).forEach(s => s.addEventListener('input', update));
+update();
+
+// ===== FAQ Accordion =====
+document.querySelectorAll('.faq-q').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const item = btn.parentElement;
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  });
+});
+
+// ===== Scroll Animations =====
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+  });
+}, { threshold: 0.15 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
