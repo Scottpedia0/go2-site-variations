@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Departures from Traditional Management | Go2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700;800&display=swap');
+:root{--bg:#0a0a0f;--board:#111118;--yellow:#ffd700;--green:#22c55e;--red:#ef4444;--blue:#3b82f6;--text:#e2e8f0;--muted:#64748b;--flip-bg:#1e1e2a;--border:#2a2a3a}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+/* Header */
+.airport-header{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:2rem 3rem;display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid var(--yellow);flex-wrap:wrap;gap:1rem}
+.airport-header h1{font-family:'JetBrains Mono',monospace;font-size:clamp(1.2rem,3vw,1.8rem);font-weight:700;color:var(--yellow);letter-spacing:3px}
+.airport-header .time{font-family:'JetBrains Mono',monospace;font-size:1.5rem;color:var(--yellow)}
+.header-sub{display:flex;gap:2rem;color:var(--muted);font-size:.8rem;text-transform:uppercase;letter-spacing:2px}
+/* Board */
+.board{background:var(--board);margin:2rem auto;max-width:1100px;border-radius:8px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);border:1px solid var(--border)}
+.board-header{display:grid;grid-template-columns:80px 1fr 200px 140px 120px;padding:12px 24px;background:#16162a;border-bottom:2px solid var(--yellow);font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--yellow);text-transform:uppercase;letter-spacing:2px;font-weight:700}
+@media(max-width:768px){.board-header,.flight-row{grid-template-columns:60px 1fr 100px 80px!important;font-size:.65rem}.flight-row .col-gate{display:none}}}
+.flight-row{display:grid;grid-template-columns:80px 1fr 200px 140px 120px;padding:0 24px;border-bottom:1px solid rgba(42,42,58,.5);align-items:center;min-height:64px;transition:background .3s;cursor:default}
+.flight-row:hover{background:rgba(255,215,0,.03)}
+.flight-row.cancelled .col-dest,.flight-row.cancelled .col-gate{text-decoration:line-through;opacity:.4}
+.col-flight{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.9rem;color:var(--blue)}
+.col-dest{font-weight:600;font-size:.85rem}
+.col-dest .sub{font-size:.7rem;color:var(--muted);font-weight:400;margin-top:2px}
+.col-gate{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--muted)}
+/* Status with flip animation */
+.col-status{position:relative;height:32px;perspective:200px}
+.flip-container{display:flex;gap:2px;height:100%;align-items:center}
+.flip-char{width:18px;height:28px;position:relative;perspective:400px;overflow:hidden}
+.flip-char .top,.flip-char .bottom{position:absolute;left:0;right:0;height:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:700;letter-spacing:1px}
+.flip-char .top{top:0;background:linear-gradient(180deg,#2a2a3e,#222235);border-radius:2px 2px 0 0;border-bottom:.5px solid rgba(0,0,0,.5);align-items:flex-end;padding-bottom:1px}
+.flip-char .bottom{bottom:0;background:linear-gradient(180deg,#1e1e30,#1a1a2a);border-radius:0 0 2px 2px;align-items:flex-start;padding-top:1px}
+.status-on-time .flip-char .top,.status-on-time .flip-char .bottom{color:var(--green)}
+.status-boarding .flip-char .top,.status-boarding .flip-char .bottom{color:var(--yellow);animation:statusPulse 2s infinite}
+.status-departed .flip-char .top,.status-departed .flip-char .bottom{color:var(--blue)}
+.status-cancelled .flip-char .top,.status-cancelled .flip-char .bottom{color:var(--red)}
+.status-delayed .flip-char .top,.status-delayed .flip-char .bottom{color:#f59e0b}
+@keyframes statusPulse{0%,100%{opacity:1}50%{opacity:.6}}
+/* Flip animation */
+@keyframes flipDown{0%{transform:rotateX(0)}50%{transform:rotateX(-90deg)}100%{transform:rotateX(0)}}
+.flipping .flip-char{animation:flipDown .3s ease-in-out}
+.flipping .flip-char:nth-child(2){animation-delay:.03s}
+.flipping .flip-char:nth-child(3){animation-delay:.06s}
+.flipping .flip-char:nth-child(4){animation-delay:.09s}
+.flipping .flip-char:nth-child(5){animation-delay:.12s}
+.flipping .flip-char:nth-child(6){animation-delay:.15s}
+.flipping .flip-char:nth-child(7){animation-delay:.18s}
+.flipping .flip-char:nth-child(8){animation-delay:.21s}
+.flipping .flip-char:nth-child(9){animation-delay:.24s}
+.flipping .flip-char:nth-child(10){animation-delay:.27s}
+/* Info bar */
+.info-bar{background:var(--board);border:1px solid var(--border);border-radius:8px;margin:2rem auto;max-width:1100px;padding:2rem;display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem}
+@media(max-width:768px){.info-bar{grid-template-columns:repeat(2,1fr);padding:1rem}}
+.info-card{text-align:center;padding:1rem;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid var(--border)}
+.info-card .val{font-family:'JetBrains Mono',monospace;font-size:clamp(1.5rem,3vw,2.5rem);font-weight:700;margin-bottom:.3rem}
+.info-card .lbl{font-size:.7rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted)}
+/* Announcement */
+.announcement{max-width:1100px;margin:0 auto 2rem;background:linear-gradient(135deg,rgba(255,215,0,.05),rgba(255,215,0,.02));border:1px solid rgba(255,215,0,.2);border-radius:8px;padding:1.5rem 2rem;display:flex;align-items:center;gap:1rem}
+.announcement .icon{font-size:2rem;flex-shrink:0}
+.announcement .text h3{color:var(--yellow);font-size:.9rem;margin-bottom:.3rem;text-transform:uppercase;letter-spacing:1px}
+.announcement .text p{color:var(--muted);font-size:.85rem;line-height:1.5}
+/* CTA */
+.cta-area{text-align:center;padding:3rem 2rem;max-width:600px;margin:0 auto}
+.cta-area h2{font-family:'JetBrains Mono',monospace;font-size:clamp(1.2rem,3vw,1.8rem);color:var(--yellow);margin-bottom:1rem;letter-spacing:2px}
+.cta-area p{color:var(--muted);margin-bottom:2rem;line-height:1.6}
+.cta-btn{display:inline-block;padding:1rem 2.5rem;background:var(--yellow);color:#000;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.9rem;border:none;border-radius:4px;cursor:pointer;text-decoration:none;text-transform:uppercase;letter-spacing:2px;transition:all .2s}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(255,215,0,.3)}
+.share-row{display:flex;gap:1rem;justify-content:center;margin-top:1.5rem}
+.share-btn{padding:.6rem 1.2rem;background:transparent;border:1px solid var(--border);color:var(--text);border-radius:4px;font-family:inherit;font-size:.8rem;cursor:pointer;transition:all .2s}
+.share-btn:hover{border-color:var(--yellow);color:var(--yellow)}
+/* Scrolling announcement */
+.ticker-bar{background:#16162a;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:8px 0;overflow:hidden;margin:1rem auto;max-width:1100px;border-radius:4px}
+.ticker-text{display:inline-block;white-space:nowrap;animation:tickerScroll 30s linear infinite;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--yellow)}
+@keyframes tickerScroll{from{transform:translateX(100%)}to{transform:translateX(-100%)}}
+</style>
+</head>
+<body>
+<div class="airport-header">
+<div>
+<h1>GO2 INTERNATIONAL</h1>
+<div class="header-sub"><span>Terminal: AI Workforce</span><span>Concourse: Productivity</span></div>
+</div>
+<div class="time" id="clock">00:00:00</div>
+</div>
+
+<div class="ticker-bar">
+<div class="ticker-text">&#x26A0; ATTENTION: All flights to "Manual Process Land" have been permanently cancelled. Passengers are advised to rebook via Go2 AI Coaching. &#x2708; Go2 now serving 2M+ workers worldwide. &#x1F4CA; On-time performance: 89% satisfaction rate. &#x1F4B0; Revenue generated: $60M+ and climbing. &#x26A0; GATE CHANGE: AI Agent Deployment moved to Gate GO2 — now boarding all rows.</div>
+</div>
+
+<div class="board">
+<div class="board-header">
+<div>FLIGHT</div><div>DESTINATION</div><div>GATE</div><div>TIME</div><div>STATUS</div>
+</div>
+<div id="flights"></div>
+</div>
+
+<div class="info-bar">
+<div class="info-card"><div class="val" style="color:var(--green)">2M+</div><div class="lbl">Passengers (Workers)</div></div>
+<div class="info-card"><div class="val" style="color:var(--yellow)">89%</div><div class="lbl">On-Time (Satisfaction)</div></div>
+<div class="info-card"><div class="val" style="color:var(--blue)">$60M+</div><div class="lbl">Revenue Generated</div></div>
+<div class="info-card"><div class="val" style="color:var(--red)">95%</div><div class="lbl">Competitors Grounded</div></div>
+</div>
+
+<div class="announcement">
+<div class="icon">&#x1F4E2;</div>
+<div class="text">
+<h3>Terminal Announcement</h3>
+<p>Attention all passengers: Traditional management tools have been permanently grounded due to AI failure rates of 95%. All departures now operate via Go2 work-data infrastructure. Please proceed to go2.io for rebooking.</p>
+</div>
+</div>
+
+<div class="cta-area">
+<h2>BOOK YOUR DEPARTURE</h2>
+<p>Stop waiting at the gate of failed AI implementations. Go2 captures how work happens, coaches via AI, and deploys agents that actually arrive on time.</p>
+<a href="https://go2.io" target="_blank" class="cta-btn">Board Now &#x2708;</a>
+<div class="share-row">
+<button class="share-btn" onclick="shareTwitter()">Share on Twitter</button>
+<button class="share-btn" onclick="shareLinkedIn()">Share on LinkedIn</button>
+</div>
+</div>
+
+<script>
+const flights=[
+{code:'GO2-001',dest:'AI Coaching City',sub:'Real-time productivity guidance for every worker',gate:'A1',time:'NOW',status:'BOARDING',statusClass:'boarding'},
+{code:'GO2-002',dest:'Work Pattern Capture',sub:'Automatic work data collection — no surveys needed',gate:'A3',time:'08:15',status:'ON TIME',statusClass:'on-time'},
+{code:'GO2-003',dest:'Auto-Documentation Hub',sub:'Every process documented without lifting a finger',gate:'B7',time:'09:30',status:'ON TIME',statusClass:'on-time'},
+{code:'GO2-004',dest:'Automation Discovery',sub:'Find 40+ automation opportunities automatically',gate:'C2',time:'10:00',status:'BOARDING',statusClass:'boarding'},
+{code:'GO2-005',dest:'AI Agent Deployment',sub:'Deploy agents trained on YOUR real work data',gate:'D4',time:'11:45',status:'ON TIME',statusClass:'on-time'},
+{code:'GO2-006',dest:'Workforce Analytics',sub:'Deep insights into how your org actually works',gate:'B1',time:'12:30',status:'DEPARTED',statusClass:'departed'},
+{code:'GO2-007',dest:'Process Optimization',sub:'ML-powered workflow improvement suggestions',gate:'A5',time:'14:00',status:'ON TIME',statusClass:'on-time'},
+{code:'EXL-404',dest:'Manual Spreadsheet Tracking',sub:'Copy-paste data entry for the next 10 years',gate:'---',time:'---',status:'CANCELLED',statusClass:'cancelled'},
+{code:'CNS-999',dest:'$2M Consulting Engagement',sub:'200 pages of recommendations nobody reads',gate:'---',time:'INDEF',status:'CANCELLED',statusClass:'cancelled'},
+{code:'DSH-000',dest:'Dashboard Nobody Looks At',sub:'Beautiful charts with zero actionable insights',gate:'---',time:'---',status:'CANCELLED',statusClass:'cancelled'},
+{code:'MTG-911',dest:'Meeting About the Meeting',sub:'Let\'s schedule a pre-meeting to discuss the agenda',gate:'---',time:'NEVER',status:'CANCELLED',statusClass:'cancelled'},
+{code:'OLD-001',dest:'Manual Process Documentation',sub:'Spend 3 months writing docs that are wrong by month 2',gate:'---',time:'---',status:'CANCELLED',statusClass:'cancelled'},
+{code:'GO2-008',dest:'Productivity Transformation',sub:'34% average improvement across 2M+ workers',gate:'GO2',time:'TODAY',status:'BOARDING',statusClass:'boarding'},
+];
+
+function createFlipText(text,statusClass){
+let html=`<div class="col-status"><div class="flip-container ${statusClass}">`;
+const padded=text.padEnd(10);
+for(let i=0;i<padded.length;i++){
+html+=`<div class="flip-char"><div class="top">${padded[i]}</div><div class="bottom">${padded[i]}</div></div>`;
+}
+html+=`</div></div>`;
+return html;
+}
+
+function renderFlights(){
+const el=document.getElementById('flights');
+el.innerHTML=flights.map(f=>`
+<div class="flight-row${f.statusClass==='cancelled'?' cancelled':''}">
+<div class="col-flight">${f.code}</div>
+<div class="col-dest">${f.dest}<div class="sub">${f.sub}</div></div>
+<div class="col-gate">${f.gate}</div>
+<div style="font-family:JetBrains Mono,monospace;font-size:.85rem">${f.time}</div>
+${createFlipText(f.status,'status-'+f.statusClass)}
+</div>`).join('');
+}
+
+// Flip animation cycle
+function animateFlips(){
+const containers=document.querySelectorAll('.flip-container');
+let delay=0;
+containers.forEach(c=>{
+setTimeout(()=>{
+c.classList.add('flipping');
+setTimeout(()=>c.classList.remove('flipping'),600);
+},delay);
+delay+=150;
+});
+}
+
+function updateClock(){
+const now=new Date();
+document.getElementById('clock').textContent=now.toLocaleTimeString('en-US',{hour12:false});
+}
+
+renderFlights();
+updateClock();
+setInterval(updateClock,1000);
+setInterval(animateFlips,8000);
+setTimeout(animateFlips,1000);
+
+function shareTwitter(){window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent('DEPARTURES FROM TRADITIONAL MANAGEMENT:\n\n✈️ AI Coaching — BOARDING\n✈️ Auto-Documentation — ON TIME\n✈️ Manual Spreadsheets — CANCELLED\n✈️ $2M Consulting — CANCELLED\n\nAll flights now via @go2io')}&url=${encodeURIComponent('https://go2.io')}`,'_blank');}
+function shareLinkedIn(){window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://go2.io')}`,'_blank');}
+</script>
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The AI Implementation Game — by Go2</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a0f2e;color:#fff;font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden}
+
+.header{text-align:center;padding:30px 20px 10px}
+.header h1{font-family:'Fredoka',sans-serif;font-size:36px;background:linear-gradient(135deg,#ffd93d,#ff9f43);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header p{color:#888;font-size:14px;margin-top:4px}
+
+/* Game layout */
+.game-container{display:flex;gap:20px;padding:20px;max-width:1400px;margin:0 auto}
+@media(max-width:1000px){.game-container{flex-direction:column}}
+
+/* Board */
+.board-wrap{flex:1;position:relative}
+.board{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;padding:16px;background:#120a20;border-radius:16px;border:2px solid #2a1f3e}
+.square{aspect-ratio:1;border-radius:10px;padding:8px;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;transition:all 0.2s;position:relative;font-size:11px;min-height:70px;border:2px solid transparent}
+.square:hover{transform:scale(1.05);z-index:2;border-color:rgba(255,255,255,0.3)}
+.sq-num{font-weight:700;font-size:10px;opacity:0.5}
+.sq-name{font-weight:600;font-size:10px;line-height:1.3}
+.sq-icon{font-size:20px;text-align:center}
+
+/* Square types */
+.sq-start{background:linear-gradient(135deg,#27c93f,#20a835)}
+.sq-go2{background:linear-gradient(135deg,#00d4ff,#0099cc)}
+.sq-bad{background:linear-gradient(135deg,#ff5f56,#cc3333)}
+.sq-neutral{background:linear-gradient(135deg,#555,#444)}
+.sq-money{background:linear-gradient(135deg,#ffd93d,#cc9900)}
+.sq-consultant{background:linear-gradient(135deg,#7b61ff,#5940cc)}
+.sq-win{background:linear-gradient(135deg,#ffd93d,#27c93f)}
+.sq-event{background:linear-gradient(135deg,#ff9f43,#cc7733)}
+
+/* Player token */
+.token{width:20px;height:20px;border-radius:50%;position:absolute;bottom:6px;right:6px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4);transition:all 0.3s;z-index:5}
+.token.p1{background:#ff5f56}
+.token.p2{background:#00d4ff}
+
+/* Side panel */
+.side-panel{width:360px;display:flex;flex-direction:column;gap:12px}
+@media(max-width:1000px){.side-panel{width:100%}}
+
+.panel-card{background:#1e1433;border:1px solid #2a1f3e;border-radius:12px;padding:16px}
+.panel-card h3{font-family:'Fredoka',sans-serif;font-size:16px;margin-bottom:10px}
+
+/* Dice */
+.dice-area{text-align:center}
+.dice{width:80px;height:80px;background:#fff;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-size:40px;color:#1a0f2e;font-weight:800;cursor:pointer;transition:all 0.2s;user-select:none;font-family:'Fredoka',sans-serif}
+.dice:hover{transform:scale(1.1)}
+.dice.rolling{animation:diceRoll 0.5s ease}
+@keyframes diceRoll{0%{transform:rotate(0) scale(1)}25%{transform:rotate(90deg) scale(0.8)}50%{transform:rotate(180deg) scale(1.1)}75%{transform:rotate(270deg) scale(0.9)}100%{transform:rotate(360deg) scale(1)}}
+
+/* Status */
+.player-status{display:flex;gap:8px}
+.p-card{flex:1;padding:10px;border-radius:8px;background:#120a20;text-align:center}
+.p-card .name{font-weight:600;font-size:13px;margin-bottom:4px}
+.p-card .money{font-size:20px;font-weight:700;font-family:'Fredoka',sans-serif}
+.p-card .pos{font-size:11px;color:#888}
+.p-card.active{border:2px solid #ffd93d}
+
+/* Event card */
+.event-card{background:#1e1433;border:2px solid #7b61ff;border-radius:12px;padding:20px;min-height:120px}
+.event-card h4{font-family:'Fredoka',sans-serif;font-size:18px;margin-bottom:8px}
+.event-card p{font-size:14px;color:#ccc;line-height:1.6}
+.event-card .effect{margin-top:12px;padding:8px 12px;border-radius:6px;font-size:13px;font-weight:600}
+.effect.good{background:rgba(39,201,63,0.15);color:#27c93f}
+.effect.bad{background:rgba(255,95,86,0.15);color:#ff5f56}
+.effect.neutral{background:rgba(255,255,255,0.05);color:#aaa}
+
+/* Log */
+.game-log{max-height:160px;overflow-y:auto;font-size:12px;color:#888;line-height:1.6}
+.game-log::-webkit-scrollbar{width:4px}
+.game-log::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+.log-entry{padding:3px 0;border-bottom:1px solid #1a1030}
+.log-entry .turn{color:#ffd93d}
+
+/* Rules */
+#rules{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100;display:none;align-items:center;justify-content:center}
+#rules.show{display:flex}
+.rules-box{background:#1e1433;border-radius:16px;padding:32px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto}
+.rules-box h2{font-family:'Fredoka',sans-serif;margin-bottom:16px;color:#ffd93d}
+.rules-box p{font-size:14px;color:#ccc;margin-bottom:12px;line-height:1.6}
+.rules-box .close-btn{background:#7b61ff;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:16px}
+
+.btn{background:#7b61ff;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.btn:hover{background:#6b51ef}
+.btn-sm{font-size:12px;padding:6px 12px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>&#127922; The AI Implementation Game</h1>
+  <p>Navigate the treacherous path from "We need AI" to "AI-Powered Organization"</p>
+</div>
+
+<div class="game-container">
+  <div class="board-wrap">
+    <div class="board" id="board"></div>
+  </div>
+  <div class="side-panel">
+    <div class="panel-card">
+      <div class="player-status">
+        <div class="p-card active" id="p1-card">
+          <div class="name" style="color:#ff5f56">&#128308; Player 1</div>
+          <div class="money" id="p1-money">$500K</div>
+          <div class="pos" id="p1-pos">Square 1</div>
+        </div>
+        <div class="p-card" id="p2-card">
+          <div class="name" style="color:#00d4ff">&#128309; Player 2</div>
+          <div class="money" id="p2-money">$500K</div>
+          <div class="pos" id="p2-pos">Square 1</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-card dice-area">
+      <h3>Roll the Dice</h3>
+      <div class="dice" id="dice" onclick="rollDice()">?</div>
+      <p style="font-size:12px;color:#666;margin-top:8px" id="turn-msg">Player 1's turn — click to roll!</p>
+    </div>
+
+    <div class="event-card" id="event-card">
+      <h4>&#127922; Welcome!</h4>
+      <p>Roll the dice to begin your AI implementation journey. Land on squares to encounter realistic AI implementation scenarios. First to reach "AI-Powered Organization" wins!</p>
+      <div class="effect neutral">Budget: $500K each | Goal: Square 30</div>
+    </div>
+
+    <div class="panel-card">
+      <h3>Game Log</h3>
+      <div class="game-log" id="log"></div>
+    </div>
+
+    <div style="display:flex;gap:8px">
+      <button class="btn" onclick="document.getElementById('rules').classList.add('show')">&#128214; Rules</button>
+      <button class="btn" onclick="resetGame()">&#128260; New Game</button>
+    </div>
+  </div>
+</div>
+
+<div id="rules">
+  <div class="rules-box">
+    <h2>How to Play</h2>
+    <p><strong>Objective:</strong> Be the first player to reach Square 30: "AI-Powered Organization." You start with $500K in AI budget.</p>
+    <p><strong>Rolling:</strong> Click the dice. You'll move forward 1-6 spaces. Each square triggers a scenario card.</p>
+    <p><strong>Square Types:</strong></p>
+    <p>&#128994; <strong>Go2 squares:</strong> Good things happen. You advance, gain budget, or unlock insights.</p>
+    <p>&#128308; <strong>Bad AI squares:</strong> Classic AI implementation failures. Lose money, move backward.</p>
+    <p>&#128992; <strong>Consultant squares:</strong> Expensive and slow. You'll pay a lot and gain little.</p>
+    <p>&#128310; <strong>Event squares:</strong> Random events — could be good or bad.</p>
+    <p><strong>Bankruptcy:</strong> If your budget hits $0, you must restart from Square 1 with $200K (a "pivot").</p>
+    <p><strong>Winning:</strong> First player to land on or pass Square 30 wins!</p>
+    <button class="rules-box close-btn" onclick="document.getElementById('rules').classList.remove('show')">Got it!</button>
+  </div>
+</div>
+
+<script>
+const squares=[
+  {name:'START',icon:'&#128640;',type:'start',title:'The Journey Begins',desc:'Your company has decided to "do AI." You have $500K in budget and unlimited optimism. Both will be tested.',effect:'neutral',effectText:'Starting budget: $500K'},
+  {name:'Buy ChatGPT Enterprise',icon:'&#128172;',type:'bad',title:'Buy ChatGPT Enterprise',desc:'You spend $50K on ChatGPT Enterprise licenses. Your team uses it to write emails slightly faster. The CEO asks where the "transformation" is.',effect:'bad',effectText:'-$50K | No real impact',money:-50,move:0},
+  {name:'Go2 Free Trial',icon:'&#128161;',type:'go2',title:'Install Go2 Free Trial',desc:'You install Cowork.ai on 5 desks. Within 24 hours, you discover that your "7-step" invoice process actually has 14 steps. Mind. Blown.',effect:'good',effectText:'+2 spaces | Reality unlocked',money:0,move:2},
+  {name:'Attend AI Conference',icon:'&#127908;',type:'event',title:'AI Conference Hype',desc:'You attend an AI conference. Every booth promises "transformation." You buy $30K worth of tools you\'ll never deploy. But the swag bags were nice.',effect:'bad',effectText:'-$30K | Nice t-shirts though',money:-30,move:0},
+  {name:'Hire AI Consultant',icon:'&#128084;',type:'consultant',title:'Hire McKinsey for AI Strategy',desc:'McKinsey sends 4 associates to "map your processes" through interviews. They produce a 127-slide deck. None of the process maps match reality. $150K gone.',effect:'bad',effectText:'-$150K | Move back 3 spaces',money:-150,move:-3},
+  {name:'Go2 Coaching Starts',icon:'&#129504;',type:'go2',title:'Go2 AI Coaching Activates',desc:'Go2 starts coaching your team in real-time. Focus scores improve 23% in the first week. One engineer says "it\'s like having a productivity superpower."',effect:'good',effectText:'+$30K value | +3 spaces',money:30,move:3},
+  {name:'Data Breach Scare',icon:'&#128274;',type:'event',title:'Security Audit Panic',desc:'Legal wants a full security audit of your AI tools. Go2 passes instantly (SOC 2 Type II). That chatbot you hacked together? Not so much. Delay: 2 weeks.',effect:'bad',effectText:'-1 space | Compliance matters',money:0,move:-1},
+  {name:'Build Custom ML Model',icon:'&#129302;',type:'bad',title:'Build Custom ML Model',desc:'Your CTO decides to build a custom ML model for demand forecasting. 6 months and $200K later, it\'s less accurate than a spreadsheet.',effect:'bad',effectText:'-$200K | Move back 4',money:-200,move:-4},
+  {name:'Process Discovery',icon:'&#128270;',type:'go2',title:'Go2 Finds Hidden Process',desc:'Go2 discovers that 3 employees have developed identical workarounds for a system bug nobody reported. Auto-documenting saves 15 hrs/week.',effect:'good',effectText:'+$50K value | +2 spaces',money:50,move:2},
+  {name:'Board Meeting',icon:'&#128188;',type:'event',title:'Board Wants AI ROI',desc:'The board asks for AI ROI at the quarterly meeting. If you have Go2 data, you show real metrics. If not, you mumble about "long-term strategic value."',effect:'neutral',effectText:'Show your cards...',money:0,move:0},
+  {name:'Vendor Lock-in',icon:'&#128275;',type:'bad',title:'Vendor Lock-in Trap',desc:'Your AI vendor changes pricing. You\'re locked in with an annual contract. Costs double. You can\'t switch because all your data is in their format.',effect:'bad',effectText:'-$80K | Trapped',money:-80,move:0},
+  {name:'Go2 Agent Shadow',icon:'&#128065;',type:'go2',title:'First Go2 Agent in Shadow Mode',desc:'Go2 deploys an invoice processing agent in shadow mode. It runs alongside Sarah for 48 hours and matches her decisions 99.2% of the time. The future is here.',effect:'good',effectText:'+4 spaces | Agent ready',money:0,move:4},
+  {name:'Hire "AI Expert"',icon:'&#127891;',type:'bad',title:'Hire an "AI Expert"',desc:'You hire a data scientist with a PhD and zero business context. They build an impressive neural network that solves a problem nobody has. $120K salary.',effect:'bad',effectText:'-$120K | Wrong problem solved',money:-120,move:-2},
+  {name:'Team Resistance',icon:'&#128542;',type:'event',title:'Team Pushback',desc:'Employees hear "AI" and think "job replacement." Morale drops. But then they see Go2\'s coaching — it helps, not monitors — and resistance melts away.',effect:'neutral',effectText:'Trust matters. +1 if coaching, -1 if not',money:0,move:1},
+  {name:'Quick Win',icon:'&#9889;',type:'go2',title:'Go2 Quick Win',desc:'Go2 identifies that your team spends 34 minutes/day on manual data entry that could be automated. You deploy an agent. Instant 7 hrs/week saved.',effect:'good',effectText:'+$40K value | +2 spaces',money:40,move:2},
+  {name:'RPA Graveyard',icon:'&#128128;',type:'bad',title:'RPA Bot Breaks',desc:'Remember those RPA bots from 2023? They break every time the UI changes. You spend $60K maintaining robots that were supposed to save money.',effect:'bad',effectText:'-$60K | Automation theater',money:-60,move:-1},
+  {name:'Go2 Documents All',icon:'&#128196;',type:'go2',title:'Auto Process Documentation',desc:'Go2 has now auto-documented 10 core business processes. Your operations VP cries actual tears of joy. "We\'ve been trying to document these for 3 years."',effect:'good',effectText:'+$80K value | +3 spaces',money:80,move:3},
+  {name:'Competitor Moves',icon:'&#127939;',type:'event',title:'Competitor Deploys AI',desc:'Your competitor announces "AI-powered operations." Panic. But when you investigate, it\'s just a chatbot on their website. You relax... slightly.',effect:'neutral',effectText:'Stay the course. No change.',money:0,move:0},
+  {name:'Bad Training Data',icon:'&#128165;',type:'bad',title:'Garbage In, Garbage Out',desc:'Your predictive model was trained on 3 years of data from a system migration. Half the data is corrupted. $100K in model development, wasted.',effect:'bad',effectText:'-$100K | Data quality matters',money:-100,move:-2},
+  {name:'Go2 Agent Live!',icon:'&#129302;',type:'go2',title:'First Agent Goes Live!',desc:'Your invoice processing agent is promoted from shadow to active. 847 invoices/day at 99.7% accuracy. Sarah now leads vendor strategy instead.',effect:'good',effectText:'+$100K savings | +5 spaces!',money:100,move:5},
+  {name:'Regulatory Change',icon:'&#128220;',type:'event',title:'New AI Regulation',desc:'Government announces new AI transparency requirements. Go2\'s audit trail covers you automatically. Companies without it scramble for compliance.',effect:'good',effectText:'+1 space | Compliance covered',money:0,move:1},
+  {name:'Budget Cut',icon:'&#9986;',type:'bad',title:'AI Budget Gets Cut',desc:'Economic downturn. CFO cuts the AI budget by 30%. Only projects with proven ROI survive. Hope you have real metrics, not promises.',effect:'bad',effectText:'-$50K budget cut',money:-50,move:0},
+  {name:'Go2 Scale Up',icon:'&#128200;',type:'go2',title:'Go2 Company-Wide Rollout',desc:'After the pilot\'s success, leadership approves company-wide Go2 deployment. 47 workers coached, 3 more agents in training. The flywheel spins.',effect:'good',effectText:'+$150K value | +3 spaces',money:150,move:3},
+  {name:'AI Ethics Crisis',icon:'&#9888;',type:'event',title:'AI Ethics in the News',desc:'A major company gets caught using AI to fire employees based on productivity scores. Your team panics. Go2 is coaching, not surveillance. Crisis avoided.',effect:'neutral',effectText:'Public trust matters. No change.',money:0,move:0},
+  {name:'Integration Hell',icon:'&#128293;',type:'bad',title:'Integration Nightmare',desc:'You try to connect your AI tool to your ERP. 4 months of custom API work. $90K in developer time. It still drops connections on Tuesdays.',effect:'bad',effectText:'-$90K | Move back 2',money:-90,move:-2},
+  {name:'Go2 ROI Report',icon:'&#128202;',type:'go2',title:'Go2 Generates ROI Report',desc:'Go2 auto-generates an ROI report: $652K annualized savings, 342 hrs/month recovered, 67% error reduction. The board gives a standing ovation.',effect:'good',effectText:'+$200K proven value | +4 spaces',money:200,move:4},
+  {name:'Knowledge Drain',icon:'&#128683;',type:'event',title:'Key Employee Quits',desc:'Your best invoice processor gives notice. Panic! But wait — Go2 already captured and documented every step of her process. Knowledge preserved.',effect:'good',effectText:'+2 spaces | Knowledge captured',money:0,move:2},
+  {name:'AI Washing',icon:'&#128167;',type:'bad',title:'"AI" That Isn\'t',desc:'A vendor sold you an "AI-powered" tool. It\'s actually just if-then rules in a trench coat. $40K for glorified Excel macros.',effect:'bad',effectText:'-$40K | Read the fine print',money:-40,move:-1},
+  {name:'Full Automation',icon:'&#128640;',type:'go2',title:'Go2 Full Automation Suite',desc:'4 agents running, 10 processes documented, team productivity up 41%. You\'re not just using AI — you\'re powered by it. Almost there!',effect:'good',effectText:'+3 spaces | Almost home!',money:100,move:3},
+  {name:'AI-POWERED ORG',icon:'&#127942;',type:'win',title:'AI-POWERED ORGANIZATION!',desc:'You did it! Your organization has real AI that works — not because you bought the best tools, but because you understood your work first. Go2 showed you how.',effect:'good',effectText:'YOU WIN! 🎉'},
+];
+
+let players=[{pos:0,money:500,name:'Player 1'},{pos:0,money:500,name:'Player 2'}];
+let currentPlayer=0;
+let rolling=false;
+let gameOver=false;
+
+function renderBoard(){
+  const board=document.getElementById('board');
+  board.innerHTML='';
+  // We need to lay out 30 squares in a snake pattern: 6 cols
+  // Row 0: 0-5 (L to R), Row 1: 6-11 (R to L), etc.
+  const ordered=[];
+  for(let row=0;row<5;row++){
+    const start=row*6;
+    const rowSquares=squares.slice(start,start+6);
+    if(row%2===1)rowSquares.reverse();
+    ordered.push(...rowSquares.map((s,i)=>{
+      const actualIdx=row%2===1?start+5-i:start+i;
+      return{...s,idx:actualIdx};
+    }));
+  }
+
+  ordered.forEach(sq=>{
+    const div=document.createElement('div');
+    div.className=`square sq-${sq.type}`;
+    div.innerHTML=`<div class="sq-num">${sq.idx+1}</div><div class="sq-icon">${sq.icon}</div><div class="sq-name">${sq.name}</div>`;
+    div.onclick=()=>showCard(sq.idx);
+
+    // Add tokens
+    players.forEach((p,pi)=>{
+      if(p.pos===sq.idx){
+        const token=document.createElement('div');
+        token.className=`token p${pi+1}`;
+        if(pi===1)token.style.right='28px';
+        div.appendChild(token);
+      }
+    });
+
+    board.appendChild(div);
+  });
+}
+
+function showCard(idx){
+  const sq=squares[idx];
+  const card=document.getElementById('event-card');
+  card.innerHTML=`
+    <h4>${sq.icon} ${sq.title}</h4>
+    <p>${sq.desc}</p>
+    <div class="effect ${sq.effect}">${sq.effectText}</div>
+  `;
+}
+
+function rollDice(){
+  if(rolling||gameOver)return;
+  rolling=true;
+  const dice=document.getElementById('dice');
+  dice.classList.add('rolling');
+
+  const result=Math.floor(Math.random()*6)+1;
+
+  setTimeout(()=>{
+    dice.classList.remove('rolling');
+    dice.textContent=result;
+
+    const p=players[currentPlayer];
+    const oldPos=p.pos;
+    p.pos=Math.min(p.pos+result,29);
+
+    const sq=squares[p.pos];
+
+    // Apply effects
+    if(sq.money)p.money+=sq.money;
+    if(sq.move){
+      p.pos=Math.max(0,Math.min(29,p.pos+sq.move));
+    }
+
+    // Bankruptcy
+    if(p.money<=0){
+      p.money=200;
+      p.pos=0;
+      addLog(`${p.name} went BANKRUPT! Restarting with $200K. 💀`);
+    }
+
+    // Win check
+    if(p.pos>=29){
+      gameOver=true;
+      showCard(29);
+      document.getElementById('event-card').innerHTML+=`<div style="margin-top:16px;font-size:24px;text-align:center;font-family:'Fredoka',sans-serif;color:#ffd93d">🎉 ${p.name} WINS! 🎉</div>`;
+      addLog(`🏆 ${p.name} reaches the AI-Powered Organization! VICTORY!`);
+    }else{
+      showCard(p.pos);
+    }
+
+    addLog(`${p.name} rolls ${result}. Lands on: ${sq.name}${sq.money?' ('+((sq.money>0?'+':'')+sq.money+'K')+')':''}${sq.move?' ('+((sq.move>0?'+':'')+sq.move)+' spaces)':''}`);
+
+    // Update UI
+    renderBoard();
+    updateStatus();
+
+    if(!gameOver){
+      currentPlayer=1-currentPlayer;
+      document.getElementById('p1-card').classList.toggle('active',currentPlayer===0);
+      document.getElementById('p2-card').classList.toggle('active',currentPlayer===1);
+      document.getElementById('turn-msg').textContent=`Player ${currentPlayer+1}'s turn — click to roll!`;
+    }else{
+      document.getElementById('turn-msg').textContent='Game over! Click New Game to play again.';
+    }
+
+    rolling=false;
+  },600);
+}
+
+function updateStatus(){
+  document.getElementById('p1-money').textContent='$'+players[0].money+'K';
+  document.getElementById('p1-pos').textContent='Square '+(players[0].pos+1)+'/30';
+  document.getElementById('p2-money').textContent='$'+players[1].money+'K';
+  document.getElementById('p2-pos').textContent='Square '+(players[1].pos+1)+'/30';
+}
+
+function addLog(msg){
+  const log=document.getElementById('log');
+  const entry=document.createElement('div');
+  entry.className='log-entry';
+  entry.innerHTML=`<span class="turn">T${log.children.length+1}</span> ${msg}`;
+  log.prepend(entry);
+}
+
+function resetGame(){
+  players=[{pos:0,money:500,name:'Player 1'},{pos:0,money:500,name:'Player 2'}];
+  currentPlayer=0;
+  rolling=false;
+  gameOver=false;
+  document.getElementById('dice').textContent='?';
+  document.getElementById('log').innerHTML='';
+  document.getElementById('p1-card').classList.add('active');
+  document.getElementById('p2-card').classList.remove('active');
+  document.getElementById('turn-msg').textContent="Player 1's turn — click to roll!";
+  document.getElementById('event-card').innerHTML=`<h4>&#127922; Welcome!</h4><p>Roll the dice to begin your AI implementation journey!</p><div class="effect neutral">Budget: $500K each | Goal: Square 30</div>`;
+  renderBoard();
+  updateStatus();
+}
+
+renderBoard();
+updateStatus();
+</script>
+</body>
+</html>

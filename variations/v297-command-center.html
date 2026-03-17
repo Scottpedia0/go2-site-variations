@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 Mission Control</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+body{font-family:'Inter',system-ui,sans-serif;background:#060610;color:#fff;overflow:hidden;height:100vh}
+
+.topbar{height:48px;background:rgba(10,10,20,0.95);border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;position:relative;z-index:10}
+.topbar-left{display:flex;align-items:center;gap:1rem}
+.topbar-logo{font-weight:800;font-size:1rem;background:linear-gradient(135deg,#6366f1,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.topbar-status{display:flex;align-items:center;gap:0.4rem;font-size:0.75rem;color:#34d399}
+.topbar-status .dot{width:6px;height:6px;border-radius:50%;background:#34d399;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.topbar-center{font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:#64748b}
+.topbar-right{display:flex;gap:1rem;align-items:center;font-size:0.8rem;color:#94a3b8}
+
+.dashboard{display:grid;grid-template-columns:1fr 1fr 1fr 320px;grid-template-rows:auto 1fr 1fr;height:calc(100vh - 48px);gap:1px;background:rgba(255,255,255,0.04)}
+
+.panel{background:#0a0a14;padding:1rem;overflow:hidden;position:relative}
+.panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem}
+.panel-title{font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#64748b;display:flex;align-items:center;gap:0.5rem}
+.panel-title .live{color:#34d399;font-size:0.6rem;font-weight:700}
+.panel-badge{font-size:0.65rem;padding:0.15rem 0.5rem;border-radius:8px;background:rgba(99,102,241,0.15);color:#a5b4fc}
+
+/* Stats row */
+.stats-row{grid-column:1/-1;display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:rgba(255,255,255,0.04)}
+.stat-cell{background:#0a0a14;padding:1rem;text-align:center}
+.stat-cell .num{font-size:1.8rem;font-weight:800;font-variant-numeric:tabular-nums;background:linear-gradient(135deg,#a5b4fc,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-cell .lbl{font-size:0.65rem;color:#64748b;margin-top:0.2rem;text-transform:uppercase;letter-spacing:0.05em}
+.stat-cell .change{font-size:0.7rem;margin-top:0.15rem}
+.stat-cell .change.up{color:#34d399}
+.stat-cell .change.down{color:#f87171}
+
+/* Coaching Feed */
+.feed{display:flex;flex-direction:column;gap:0.5rem;overflow-y:auto;max-height:calc(100% - 40px)}
+.feed-item{background:rgba(255,255,255,0.02);border-radius:10px;padding:0.6rem 0.8rem;border-left:3px solid;font-size:0.8rem;transition:all 0.3s;animation:slideIn 0.4s ease}
+@keyframes slideIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+.feed-item.coaching{border-color:#8b5cf6}
+.feed-item.alert{border-color:#f59e0b}
+.feed-item.success{border-color:#34d399}
+.feed-item.info{border-color:#06b6d4}
+.feed-time{font-size:0.6rem;color:#4a5568;font-family:'JetBrains Mono',monospace}
+.feed-text{color:#cbd5e1;margin-top:0.15rem;line-height:1.4}
+.feed-text strong{color:#fff}
+
+/* Agent Status */
+.agents-list{display:flex;flex-direction:column;gap:0.5rem;overflow-y:auto;max-height:calc(100% - 40px)}
+.agent-row{display:flex;align-items:center;gap:0.6rem;background:rgba(255,255,255,0.02);border-radius:10px;padding:0.5rem 0.7rem;transition:all 0.3s}
+.agent-row:hover{background:rgba(255,255,255,0.05)}
+.agent-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.agent-dot.active{background:#34d399;box-shadow:0 0 8px rgba(52,211,153,0.4)}
+.agent-dot.idle{background:#fbbf24}
+.agent-dot.error{background:#f87171;animation:pulse 1s infinite}
+.agent-info{flex:1;min-width:0}
+.agent-name{font-size:0.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.agent-task{font-size:0.65rem;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.agent-metric{font-size:0.75rem;font-weight:700;color:#a5b4fc;font-family:'JetBrains Mono',monospace}
+
+/* Chart panel */
+.chart-container{position:relative;height:calc(100% - 40px)}
+.chart-container canvas{width:100%!important;height:100%!important}
+
+/* Activity Heatmap */
+.heatmap{display:grid;grid-template-columns:repeat(24,1fr);gap:2px}
+.heat-cell{aspect-ratio:1;border-radius:3px;transition:all 0.3s;cursor:pointer;position:relative}
+.heat-cell:hover{transform:scale(1.3);z-index:1}
+.heat-labels{display:flex;justify-content:space-between;margin-top:0.3rem;font-size:0.55rem;color:#4a5568;font-family:'JetBrains Mono',monospace}
+
+/* Knowledge Base Growth */
+.kb-list{display:flex;flex-direction:column;gap:0.4rem;overflow-y:auto;max-height:calc(100% - 40px)}
+.kb-item{display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0}
+.kb-icon{font-size:0.9rem}
+.kb-info{flex:1}
+.kb-name{font-size:0.75rem;font-weight:600}
+.kb-meta{font-size:0.6rem;color:#64748b}
+.kb-bar{width:60px;height:4px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden}
+.kb-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,#6366f1,#34d399)}
+
+/* Sidebar */
+.sidebar{grid-row:1/-1;grid-column:4;display:flex;flex-direction:column;gap:1px;background:rgba(255,255,255,0.04)}
+.sidebar .panel{flex:1}
+
+/* Alerts ticker */
+.ticker{grid-column:1/-2;background:#0a0a14;padding:0.5rem 1rem;display:flex;align-items:center;gap:1rem;overflow:hidden}
+.ticker-label{font-size:0.65rem;font-weight:700;color:#f59e0b;text-transform:uppercase;flex-shrink:0}
+.ticker-content{font-size:0.75rem;color:#94a3b8;white-space:nowrap;animation:scroll 30s linear infinite}
+@keyframes scroll{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
+
+@media(max-width:1024px){.dashboard{grid-template-columns:1fr 1fr;grid-template-rows:auto repeat(4,1fr)}.sidebar{grid-column:auto;grid-row:auto}.stats-row{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+<div class="topbar-left">
+<div class="topbar-logo">Go2 Mission Control</div>
+<div class="topbar-status"><span class="dot"></span> All Systems Operational</div>
+</div>
+<div class="topbar-center" id="clock">2026-03-17 14:32:07 UTC</div>
+<div class="topbar-right">
+<span>Agents: <strong style="color:#34d399">12/12</strong></span>
+<span>Uptime: <strong>99.97%</strong></span>
+</div>
+</div>
+
+<div class="dashboard">
+<!-- Stats Row -->
+<div class="stats-row">
+<div class="stat-cell"><div class="num" id="s1">2,847</div><div class="lbl">Tasks Today</div><div class="change up">+12% vs yesterday</div></div>
+<div class="stat-cell"><div class="num" id="s2">12</div><div class="lbl">Active Agents</div><div class="change up">All operational</div></div>
+<div class="stat-cell"><div class="num" id="s3">94.2%</div><div class="lbl">Auto-Resolution</div><div class="change up">+2.1%</div></div>
+<div class="stat-cell"><div class="num" id="s4">$18.4K</div><div class="lbl">Saved Today</div><div class="change up">+$2.1K</div></div>
+<div class="stat-cell"><div class="num" id="s5">1,247</div><div class="lbl">KB Articles</div><div class="change up">+8 new</div></div>
+<div class="stat-cell"><div class="num" id="s6">9.1</div><div class="lbl">Team Score</div><div class="change up">+0.3</div></div>
+</div>
+
+<!-- Coaching Feed -->
+<div class="panel">
+<div class="panel-header">
+<div class="panel-title">Coaching Feed <span class="live">LIVE</span></div>
+<div class="panel-badge">24 today</div>
+</div>
+<div class="feed" id="coachingFeed"></div>
+</div>
+
+<!-- Agent Performance Chart -->
+<div class="panel">
+<div class="panel-header">
+<div class="panel-title">Output Timeline</div>
+<div class="panel-badge">Last 24h</div>
+</div>
+<div class="chart-container"><canvas id="outputChart"></canvas></div>
+</div>
+
+<!-- Activity Heatmap -->
+<div class="panel">
+<div class="panel-header">
+<div class="panel-title">Activity Heatmap</div>
+<div class="panel-badge">This week</div>
+</div>
+<div id="heatmapContainer" style="overflow-y:auto;max-height:calc(100% - 40px)"></div>
+</div>
+
+<!-- Sidebar: Agent Status -->
+<div class="sidebar">
+<div class="panel">
+<div class="panel-header">
+<div class="panel-title">Agent Status <span class="live">LIVE</span></div>
+</div>
+<div class="agents-list" id="agentsList"></div>
+</div>
+<div class="panel">
+<div class="panel-header">
+<div class="panel-title">Knowledge Base</div>
+<div class="panel-badge">Growing</div>
+</div>
+<div class="kb-list" id="kbList"></div>
+</div>
+</div>
+
+<!-- Bottom: Automation Status -->
+<div class="panel">
+<div class="panel-header">
+<div class="panel-title">Automation Pipeline</div>
+<div class="panel-badge" id="pipeCount">47 active</div>
+</div>
+<div class="feed" id="automationFeed"></div>
+</div>
+
+<!-- Bottom: Team Metrics -->
+<div class="panel">
+<div class="panel-header">
+<div class="panel-title">Team Metrics</div>
+</div>
+<div class="chart-container"><canvas id="teamChart"></canvas></div>
+</div>
+
+<!-- Bottom: Alerts -->
+<div class="panel">
+<div class="panel-header">
+<div class="panel-title">System Health</div>
+</div>
+<div class="feed" id="healthFeed"></div>
+</div>
+</div>
+
+<script>
+// Clock
+function updateClock(){
+const now=new Date();
+document.getElementById('clock').textContent=now.toISOString().replace('T',' ').slice(0,19)+' UTC';
+}
+setInterval(updateClock,1000);
+
+// Coaching Feed
+const coachingMessages=[
+{type:'coaching',text:'<strong>Sarah Chen</strong> spending 40% more time on admin vs last week. Suggested: delegate invoice follow-ups to InvoiceBot.'},
+{type:'success',text:'<strong>InvoiceBot</strong> caught duplicate payment of $4,200 to Vendor #1847. Auto-flagged for review.'},
+{type:'alert',text:'<strong>Marcus J.</strong> has 3 PRs pending review >24hrs. CodeReviewer can handle 2 of them.'},
+{type:'coaching',text:'<strong>Sales team</strong> win rate up 12% since implementing AI-suggested follow-up sequences.'},
+{type:'info',text:'New process documented: "Client Onboarding v3.2" — captured from Emily\'s workflow automatically.'},
+{type:'success',text:'<strong>SupportBot</strong> resolved 47 tickets in the last hour. CSAT: 4.7/5.'},
+{type:'coaching',text:'<strong>David Park</strong> — your Monday standup could be 40% shorter. Here\'s a suggested agenda format.'},
+{type:'alert',text:'Knowledge gap detected: "Refund exception process" known by 1 person. Scheduling documentation.'},
+{type:'success',text:'<strong>ContentEngine</strong> published 3 blog posts. Avg. engagement 2.4x above benchmark.'},
+{type:'info',text:'Q4 forecast updated automatically. Revenue tracking 8% above plan.'},
+{type:'coaching',text:'<strong>Lisa Wang</strong> — 2 candidates waiting >48hrs for feedback. Recommend same-day response.'},
+{type:'success',text:'<strong>OnboardBot</strong> completed onboarding for new hire Alex T. in 3.5 hours. All systems provisioned.'}
+];
+
+const feed=document.getElementById('coachingFeed');
+let feedIdx=0;
+function addFeedItem(){
+const msg=coachingMessages[feedIdx%coachingMessages.length];
+const item=document.createElement('div');
+item.className='feed-item '+msg.type;
+item.innerHTML=`<div class="feed-time">${new Date().toLocaleTimeString()}</div><div class="feed-text">${msg.text}</div>`;
+feed.insertBefore(item,feed.firstChild);
+if(feed.children.length>15)feed.removeChild(feed.lastChild);
+feedIdx++;
+}
+for(let i=0;i<6;i++)addFeedItem();
+setInterval(addFeedItem,5000);
+
+// Agents
+const agents=[
+{name:'InvoiceBot',task:'Processing batch #4821',status:'active',metric:'847/d'},
+{name:'SupportBot',task:'Handling ticket #12847',status:'active',metric:'340/d'},
+{name:'ContentEngine',task:'Drafting blog post',status:'active',metric:'50/w'},
+{name:'CodeReviewer',task:'Reviewing PR #892',status:'active',metric:'89/d'},
+{name:'OnboardBot',task:'Onboarding Alex T.',status:'active',metric:'3.5h'},
+{name:'DataAnalyst',task:'Running weekly report',status:'active',metric:'200/d'},
+{name:'LeadQualifier',task:'Scoring inbound leads',status:'active',metric:'120/d'},
+{name:'MeetingScribe',task:'Transcribing standup',status:'active',metric:'12/d'},
+{name:'ExpenseBot',task:'Processing receipts',status:'active',metric:'340/d'},
+{name:'ComplianceBot',task:'Monitoring updates',status:'idle',metric:'24/7'},
+{name:'SalesCoach',task:'Analyzing call #847',status:'active',metric:'18/d'},
+{name:'HRPolicy',task:'Updating handbook',status:'active',metric:'5/w'}
+];
+
+const agentsList=document.getElementById('agentsList');
+agentsList.innerHTML=agents.map(a=>`<div class="agent-row">
+<div class="agent-dot ${a.status}"></div>
+<div class="agent-info"><div class="agent-name">${a.name}</div><div class="agent-task">${a.task}</div></div>
+<div class="agent-metric">${a.metric}</div>
+</div>`).join('');
+
+// Heatmap
+const heatContainer=document.getElementById('heatmapContainer');
+const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+days.forEach(day=>{
+const label=document.createElement('div');
+label.style.cssText='font-size:0.6rem;color:#4a5568;margin:0.3rem 0 0.15rem;font-family:JetBrains Mono,monospace';
+label.textContent=day;
+heatContainer.appendChild(label);
+const row=document.createElement('div');
+row.className='heatmap';
+for(let h=0;h<24;h++){
+const cell=document.createElement('div');
+cell.className='heat-cell';
+const intensity=day==='Sat'||day==='Sun'?Math.random()*0.3:h>=9&&h<=17?0.4+Math.random()*0.6:Math.random()*0.3;
+const r=Math.round(99*(1-intensity)+52*intensity);
+const g=Math.round(102*(1-intensity)+211*intensity);
+const b=Math.round(241*(1-intensity)+153*intensity);
+cell.style.background=`rgba(${r},${g},${b},${0.1+intensity*0.7})`;
+cell.title=`${day} ${h}:00 — ${Math.round(intensity*100)}% activity`;
+row.appendChild(cell);
+}
+heatContainer.appendChild(row);
+});
+const labels=document.createElement('div');
+labels.className='heat-labels';
+labels.innerHTML='<span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span>';
+heatContainer.appendChild(labels);
+
+// KB List
+const kbItems=[
+{icon:'📄',name:'Client Onboarding v3.2',meta:'Auto-documented 2h ago',fill:100},
+{icon:'📋',name:'Refund Exception Process',meta:'In progress — 65%',fill:65},
+{icon:'🔧',name:'Deploy Runbook',meta:'Updated yesterday',fill:95},
+{icon:'📊',name:'Sales Forecast Model',meta:'Verified last week',fill:88},
+{icon:'💰',name:'Invoice Processing SOP',meta:'Auto-maintained',fill:100},
+{icon:'🎧',name:'Escalation Playbook',meta:'Updated 3 days ago',fill:92},
+{icon:'👋',name:'New Hire Checklist',meta:'Auto-maintained',fill:100},
+{icon:'🔐',name:'Security Incident Plan',meta:'Review needed',fill:78},
+{icon:'📈',name:'Territory Mapping',meta:'Updated today',fill:85},
+{icon:'⚙️',name:'CI/CD Pipeline Docs',meta:'Auto-maintained',fill:100}
+];
+document.getElementById('kbList').innerHTML=kbItems.map(k=>`<div class="kb-item">
+<div class="kb-icon">${k.icon}</div>
+<div class="kb-info"><div class="kb-name">${k.name}</div><div class="kb-meta">${k.meta}</div></div>
+<div class="kb-bar"><div class="kb-fill" style="width:${k.fill}%"></div></div>
+</div>`).join('');
+
+// Automation feed
+const autoMsgs=[
+{type:'success',text:'Invoice #4821-4850 batch processed. 30 invoices, $127K total. All matched.'},
+{type:'info',text:'Auto-generated weekly sales report. Sent to 8 stakeholders.'},
+{type:'success',text:'Expense reports: 12 auto-approved (within policy), 2 flagged for review.'},
+{type:'info',text:'Meeting notes from 9am standup distributed. 4 action items assigned.'},
+{type:'success',text:'Lead scoring: 23 new MQLs identified. Routed to SDR team.'},
+{type:'alert',text:'Pipeline: Deal #847 stalled >14 days. Auto-escalated to VP Sales.'}
+];
+const autoFeed=document.getElementById('automationFeed');
+autoMsgs.forEach(m=>{
+const item=document.createElement('div');
+item.className='feed-item '+m.type;
+item.innerHTML=`<div class="feed-time">${new Date(Date.now()-Math.random()*3600000).toLocaleTimeString()}</div><div class="feed-text">${m.text}</div>`;
+autoFeed.appendChild(item);
+});
+
+// Health feed
+const healthMsgs=[
+{type:'success',text:'All 12 agents reporting healthy. Avg response: 45ms.'},
+{type:'success',text:'API rate limits: 34% utilized. Plenty of headroom.'},
+{type:'info',text:'Scheduled maintenance: Knowledge index rebuild at 02:00 UTC.'},
+{type:'success',text:'Data pipeline: 0 errors in last 24 hours. 2.4M events processed.'},
+{type:'success',text:'Model performance: accuracy stable at 97.2%. No drift detected.'},
+{type:'info',text:'Storage: 42% utilized (1.2TB / 3TB). Growing ~2GB/day.'}
+];
+const healthFeed=document.getElementById('healthFeed');
+healthMsgs.forEach(m=>{
+const item=document.createElement('div');
+item.className='feed-item '+m.type;
+item.innerHTML=`<div class="feed-text">${m.text}</div>`;
+healthFeed.appendChild(item);
+});
+
+// Simple chart drawing (no external dependencies)
+function drawChart(canvasId, data, color1, color2) {
+const canvas = document.getElementById(canvasId);
+const ctx = canvas.getContext('2d');
+const dpr = window.devicePixelRatio || 1;
+const rect = canvas.parentElement.getBoundingClientRect();
+canvas.width = rect.width * dpr;
+canvas.height = (rect.height - 40) * dpr;
+canvas.style.width = rect.width + 'px';
+canvas.style.height = (rect.height - 40) + 'px';
+ctx.scale(dpr, dpr);
+const w = rect.width, h = rect.height - 40;
+const max = Math.max(...data) * 1.2;
+const step = w / (data.length - 1);
+
+// Grid
+ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+ctx.lineWidth = 1;
+for (let i = 0; i < 5; i++) {
+const y = h * i / 4;
+ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+}
+
+// Area
+ctx.beginPath();
+ctx.moveTo(0, h);
+data.forEach((v, i) => ctx.lineTo(i * step, h - (v / max) * h));
+ctx.lineTo(w, h);
+ctx.closePath();
+const grad = ctx.createLinearGradient(0, 0, 0, h);
+grad.addColorStop(0, color1 + '40');
+grad.addColorStop(1, 'transparent');
+ctx.fillStyle = grad;
+ctx.fill();
+
+// Line
+ctx.beginPath();
+data.forEach((v, i) => {
+const x = i * step, y = h - (v / max) * h;
+i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+});
+ctx.strokeStyle = color1;
+ctx.lineWidth = 2;
+ctx.stroke();
+}
+
+const outputData = Array.from({length: 24}, (_, i) => {
+if (i < 8) return 20 + Math.random() * 30;
+if (i < 18) return 100 + Math.random() * 150;
+return 40 + Math.random() * 60;
+});
+const teamData = Array.from({length: 24}, () => 60 + Math.random() * 40);
+
+setTimeout(() => {
+drawChart('outputChart', outputData, '#6366f1', '#34d399');
+drawChart('teamChart', teamData, '#34d399', '#06b6d4');
+}, 100);
+
+// Live counter updates
+setInterval(() => {
+const s1 = document.getElementById('s1');
+s1.textContent = (parseInt(s1.textContent.replace(',','')) + Math.floor(Math.random()*3)).toLocaleString();
+}, 3000);
+</script>
+</body>
+</html>
