@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The Navigator for Your Team</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0c1220;
+  --surface: #111827;
+  --surface2: #1a2236;
+  --border: #2a3650;
+  --text: #e8ecf4;
+  --text-dim: #8896b0;
+  --accent: #3b82f6;
+  --accent-light: #60a5fa;
+  --green: #10b981;
+  --green-light: #34d399;
+  --amber: #f59e0b;
+  --purple: #8b5cf6;
+  --road: #1e3a5f;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; overflow-x: hidden; }
+
+/* Navigation */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(12,18,32,0.9);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(42,54,80,0.5);
+}
+.nav-logo {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+.nav-logo span { color: var(--accent-light); }
+.nav-links { display: flex; gap: 2rem; align-items: center; }
+.nav-links a { color: var(--text-dim); font-size: 0.9rem; text-decoration: none; transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); }
+.nav-cta {
+  padding: 8px 20px;
+  background: var(--accent);
+  color: white;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.nav-cta:hover { background: var(--accent-light); }
+
+/* Hero */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6rem 2rem 4rem;
+  position: relative;
+  overflow: hidden;
+}
+.hero-bg {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+}
+/* Animated road/path */
+.road-svg {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.15;
+}
+.road-path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-dasharray: 12 8;
+  animation: roadDash 20s linear infinite;
+}
+@keyframes roadDash {
+  to { stroke-dashoffset: -200; }
+}
+.hero-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  max-width: 800px;
+}
+.hero-badge {
+  display: inline-block;
+  padding: 6px 16px;
+  background: rgba(59,130,246,0.12);
+  border: 1px solid rgba(59,130,246,0.25);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: var(--accent-light);
+  margin-bottom: 2rem;
+  font-weight: 500;
+}
+.hero h1 {
+  font-size: clamp(2.2rem, 5.5vw, 3.8rem);
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.02em;
+}
+.hero h1 .highlight {
+  background: linear-gradient(135deg, var(--accent-light), var(--green-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.hero p {
+  font-size: 1.2rem;
+  color: var(--text-dim);
+  max-width: 600px;
+  margin: 0 auto 2.5rem;
+  line-height: 1.7;
+}
+.hero-cta {
+  display: inline-block;
+  padding: 16px 40px;
+  background: var(--accent);
+  color: white;
+  border-radius: 8px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.hero-cta:hover { background: var(--accent-light); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(59,130,246,0.3); }
+
+/* Metaphor Section */
+.metaphor {
+  padding: 6rem 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+.metaphor-header {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+.metaphor-header h2 {
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+.metaphor-header p {
+  color: var(--text-dim);
+  font-size: 1.1rem;
+  max-width: 650px;
+  margin: 0 auto;
+}
+
+.comparison {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+.comp-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2rem;
+}
+.comp-card.old {
+  opacity: 0.7;
+}
+.comp-card.new {
+  border-color: rgba(59,130,246,0.3);
+  box-shadow: 0 0 40px rgba(59,130,246,0.08);
+}
+.comp-card h3 {
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.comp-card.old h3 { color: var(--text-dim); }
+.comp-card.new h3 { color: var(--accent-light); }
+.comp-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.comp-item .icon { font-size: 1rem; flex-shrink: 0; margin-top: 2px; }
+.comp-vs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  padding-top: 4rem;
+}
+
+/* Journey Section */
+.journey {
+  padding: 6rem 2rem;
+  position: relative;
+  overflow: hidden;
+}
+.journey-inner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+.journey h2 {
+  text-align: center;
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+.journey .subtitle {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 1.05rem;
+  margin-bottom: 4rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Waypoints */
+.waypoints {
+  position: relative;
+  padding-left: 40px;
+}
+.waypoints::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--accent), var(--green));
+}
+.waypoint {
+  position: relative;
+  margin-bottom: 3rem;
+  padding-left: 2rem;
+}
+.waypoint:last-child { margin-bottom: 0; }
+.waypoint-marker {
+  position: absolute;
+  left: -33px;
+  top: 4px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  z-index: 1;
+}
+.waypoint-marker.active {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 0 16px rgba(59,130,246,0.4);
+}
+.waypoint-marker.complete {
+  background: var(--green);
+  color: white;
+}
+.waypoint-marker.future {
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  color: var(--text-dim);
+}
+.waypoint h4 {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.waypoint-tag {
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+.tag-done { background: rgba(16,185,129,0.15); color: var(--green-light); }
+.tag-now { background: rgba(59,130,246,0.15); color: var(--accent-light); }
+.tag-next { background: rgba(42,54,80,0.5); color: var(--text-dim); }
+.waypoint p {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+.waypoint-nav {
+  margin-top: 8px;
+  padding: 10px 14px;
+  background: rgba(59,130,246,0.06);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  font-size: 0.82rem;
+  color: var(--accent-light);
+}
+.waypoint-nav strong { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+
+/* Features — Navigation Instruments */
+.instruments {
+  padding: 6rem 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.instruments h2 {
+  text-align: center;
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+.instruments .subtitle {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 1.05rem;
+  margin-bottom: 3.5rem;
+}
+.inst-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+.inst-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2rem;
+  transition: border-color 0.3s;
+}
+.inst-card:hover { border-color: rgba(59,130,246,0.3); }
+.inst-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  margin-bottom: 1rem;
+}
+.inst-card h4 { font-size: 1.05rem; margin-bottom: 0.5rem; }
+.inst-card p { color: var(--text-dim); font-size: 0.88rem; line-height: 1.6; }
+.inst-card .nav-example {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: var(--surface2);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.inst-card .nav-example .voice {
+  color: var(--accent-light);
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+/* Waze comparison */
+.waze-section {
+  padding: 5rem 2rem;
+  text-align: center;
+}
+.waze-box {
+  max-width: 750px;
+  margin: 0 auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 3rem;
+}
+.waze-box h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  font-weight: 700;
+}
+.waze-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  margin: 2rem 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.waze-col {
+  padding: 1.5rem;
+}
+.waze-col:first-child { border-right: 1px solid var(--border); }
+.waze-col h4 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+  color: var(--text-dim);
+}
+.waze-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 0.8rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  text-align: left;
+}
+.waze-item .w-icon { color: var(--accent-light); flex-shrink: 0; }
+
+/* Stats */
+.stats-section {
+  padding: 4rem 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  text-align: center;
+}
+.stat-item h3 {
+  font-size: 2.8rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent-light), var(--green-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0.5rem;
+}
+.stat-item p {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+/* CTA */
+.cta {
+  padding: 6rem 2rem;
+  text-align: center;
+}
+.cta-inner {
+  max-width: 650px;
+  margin: 0 auto;
+  background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(16,185,129,0.06));
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 20px;
+  padding: 3.5rem;
+}
+.cta h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+.cta p {
+  color: var(--text-dim);
+  font-size: 1.05rem;
+  margin-bottom: 2rem;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.cta-btn {
+  display: inline-block;
+  padding: 16px 40px;
+  background: var(--accent);
+  color: white;
+  border-radius: 8px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.cta-btn:hover { background: var(--accent-light); transform: translateY(-2px); }
+
+/* Footer */
+footer {
+  padding: 3rem 2rem;
+  text-align: center;
+  border-top: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+footer .logo { font-weight: 800; font-size: 1.2rem; color: var(--text); margin-bottom: 0.5rem; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .comparison { grid-template-columns: 1fr; }
+  .comp-vs { padding: 0; }
+  .inst-grid { grid-template-columns: 1fr; }
+  .waze-grid { grid-template-columns: 1fr; }
+  .waze-col:first-child { border-right: none; border-bottom: 1px solid var(--border); }
+  .stats-row { grid-template-columns: 1fr; gap: 1.5rem; }
+  .nav-links { display: none; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Go<span>2</span></div>
+  <div class="nav-links">
+    <a href="#journey">The Journey</a>
+    <a href="#instruments">How It Works</a>
+    <a href="#cta" class="nav-cta">Get a Demo</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-bg">
+    <svg class="road-svg" viewBox="0 0 1200 800" preserveAspectRatio="none">
+      <path class="road-path" d="M-100,400 C200,200 400,600 600,350 C800,100 1000,500 1300,300" />
+      <path class="road-path" d="M-100,500 C200,300 400,700 600,450 C800,200 1000,600 1300,400" style="opacity:0.5; animation-delay: -5s;" />
+      <path class="road-path" d="M-100,600 C200,400 400,800 600,550 C800,300 1000,700 1300,500" style="opacity:0.3; animation-delay: -10s;" />
+    </svg>
+  </div>
+  <div class="hero-content">
+    <div class="hero-badge">AI-Powered Workforce Navigation</div>
+    <h1>Your team is on a journey.<br><span class="highlight">Go2 is the navigator.</span></h1>
+    <p>Not a map you stare at. An active navigator that says "turn here," "take this shortcut," and "recalculating" when things change. Like Waze, but for how your team works.</p>
+    <a href="#cta" class="hero-cta">Start Navigating</a>
+  </div>
+</section>
+
+<section class="metaphor">
+  <div class="metaphor-header">
+    <h2>Maps show you where you are. Navigators get you there.</h2>
+    <p>Most tools give you dashboards and data. Go2 gives you an active co-pilot for every person on your team.</p>
+  </div>
+  <div class="comparison">
+    <div class="comp-card old">
+      <h3>A Map (Traditional Tools)</h3>
+      <div class="comp-item"><span class="icon">&#9744;</span> Shows you data after the fact</div>
+      <div class="comp-item"><span class="icon">&#9744;</span> You interpret it yourself</div>
+      <div class="comp-item"><span class="icon">&#9744;</span> Requires you to check it</div>
+      <div class="comp-item"><span class="icon">&#9744;</span> Same view for everyone</div>
+      <div class="comp-item"><span class="icon">&#9744;</span> Tells you where you are</div>
+      <div class="comp-item"><span class="icon">&#9744;</span> You figure out the route</div>
+    </div>
+    <div class="comp-vs">vs</div>
+    <div class="comp-card new">
+      <h3>A Navigator (Go2)</h3>
+      <div class="comp-item"><span class="icon">&#9745;</span> Coaches in real time as work happens</div>
+      <div class="comp-item"><span class="icon">&#9745;</span> Delivers specific, actionable guidance</div>
+      <div class="comp-item"><span class="icon">&#9745;</span> Comes to you proactively</div>
+      <div class="comp-item"><span class="icon">&#9745;</span> Personalized for each worker</div>
+      <div class="comp-item"><span class="icon">&#9745;</span> Tells you where to go next</div>
+      <div class="comp-item"><span class="icon">&#9745;</span> Gives turn-by-turn directions</div>
+    </div>
+  </div>
+</section>
+
+<section class="journey" id="journey">
+  <div class="journey-inner">
+    <h2>The journey from where your team is to where they could be</h2>
+    <p class="subtitle">Go2 navigates every step, from first install to continuous optimization</p>
+
+    <div class="waypoints">
+      <div class="waypoint">
+        <div class="waypoint-marker complete">1</div>
+        <h4>Deploy <span class="waypoint-tag tag-done">Day 1</span></h4>
+        <p>Install Go2's lightweight desktop agent. It begins learning how each person works &mdash; their tools, their patterns, their rhythms.</p>
+        <div class="waypoint-nav">
+          <strong>Navigator says:</strong>
+          "I'm learning the terrain. Give me a few days to map your team's workflow landscape."
+        </div>
+      </div>
+
+      <div class="waypoint">
+        <div class="waypoint-marker complete">2</div>
+        <h4>Observe <span class="waypoint-tag tag-done">Week 1</span></h4>
+        <p>Go2 identifies the first patterns: repeated manual tasks, context-switching hotspots, tool gaps, and workflow detours.</p>
+        <div class="waypoint-nav">
+          <strong>Navigator says:</strong>
+          "I've found 3 shortcuts. Your team spends 14 hours/week on tasks that could be automated."
+        </div>
+      </div>
+
+      <div class="waypoint">
+        <div class="waypoint-marker active">3</div>
+        <h4>Navigate <span class="waypoint-tag tag-now">Ongoing</span></h4>
+        <p>Individual coaching kicks in. Each person gets specific, contextual tips based on their actual work. Frontier AI (Claude, GPT, Gemini) powers personalized guidance.</p>
+        <div class="waypoint-nav">
+          <strong>Navigator says:</strong>
+          "Turn here &mdash; you've been taking the long way around this report. Here's a one-click shortcut."
+        </div>
+      </div>
+
+      <div class="waypoint">
+        <div class="waypoint-marker future">4</div>
+        <h4>Recalculate <span class="waypoint-tag tag-next">Continuous</span></h4>
+        <p>As teams adopt changes, Go2 recalculates. New patterns emerge, new coaching opportunities arise. The navigation never stops improving.</p>
+        <div class="waypoint-nav">
+          <strong>Navigator says:</strong>
+          "Your team's efficiency improved 18% this month. I see 4 new optimization routes opening up."
+        </div>
+      </div>
+
+      <div class="waypoint">
+        <div class="waypoint-marker future">5</div>
+        <h4>Arrive (and keep going) <span class="waypoint-tag tag-next">Always</span></h4>
+        <p>There's no final destination &mdash; just continuously better work. Go2 maps automation opportunities and helps managers see the aggregate picture without surveillance.</p>
+        <div class="waypoint-nav">
+          <strong>Navigator says:</strong>
+          "You've reclaimed 22 hours/week across the team. Here's what's next."
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="instruments" id="instruments">
+  <h2>Your navigation instruments</h2>
+  <p class="subtitle">Everything you need to guide your team to better work</p>
+  <div class="inst-grid">
+    <div class="inst-card">
+      <div class="inst-icon" style="background: rgba(59,130,246,0.12); color: var(--accent-light);">&#9041;</div>
+      <h4>Real-Time Coaching</h4>
+      <p>Like turn-by-turn directions, Go2 delivers specific guidance to each worker as they work. Not after. Not in a weekly review. Right now.</p>
+      <div class="nav-example">
+        <div class="voice">Navigator:</div>
+        "You're about to manually format this report again. There's a template that does it in one click &mdash; want me to show you?"
+      </div>
+    </div>
+    <div class="inst-card">
+      <div class="inst-icon" style="background: rgba(16,185,129,0.12); color: var(--green-light);">&#9878;</div>
+      <h4>Shortcut Detection</h4>
+      <p>Go2 continuously discovers faster routes through your team's work. Automations, integrations, and workflows they didn't know existed.</p>
+      <div class="nav-example">
+        <div class="voice">Navigator:</div>
+        "There's a faster route: connect your CRM to your invoicing tool. Saves 3 hours/week per account manager."
+      </div>
+    </div>
+    <div class="inst-card">
+      <div class="inst-icon" style="background: rgba(245,158,11,0.12); color: var(--amber);">&#9888;</div>
+      <h4>Traffic Alerts</h4>
+      <p>Spot bottlenecks before they become problems. Go2 identifies workflow congestion &mdash; where teams slow down, get stuck, or lose momentum.</p>
+      <div class="nav-example">
+        <div class="voice">Navigator:</div>
+        "Congestion ahead: your approval process adds 2 days to every project. Here's a faster route."
+      </div>
+    </div>
+    <div class="inst-card">
+      <div class="inst-icon" style="background: rgba(139,92,246,0.12); color: var(--purple);">&#9635;</div>
+      <h4>Manager Dashboard</h4>
+      <p>Aggregated team insights &mdash; never individual surveillance. See the journey your team is on, where they're improving, and what's next.</p>
+      <div class="nav-example">
+        <div class="voice">Navigator:</div>
+        "Team overview: 87% of coaching tips adopted. 3 automation opportunities ready to deploy. 12 hours/week reclaimed this month."
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="waze-section">
+  <div class="waze-box">
+    <h2>Why "navigator" and not "dashboard"?</h2>
+    <div class="waze-grid">
+      <div class="waze-col">
+        <h4>Waze for Driving</h4>
+        <div class="waze-item"><span class="w-icon">&#8594;</span> Learns from millions of drivers</div>
+        <div class="waze-item"><span class="w-icon">&#8594;</span> Gives you specific turn instructions</div>
+        <div class="waze-item"><span class="w-icon">&#8594;</span> Alerts you to hazards ahead</div>
+        <div class="waze-item"><span class="w-icon">&#8594;</span> Reroutes when conditions change</div>
+        <div class="waze-item"><span class="w-icon">&#8594;</span> Gets smarter with every trip</div>
+      </div>
+      <div class="waze-col">
+        <h4>Go2 for Work</h4>
+        <div class="waze-item"><span class="w-icon">&#8594;</span> Learns from ~1M workers' patterns</div>
+        <div class="waze-item"><span class="w-icon">&#8594;</span> Gives specific workflow tips</div>
+        <div class="waze-item"><span class="w-icon">&#8594;</span> Alerts to inefficiency patterns</div>
+        <div class="waze-item"><span class="w-icon">&#8594;</span> Adapts as workflows evolve</div>
+        <div class="waze-item"><span class="w-icon">&#8594;</span> Gets smarter with every workday</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stats-section">
+  <div class="stats-row">
+    <div class="stat-item">
+      <h3>~1M</h3>
+      <p>Workers' data training<br>the navigation engine</p>
+    </div>
+    <div class="stat-item">
+      <h3>3 AIs</h3>
+      <p>Claude, GPT, and Gemini<br>powering every coach</p>
+    </div>
+    <div class="stat-item">
+      <h3>24/7</h3>
+      <p>Always navigating,<br>always improving</p>
+    </div>
+  </div>
+</section>
+
+<section class="cta" id="cta">
+  <div class="cta-inner">
+    <h2>Stop staring at maps.<br>Start navigating.</h2>
+    <p>See how Go2 navigates your team from where they are to where they could be. Active guidance, not passive dashboards.</p>
+    <a href="#" class="cta-btn">Request a Demo</a>
+  </div>
+</section>
+
+<footer>
+  <div class="logo">Go2</div>
+  <p>AI navigation for your workforce. Turn-by-turn coaching for every worker.</p>
+  <p style="margin-top: 0.5rem;">&copy; 2026 Go2. All rights reserved.</p>
+</footer>
+
+</body>
+</html>

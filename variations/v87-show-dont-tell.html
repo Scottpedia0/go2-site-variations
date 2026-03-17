@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — See It In Action</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --surface2: #1a1a25;
+  --border: #2a2a3a;
+  --text: #e8e8f0;
+  --text-dim: #8888a0;
+  --accent: #6366f1;
+  --accent-light: #818cf8;
+  --green: #34d399;
+  --amber: #fbbf24;
+  --blue: #60a5fa;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; overflow-x: hidden; }
+a { color: var(--accent-light); text-decoration: none; }
+
+/* HERO — The Simulation */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(ellipse at 50% 30%, rgba(99,102,241,0.08) 0%, transparent 60%);
+  pointer-events: none;
+}
+.sim-container {
+  width: 100%;
+  max-width: 900px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Simulated Screen */
+.sim-screen {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03);
+}
+.sim-titlebar {
+  background: var(--surface2);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.sim-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #ff5f57;
+}
+.sim-dot:nth-child(2) { background: #febc2e; }
+.sim-dot:nth-child(3) { background: #28c840; }
+.sim-titlebar-text {
+  flex: 1;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+.sim-body {
+  padding: 0;
+  min-height: 420px;
+  display: flex;
+}
+
+/* Left: Simulated Spreadsheet */
+.sim-spreadsheet {
+  flex: 1;
+  padding: 16px;
+  border-right: 1px solid var(--border);
+  position: relative;
+}
+.sim-spreadsheet h4 {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+.ss-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 4px;
+  margin-bottom: 4px;
+  font-size: 0.78rem;
+}
+.ss-cell {
+  padding: 6px 8px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ss-header .ss-cell {
+  background: rgba(99,102,241,0.1);
+  color: var(--accent-light);
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+.ss-highlight {
+  animation: highlightRow 3s ease-in-out infinite;
+}
+@keyframes highlightRow {
+  0%, 100% { background: rgba(255,255,255,0.03); }
+  50% { background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.3); }
+}
+
+/* Right: AI Coaching Chat */
+.sim-chat {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(0,0,0,0.2);
+}
+.sim-chat-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ai-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--green));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.sim-chat-header-text h5 { font-size: 0.85rem; font-weight: 600; }
+.sim-chat-header-text span { font-size: 0.7rem; color: var(--green); }
+.sim-chat-messages {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+.chat-msg {
+  max-width: 90%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  opacity: 0;
+  animation: msgAppear 0.5s ease forwards;
+}
+.chat-msg:nth-child(1) { animation-delay: 1s; }
+.chat-msg:nth-child(2) { animation-delay: 3s; }
+.chat-msg:nth-child(3) { animation-delay: 5.5s; }
+.chat-msg:nth-child(4) { animation-delay: 7.5s; }
+.chat-msg:nth-child(5) { animation-delay: 9.5s; }
+@keyframes msgAppear {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.chat-ai {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+.chat-ai .label {
+  font-size: 0.65rem;
+  color: var(--accent-light);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+.chat-tip {
+  background: rgba(99,102,241,0.1);
+  border: 1px solid rgba(99,102,241,0.2);
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+.chat-tip .tip-title {
+  font-weight: 700;
+  color: var(--accent-light);
+  margin-bottom: 4px;
+  font-size: 0.78rem;
+}
+.chat-result {
+  background: rgba(52,211,153,0.08);
+  border: 1px solid rgba(52,211,153,0.2);
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+  color: var(--green);
+}
+
+/* The Reveal */
+.reveal {
+  text-align: center;
+  padding: 6rem 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+.reveal h2 {
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+}
+.reveal h2 span { color: var(--accent-light); }
+.reveal p {
+  font-size: 1.15rem;
+  color: var(--text-dim);
+  max-width: 600px;
+  margin: 0 auto 2.5rem;
+  line-height: 1.7;
+}
+
+/* How it works */
+.how-section {
+  padding: 4rem 2rem 6rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.how-section h3 {
+  text-align: center;
+  font-size: 1.6rem;
+  margin-bottom: 3rem;
+  color: var(--text-dim);
+}
+.how-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+.how-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.how-card-screen {
+  height: 200px;
+  padding: 16px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.how-card-body {
+  padding: 20px;
+}
+.how-card-body h4 {
+  font-size: 1rem;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+.how-card-body p {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+/* Mini simulated screens in cards */
+.mini-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+.mini-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(99,102,241,0.15);
+  position: relative;
+  overflow: hidden;
+}
+.mini-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--accent);
+  animation: barGrow 2s ease-in-out infinite alternate;
+}
+@keyframes barGrow {
+  from { width: 30%; }
+  to { width: 85%; }
+}
+.mini-chat-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+.mini-chat-line {
+  height: 10px;
+  border-radius: 6px;
+  animation: chatPulse 2s ease-in-out infinite;
+}
+.mini-chat-line:nth-child(odd) {
+  background: rgba(99,102,241,0.15);
+  width: 80%;
+}
+.mini-chat-line:nth-child(even) {
+  background: rgba(52,211,153,0.12);
+  width: 65%;
+  margin-left: auto;
+}
+@keyframes chatPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+.mini-grid-cells {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin-top: 12px;
+}
+.mini-cell {
+  height: 24px;
+  border-radius: 4px;
+  background: rgba(99,102,241,0.08);
+}
+.mini-cell.lit {
+  background: rgba(52,211,153,0.15);
+  animation: cellPulse 3s ease-in-out infinite;
+}
+@keyframes cellPulse {
+  0%, 100% { background: rgba(52,211,153,0.08); }
+  50% { background: rgba(52,211,153,0.25); }
+}
+
+/* More simulated conversations */
+.more-section {
+  padding: 4rem 2rem 6rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.more-section h3 {
+  text-align: center;
+  font-size: 1.6rem;
+  margin-bottom: 1rem;
+}
+.more-section .subtitle {
+  text-align: center;
+  color: var(--text-dim);
+  margin-bottom: 3rem;
+  font-size: 1rem;
+}
+.scenario {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+.scenario-header {
+  padding: 16px 20px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.scenario-icon {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+}
+.scenario-header h4 { font-size: 0.9rem; }
+.scenario-header span { font-size: 0.75rem; color: var(--text-dim); }
+.scenario-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.s-msg {
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  max-width: 85%;
+}
+.s-observe {
+  background: rgba(251,191,36,0.08);
+  border: 1px solid rgba(251,191,36,0.15);
+  align-self: flex-start;
+  color: var(--amber);
+  font-size: 0.78rem;
+}
+.s-observe::before {
+  content: 'Observed: ';
+  font-weight: 700;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+.s-insight {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  align-self: flex-start;
+}
+.s-action {
+  background: rgba(99,102,241,0.1);
+  border: 1px solid rgba(99,102,241,0.2);
+  align-self: flex-start;
+}
+.s-action strong { color: var(--accent-light); }
+.s-outcome {
+  background: rgba(52,211,153,0.08);
+  border: 1px solid rgba(52,211,153,0.15);
+  align-self: flex-end;
+  color: var(--green);
+  text-align: right;
+}
+
+/* Scale section */
+.scale {
+  text-align: center;
+  padding: 6rem 2rem;
+  position: relative;
+}
+.scale::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(99,102,241,0.06) 0%, transparent 60%);
+  pointer-events: none;
+}
+.scale-content { position: relative; z-index: 1; }
+.scale h2 {
+  font-size: clamp(1.6rem, 3.5vw, 2.5rem);
+  margin-bottom: 1.5rem;
+  font-weight: 700;
+}
+.scale p {
+  font-size: 1.1rem;
+  color: var(--text-dim);
+  max-width: 600px;
+  margin: 0 auto 2rem;
+  line-height: 1.7;
+}
+.scale-stats {
+  display: flex;
+  justify-content: center;
+  gap: 4rem;
+  margin: 3rem 0;
+  flex-wrap: wrap;
+}
+.scale-stat h3 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent-light), var(--green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.scale-stat p {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin: 0;
+}
+
+/* CTA */
+.cta-section {
+  padding: 5rem 2rem 6rem;
+  text-align: center;
+}
+.cta-box {
+  max-width: 600px;
+  margin: 0 auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 3rem;
+}
+.cta-box h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+.cta-box p {
+  color: var(--text-dim);
+  margin-bottom: 2rem;
+  font-size: 1rem;
+}
+.cta-btn {
+  display: inline-block;
+  padding: 14px 36px;
+  background: var(--accent);
+  color: white;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+}
+.cta-btn:hover { background: var(--accent-light); transform: translateY(-1px); }
+
+/* Footer */
+footer {
+  padding: 3rem 2rem;
+  text-align: center;
+  border-top: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+footer .logo { font-weight: 800; font-size: 1.2rem; color: var(--text); margin-bottom: 0.5rem; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sim-body { flex-direction: column; }
+  .sim-chat { width: 100%; }
+  .sim-spreadsheet { border-right: none; border-bottom: 1px solid var(--border); }
+  .how-grid { grid-template-columns: 1fr; }
+  .scale-stats { gap: 2rem; }
+}
+@media (max-width: 480px) {
+  .hero { padding: 1rem; }
+  .sim-chat-messages { padding: 12px; }
+  .chat-msg { font-size: 0.78rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- HERO: Pure simulation, zero marketing copy -->
+<section class="hero">
+  <div class="sim-container">
+    <div class="sim-screen">
+      <div class="sim-titlebar">
+        <div class="sim-dot"></div>
+        <div class="sim-dot"></div>
+        <div class="sim-dot"></div>
+        <div class="sim-titlebar-text">Q1 Pipeline Report.xlsx &mdash; Microsoft Excel</div>
+      </div>
+      <div class="sim-body">
+        <div class="sim-spreadsheet">
+          <h4>Active Pipeline</h4>
+          <div class="ss-row ss-header">
+            <div class="ss-cell">Account</div>
+            <div class="ss-cell">Stage</div>
+            <div class="ss-cell">Value</div>
+          </div>
+          <div class="ss-row"><div class="ss-cell">Meridian Corp</div><div class="ss-cell">Proposal</div><div class="ss-cell">$42,000</div></div>
+          <div class="ss-row"><div class="ss-cell">Atlas Solutions</div><div class="ss-cell">Discovery</div><div class="ss-cell">$18,500</div></div>
+          <div class="ss-row ss-highlight"><div class="ss-cell">Vertex Industries</div><div class="ss-cell">Negotiation</div><div class="ss-cell">$67,000</div></div>
+          <div class="ss-row"><div class="ss-cell">Pinnacle LLC</div><div class="ss-cell">Proposal</div><div class="ss-cell">$31,200</div></div>
+          <div class="ss-row"><div class="ss-cell">Nova Dynamics</div><div class="ss-cell">Closed Won</div><div class="ss-cell">$55,000</div></div>
+          <div class="ss-row ss-highlight"><div class="ss-cell">Cobalt Group</div><div class="ss-cell">Negotiation</div><div class="ss-cell">$89,000</div></div>
+          <div class="ss-row"><div class="ss-cell">Redstone Inc</div><div class="ss-cell">Discovery</div><div class="ss-cell">$24,700</div></div>
+          <div class="ss-row"><div class="ss-cell">Apex Ventures</div><div class="ss-cell">Proposal</div><div class="ss-cell">$36,400</div></div>
+          <div class="ss-row"><div class="ss-cell">Ironbridge Ltd</div><div class="ss-cell">Qualification</div><div class="ss-cell">$15,800</div></div>
+          <div class="ss-row"><div class="ss-cell">Summit Group</div><div class="ss-cell">Closed Won</div><div class="ss-cell">$48,300</div></div>
+        </div>
+        <div class="sim-chat">
+          <div class="sim-chat-header">
+            <div class="ai-avatar">G2</div>
+            <div class="sim-chat-header-text">
+              <h5>Go2 AI Coach</h5>
+              <span>Watching &bull; Active</span>
+            </div>
+          </div>
+          <div class="sim-chat-messages">
+            <div class="chat-msg chat-ai">
+              <div class="label">Observation</div>
+              I noticed you've been manually copying pipeline data from your CRM into this spreadsheet. You've done this 3 times this week, spending about 12 minutes each time.
+            </div>
+            <div class="chat-msg chat-ai">
+              <div class="label">Pattern</div>
+              The columns you're copying match the fields in your CRM's built-in pipeline report. The data is identical &mdash; you're recreating something that already exists.
+            </div>
+            <div class="chat-msg chat-tip">
+              <div class="tip-title">Tip: Skip the copy-paste</div>
+              Your CRM has a one-click export to Excel. Menu &rarr; Reports &rarr; Pipeline &rarr; Export. Same data, same format, 10 seconds instead of 12 minutes.
+            </div>
+            <div class="chat-msg chat-ai">
+              That's <strong>36 minutes this week</strong> on something that could take 30 seconds. Over a year, that's roughly <strong>31 hours</strong> &mdash; almost a full work week.
+            </div>
+            <div class="chat-msg chat-result">
+              If everyone on your team has even one habit like this, the total adds up fast. I'll keep watching for more.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- The Reveal -->
+<section class="reveal">
+  <h2>This is <span>Go2</span>.</h2>
+  <p>It does this for every person on your team. All day, every day. A personal AI coach that watches how people actually work, spots the patterns they can't see, and delivers specific, actionable coaching.</p>
+  <p style="color: var(--text); font-weight: 500;">No dashboards to check. No reports to read. Just better work, automatically.</p>
+</section>
+
+<!-- How it works — shown through mini simulations -->
+<section class="how-section">
+  <h3>What your team actually sees</h3>
+  <div class="how-grid">
+    <div class="how-card">
+      <div class="how-card-screen">
+        <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em;">Observing</div>
+        <div class="mini-bars">
+          <div class="mini-bar"><div class="mini-bar-fill" style="width: 70%;"></div></div>
+          <div class="mini-bar"><div class="mini-bar-fill" style="width: 45%;"></div></div>
+          <div class="mini-bar"><div class="mini-bar-fill" style="width: 85%;"></div></div>
+          <div class="mini-bar"><div class="mini-bar-fill" style="width: 30%;"></div></div>
+          <div class="mini-bar"><div class="mini-bar-fill" style="width: 60%;"></div></div>
+        </div>
+        <div style="margin-top: 16px; font-size: 0.7rem; color: var(--amber);">Pattern detected...</div>
+      </div>
+      <div class="how-card-body">
+        <h4>It watches work happen</h4>
+        <p>Go2's desktop agent quietly observes how each person works. Not tracking time &mdash; understanding workflow patterns, tool usage, and repeated actions.</p>
+      </div>
+    </div>
+    <div class="how-card">
+      <div class="how-card-screen">
+        <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em;">Coaching</div>
+        <div class="mini-chat-lines">
+          <div class="mini-chat-line"></div>
+          <div class="mini-chat-line"></div>
+          <div class="mini-chat-line"></div>
+          <div class="mini-chat-line"></div>
+          <div class="mini-chat-line"></div>
+          <div class="mini-chat-line"></div>
+        </div>
+      </div>
+      <div class="how-card-body">
+        <h4>It coaches individually</h4>
+        <p>Powered by frontier AI (Claude, GPT, Gemini), each person gets a private coach that delivers personalized tips based on their actual work &mdash; not generic advice.</p>
+      </div>
+    </div>
+    <div class="how-card">
+      <div class="how-card-screen">
+        <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em;">Insights</div>
+        <div class="mini-grid-cells">
+          <div class="mini-cell"></div><div class="mini-cell lit"></div><div class="mini-cell"></div><div class="mini-cell lit"></div>
+          <div class="mini-cell lit"></div><div class="mini-cell"></div><div class="mini-cell lit"></div><div class="mini-cell"></div>
+          <div class="mini-cell"></div><div class="mini-cell"></div><div class="mini-cell lit"></div><div class="mini-cell"></div>
+          <div class="mini-cell lit"></div><div class="mini-cell"></div><div class="mini-cell"></div><div class="mini-cell lit"></div>
+        </div>
+        <div style="margin-top: 12px; font-size: 0.7rem; color: var(--green);">3 automation opportunities found</div>
+      </div>
+      <div class="how-card-body">
+        <h4>You get the big picture</h4>
+        <p>Managers see aggregated insights &mdash; team-wide patterns, automation opportunities, and coaching impact. Never individual surveillance, always collective intelligence.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- More simulated conversations -->
+<section class="more-section">
+  <h3>Real coaching moments</h3>
+  <p class="subtitle">These happen hundreds of times a day across your team</p>
+
+  <div class="scenario">
+    <div class="scenario-header">
+      <div class="scenario-icon" style="background: rgba(96,165,250,0.15); color: var(--blue);">CS</div>
+      <div>
+        <h4>Customer Support Rep</h4>
+        <span>Zendesk &bull; 2:14 PM</span>
+      </div>
+    </div>
+    <div class="scenario-body">
+      <div class="s-msg s-observe">You've typed similar refund policy explanations in 6 tickets today. Each one takes about 90 seconds to compose.</div>
+      <div class="s-msg s-insight">The wording varies slightly each time, but the core information is identical. You're doing great work &mdash; but you're rewriting what you already know.</div>
+      <div class="s-msg s-action"><strong>Try this:</strong> I've drafted a saved reply based on your best version. It covers all the edge cases you typically mention. One click instead of 90 seconds.</div>
+      <div class="s-msg s-outcome">Potential savings: 9 minutes/day, 3+ hours/month on this one response alone.</div>
+    </div>
+  </div>
+
+  <div class="scenario">
+    <div class="scenario-header">
+      <div class="scenario-icon" style="background: rgba(251,191,36,0.15); color: var(--amber);">PM</div>
+      <div>
+        <h4>Project Manager</h4>
+        <span>Monday.com + Slack &bull; 10:45 AM</span>
+      </div>
+    </div>
+    <div class="scenario-body">
+      <div class="s-msg s-observe">You switch between Monday.com and Slack about 40 times before lunch, mostly to update team members on task status changes.</div>
+      <div class="s-msg s-insight">Monday.com has a Slack integration that auto-posts status changes to channels. Your manual updates are duplicating what automation can do.</div>
+      <div class="s-msg s-action"><strong>Quick win:</strong> Enable the Monday.com &rarr; Slack integration for your project boards. Status changes will auto-notify the right channels. Setup takes 5 minutes.</div>
+      <div class="s-msg s-outcome">This could free up roughly 45 minutes of your morning. Every day.</div>
+    </div>
+  </div>
+
+  <div class="scenario">
+    <div class="scenario-header">
+      <div class="scenario-icon" style="background: rgba(52,211,153,0.15); color: var(--green);">DE</div>
+      <div>
+        <h4>Developer</h4>
+        <span>VS Code + Terminal &bull; 4:30 PM</span>
+      </div>
+    </div>
+    <div class="scenario-body">
+      <div class="s-msg s-observe">You run the same 4-command deployment sequence manually every time you push to staging. Average: 3 deployments/day, 4 minutes each.</div>
+      <div class="s-msg s-action"><strong>Automation opportunity:</strong> These 4 commands can be a single shell alias or, even better, a git hook that runs automatically on push. I can show you both approaches.</div>
+      <div class="s-msg s-outcome">12 minutes/day back. Plus zero chance of forgetting a step or running commands in the wrong order.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Scale -->
+<section class="scale">
+  <div class="scale-content">
+    <h2>Now multiply this across your entire team</h2>
+    <p>Every person. Every workflow. Every hidden inefficiency. Go2 finds them all and coaches your team through fixing them &mdash; one specific, actionable tip at a time.</p>
+    <div class="scale-stats">
+      <div class="scale-stat">
+        <h3>~1M</h3>
+        <p>Workers' data analyzed</p>
+      </div>
+      <div class="scale-stat">
+        <h3>3</h3>
+        <p>Frontier AI models</p>
+      </div>
+      <div class="scale-stat">
+        <h3>24/7</h3>
+        <p>Always coaching</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-box">
+    <h2>See it yourself</h2>
+    <p>Watch Go2 analyze your team's actual workflows and deliver its first coaching insights. No setup, no commitment.</p>
+    <a href="#" class="cta-btn">Request a Demo</a>
+  </div>
+</section>
+
+<footer>
+  <div class="logo">Go2</div>
+  <p>AI coaching for every worker. Aggregated insights for managers.</p>
+  <p style="margin-top: 0.5rem;">&copy; 2026 Go2. All rights reserved.</p>
+</footer>
+
+</body>
+</html>

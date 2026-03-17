@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The X-Ray for Your Operations</title>
+<style>
+  :root {
+    --clinical-white: #f8fafb;
+    --xray-blue: #0a2540;
+    --scan-cyan: #00d4ff;
+    --pulse-green: #00e89d;
+    --tissue-gray: #e8ecef;
+    --bone-white: #ffffff;
+    --diagnostic-red: #ff4d6a;
+    --text-primary: #0a2540;
+    --text-secondary: #4a5568;
+    --scan-line: rgba(0, 212, 255, 0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--clinical-white);
+    color: var(--text-primary);
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+
+  /* Nav */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--tissue-gray);
+    padding: 0 2rem;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-logo {
+    font-size: 1.5rem; font-weight: 800; color: var(--xray-blue);
+    letter-spacing: -0.5px;
+  }
+  .nav-logo span { color: var(--scan-cyan); }
+  .nav-links { display: flex; gap: 2rem; align-items: center; }
+  .nav-links a {
+    text-decoration: none; color: var(--text-secondary);
+    font-size: 0.9rem; font-weight: 500; transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--xray-blue); }
+  .nav-cta {
+    background: var(--xray-blue) !important; color: white !important;
+    padding: 0.5rem 1.25rem; border-radius: 8px;
+    font-weight: 600 !important; transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(10,37,64,0.3); }
+
+  /* Hero */
+  .hero {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 6rem 2rem 4rem;
+    position: relative;
+    background: linear-gradient(180deg, #0a2540 0%, #0d3055 60%, #0f3d6e 100%);
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,212,255,0.03) 3px, rgba(0,212,255,0.03) 4px),
+      repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(0,212,255,0.03) 3px, rgba(0,212,255,0.03) 4px);
+    pointer-events: none;
+  }
+  .scan-line {
+    position: absolute; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--scan-cyan), transparent);
+    animation: scanDown 4s ease-in-out infinite;
+    opacity: 0.6;
+  }
+  @keyframes scanDown {
+    0% { top: 10%; opacity: 0; }
+    10% { opacity: 0.6; }
+    90% { opacity: 0.6; }
+    100% { top: 90%; opacity: 0; }
+  }
+  .hero-content {
+    max-width: 800px; text-align: center; position: relative; z-index: 2;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 100px; padding: 0.4rem 1rem;
+    font-size: 0.8rem; color: var(--scan-cyan); font-weight: 600;
+    margin-bottom: 2rem; letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .badge-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--scan-cyan);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .hero h1 {
+    font-size: clamp(2.5rem, 6vw, 4.2rem);
+    font-weight: 800; color: white; line-height: 1.1;
+    margin-bottom: 1.5rem; letter-spacing: -1.5px;
+  }
+  .hero h1 em {
+    font-style: normal; color: var(--scan-cyan);
+    text-shadow: 0 0 40px rgba(0,212,255,0.3);
+  }
+  .hero p {
+    font-size: 1.2rem; color: rgba(255,255,255,0.7);
+    max-width: 600px; margin: 0 auto 2.5rem; line-height: 1.7;
+  }
+  .hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: var(--scan-cyan); color: var(--xray-blue);
+    padding: 0.9rem 2rem; border-radius: 12px;
+    font-size: 1rem; font-weight: 700; text-decoration: none;
+    transition: all 0.3s; border: none; cursor: pointer;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,212,255,0.3); }
+  .btn-secondary {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(255,255,255,0.08); color: white;
+    padding: 0.9rem 2rem; border-radius: 12px;
+    font-size: 1rem; font-weight: 600; text-decoration: none;
+    border: 1px solid rgba(255,255,255,0.15); transition: all 0.3s;
+  }
+  .btn-secondary:hover { background: rgba(255,255,255,0.12); }
+
+  /* Diagnosis Section */
+  .section { padding: 6rem 2rem; }
+  .section-dark { background: var(--xray-blue); color: white; }
+  .container { max-width: 1100px; margin: 0 auto; }
+  .section-label {
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--scan-cyan); margin-bottom: 1rem;
+  }
+  .section-title {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800; line-height: 1.15; letter-spacing: -1px;
+    margin-bottom: 1.5rem;
+  }
+  .section-subtitle {
+    font-size: 1.1rem; color: var(--text-secondary); max-width: 600px;
+    line-height: 1.7; margin-bottom: 3rem;
+  }
+  .section-dark .section-subtitle { color: rgba(255,255,255,0.6); }
+
+  /* Diagnosis Grid */
+  .diagnosis-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem; margin-top: 3rem;
+  }
+  .diagnosis-card {
+    background: white; border-radius: 16px;
+    border: 1px solid var(--tissue-gray);
+    padding: 2rem; position: relative; overflow: hidden;
+    transition: all 0.3s;
+  }
+  .diagnosis-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(10,37,64,0.08);
+    border-color: var(--scan-cyan);
+  }
+  .diagnosis-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 3px; background: linear-gradient(90deg, var(--scan-cyan), var(--pulse-green));
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .diagnosis-card:hover::before { opacity: 1; }
+  .card-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; margin-bottom: 1.25rem;
+  }
+  .card-icon.blue { background: rgba(0,212,255,0.1); }
+  .card-icon.green { background: rgba(0,232,157,0.1); }
+  .card-icon.red { background: rgba(255,77,106,0.1); }
+  .diagnosis-card h3 {
+    font-size: 1.15rem; font-weight: 700; margin-bottom: 0.75rem;
+    color: var(--xray-blue);
+  }
+  .diagnosis-card p { font-size: 0.95rem; color: var(--text-secondary); line-height: 1.6; }
+
+  /* X-Ray Visual */
+  .xray-visual {
+    padding: 6rem 2rem;
+    background: linear-gradient(180deg, var(--clinical-white) 0%, #edf2f7 100%);
+  }
+  .xray-comparison {
+    display: grid; grid-template-columns: 1fr auto 1fr;
+    gap: 2rem; align-items: stretch; margin-top: 3rem;
+  }
+  .xray-panel {
+    background: white; border-radius: 16px; padding: 2.5rem;
+    border: 1px solid var(--tissue-gray); position: relative;
+  }
+  .xray-panel.before { border-color: rgba(255,77,106,0.2); }
+  .xray-panel.after { border-color: rgba(0,232,157,0.2); }
+  .panel-label {
+    position: absolute; top: -12px; left: 24px;
+    background: var(--diagnostic-red); color: white;
+    padding: 0.2rem 0.8rem; border-radius: 6px;
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .panel-label.healthy { background: var(--pulse-green); color: var(--xray-blue); }
+  .xray-panel h3 {
+    font-size: 1.3rem; font-weight: 700; margin-bottom: 1.5rem;
+    color: var(--xray-blue);
+  }
+  .xray-finding {
+    display: flex; gap: 0.75rem; align-items: flex-start;
+    margin-bottom: 1rem; padding: 0.75rem;
+    background: rgba(248,250,251,0.8); border-radius: 10px;
+  }
+  .finding-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 2px; }
+  .finding-text { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; }
+  .finding-text strong { color: var(--xray-blue); }
+  .xray-divider {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 0.5rem;
+  }
+  .divider-line {
+    width: 2px; flex: 1;
+    background: linear-gradient(180deg, var(--diagnostic-red), var(--scan-cyan), var(--pulse-green));
+    border-radius: 2px;
+  }
+  .divider-icon {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: var(--xray-blue); color: var(--scan-cyan);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; font-weight: 800;
+  }
+
+  /* Scan Process */
+  .scan-process { padding: 6rem 2rem; background: var(--xray-blue); }
+  .process-steps {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem; margin-top: 3rem;
+  }
+  .process-step {
+    text-align: center; padding: 2rem 1.5rem;
+    background: rgba(255,255,255,0.04); border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.06);
+    position: relative; transition: all 0.3s;
+  }
+  .process-step:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(0,212,255,0.2);
+    transform: translateY(-4px);
+  }
+  .step-number {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: rgba(0,212,255,0.15); color: var(--scan-cyan);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; font-weight: 800; margin: 0 auto 1.25rem;
+  }
+  .process-step h3 {
+    font-size: 1.05rem; font-weight: 700; color: white; margin-bottom: 0.75rem;
+  }
+  .process-step p {
+    font-size: 0.85rem; color: rgba(255,255,255,0.5); line-height: 1.6;
+  }
+  .step-icon { font-size: 2rem; margin-bottom: 1rem; }
+
+  /* Stats */
+  .stats-section { padding: 5rem 2rem; background: white; }
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+  }
+  .stat-card { text-align: center; padding: 2rem 1rem; }
+  .stat-number {
+    font-size: 3rem; font-weight: 800; color: var(--xray-blue);
+    line-height: 1; margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, var(--xray-blue), var(--scan-cyan));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat-label {
+    font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;
+    line-height: 1.4;
+  }
+
+  /* Findings / Testimonials */
+  .findings-section { padding: 6rem 2rem; background: var(--clinical-white); }
+  .findings-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem; margin-top: 3rem;
+  }
+  .finding-card {
+    background: white; border-radius: 16px; padding: 2rem;
+    border: 1px solid var(--tissue-gray);
+    position: relative;
+  }
+  .finding-card::before {
+    content: '"'; position: absolute; top: 1rem; right: 1.5rem;
+    font-size: 4rem; color: var(--tissue-gray); font-family: Georgia, serif;
+    line-height: 1;
+  }
+  .finding-quote {
+    font-size: 1rem; color: var(--text-primary); line-height: 1.7;
+    margin-bottom: 1.5rem; font-style: italic;
+  }
+  .finding-source {
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .source-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--scan-cyan), var(--pulse-green));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.85rem; color: var(--xray-blue);
+  }
+  .source-info strong {
+    display: block; font-size: 0.85rem; color: var(--xray-blue);
+  }
+  .source-info span {
+    font-size: 0.75rem; color: var(--text-secondary);
+  }
+
+  /* CTA */
+  .cta-section {
+    padding: 6rem 2rem;
+    background: linear-gradient(135deg, var(--xray-blue) 0%, #0d3055 100%);
+    text-align: center; position: relative; overflow: hidden;
+  }
+  .cta-section::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(0,212,255,0.08) 0%, transparent 60%);
+  }
+  .cta-content { position: relative; z-index: 2; max-width: 650px; margin: 0 auto; }
+  .cta-section h2 {
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    font-weight: 800; color: white; line-height: 1.15;
+    margin-bottom: 1rem; letter-spacing: -1px;
+  }
+  .cta-section p {
+    font-size: 1.1rem; color: rgba(255,255,255,0.6);
+    margin-bottom: 2.5rem; line-height: 1.7;
+  }
+  .cta-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+  /* Footer */
+  footer {
+    background: #050e1a; padding: 3rem 2rem 2rem;
+    color: rgba(255,255,255,0.4); font-size: 0.85rem;
+  }
+  .footer-content {
+    max-width: 1100px; margin: 0 auto;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 1rem;
+  }
+  .footer-links { display: flex; gap: 1.5rem; }
+  .footer-links a { color: rgba(255,255,255,0.4); text-decoration: none; transition: color 0.2s; }
+  .footer-links a:hover { color: var(--scan-cyan); }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .xray-comparison { grid-template-columns: 1fr; }
+    .xray-divider { flex-direction: row; padding: 1rem 0; }
+    .divider-line { width: auto; height: 2px; flex: 1; background: linear-gradient(90deg, var(--diagnostic-red), var(--scan-cyan), var(--pulse-green)); }
+    .process-steps { grid-template-columns: repeat(2, 1fr); }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 600px) {
+    .nav-links a:not(.nav-cta) { display: none; }
+    .hero { padding: 8rem 1.5rem 4rem; }
+    .process-steps { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .diagnosis-grid { grid-template-columns: 1fr; }
+    .hero-actions { flex-direction: column; align-items: center; }
+  }
+
+  /* Scroll animations */
+  .fade-up {
+    opacity: 0; transform: translateY(30px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">go<span>2</span></div>
+  <div class="nav-links">
+    <a href="#diagnosis">Diagnosis</a>
+    <a href="#scan">How It Works</a>
+    <a href="#findings">Findings</a>
+    <a href="#scan" class="nav-cta">Get Your Scan</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="scan-line"></div>
+  <div class="hero-content">
+    <div class="hero-badge"><div class="badge-dot"></div> Diagnostic-Grade Operational Intelligence</div>
+    <h1>An <em>X-ray</em> for your<br>operations</h1>
+    <p>You wouldn't treat a patient without imaging first. Why are you trying to fix your business without seeing what's actually happening inside it?</p>
+    <div class="hero-actions">
+      <a href="#scan" class="btn-primary">Start Your Diagnostic Scan</a>
+      <a href="#diagnosis" class="btn-secondary">See the Findings</a>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="diagnosis">
+  <div class="container fade-up">
+    <div class="section-label">The Problem</div>
+    <div class="section-title">You can't fix what you can't see</div>
+    <div class="section-subtitle">Every company has operational blind spots. Processes that look fine on the surface but are bleeding time and money underneath. Go2 reveals what's really going on.</div>
+    <div class="diagnosis-grid">
+      <div class="diagnosis-card">
+        <div class="card-icon blue">&#x1F50D;</div>
+        <h3>Symptom: "We're busy but not productive"</h3>
+        <p>Your team works 50-hour weeks but output doesn't match. The problem isn't effort, it's invisible friction. Go2's scan reveals exactly where work stalls, loops back, or gets lost between tools.</p>
+      </div>
+      <div class="diagnosis-card">
+        <div class="card-icon red">&#x26A0;</div>
+        <h3>Symptom: "We keep throwing bodies at it"</h3>
+        <p>Headcount grows but velocity doesn't. The real issue is usually process debt, not people shortage. Go2 identifies tasks being done manually that should be automated, saving the equivalent of 2-3 full-time roles.</p>
+      </div>
+      <div class="diagnosis-card">
+        <div class="card-icon green">&#x1F4CA;</div>
+        <h3>Symptom: "I don't know where time goes"</h3>
+        <p>You get reports that say "utilization is 85%" but can't explain why projects are always late. Go2 gives you the diagnostic image, not the self-reported summary. See actual workflow, not approximations.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="xray-visual">
+  <div class="container fade-up">
+    <div class="section-label">Before &amp; After</div>
+    <div class="section-title">What the scan reveals</div>
+    <div class="section-subtitle">Like switching from a blurry snapshot to high-resolution imaging, Go2 gives you the clarity to act with confidence.</div>
+    <div class="xray-comparison">
+      <div class="xray-panel before">
+        <div class="panel-label">Without Go2</div>
+        <h3>Operating Blind</h3>
+        <div class="xray-finding">
+          <div class="finding-icon">&#x2753;</div>
+          <div class="finding-text"><strong>"We think people are productive"</strong> but have zero data to back it up beyond self-reported timesheets</div>
+        </div>
+        <div class="xray-finding">
+          <div class="finding-icon">&#x2753;</div>
+          <div class="finding-text"><strong>"Our processes work fine"</strong> because nobody has measured how many hours are spent on copy-paste between systems</div>
+        </div>
+        <div class="xray-finding">
+          <div class="finding-icon">&#x2753;</div>
+          <div class="finding-text"><strong>"We need more people"</strong> is the default answer when velocity drops, costing $60K+ per unnecessary hire</div>
+        </div>
+        <div class="xray-finding">
+          <div class="finding-icon">&#x2753;</div>
+          <div class="finding-text"><strong>"Managers have good instincts"</strong> but instinct doesn't scale across 30 remote workers in 4 time zones</div>
+        </div>
+      </div>
+      <div class="xray-divider">
+        <div class="divider-line"></div>
+        <div class="divider-icon">&#x2192;</div>
+        <div class="divider-line"></div>
+      </div>
+      <div class="xray-panel after">
+        <div class="panel-label healthy">With Go2</div>
+        <h3>Diagnostic Clarity</h3>
+        <div class="xray-finding">
+          <div class="finding-icon">&#x2705;</div>
+          <div class="finding-text"><strong>Objective workflow data</strong> shows exactly where each hour goes, no self-reporting required, no surveillance theater</div>
+        </div>
+        <div class="xray-finding">
+          <div class="finding-icon">&#x2705;</div>
+          <div class="finding-text"><strong>Process bottlenecks mapped</strong> automatically. One team found 23 hours/week spent on a task that took 4 minutes to automate</div>
+        </div>
+        <div class="xray-finding">
+          <div class="finding-icon">&#x2705;</div>
+          <div class="finding-text"><strong>Automation opportunities scored</strong> by ROI. Know exactly which tasks to automate first and how much you'll save</div>
+        </div>
+        <div class="xray-finding">
+          <div class="finding-icon">&#x2705;</div>
+          <div class="finding-text"><strong>AI coaching guides each worker</strong> in real-time. Not monitoring. Coaching. Like having a personal productivity expert for every employee</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scan-process" id="scan">
+  <div class="container fade-up">
+    <div class="section-label">The Scan</div>
+    <div class="section-title" style="color:white">Four steps to operational clarity</div>
+    <div class="section-subtitle">Go2 works like medical imaging. Painless setup, comprehensive scan, expert analysis, clear treatment plan.</div>
+    <div class="process-steps">
+      <div class="process-step">
+        <div class="step-icon">&#x1F4E5;</div>
+        <div class="step-number">1</div>
+        <h3>Install the Agent</h3>
+        <p>A lightweight desktop agent deploys to your team's machines in minutes. No workflow changes. No learning curve. It observes silently.</p>
+      </div>
+      <div class="process-step">
+        <div class="step-icon">&#x1F4F7;</div>
+        <div class="step-number">2</div>
+        <h3>Capture the Image</h3>
+        <p>Go2 builds a complete picture of how work actually flows. Every tool, every task, every transition. Data from ~1M workers makes patterns unmistakable.</p>
+      </div>
+      <div class="process-step">
+        <div class="step-icon">&#x1F9EC;</div>
+        <div class="step-number">3</div>
+        <h3>AI Analysis</h3>
+        <p>Frontier AI models (Claude, GPT, Gemini) analyze patterns across your organization. They find the invisible waste, the automation opportunities, the coaching moments.</p>
+      </div>
+      <div class="process-step">
+        <div class="step-icon">&#x1F489;</div>
+        <div class="step-number">4</div>
+        <h3>Prescribe &amp; Treat</h3>
+        <p>Workers get real-time AI coaching. Managers get aggregated insights. You get a clear roadmap of what to automate and how much it'll save.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stats-section">
+  <div class="container fade-up">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number">~1M</div>
+        <div class="stat-label">Workers generating behavioral data across industries</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">23%</div>
+        <div class="stat-label">Average productivity gain in the first 90 days</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">4.2</div>
+        <div class="stat-label">Hours per worker per week recovered from invisible waste</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">30</div>
+        <div class="stat-label">Days to see the full diagnostic picture of your operations</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="findings-section" id="findings">
+  <div class="container fade-up">
+    <div class="section-label">Clinical Findings</div>
+    <div class="section-title">What leaders discover after the scan</div>
+    <div class="section-subtitle">Real diagnostic outcomes from companies that opened their operations up to Go2's analysis.</div>
+    <div class="findings-grid">
+      <div class="finding-card">
+        <div class="finding-quote">"We thought our operations team was at capacity. Go2 showed us they were spending 31% of their time on manual data transfers between three systems. We automated it in a week. It was like finding a tumor we didn't know was there."</div>
+        <div class="finding-source">
+          <div class="source-avatar">VP</div>
+          <div class="source-info">
+            <strong>VP of Operations</strong>
+            <span>42-person logistics company</span>
+          </div>
+        </div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-quote">"The AI coaching alone was worth it. Our support team's resolution time dropped 28% because Go2 was showing them faster paths through our tooling in real-time. Not watching them. Teaching them."</div>
+        <div class="finding-source">
+          <div class="source-avatar">CS</div>
+          <div class="source-info">
+            <strong>Customer Success Director</strong>
+            <span>28-person SaaS company</span>
+          </div>
+        </div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-quote">"I was about to hire 3 more people. Go2's scan showed me that with two process changes and one automation, my existing team could handle 40% more volume. That saved us over $200K annually."</div>
+        <div class="finding-source">
+          <div class="source-avatar">CEO</div>
+          <div class="source-info">
+            <strong>CEO &amp; Founder</strong>
+            <span>35-person marketing agency</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container fade-up">
+    <div class="section-label">Coaching, Not Surveillance</div>
+    <div class="section-title">The treatment is as important as the diagnosis</div>
+    <div class="section-subtitle">Go2 isn't a monitoring tool dressed up in friendly language. The entire architecture is designed around making people better at their jobs.</div>
+    <div class="diagnosis-grid">
+      <div class="diagnosis-card">
+        <div class="card-icon green">&#x1F9D1;&#x200D;&#x1F3EB;</div>
+        <h3>Workers Get a Personal Coach</h3>
+        <p>Real-time suggestions powered by frontier AI. "You've been formatting this report manually. Here's how to automate it." Helpful, not creepy. Workers love it because it makes their jobs easier.</p>
+      </div>
+      <div class="diagnosis-card">
+        <div class="card-icon blue">&#x1F4CA;</div>
+        <h3>Managers Get Aggregated Insights</h3>
+        <p>No individual surveillance. Team-level patterns, process bottlenecks, automation opportunities. The view is operational, not personal. You see the system, not the people.</p>
+      </div>
+      <div class="diagnosis-card">
+        <div class="card-icon red">&#x1F916;</div>
+        <h3>AI Maps the Automation</h3>
+        <p>Go2 identifies every task that could be automated, scores them by ROI, and in many cases can build the automation for you. The goal: free humans for work that requires humans.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <div class="cta-content fade-up">
+    <h2>Ready for your<br>operational X-ray?</h2>
+    <p>Most companies have never seen their operations with this level of clarity. The scan takes 30 days. The insights last forever.</p>
+    <div class="cta-actions">
+      <a href="#" class="btn-primary">Schedule Your Diagnostic</a>
+      <a href="#" class="btn-secondary">Talk to Our Team</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-content">
+    <div>&copy; 2026 Go2. Diagnostic-grade operational intelligence.</div>
+    <div class="footer-links">
+      <a href="#">Privacy</a>
+      <a href="#">Security</a>
+      <a href="#">Terms</a>
+      <a href="#">Contact</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Scroll-triggered fade-in
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+  // Smooth scroll
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  // Stat counter animation
+  const statObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const el = entry.target;
+        const text = el.textContent;
+        const match = text.match(/(~?)(\d+\.?\d*)/);
+        if (match) {
+          const prefix = match[1] || '';
+          const target = parseFloat(match[2]);
+          const suffix = text.replace(match[0], '');
+          const isFloat = text.includes('.');
+          const duration = 1500;
+          const start = performance.now();
+          const animate = (now) => {
+            const elapsed = now - start;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const current = target * eased;
+            el.textContent = prefix + (isFloat ? current.toFixed(1) : Math.round(current)) + suffix;
+            if (progress < 1) requestAnimationFrame(animate);
+          };
+          requestAnimationFrame(animate);
+        }
+        statObserver.unobserve(el);
+      }
+    });
+  }, { threshold: 0.5 });
+  document.querySelectorAll('.stat-number').forEach(el => statObserver.observe(el));
+</script>
+</body>
+</html>

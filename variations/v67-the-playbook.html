@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Your Company's Playbook, Written Automatically</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --ink:#1a1a2e;--page:#fefcf8;--accent:#c0392b;--accent2:#e74c3c;
+    --gold:#d4a843;--cream:#f5f0e8;--warm-gray:#6b6358;--light-border:#e0d8cc;
+    --font-serif:'Georgia','Times New Roman',serif;
+    --font-sans:'Segoe UI','Helvetica Neue',Arial,sans-serif;
+  }
+  html{scroll-behavior:smooth}
+  body{font-family:var(--font-sans);color:var(--ink);background:var(--page);line-height:1.7;overflow-x:hidden}
+
+  /* NAV */
+  nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(254,252,248,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--light-border);transition:box-shadow .3s}
+  nav.scrolled{box-shadow:0 2px 20px rgba(0,0,0,0.08)}
+  .nav-inner{max-width:1200px;margin:0 auto;padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px}
+  .logo{font-family:var(--font-serif);font-size:1.6rem;font-weight:700;color:var(--ink);text-decoration:none;letter-spacing:-0.02em}
+  .logo span{color:var(--accent)}
+  .nav-links{display:flex;gap:2rem;align-items:center}
+  .nav-links a{text-decoration:none;color:var(--warm-gray);font-size:0.9rem;transition:color .2s}
+  .nav-links a:hover{color:var(--ink)}
+  .nav-cta{background:var(--accent);color:#fff!important;padding:0.5rem 1.25rem;border-radius:6px;font-weight:600;transition:background .2s}
+  .nav-cta:hover{background:var(--accent2)}
+
+  /* HERO */
+  .hero{min-height:100vh;display:flex;align-items:center;padding:6rem 2rem 4rem;background:linear-gradient(170deg,var(--page) 0%,var(--cream) 100%);position:relative;overflow:hidden}
+  .hero::after{content:'';position:absolute;right:-5%;top:10%;width:500px;height:700px;background:linear-gradient(135deg,rgba(212,168,67,0.06),rgba(192,57,43,0.04));border-radius:8px;transform:rotate(8deg);z-index:0}
+  .hero-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;position:relative;z-index:1}
+  .hero-text h1{font-family:var(--font-serif);font-size:clamp(2.2rem,5vw,3.6rem);line-height:1.15;color:var(--ink);margin-bottom:1.5rem}
+  .hero-text h1 em{font-style:italic;color:var(--accent);font-weight:700}
+  .hero-text .subtitle{font-size:1.2rem;color:var(--warm-gray);max-width:520px;margin-bottom:2rem;line-height:1.8}
+  .hero-cta-group{display:flex;gap:1rem;flex-wrap:wrap}
+  .btn-primary{background:var(--accent);color:#fff;padding:0.85rem 2rem;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;transition:all .2s}
+  .btn-primary:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 16px rgba(192,57,43,0.25)}
+  .btn-secondary{background:transparent;color:var(--ink);padding:0.85rem 2rem;border:2px solid var(--light-border);border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;text-decoration:none;transition:all .2s}
+  .btn-secondary:hover{border-color:var(--ink)}
+
+  /* Book Visual */
+  .hero-visual{display:flex;justify-content:center;align-items:center}
+  .book-container{position:relative;perspective:1200px}
+  .book{width:300px;height:400px;position:relative;transform:rotateY(-15deg) rotateX(3deg);transform-style:preserve-3d;transition:transform .5s}
+  .book:hover{transform:rotateY(-5deg) rotateX(1deg)}
+  .book-cover{position:absolute;inset:0;background:linear-gradient(145deg,var(--accent),#8e2018);border-radius:4px 12px 12px 4px;box-shadow:8px 8px 30px rgba(0,0,0,0.2),-2px 0 8px rgba(0,0,0,0.1);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:2.5rem;color:#fff}
+  .book-cover::before{content:'';position:absolute;left:0;top:0;bottom:0;width:20px;background:linear-gradient(90deg,rgba(0,0,0,0.2),transparent);border-radius:4px 0 0 4px}
+  .book-title{font-family:var(--font-serif);font-size:1.8rem;text-align:center;line-height:1.3;margin-bottom:1rem}
+  .book-subtitle{font-size:0.85rem;text-align:center;opacity:0.8;text-transform:uppercase;letter-spacing:0.1em}
+  .book-company{font-family:var(--font-serif);font-size:1rem;margin-top:auto;opacity:0.7;font-style:italic}
+  .book-pages{position:absolute;right:-8px;top:8px;bottom:8px;width:25px;background:repeating-linear-gradient(90deg,#f8f4ec,#f8f4ec 1px,#e8e0d4 1px,#e8e0d4 2px);border-radius:0 3px 3px 0;transform:translateZ(-1px)}
+  .book-glow{position:absolute;inset:-30px;background:radial-gradient(circle,rgba(212,168,67,0.15),transparent 70%);z-index:-1}
+
+  /* Stats Bar */
+  .stats-bar{background:var(--ink);color:#fff;padding:3rem 2rem}
+  .stats-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;text-align:center}
+  .stat-item .stat-number{font-family:var(--font-serif);font-size:2.5rem;font-weight:700;color:var(--gold)}
+  .stat-item .stat-label{font-size:0.85rem;color:rgba(255,255,255,0.6);margin-top:0.25rem}
+
+  /* Section Shared */
+  section{padding:5rem 2rem}
+  .section-inner{max-width:1100px;margin:0 auto}
+  .section-label{font-size:0.8rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--accent);font-weight:700;margin-bottom:0.75rem}
+  .section-title{font-family:var(--font-serif);font-size:clamp(1.8rem,3.5vw,2.8rem);line-height:1.2;margin-bottom:1rem}
+  .section-subtitle{font-size:1.1rem;color:var(--warm-gray);max-width:640px;margin-bottom:3rem;line-height:1.8}
+
+  /* Problem */
+  .problem{background:var(--cream)}
+  .problem-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin-top:2rem}
+  .problem-card{background:#fff;border-radius:12px;padding:2rem;border:1px solid var(--light-border);transition:transform .2s,box-shadow .2s}
+  .problem-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,0.06)}
+  .problem-icon{width:48px;height:48px;background:rgba(192,57,43,0.08);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:1rem}
+  .problem-card h3{font-family:var(--font-serif);font-size:1.15rem;margin-bottom:0.75rem}
+  .problem-card p{color:var(--warm-gray);font-size:0.95rem;line-height:1.7}
+
+  /* Process */
+  .process-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;margin-top:3rem;position:relative}
+  .process-steps::before{content:'';position:absolute;top:36px;left:10%;right:10%;height:2px;background:linear-gradient(90deg,var(--accent),var(--gold));opacity:0.2}
+  .step{text-align:center;position:relative}
+  .step-number{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:1.5rem;font-weight:700;margin:0 auto 1.25rem;box-shadow:0 4px 16px rgba(192,57,43,0.2);position:relative;z-index:1}
+  .step h3{font-family:var(--font-serif);font-size:1.1rem;margin-bottom:0.5rem}
+  .step p{color:var(--warm-gray);font-size:0.9rem;line-height:1.6;max-width:220px;margin:0 auto}
+
+  /* Playbook Preview */
+  .playbook-preview{background:var(--ink);color:#fff;overflow:hidden}
+  .playbook-preview .section-label{color:var(--gold)}
+  .playbook-preview .section-subtitle{color:rgba(255,255,255,0.6)}
+  .preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start;margin-top:2rem}
+  .page-preview{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:2rem;position:relative}
+  .page-preview::before{content:'';position:absolute;top:-1px;left:2rem;right:2rem;height:3px;background:linear-gradient(90deg,var(--accent),var(--gold));border-radius:0 0 3px 3px}
+  .page-preview h3{font-family:var(--font-serif);font-size:1.15rem;margin-bottom:1rem;color:var(--gold)}
+  .page-entry{padding:0.75rem 0;border-bottom:1px solid rgba(255,255,255,0.06)}
+  .page-entry:last-child{border-bottom:none}
+  .page-entry .entry-title{font-size:0.95rem;font-weight:600;margin-bottom:0.25rem}
+  .page-entry .entry-meta{font-size:0.8rem;color:rgba(255,255,255,0.4)}
+  .page-entry .entry-insight{font-size:0.85rem;color:rgba(255,255,255,0.6);margin-top:0.25rem;font-style:italic}
+
+  /* Benefits */
+  .benefits-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:2rem}
+  .benefit-card{padding:2rem;border-radius:12px;border:1px solid var(--light-border);background:#fff;transition:transform .2s}
+  .benefit-card:hover{transform:translateY(-2px)}
+  .benefit-card .benefit-icon{font-size:1.8rem;margin-bottom:1rem}
+  .benefit-card h3{font-family:var(--font-serif);font-size:1.15rem;margin-bottom:0.75rem}
+  .benefit-card p{color:var(--warm-gray);font-size:0.95rem;line-height:1.7}
+  .benefit-card .benefit-stat{display:inline-block;background:rgba(192,57,43,0.06);color:var(--accent);padding:0.25rem 0.75rem;border-radius:20px;font-size:0.8rem;font-weight:700;margin-top:0.75rem}
+
+  /* Testimonial */
+  .testimonial-section{background:var(--cream)}
+  .testimonial-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:2rem}
+  .testimonial{background:#fff;border-radius:12px;padding:2.5rem;border:1px solid var(--light-border);position:relative}
+  .testimonial::before{content:'\201C';font-family:var(--font-serif);font-size:4rem;color:var(--accent);opacity:0.15;position:absolute;top:0.5rem;left:1.25rem;line-height:1}
+  .testimonial p{font-size:1rem;line-height:1.8;color:var(--warm-gray);margin-bottom:1.25rem;position:relative;z-index:1}
+  .testimonial-author{display:flex;align-items:center;gap:0.75rem}
+  .testimonial-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--gold));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.9rem}
+  .testimonial-info .t-name{font-weight:700;font-size:0.9rem}
+  .testimonial-info .t-role{font-size:0.8rem;color:var(--warm-gray)}
+
+  /* Use Cases */
+  .use-cases-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin-top:2rem}
+  .use-case{padding:2rem;border-radius:12px;border:1px solid var(--light-border);background:#fff}
+  .use-case h3{font-family:var(--font-serif);font-size:1.05rem;margin-bottom:0.75rem}
+  .use-case p{color:var(--warm-gray);font-size:0.9rem;line-height:1.7}
+  .use-case .tag{display:inline-block;background:rgba(212,168,67,0.1);color:var(--gold);padding:0.2rem 0.6rem;border-radius:12px;font-size:0.75rem;font-weight:600;margin-bottom:0.75rem}
+
+  /* CTA */
+  .final-cta{background:linear-gradient(135deg,var(--ink),#2d2d4a);color:#fff;text-align:center;padding:6rem 2rem}
+  .final-cta h2{font-family:var(--font-serif);font-size:clamp(2rem,4vw,3rem);margin-bottom:1rem}
+  .final-cta p{font-size:1.1rem;color:rgba(255,255,255,0.6);max-width:560px;margin:0 auto 2.5rem;line-height:1.8}
+  .final-cta .btn-primary{background:var(--gold);font-size:1.1rem;padding:1rem 2.5rem}
+  .final-cta .btn-primary:hover{background:#c49a35}
+
+  /* Footer */
+  footer{background:var(--ink);color:rgba(255,255,255,0.5);padding:3rem 2rem;border-top:1px solid rgba(255,255,255,0.05)}
+  .footer-inner{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+  .footer-links{display:flex;gap:2rem}
+  .footer-links a{color:rgba(255,255,255,0.5);text-decoration:none;font-size:0.85rem;transition:color .2s}
+  .footer-links a:hover{color:#fff}
+
+  /* Responsive */
+  @media(max-width:900px){
+    .hero-inner{grid-template-columns:1fr}
+    .hero-visual{order:-1}
+    .book{width:220px;height:300px}
+    .stats-inner{grid-template-columns:repeat(2,1fr)}
+    .problem-grid,.use-cases-grid{grid-template-columns:1fr}
+    .process-steps{grid-template-columns:repeat(2,1fr)}
+    .process-steps::before{display:none}
+    .preview-grid,.benefits-grid,.testimonial-grid{grid-template-columns:1fr}
+    .nav-links{display:none}
+  }
+  @media(max-width:600px){
+    .hero{padding:5rem 1.25rem 3rem}
+    section{padding:3.5rem 1.25rem}
+    .stats-inner{grid-template-columns:1fr 1fr}
+    .hero-cta-group{flex-direction:column}
+  }
+
+  /* Animations */
+  @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+  .animate{opacity:0;animation:fadeUp 0.6s ease forwards}
+  .delay-1{animation-delay:0.1s}.delay-2{animation-delay:0.2s}.delay-3{animation-delay:0.3s}.delay-4{animation-delay:0.4s}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-inner">
+    <a href="#" class="logo">Go<span>2</span></a>
+    <div class="nav-links">
+      <a href="#how-it-works">How It Works</a>
+      <a href="#playbook">The Playbook</a>
+      <a href="#benefits">Benefits</a>
+      <a href="#cta" class="nav-cta">Get Your Playbook</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-text animate">
+      <h1>Every great company has a playbook.<br><em>Yours is trapped in your best employees' heads.</em></h1>
+      <p class="subtitle">Go2 writes your company's playbook automatically -- by observing how your best people actually work, then turning those patterns into coaching for everyone else.</p>
+      <div class="hero-cta-group">
+        <a href="#cta" class="btn-primary">Get Your Playbook <span>&rarr;</span></a>
+        <a href="#how-it-works" class="btn-secondary">See How It Works</a>
+      </div>
+    </div>
+    <div class="hero-visual animate delay-2">
+      <div class="book-container">
+        <div class="book-glow"></div>
+        <div class="book">
+          <div class="book-pages"></div>
+          <div class="book-cover">
+            <div class="book-subtitle">Auto-Generated</div>
+            <div class="book-title">The Company Playbook</div>
+            <div class="book-company">Your Company Name</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item animate"><div class="stat-number">~1M</div><div class="stat-label">Workers Coached</div></div>
+    <div class="stat-item animate delay-1"><div class="stat-number">3</div><div class="stat-label">Frontier AI Models</div></div>
+    <div class="stat-item animate delay-2"><div class="stat-number">87%</div><div class="stat-label">Teams See Improvement in 30 Days</div></div>
+    <div class="stat-item animate delay-3"><div class="stat-number">24/7</div><div class="stat-label">Continuous Learning</div></div>
+  </div>
+</div>
+
+<section class="problem" id="problem">
+  <div class="section-inner">
+    <div class="section-label">The Problem</div>
+    <h2 class="section-title">Your best processes are invisible</h2>
+    <p class="section-subtitle">Most companies run on tribal knowledge. When top performers leave, their methods walk out the door. New hires guess. Managers assume. Nobody knows what "great" actually looks like.</p>
+    <div class="problem-grid">
+      <div class="problem-card animate">
+        <div class="problem-icon">&#128214;</div>
+        <h3>The Documentation Lie</h3>
+        <p>You've asked people to document their processes. They did it once, two years ago. Those docs are now fiction. Real work evolved; the wiki didn't.</p>
+      </div>
+      <div class="problem-card animate delay-1">
+        <div class="problem-icon">&#128100;</div>
+        <h3>The Key Person Risk</h3>
+        <p>Your best account manager handles 40% of revenue. She has a system -- an intricate dance of tools, timing, and instinct. None of it is written down.</p>
+      </div>
+      <div class="problem-card animate delay-2">
+        <div class="problem-icon">&#9203;</div>
+        <h3>The Onboarding Gap</h3>
+        <p>New hires take 4-6 months to reach full productivity. Not because they're slow -- because nobody can articulate what "good" looks like at your company.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how-it-works">
+  <div class="section-inner">
+    <div class="section-label">How It Works</div>
+    <h2 class="section-title">From invisible patterns to written playbook</h2>
+    <p class="section-subtitle">Go2's desktop agent quietly observes how your team works. Frontier AI analyzes the patterns, surfaces best practices, and builds your living playbook.</p>
+    <div class="process-steps">
+      <div class="step animate">
+        <div class="step-number">1</div>
+        <h3>Observe</h3>
+        <p>Go2's desktop agent watches work patterns across your team -- every tool, workflow, and method.</p>
+      </div>
+      <div class="step animate delay-1">
+        <div class="step-number">2</div>
+        <h3>Document</h3>
+        <p>AI identifies what your top performers do differently and automatically writes it into structured playbook pages.</p>
+      </div>
+      <div class="step animate delay-2">
+        <div class="step-number">3</div>
+        <h3>Standardize</h3>
+        <p>Best practices become the baseline. Everyone gets the same playbook, adapted to their role and experience level.</p>
+      </div>
+      <div class="step animate delay-3">
+        <div class="step-number">4</div>
+        <h3>Teach</h3>
+        <p>Go2 coaches each worker in real time -- nudging them toward playbook methods with contextual, private tips.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="playbook-preview" id="playbook">
+  <div class="section-inner">
+    <div class="section-label">Inside the Playbook</div>
+    <h2 class="section-title">What your auto-generated playbook looks like</h2>
+    <p class="section-subtitle">Go2 doesn't just say "be more productive." It creates specific, actionable pages based on what actually works at your company.</p>
+    <div class="preview-grid">
+      <div class="page-preview animate">
+        <h3>Client Onboarding Process</h3>
+        <div class="page-entry">
+          <div class="entry-title">First-touch email timing</div>
+          <div class="entry-insight">"Top performers send the welcome email within 11 minutes of contract signature. Average time across team: 4.2 hours."</div>
+          <div class="entry-meta">Discovered from 340+ client onboardings</div>
+        </div>
+        <div class="page-entry">
+          <div class="entry-title">CRM update sequence</div>
+          <div class="entry-insight">"Best pattern: Update CRM, then Slack the team, then schedule kickoff. 73% of missed handoffs come from reversing this order."</div>
+          <div class="entry-meta">Based on 12 months of workflow data</div>
+        </div>
+        <div class="page-entry">
+          <div class="entry-title">Follow-up cadence</div>
+          <div class="entry-insight">"Day 1, Day 3, Day 7 pattern yields 2.3x higher client satisfaction scores than ad-hoc follow-ups."</div>
+          <div class="entry-meta">Correlated with satisfaction survey data</div>
+        </div>
+      </div>
+      <div class="page-preview animate delay-1">
+        <h3>Sales Proposal Workflow</h3>
+        <div class="page-entry">
+          <div class="entry-title">Research phase</div>
+          <div class="entry-insight">"Top closers spend 22 minutes on prospect research before writing. Average: 6 minutes. Win rate difference: 34%."</div>
+          <div class="entry-meta">Across 1,200+ proposals analyzed</div>
+        </div>
+        <div class="page-entry">
+          <div class="entry-title">Template customization</div>
+          <div class="entry-insight">"Proposals with 3+ prospect-specific sections close 41% more often than mostly-template proposals."</div>
+          <div class="entry-meta">Pattern identified by Claude analysis</div>
+        </div>
+        <div class="page-entry">
+          <div class="entry-title">Send timing</div>
+          <div class="entry-insight">"Tuesday 10am-11am sends get 2.1x faster responses than Friday afternoon sends. Your team sends 38% of proposals on Fridays."</div>
+          <div class="entry-meta">Correlation analysis, last 6 months</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="benefits">
+  <div class="section-inner">
+    <div class="section-label">Why It Matters</div>
+    <h2 class="section-title">Stop losing institutional knowledge</h2>
+    <p class="section-subtitle">Your playbook isn't just documentation. It's the compound interest of everything your company has learned about how to work.</p>
+    <div class="benefits-grid">
+      <div class="benefit-card animate">
+        <div class="benefit-icon">&#128640;</div>
+        <h3>Onboard in weeks, not months</h3>
+        <p>New hires don't have to figure out "how we do things here" by trial and error. The playbook shows them exactly what good looks like from day one.</p>
+        <div class="benefit-stat">68% faster ramp-up</div>
+      </div>
+      <div class="benefit-card animate delay-1">
+        <div class="benefit-icon">&#128274;</div>
+        <h3>De-risk key departures</h3>
+        <p>When your best performer's methods are captured in the playbook, their knowledge stays even if they don't. No more single points of failure.</p>
+        <div class="benefit-stat">Institutional memory preserved</div>
+      </div>
+      <div class="benefit-card animate delay-2">
+        <div class="benefit-icon">&#128200;</div>
+        <h3>Raise the floor, not just the ceiling</h3>
+        <p>Your B-players become A-players when they can see exactly what the A-players do. The playbook narrows the performance gap across your entire team.</p>
+        <div class="benefit-stat">23% average productivity lift</div>
+      </div>
+      <div class="benefit-card animate delay-3">
+        <div class="benefit-icon">&#128736;</div>
+        <h3>Find what should be automated</h3>
+        <p>The playbook reveals repetitive patterns nobody noticed. Go2 maps exactly which steps can be automated -- and estimates the hours you'll save.</p>
+        <div class="benefit-stat">Automation roadmap included</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="testimonial-section">
+  <div class="section-inner">
+    <div class="section-label">From Teams Using Go2</div>
+    <h2 class="section-title">The playbook effect</h2>
+    <div class="testimonial-grid">
+      <div class="testimonial animate">
+        <p>"We thought we had processes. Go2 showed us we had suggestions. The auto-generated playbook captured things our best people did that even they couldn't articulate."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">M</div>
+          <div class="testimonial-info">
+            <div class="t-name">Operations Director</div>
+            <div class="t-role">32-person services firm</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial animate delay-1">
+        <p>"Our new hires used to take 5 months to hit quota. With the Go2 playbook coaching them, the last three reached it in 7 weeks. Same role, same market, completely different onboarding."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">R</div>
+          <div class="testimonial-info">
+            <div class="t-name">VP of Sales</div>
+            <div class="t-role">SaaS company, 45 employees</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-inner">
+    <div class="section-label">Use Cases</div>
+    <h2 class="section-title">Every department has an unwritten playbook</h2>
+    <div class="use-cases-grid">
+      <div class="use-case animate">
+        <div class="tag">Sales</div>
+        <h3>Win more deals with the patterns that already work</h3>
+        <p>Go2 finds the research habits, follow-up timing, and proposal structures your best closers use -- then teaches them to everyone.</p>
+      </div>
+      <div class="use-case animate delay-1">
+        <div class="tag">Customer Success</div>
+        <h3>Turn tribal knowledge into retention playbooks</h3>
+        <p>Your best CSMs have renewal instincts. Go2 turns those instincts into documented patterns with specific triggers and actions.</p>
+      </div>
+      <div class="use-case animate delay-2">
+        <div class="tag">Operations</div>
+        <h3>Standardize without strangling</h3>
+        <p>Most SOPs are written top-down. Go2's playbook is written bottom-up -- from how people actually work, not how managers imagine they work.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="final-cta" id="cta">
+  <div class="section-inner">
+    <h2 class="animate">Your company's playbook is being written right now.<br>The question is whether you're capturing it.</h2>
+    <p class="animate delay-1">Every day, your best performers make thousands of micro-decisions. Go2 captures them all and turns them into your company's unfair advantage.</p>
+    <a href="#" class="btn-primary animate delay-2">Start Building Your Playbook <span>&rarr;</span></a>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <span>&copy; 2026 Go2. All rights reserved.</span>
+    <div class="footer-links">
+      <a href="#">Privacy</a>
+      <a href="#">Security</a>
+      <a href="#">Terms</a>
+      <a href="#">Contact</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Nav scroll
+  const nav=document.getElementById('nav');
+  window.addEventListener('scroll',()=>{nav.classList.toggle('scrolled',window.scrollY>40)});
+
+  // Intersection observer for animations
+  const observer=new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{if(e.isIntersecting){e.target.style.animationPlayState='running';observer.unobserve(e.target)}})
+  },{threshold:0.15});
+  document.querySelectorAll('.animate').forEach(el=>{el.style.animationPlayState='paused';observer.observe(el)});
+
+  // Smooth scroll
+  document.querySelectorAll('a[href^="#"]').forEach(a=>{
+    a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth'})});
+  });
+</script>
+
+</body>
+</html>

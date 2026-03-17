@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — The Anti-Meeting</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#fafafa;--surface:#fff;--card:#fff;--border:#e5e7eb;--text:#111827;--muted:#6b7280;--accent:#ef4444;--accent2:#f97316;--blue:#3b82f6;--green:#10b981;--dark:#1f2937;--grad:linear-gradient(135deg,#ef4444,#f97316)}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+a{color:var(--blue);text-decoration:none}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 2rem;height:64px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:1.5rem;font-weight:800;color:var(--text)}
+.logo span{color:var(--accent)}
+.nav-links{display:flex;gap:2rem;align-items:center}
+.nav-links a{color:var(--muted);font-size:.9rem;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{background:var(--dark);color:#fff!important;padding:.5rem 1.25rem;border-radius:8px;font-weight:600;font-size:.9rem;transition:background .2s}
+.nav-cta:hover{background:#111}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6rem 2rem 4rem}
+.hero-stat{display:flex;align-items:baseline;gap:.5rem;margin-bottom:1rem}
+.hero-pct{font-size:clamp(6rem,18vw,14rem);font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
+.hero-of{font-size:1.5rem;color:var(--muted);font-weight:500}
+.hero h1{font-size:clamp(1.3rem,3.5vw,2.5rem);max-width:750px;line-height:1.3;margin-bottom:1rem}
+.hero h1 .strike{text-decoration:line-through;color:var(--accent);opacity:.6}
+.hero p{font-size:1.15rem;color:var(--muted);max-width:550px;margin-bottom:2.5rem}
+.cta-row{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center}
+.btn-dark{background:var(--dark);color:#fff;padding:.85rem 2rem;border-radius:10px;font-weight:700;font-size:1rem;border:none;cursor:pointer;transition:all .2s}
+.btn-dark:hover{background:#111;transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.btn-outline{background:transparent;color:var(--text);padding:.85rem 2rem;border-radius:10px;font-weight:600;font-size:1rem;border:2px solid var(--border);cursor:pointer;transition:border-color .2s}
+.btn-outline:hover{border-color:var(--text)}
+
+/* PIE SECTION */
+.pie-section{padding:6rem 2rem;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.pie-inner{max-width:1000px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center}
+.pie-chart{width:300px;height:300px;border-radius:50%;background:conic-gradient(var(--accent) 0% 31%, #e5e7eb 31% 100%);position:relative;margin:0 auto}
+.pie-chart::after{content:'31%';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:3rem;font-weight:900;color:var(--accent);background:var(--surface);width:180px;height:180px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.pie-text h2{font-size:2rem;margin-bottom:1rem;line-height:1.3}
+.pie-text p{color:var(--muted);font-size:1.05rem;margin-bottom:1.5rem}
+.pie-text .highlight{color:var(--accent);font-weight:700}
+
+/* WASTE BREAKDOWN */
+.waste-section{padding:6rem 2rem}
+.waste-inner{max-width:900px;margin:0 auto}
+.section-label{display:inline-block;padding:.35rem 1rem;background:#fef2f2;border:1px solid #fecaca;border-radius:20px;font-size:.8rem;color:var(--accent);font-weight:600;margin-bottom:1rem;text-transform:uppercase;letter-spacing:.05em}
+.section-label.blue{background:#eff6ff;border-color:#bfdbfe;color:var(--blue)}
+.section-label.green{background:#ecfdf5;border-color:#a7f3d0;color:var(--green)}
+.section-title{font-size:clamp(1.5rem,3.5vw,2.5rem);margin-bottom:.75rem;line-height:1.2}
+.section-sub{color:var(--muted);font-size:1.05rem;max-width:600px;margin-bottom:3rem}
+
+.waste-grid{display:grid;gap:1rem}
+.waste-row{display:grid;grid-template-columns:200px 1fr 80px;align-items:center;gap:1.5rem;padding:1.25rem 1.5rem;background:var(--card);border:1px solid var(--border);border-radius:12px;transition:border-color .2s}
+.waste-row:hover{border-color:var(--accent)}
+.waste-name{font-weight:700;font-size:.95rem}
+.waste-bar-bg{height:24px;background:#f3f4f6;border-radius:6px;overflow:hidden}
+.waste-bar{height:100%;border-radius:6px;background:var(--grad);transition:width 1s ease}
+.waste-pct{font-weight:800;color:var(--accent);text-align:right}
+
+/* TWIST */
+.twist-section{padding:6rem 2rem;background:var(--dark);color:#fff;text-align:center}
+.twist-inner{max-width:700px;margin:0 auto}
+.twist-inner h2{font-size:clamp(1.5rem,4vw,2.5rem);margin-bottom:1.5rem;line-height:1.3}
+.twist-inner p{color:rgba(255,255,255,.7);font-size:1.1rem;line-height:1.7;margin-bottom:1rem}
+.twist-callout{font-size:1.3rem;font-weight:700;color:var(--accent2);margin:2rem 0}
+
+/* WHAT GO2 FINDS */
+.finds-section{padding:6rem 2rem}
+.finds-inner{max-width:1100px;margin:0 auto}
+.finds-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem}
+.finds-card{padding:2rem;background:var(--card);border:1px solid var(--border);border-radius:16px;transition:border-color .3s,transform .3s}
+.finds-card:hover{border-color:var(--blue);transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,.06)}
+.finds-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:1rem}
+.finds-icon.red{background:#fef2f2;color:var(--accent)}
+.finds-icon.orange{background:#fff7ed;color:var(--accent2)}
+.finds-icon.blue{background:#eff6ff;color:var(--blue)}
+.finds-icon.green{background:#ecfdf5;color:var(--green)}
+.finds-card h3{font-size:1.1rem;margin-bottom:.5rem}
+.finds-card p{color:var(--muted);font-size:.9rem;line-height:1.5}
+.finds-card .finds-stat{font-size:1.5rem;font-weight:800;margin-top:.75rem}
+.finds-card .finds-stat.red{color:var(--accent)}
+.finds-card .finds-stat.green{color:var(--green)}
+
+/* COACHING */
+.coach-section{padding:6rem 2rem;background:var(--surface);border-top:1px solid var(--border)}
+.coach-inner{max-width:1000px;margin:0 auto}
+.coach-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start}
+.coach-left h2{font-size:2rem;margin-bottom:1rem}
+.coach-left p{color:var(--muted);margin-bottom:1.5rem}
+.coach-example{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1rem}
+.coach-example .coach-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--blue);font-weight:700;margin-bottom:.5rem}
+.coach-example .coach-msg{font-size:.95rem;line-height:1.5}
+.coach-right{display:flex;flex-direction:column;gap:1rem}
+.coach-stat-card{display:flex;gap:1rem;align-items:center;padding:1.25rem;background:var(--bg);border:1px solid var(--border);border-radius:12px}
+.coach-stat-num{font-size:2rem;font-weight:800;color:var(--blue);min-width:80px;text-align:center}
+.coach-stat-text h4{font-size:.95rem;margin-bottom:.25rem}
+.coach-stat-text p{font-size:.8rem;color:var(--muted)}
+
+/* TIMELINE */
+.timeline-section{padding:6rem 2rem}
+.timeline-inner{max-width:700px;margin:0 auto}
+.timeline-item{display:flex;gap:2rem;padding-bottom:2.5rem;position:relative}
+.timeline-item::before{content:'';position:absolute;left:19px;top:40px;bottom:0;width:2px;background:var(--border)}
+.timeline-item:last-child::before{display:none}
+.timeline-dot{width:40px;height:40px;border-radius:50%;background:var(--bg);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;color:var(--muted);flex-shrink:0;position:relative;z-index:1}
+.timeline-item.active .timeline-dot{background:var(--dark);border-color:var(--dark);color:#fff}
+.timeline-content h3{font-size:1.05rem;margin-bottom:.25rem}
+.timeline-content p{color:var(--muted);font-size:.9rem}
+
+/* COMPARISON */
+.compare-section{padding:6rem 2rem;background:var(--surface);border-top:1px solid var(--border)}
+.compare-inner{max-width:800px;margin:0 auto}
+.compare-table{width:100%;border-collapse:collapse;margin-top:2rem}
+.compare-table th,.compare-table td{padding:1rem 1.5rem;text-align:left;border-bottom:1px solid var(--border)}
+.compare-table th{font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+.compare-table td:first-child{font-weight:600}
+.compare-table td:nth-child(2){color:var(--muted)}
+.compare-table td:nth-child(3){color:var(--green);font-weight:700}
+.compare-check{color:var(--green);font-weight:700}
+.compare-x{color:var(--accent);font-weight:700}
+
+/* QUOTE */
+.quote-section{padding:5rem 2rem;text-align:center}
+.quote-inner{max-width:650px;margin:0 auto}
+.quote-text{font-size:1.3rem;font-style:italic;line-height:1.7;margin-bottom:1.5rem;color:var(--text)}
+.quote-attr{color:var(--muted);font-size:.9rem}
+
+/* FAQ */
+.faq-section{padding:6rem 2rem;background:var(--surface);border-top:1px solid var(--border)}
+.faq-inner{max-width:700px;margin:0 auto}
+.faq-item{border-bottom:1px solid var(--border);padding:1.5rem 0}
+.faq-q{font-weight:700;font-size:1.05rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.faq-q::after{content:'+';font-size:1.5rem;color:var(--muted);transition:transform .3s}
+.faq-item.open .faq-q::after{transform:rotate(45deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease;color:var(--muted);font-size:.95rem;line-height:1.6}
+.faq-item.open .faq-a{max-height:300px;padding-top:1rem}
+
+/* FINAL */
+.final-section{padding:6rem 2rem;text-align:center}
+.final-inner{max-width:650px;margin:0 auto}
+.final-inner h2{font-size:clamp(1.5rem,4vw,2.5rem);margin-bottom:1rem}
+.final-inner p{color:var(--muted);font-size:1.1rem;margin-bottom:2rem}
+
+footer{padding:3rem 2rem;border-top:1px solid var(--border);text-align:center;color:var(--muted);font-size:.85rem}
+
+@media(max-width:768px){
+  .nav-links a:not(.nav-cta){display:none}
+  .pie-inner{grid-template-columns:1fr;text-align:center}
+  .pie-chart{width:220px;height:220px}
+  .pie-chart::after{width:130px;height:130px;font-size:2rem}
+  .coach-grid{grid-template-columns:1fr}
+  .waste-row{grid-template-columns:1fr;gap:.5rem}
+  .waste-bar-bg{height:16px}
+  .compare-table{font-size:.85rem}
+  .compare-table th,.compare-table td{padding:.75rem}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Go<span>2</span></div>
+  <div class="nav-links">
+    <a href="#waste">The Waste</a>
+    <a href="#finds">What We Find</a>
+    <a href="#faq">FAQ</a>
+    <a href="#cta" class="nav-cta">Get a Demo</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-stat">
+    <span class="hero-pct">31%</span>
+  </div>
+  <h1>Your team spends 31% of their time in meetings.<br>Go2 finds the <span class="strike">other 69%</span> that's being wasted too.</h1>
+  <p>Meetings are just the tip. Underneath is a hidden ocean of context switching, tool friction, and workflow waste. Go2 finds all of it.</p>
+  <div class="cta-row">
+    <button class="btn-dark" onclick="document.getElementById('cta').scrollIntoView({behavior:'smooth'})">Find Your Hidden Waste</button>
+    <button class="btn-outline" onclick="document.getElementById('waste').scrollIntoView({behavior:'smooth'})">See the Breakdown</button>
+  </div>
+</section>
+
+<section class="pie-section">
+  <div class="pie-inner">
+    <div class="pie-chart"></div>
+    <div class="pie-text">
+      <h2>You already know meetings are a problem.</h2>
+      <p>Every SMB owner feels it. Too many calls. Too many syncs. Status updates that could've been a Slack message. You've probably tried to fix it.</p>
+      <p>But here's what you don't know: <span class="highlight">meetings are only 31% of the waste.</span> The other 69% is invisible. It's hiding in context switches, redundant workflows, tool friction, and habits nobody talks about.</p>
+      <p><strong>Go2 sees all of it.</strong></p>
+    </div>
+  </div>
+</section>
+
+<section class="waste-section" id="waste">
+  <div class="waste-inner">
+    <span class="section-label">The Full Picture</span>
+    <h2 class="section-title">Where your team's time actually goes</h2>
+    <p class="section-sub">Go2's desktop agent captures everything. Here's what we typically find in a 40-person remote team.</p>
+    <div class="waste-grid">
+      <div class="waste-row">
+        <div class="waste-name">Unnecessary Meetings</div>
+        <div class="waste-bar-bg"><div class="waste-bar" style="width:31%"></div></div>
+        <div class="waste-pct">31%</div>
+      </div>
+      <div class="waste-row">
+        <div class="waste-name">Context Switching</div>
+        <div class="waste-bar-bg"><div class="waste-bar" style="width:22%"></div></div>
+        <div class="waste-pct">22%</div>
+      </div>
+      <div class="waste-row">
+        <div class="waste-name">Redundant Workflows</div>
+        <div class="waste-bar-bg"><div class="waste-bar" style="width:17%"></div></div>
+        <div class="waste-pct">17%</div>
+      </div>
+      <div class="waste-row">
+        <div class="waste-name">Tool Friction</div>
+        <div class="waste-bar-bg"><div class="waste-bar" style="width:14%"></div></div>
+        <div class="waste-pct">14%</div>
+      </div>
+      <div class="waste-row">
+        <div class="waste-name">Notification Overload</div>
+        <div class="waste-bar-bg"><div class="waste-bar" style="width:9%"></div></div>
+        <div class="waste-pct">9%</div>
+      </div>
+      <div class="waste-row">
+        <div class="waste-name">Process Confusion</div>
+        <div class="waste-bar-bg"><div class="waste-bar" style="width:7%"></div></div>
+        <div class="waste-pct">7%</div>
+      </div>
+    </div>
+    <p style="color:var(--muted);font-size:.85rem;margin-top:1rem;text-align:center">Based on aggregated data from ~1M workers across 142 industries</p>
+  </div>
+</section>
+
+<section class="twist-section">
+  <div class="twist-inner">
+    <h2>Meetings aren't the disease. They're a symptom.</h2>
+    <p>Teams default to meetings when processes are unclear, when tools don't talk to each other, when nobody knows who's doing what. Fix the root causes and the meetings fix themselves.</p>
+    <div class="twist-callout">Go2 doesn't just count your meetings. It finds WHY you have so many.</div>
+    <p>Our AI is powered by Claude, GPT, and Gemini -- analyzing patterns across nearly a million workers to identify the invisible friction that drives meeting culture.</p>
+  </div>
+</section>
+
+<section class="finds-section" id="finds">
+  <div class="finds-inner">
+    <span class="section-label blue">What Go2 Finds</span>
+    <h2 class="section-title">The waste hiding in plain sight</h2>
+    <p class="section-sub">Your team doesn't know they're wasting time. That's what makes it invisible. Go2's AI spots patterns humans can't see.</p>
+    <div class="finds-grid">
+      <div class="finds-card">
+        <div class="finds-icon red">&#8635;</div>
+        <h3>Context Switch Tax</h3>
+        <p>Your team switches between tools an average of 78 times per day. Each switch costs 23 minutes of refocus time. Go2 identifies the worst offenders and coaches better batching habits.</p>
+        <div class="finds-stat red">78 switches/day</div>
+      </div>
+      <div class="finds-card">
+        <div class="finds-icon orange">&#9881;</div>
+        <h3>Redundant Workflows</h3>
+        <p>Three people entering the same data into two different systems. A report that gets copy-pasted every week. Go2 maps these and flags automation opportunities.</p>
+        <div class="finds-stat red">17% of all work</div>
+      </div>
+      <div class="finds-card">
+        <div class="finds-icon blue">&#9888;</div>
+        <h3>Tool Friction</h3>
+        <p>Your CRM doesn't talk to your project management tool. So your team spends 14% of their day being the bridge. Go2 identifies integration gaps that cost real money.</p>
+        <div class="finds-stat red">14% wasted</div>
+      </div>
+      <div class="finds-card">
+        <div class="finds-icon green">&#10003;</div>
+        <h3>Deep Work Windows</h3>
+        <p>Your best employees average only 22 minutes of uninterrupted focus before something breaks their concentration. Go2 coaches teams toward 52+ minute deep work blocks.</p>
+        <div class="finds-stat green">22 min &rarr; 52 min</div>
+      </div>
+      <div class="finds-card">
+        <div class="finds-icon red">&#9993;</div>
+        <h3>Notification Overload</h3>
+        <p>Slack, email, Teams, texts. Your team gets interrupted every 3.2 minutes on average. Go2 identifies notification patterns and coaches smarter batching.</p>
+        <div class="finds-stat red">Every 3.2 min</div>
+      </div>
+      <div class="finds-card">
+        <div class="finds-icon orange">&#9733;</div>
+        <h3>Automation Candidates</h3>
+        <p>Go2 identifies repetitive tasks that AI or simple automation could handle. Average team has 12+ workflows that should never be done manually.</p>
+        <div class="finds-stat green">12+ automatable tasks</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="coach-section">
+  <div class="coach-inner">
+    <div class="coach-grid">
+      <div class="coach-left">
+        <span class="section-label green">AI Coaching</span>
+        <h2>Coaching, not surveillance</h2>
+        <p>Go2 gives each employee personalized, private coaching powered by frontier AI. Managers only see aggregated team insights. Never individual data.</p>
+        <div class="coach-example">
+          <div class="coach-label">Example coaching nudge</div>
+          <div class="coach-msg">"You spent 47 minutes switching between Figma and Jira today. Top-performing designers in your role batch design reviews into two 30-minute blocks. Want to try that tomorrow?"</div>
+        </div>
+        <div class="coach-example">
+          <div class="coach-label">Example coaching nudge</div>
+          <div class="coach-msg">"Your Tuesday is 68% meetings. Only 2 of 7 meetings had action items. Consider proposing async updates for the 3 status-only calls."</div>
+        </div>
+      </div>
+      <div class="coach-right">
+        <div class="coach-stat-card">
+          <div class="coach-stat-num">34%</div>
+          <div class="coach-stat-text">
+            <h4>Avg. Efficiency Gain</h4>
+            <p>Within the first 90 days of Go2 coaching</p>
+          </div>
+        </div>
+        <div class="coach-stat-card">
+          <div class="coach-stat-num">~1M</div>
+          <div class="coach-stat-text">
+            <h4>Workers in Dataset</h4>
+            <p>The AI knows what "great" looks like in every role</p>
+          </div>
+        </div>
+        <div class="coach-stat-card">
+          <div class="coach-stat-num">3</div>
+          <div class="coach-stat-text">
+            <h4>Frontier AI Models</h4>
+            <p>Claude, GPT, and Gemini working together</p>
+          </div>
+        </div>
+        <div class="coach-stat-card">
+          <div class="coach-stat-num">48h</div>
+          <div class="coach-stat-text">
+            <h4>Time to First Insight</h4>
+            <p>Coaching starts within two days of install</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="timeline-section">
+  <div class="timeline-inner">
+    <span class="section-label blue">Your First Month</span>
+    <h2 class="section-title" style="margin-bottom:2.5rem">From install to ROI</h2>
+    <div class="timeline-item active">
+      <div class="timeline-dot">1</div>
+      <div class="timeline-content">
+        <h3>Day 1: Deploy</h3>
+        <p>Install the lightweight desktop agent on your team's machines. 5 minutes per person. No workflow changes required.</p>
+      </div>
+    </div>
+    <div class="timeline-item active">
+      <div class="timeline-dot">2</div>
+      <div class="timeline-content">
+        <h3>Day 2-3: First Insights</h3>
+        <p>Go2 starts identifying patterns. You'll see your first waste breakdown and automation candidates within 48 hours.</p>
+      </div>
+    </div>
+    <div class="timeline-item active">
+      <div class="timeline-dot">3</div>
+      <div class="timeline-content">
+        <h3>Week 1: Coaching Kicks In</h3>
+        <p>Employees start receiving personalized nudges. Managers get their first aggregated dashboard with team-level trends.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot">4</div>
+      <div class="timeline-content">
+        <h3>Week 2-4: Habits Shift</h3>
+        <p>Context switching drops. Deep work blocks get longer. Meeting load decreases as root causes get addressed.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot">5</div>
+      <div class="timeline-content">
+        <h3>Month 2-3: Measurable ROI</h3>
+        <p>Average teams report 34% efficiency gains. The wasted time converts directly to productive output. No extra hires needed.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="compare-section">
+  <div class="compare-inner">
+    <span class="section-label">Why Go2 Is Different</span>
+    <h2 class="section-title">This isn't time tracking. It's AI coaching.</h2>
+    <table class="compare-table">
+      <thead>
+        <tr><th>Capability</th><th>Time Trackers</th><th>Go2</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Tracks hours worked</td><td>Yes</td><td class="compare-check">Yes</td></tr>
+        <tr><td>AI-powered coaching</td><td class="compare-x">No</td><td class="compare-check">Yes (3 frontier models)</td></tr>
+        <tr><td>~1M worker benchmark data</td><td class="compare-x">No</td><td class="compare-check">Yes</td></tr>
+        <tr><td>Automation mapping</td><td class="compare-x">No</td><td class="compare-check">Yes</td></tr>
+        <tr><td>Root cause analysis</td><td class="compare-x">No</td><td class="compare-check">Yes</td></tr>
+        <tr><td>Individual privacy protection</td><td class="compare-x">Rare</td><td class="compare-check">By design</td></tr>
+        <tr><td>Personalized per-employee nudges</td><td class="compare-x">No</td><td class="compare-check">Yes</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="quote-section">
+  <div class="quote-inner">
+    <div class="quote-text">"We cancelled 40% of our recurring meetings in the first month. Not because Go2 told us to -- because it showed us why we had them in the first place. We fixed the actual problems."</div>
+    <div class="quote-attr">-- VP of Operations, 38-person marketing agency</div>
+  </div>
+</section>
+
+<section class="faq-section" id="faq">
+  <div class="faq-inner">
+    <span class="section-label">FAQ</span>
+    <h2 class="section-title" style="margin-bottom:2rem">Questions we hear a lot</h2>
+    <div class="faq-item">
+      <div class="faq-q">Will my employees feel spied on?</div>
+      <div class="faq-a">No. Go2 is designed as a coaching tool. Employees get direct, private coaching to help them work better. Managers only see team-level aggregated data. No screenshots, no keystroke logging, no individual monitoring. Most employees love it because it actually helps them.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">How is this different from a meeting analytics tool?</div>
+      <div class="faq-a">Meeting analytics tools count your meetings. Go2 finds out why you have so many meetings in the first place -- and it looks at everything else too. Context switching, tool friction, redundant workflows, notification overload. Meetings are just the visible tip.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">What does the desktop agent actually capture?</div>
+      <div class="faq-a">The agent captures work patterns -- application usage, workflow sequences, context switches, and time allocation. It does NOT capture screenshots, keystrokes, or screen content. It sees patterns, not content.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">How fast does it work?</div>
+      <div class="faq-a">First insights within 48 hours. Coaching nudges start within the first week. Measurable team-level improvements typically appear within 2-4 weeks. Full ROI within 90 days.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">What size team is this for?</div>
+      <div class="faq-a">Go2 works best for remote teams of 15-50 people. The aggregated insights become most valuable around 15 team members, and the AI coaching works at any size.</div>
+    </div>
+  </div>
+</section>
+
+<section class="final-section" id="cta">
+  <div class="final-inner">
+    <h2>Stop fixing meetings. Start fixing everything.</h2>
+    <p>Go2 finds the 69% of waste that has nothing to do with meetings. See what your team's first week reveals.</p>
+    <button class="btn-dark" style="font-size:1.1rem;padding:1rem 2.5rem">Request Your Demo</button>
+  </div>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2. All rights reserved. &nbsp;|&nbsp; <a href="#">Privacy</a> &nbsp;|&nbsp; <a href="#">Terms</a> &nbsp;|&nbsp; <a href="#">Security</a></p>
+</footer>
+
+<script>
+document.querySelectorAll('.faq-q').forEach(q=>{
+  q.addEventListener('click',()=>q.parentElement.classList.toggle('open'));
+});
+</script>
+</body>
+</html>

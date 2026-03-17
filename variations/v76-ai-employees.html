@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Meet Your AI Employees</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f0f1a;
+  --surface: #1a1a2e;
+  --surface-2: #222240;
+  --text: #e8e8f0;
+  --text-muted: #8888a8;
+  --accent: #6366f1;
+  --accent-glow: rgba(99, 102, 241, 0.3);
+  --green: #34d399;
+  --yellow: #fbbf24;
+  --pink: #f472b6;
+  --cyan: #22d3ee;
+  --orange: #fb923c;
+  --border: #2a2a45;
+}
+
+body {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.sans {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* NAV */
+nav {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+}
+nav .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.logo {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--accent);
+  text-decoration: none;
+}
+.logo span { color: var(--text); }
+.nav-links { display: flex; gap: 20px; align-items: center; }
+.nav-links a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 13px;
+  transition: color 0.2s;
+  font-family: -apple-system, sans-serif;
+}
+.nav-links a:hover { color: var(--text); }
+.nav-links .btn-nav {
+  background: var(--accent);
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+/* HERO */
+.hero {
+  text-align: center;
+  padding: 100px 0 60px;
+  position: relative;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: clamp(36px, 5.5vw, 56px);
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 20px;
+  position: relative;
+}
+.hero h1 .gradient {
+  background: linear-gradient(135deg, var(--accent), var(--pink), var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero p {
+  font-family: -apple-system, sans-serif;
+  font-size: 20px;
+  color: var(--text-muted);
+  max-width: 580px;
+  margin: 0 auto;
+  position: relative;
+}
+.hero .fine-print {
+  font-size: 13px;
+  color: #555570;
+  margin-top: 16px;
+}
+
+/* TEAM INTRO */
+.team-intro {
+  text-align: center;
+  padding: 60px 0 20px;
+}
+.team-intro h2 {
+  font-family: -apple-system, sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.team-intro p {
+  font-family: -apple-system, sans-serif;
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+/* EMPLOYEE CARDS */
+.employees {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  padding: 32px 0 60px;
+}
+
+.employee-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  transition: border-color 0.3s, transform 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.employee-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-3px);
+}
+.employee-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.employee-card.atlas::before { background: linear-gradient(90deg, var(--accent), var(--cyan)); }
+.employee-card.nova::before { background: linear-gradient(90deg, var(--pink), var(--orange)); }
+.employee-card.sage::before { background: linear-gradient(90deg, var(--green), var(--cyan)); }
+.employee-card.echo::before { background: linear-gradient(90deg, var(--yellow), var(--orange)); }
+.employee-card.rho::before { background: linear-gradient(90deg, var(--cyan), var(--accent)); }
+
+.emp-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.emp-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+}
+.atlas .emp-avatar { background: linear-gradient(135deg, var(--accent), #818cf8); }
+.nova .emp-avatar { background: linear-gradient(135deg, var(--pink), #e879f9); }
+.sage .emp-avatar { background: linear-gradient(135deg, var(--green), #4ade80); }
+.echo .emp-avatar { background: linear-gradient(135deg, var(--yellow), var(--orange)); }
+.rho .emp-avatar { background: linear-gradient(135deg, var(--cyan), var(--accent)); }
+
+.emp-name {
+  font-size: 20px;
+  font-weight: 700;
+  font-family: -apple-system, sans-serif;
+}
+.emp-title {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-family: -apple-system, sans-serif;
+}
+
+.emp-bio {
+  font-family: -apple-system, sans-serif;
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.training-log {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.training-log .log-header {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+.log-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.log-entry .timestamp {
+  color: #555570;
+  flex-shrink: 0;
+  min-width: 60px;
+}
+.log-entry .action { color: var(--text); }
+
+.emp-stats {
+  display: flex;
+  gap: 16px;
+}
+.emp-stat {
+  flex: 1;
+  text-align: center;
+  background: var(--surface-2);
+  border-radius: 8px;
+  padding: 10px 4px;
+}
+.emp-stat .stat-val {
+  font-size: 18px;
+  font-weight: 800;
+  font-family: -apple-system, sans-serif;
+}
+.atlas .emp-stat .stat-val { color: var(--accent); }
+.nova .emp-stat .stat-val { color: var(--pink); }
+.sage .emp-stat .stat-val { color: var(--green); }
+.echo .emp-stat .stat-val { color: var(--yellow); }
+.rho .emp-stat .stat-val { color: var(--cyan); }
+.emp-stat .stat-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: -apple-system, sans-serif;
+}
+
+/* HR FILE */
+.hr-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 48px;
+  margin: 20px 0 60px;
+}
+.hr-section h2 {
+  font-family: -apple-system, sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  text-align: center;
+}
+.hr-section .sub {
+  font-family: -apple-system, sans-serif;
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.hr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+.hr-item {
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+.hr-item .hr-icon { font-size: 28px; margin-bottom: 8px; }
+.hr-item .hr-label {
+  font-family: -apple-system, sans-serif;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.hr-item .hr-val {
+  font-family: -apple-system, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--green);
+}
+.hr-item .hr-val.zero { color: var(--text-muted); }
+
+/* TIMELINE */
+.timeline-section {
+  padding: 40px 0 60px;
+  text-align: center;
+}
+.timeline-section h2 {
+  font-family: -apple-system, sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.timeline-section .sub {
+  font-family: -apple-system, sans-serif;
+  color: var(--text-muted);
+  margin-bottom: 40px;
+}
+
+.timeline {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  position: relative;
+  max-width: 800px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  top: 32px;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: var(--border);
+}
+.tl-step {
+  flex: 1;
+  min-width: 140px;
+  position: relative;
+  padding: 0 12px;
+}
+.tl-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin: 22px auto 16px;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+.tl-step:nth-child(2) .tl-dot { background: var(--pink); box-shadow: 0 0 12px rgba(244,114,182,0.3); }
+.tl-step:nth-child(3) .tl-dot { background: var(--green); box-shadow: 0 0 12px rgba(52,211,153,0.3); }
+.tl-step:nth-child(4) .tl-dot { background: var(--yellow); box-shadow: 0 0 12px rgba(251,191,36,0.3); }
+
+.tl-label {
+  font-family: -apple-system, sans-serif;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+.tl-title {
+  font-family: -apple-system, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 6px;
+}
+.tl-desc {
+  font-family: -apple-system, sans-serif;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* IRREVERENT SECTION */
+.perks {
+  background: linear-gradient(135deg, var(--surface), var(--surface-2));
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 48px;
+  margin: 0 0 60px;
+  text-align: center;
+}
+.perks h2 {
+  font-family: -apple-system, sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 32px;
+}
+.perks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  text-align: left;
+}
+.perk {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.perk .perk-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.perk .perk-text {
+  font-family: -apple-system, sans-serif;
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.perk .perk-text strong {
+  color: var(--text);
+  display: block;
+  margin-bottom: 2px;
+}
+
+/* CTA */
+.final-cta {
+  text-align: center;
+  padding: 60px 0 80px;
+}
+.final-cta h2 {
+  font-family: -apple-system, sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+.final-cta p {
+  font-family: -apple-system, sans-serif;
+  color: var(--text-muted);
+  font-size: 18px;
+  margin-bottom: 28px;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.btn-glow {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  padding: 16px 40px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+  font-family: -apple-system, sans-serif;
+  transition: transform 0.15s;
+  box-shadow: 0 0 30px var(--accent-glow);
+}
+.btn-glow:hover { transform: translateY(-2px); }
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 32px 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-family: -apple-system, sans-serif;
+}
+
+@media (max-width: 768px) {
+  .employees { grid-template-columns: 1fr; }
+  .hr-grid { grid-template-columns: repeat(2, 1fr); }
+  .hero { padding: 60px 0 40px; }
+  .hr-section, .perks { padding: 28px 20px; }
+  .timeline { flex-direction: column; align-items: center; gap: 8px; }
+  .timeline::before { display: none; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <a href="#" class="logo">Go2<span>.io</span></a>
+    <div class="nav-links">
+      <a href="#">How it works</a>
+      <a href="#" class="btn-nav">Hire Them</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="container">
+    <h1>Meet your <span class="gradient">new team members.</span></h1>
+    <p class="sans">They don't need desks, healthcare, or vacation days. They just need to watch your human team work for a month.</p>
+    <p class="fine-print sans">Powered by Claude, GPT, and Gemini. Trained on your workflows, not the internet.</p>
+  </div>
+</section>
+
+<section class="team-intro">
+  <div class="container">
+    <h2>The Go2 AI Team</h2>
+    <p>Five agents. Five specialties. Zero HR paperwork.</p>
+  </div>
+</section>
+
+<div class="container">
+  <div class="employees">
+
+    <!-- ATLAS -->
+    <div class="employee-card atlas">
+      <div class="emp-header">
+        <div class="emp-avatar">A</div>
+        <div>
+          <div class="emp-name">Atlas</div>
+          <div class="emp-title">Process Analyst</div>
+        </div>
+      </div>
+      <p class="emp-bio">Atlas watches how your team actually works &mdash; not how they say they work. It maps every workflow, spots bottlenecks, and identifies the 20% of processes eating 80% of your time.</p>
+      <div class="training-log">
+        <div class="log-header">Training Log &mdash; Week 3</div>
+        <div class="log-entry">
+          <span class="timestamp">Mon 09:14</span>
+          <span class="action">Mapped 23 unique invoice workflows across 4 team members</span>
+        </div>
+        <div class="log-entry">
+          <span class="timestamp">Tue 14:32</span>
+          <span class="action">Identified 3 redundant approval steps in purchase orders</span>
+        </div>
+        <div class="log-entry">
+          <span class="timestamp">Thu 11:07</span>
+          <span class="action">Flagged: Team uses 4 different methods for same task</span>
+        </div>
+      </div>
+      <div class="emp-stats">
+        <div class="emp-stat">
+          <div class="stat-val">847</div>
+          <div class="stat-label">Workflows mapped</div>
+        </div>
+        <div class="emp-stat">
+          <div class="stat-val">12</div>
+          <div class="stat-label">Bottlenecks found</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOVA -->
+    <div class="employee-card nova">
+      <div class="emp-header">
+        <div class="emp-avatar">N</div>
+        <div>
+          <div class="emp-name">Nova</div>
+          <div class="emp-title">Performance Coach</div>
+        </div>
+      </div>
+      <p class="emp-bio">Nova is the coach who never makes anyone feel watched. It studies your top performers, distills what makes them fast, and gently teaches everyone else &mdash; without ever naming names.</p>
+      <div class="training-log">
+        <div class="log-header">Training Log &mdash; Week 3</div>
+        <div class="log-entry">
+          <span class="timestamp">Mon 10:22</span>
+          <span class="action">Studied top rep's CRM flow: 6 keyboard shortcuts others miss</span>
+        </div>
+        <div class="log-entry">
+          <span class="timestamp">Wed 09:45</span>
+          <span class="action">Created coaching card: "Batch email responses" technique</span>
+        </div>
+        <div class="log-entry">
+          <span class="timestamp">Fri 15:18</span>
+          <span class="action">3 team members adopted new shortcuts, avg speed +18%</span>
+        </div>
+      </div>
+      <div class="emp-stats">
+        <div class="emp-stat">
+          <div class="stat-val">34</div>
+          <div class="stat-label">Tips delivered</div>
+        </div>
+        <div class="emp-stat">
+          <div class="stat-val">78%</div>
+          <div class="stat-label">Adoption rate</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SAGE -->
+    <div class="employee-card sage">
+      <div class="emp-header">
+        <div class="emp-avatar">S</div>
+        <div>
+          <div class="emp-name">Sage</div>
+          <div class="emp-title">Onboarding Specialist</div>
+        </div>
+      </div>
+      <p class="emp-bio">Sage makes new hires productive in days, not months. It learns how your best people do things right now &mdash; not from an outdated wiki &mdash; and creates living guides that update themselves.</p>
+      <div class="training-log">
+        <div class="log-header">Training Log &mdash; Week 3</div>
+        <div class="log-entry">
+          <span class="timestamp">Mon 08:30</span>
+          <span class="action">Generated current-state CRM guide (replaced 2024 Loom video)</span>
+        </div>
+        <div class="log-entry">
+          <span class="timestamp">Tue 13:15</span>
+          <span class="action">Walked new hire through first 5 lead entries in real-time</span>
+        </div>
+        <div class="log-entry">
+          <span class="timestamp">Wed 10:40</span>
+          <span class="action">New hire reached competency benchmark &mdash; 4 days early</span>
+        </div>
+      </div>
+      <div class="emp-stats">
+        <div class="emp-stat">
+          <div class="stat-val">71%</div>
+          <div class="stat-label">Faster ramp-up</div>
+        </div>
+        <div class="emp-stat">
+          <div class="stat-val">12</div>
+          <div class="stat-label">Guides created</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ECHO -->
+    <div class="employee-card echo">
+      <div class="emp-header">
+        <div class="emp-avatar">E</div>
+        <div>
+          <div class="emp-name">Echo</div>
+          <div class="emp-title">Error Prevention</div>
+        </div>
+      </div>
+      <p class="emp-bio">Echo is the teammate who catches your typo before you hit send. It learns your patterns and quietly flags when something looks off &mdash; wrong tax rate, missing field, unusual amount.</p>
+      <div class="training-log">
+        <div class="log-header">Training Log &mdash; Week 3</div>
+        <div class="log-entry">
+          <span class="timestamp">Mon 11:03</span>
+          <span class="action">Caught invoice with outdated tax rate before send</span>
+        </div>
+        <div class="log-entry">
+          <span class="timestamp">Wed 16:22</span>
+          <span class="action">Flagged duplicate customer entry, prevented data merge issue</span>
+        </div>
+        <div class="log-entry">
+          <span class="timestamp">Fri 09:50</span>
+          <span class="action">Prevented shipping to old address (customer updated 2 days ago)</span>
+        </div>
+      </div>
+      <div class="emp-stats">
+        <div class="emp-stat">
+          <div class="stat-val">23</div>
+          <div class="stat-label">Errors caught</div>
+        </div>
+        <div class="emp-stat">
+          <div class="stat-val">$14K</div>
+          <div class="stat-label">Saved this month</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RHO -->
+    <div class="employee-card rho">
+      <div class="emp-header">
+        <div class="emp-avatar">R</div>
+        <div>
+          <div class="emp-name">Rho</div>
+          <div class="emp-title">Automation Scout</div>
+        </div>
+      </div>
+      <p class="emp-bio">Rho hunts for work that shouldn't be done by humans. Copy-paste jobs, repetitive data entry, manual transfers between systems. It finds them and proposes automations &mdash; you approve with one click.</p>
+      <div class="training-log">
+        <div class="log-header">Training Log &mdash; Week 3</div>
+        <div class="log-entry">
+          <span class="timestamp">Tue 10:15</span>
+          <span class="action">Found: tracking number copy-paste done 35x/day (automatable)</span>
+        </div>
+        <div class="log-entry">
+          <span class="timestamp">Thu 14:30</span>
+          <span class="action">Proposed Zapier integration, estimated savings: 5 hrs/day</span>
+        </div>
+        <div class="log-entry">
+          <span class="timestamp">Fri 16:45</span>
+          <span class="action">Automation deployed. Zero manual tracking entries since.</span>
+        </div>
+      </div>
+      <div class="emp-stats">
+        <div class="emp-stat">
+          <div class="stat-val">7</div>
+          <div class="stat-label">Automations proposed</div>
+        </div>
+        <div class="emp-stat">
+          <div class="stat-val">31hrs</div>
+          <div class="stat-label">Saved / week</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TIMELINE -->
+<section class="timeline-section">
+  <div class="container">
+    <h2>How They Learn</h2>
+    <p class="sub">Your AI employees get trained by watching your real team. Here's the ramp-up.</p>
+    <div class="timeline">
+      <div class="tl-step">
+        <div class="tl-label">Week 1</div>
+        <div class="tl-dot"></div>
+        <div class="tl-title">Observing</div>
+        <div class="tl-desc">Silent observation. Learning tool usage, workflow patterns, team rhythms.</div>
+      </div>
+      <div class="tl-step">
+        <div class="tl-label">Week 2</div>
+        <div class="tl-dot"></div>
+        <div class="tl-title">Mapping</div>
+        <div class="tl-desc">Building process maps. Identifying top performers and their methods.</div>
+      </div>
+      <div class="tl-step">
+        <div class="tl-label">Week 3</div>
+        <div class="tl-dot"></div>
+        <div class="tl-title">Coaching</div>
+        <div class="tl-desc">First coaching suggestions. Gentle nudges. Error prevention activates.</div>
+      </div>
+      <div class="tl-step">
+        <div class="tl-label">Week 4</div>
+        <div class="tl-dot"></div>
+        <div class="tl-title">Automating</div>
+        <div class="tl-desc">Automation proposals ready. Full team insights flowing. ROI measurable.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HR FILE -->
+<div class="container">
+  <div class="hr-section">
+    <h2>Their HR File</h2>
+    <p class="sub">Here's what your AI employees cost you (spoiler: way less than humans).</p>
+    <div class="hr-grid">
+      <div class="hr-item">
+        <div class="hr-icon">&#128186;</div>
+        <div class="hr-label">Desk Required</div>
+        <div class="hr-val zero">None</div>
+      </div>
+      <div class="hr-item">
+        <div class="hr-icon">&#127956;</div>
+        <div class="hr-label">Vacation Days</div>
+        <div class="hr-val zero">0</div>
+      </div>
+      <div class="hr-item">
+        <div class="hr-icon">&#129657;</div>
+        <div class="hr-label">Healthcare</div>
+        <div class="hr-val zero">$0</div>
+      </div>
+      <div class="hr-item">
+        <div class="hr-icon">&#128564;</div>
+        <div class="hr-label">Sick Days</div>
+        <div class="hr-val zero">0</div>
+      </div>
+      <div class="hr-item">
+        <div class="hr-icon">&#9201;</div>
+        <div class="hr-label">Availability</div>
+        <div class="hr-val">24/7/365</div>
+      </div>
+      <div class="hr-item">
+        <div class="hr-icon">&#128200;</div>
+        <div class="hr-label">Performance</div>
+        <div class="hr-val">Improves daily</div>
+      </div>
+      <div class="hr-item">
+        <div class="hr-icon">&#128172;</div>
+        <div class="hr-label">Complaints Filed</div>
+        <div class="hr-val zero">0</div>
+      </div>
+      <div class="hr-item">
+        <div class="hr-icon">&#127891;</div>
+        <div class="hr-label">Training Period</div>
+        <div class="hr-val">4 weeks</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PERKS SECTION -->
+<div class="container">
+  <div class="perks">
+    <h2>Things They'll Never Do</h2>
+    <div class="perks-grid">
+      <div class="perk">
+        <span class="perk-icon">&#128064;</span>
+        <div class="perk-text">
+          <strong>Spy on individuals</strong>
+          All insights are aggregated. No individual surveillance, ever.
+        </div>
+      </div>
+      <div class="perk">
+        <span class="perk-icon">&#128227;</span>
+        <div class="perk-text">
+          <strong>Snitch to management</strong>
+          Coaching goes to the worker. Managers see team trends only.
+        </div>
+      </div>
+      <div class="perk">
+        <span class="perk-icon">&#128187;</span>
+        <div class="perk-text">
+          <strong>Take anyone's job</strong>
+          They make humans better. They don't replace them.
+        </div>
+      </div>
+      <div class="perk">
+        <span class="perk-icon">&#128290;</span>
+        <div class="perk-text">
+          <strong>Count keystrokes</strong>
+          This isn't surveillance software. Activity tracking is not the point.
+        </div>
+      </div>
+      <div class="perk">
+        <span class="perk-icon">&#128247;</span>
+        <div class="perk-text">
+          <strong>Screenshot desktops</strong>
+          No screenshots sent to bosses. That's creepy. We don't do that.
+        </div>
+      </div>
+      <div class="perk">
+        <span class="perk-icon">&#128274;</span>
+        <div class="perk-text">
+          <strong>Share data externally</strong>
+          Your data trains YOUR agents. Nobody else's.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<section class="final-cta">
+  <div class="container">
+    <h2>Ready to expand your team?</h2>
+    <p class="sans">Five new employees. No interviews. No onboarding headaches. No benefits paperwork. Just results.</p>
+    <a href="#" class="btn-glow sans">Start Hiring AI</a>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    &copy; 2026 Go2. All rights reserved. &nbsp;|&nbsp; go2.io &nbsp;|&nbsp; No AI employees were harmed in the making of this page.
+  </div>
+</footer>
+
+</body>
+</html>

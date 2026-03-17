@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — Signal vs Noise</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0e1a;--bg2:#0f1424;--bg3:#141a2e;--text:#c8d0e0;--text-muted:#6b7a9e;--accent:#00d4aa;--accent2:#00b894;--accent-glow:rgba(0,212,170,0.15);--signal:#00d4aa;--noise:#2a3454;--red:#ff4757;--orange:#ffa502;--white:#eef2ff}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+a{color:var(--accent);text-decoration:none}
+
+/* Radar Canvas Background */
+.radar-bg{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:0.06}
+
+/* Nav */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:1.2rem 2rem;display:flex;justify-content:space-between;align-items:center;background:rgba(10,14,26,0.9);backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,212,170,0.08)}
+.logo{font-size:1.4rem;font-weight:700;color:var(--white);letter-spacing:-0.5px}
+.logo span{color:var(--accent)}
+nav ul{display:flex;list-style:none;gap:2rem}
+nav ul a{color:var(--text-muted);font-size:0.9rem;transition:color 0.3s}
+nav ul a:hover{color:var(--accent)}
+.nav-cta{padding:0.5rem 1.2rem;background:var(--accent);color:var(--bg);border-radius:6px;font-weight:600;font-size:0.85rem;transition:all 0.3s}
+.nav-cta:hover{background:var(--accent2);transform:translateY(-1px)}
+
+/* Hero */
+.hero{min-height:100vh;display:flex;align-items:center;position:relative;padding:8rem 2rem 4rem}
+.hero-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center}
+.hero-badge{display:inline-block;padding:0.4rem 1rem;background:var(--accent-glow);border:1px solid rgba(0,212,170,0.2);border-radius:20px;font-size:0.8rem;color:var(--accent);margin-bottom:1.5rem;letter-spacing:0.5px;text-transform:uppercase}
+.hero h1{font-size:3.4rem;line-height:1.1;color:var(--white);font-weight:800;margin-bottom:1.5rem;letter-spacing:-1.5px}
+.hero h1 .signal{color:var(--accent)}
+.hero h1 .noise{color:var(--text-muted);opacity:0.5}
+.hero p{font-size:1.15rem;color:var(--text-muted);margin-bottom:2rem;max-width:500px;line-height:1.7}
+.hero-stat{font-size:4rem;font-weight:800;color:var(--accent);font-family:'Courier New',monospace}
+.hero-stat-label{font-size:0.9rem;color:var(--text-muted);margin-top:0.3rem}
+.cta-group{display:flex;gap:1rem;flex-wrap:wrap}
+.cta-primary{padding:0.9rem 2rem;background:var(--accent);color:var(--bg);border:none;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer;transition:all 0.3s;text-decoration:none;display:inline-block}
+.cta-primary:hover{background:var(--accent2);transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,212,170,0.3)}
+.cta-secondary{padding:0.9rem 2rem;background:transparent;color:var(--accent);border:1px solid rgba(0,212,170,0.3);border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:all 0.3s;text-decoration:none;display:inline-block}
+.cta-secondary:hover{border-color:var(--accent);background:var(--accent-glow)}
+
+/* Radar Visualization */
+.radar-viz{position:relative;width:100%;max-width:500px;aspect-ratio:1;margin:0 auto}
+.radar-circle{position:absolute;border-radius:50%;border:1px solid rgba(0,212,170,0.1);top:50%;left:50%;transform:translate(-50%,-50%)}
+.radar-circle:nth-child(1){width:100%;height:100%}
+.radar-circle:nth-child(2){width:75%;height:75%}
+.radar-circle:nth-child(3){width:50%;height:50%}
+.radar-circle:nth-child(4){width:25%;height:25%;background:var(--accent-glow)}
+.radar-sweep{position:absolute;top:50%;left:50%;width:50%;height:2px;background:linear-gradient(90deg,var(--accent),transparent);transform-origin:left center;animation:sweep 4s linear infinite}
+@keyframes sweep{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.radar-dot{position:absolute;width:8px;height:8px;border-radius:50%;transform:translate(-50%,-50%)}
+.radar-dot.signal-dot{background:var(--accent);box-shadow:0 0 12px var(--accent);animation:pulse-dot 2s ease-in-out infinite}
+.radar-dot.noise-dot{background:var(--noise);opacity:0.4;width:5px;height:5px}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:translate(-50%,-50%) scale(1)}50%{opacity:0.6;transform:translate(-50%,-50%) scale(1.3)}}
+
+/* Section Styles */
+section{position:relative;z-index:1;padding:6rem 2rem}
+.section-inner{max-width:1100px;margin:0 auto}
+.section-label{font-size:0.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:1rem;font-weight:600}
+.section-title{font-size:2.4rem;color:var(--white);font-weight:800;margin-bottom:1rem;letter-spacing:-1px}
+.section-subtitle{font-size:1.1rem;color:var(--text-muted);max-width:600px;line-height:1.7}
+
+/* Noise Problem */
+.noise-section{background:var(--bg2)}
+.noise-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin-top:3rem}
+.noise-card{background:var(--bg);border:1px solid rgba(42,52,84,0.5);border-radius:12px;padding:2rem;position:relative;overflow:hidden}
+.noise-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--red);opacity:0.6}
+.noise-icon{font-size:2rem;margin-bottom:1rem}
+.noise-card h3{color:var(--white);font-size:1.1rem;margin-bottom:0.8rem}
+.noise-card p{color:var(--text-muted);font-size:0.9rem;line-height:1.6}
+.noise-stat{font-size:2rem;font-weight:800;color:var(--red);opacity:0.7;margin-top:1rem;font-family:'Courier New',monospace}
+
+/* Signal Section */
+.signal-section{background:var(--bg)}
+.signal-demo{margin-top:3rem;background:var(--bg2);border:1px solid rgba(0,212,170,0.1);border-radius:16px;overflow:hidden}
+.signal-header{padding:1.5rem 2rem;border-bottom:1px solid rgba(0,212,170,0.08);display:flex;align-items:center;gap:1rem}
+.signal-indicator{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse-dot 2s ease-in-out infinite}
+.signal-header-text{font-size:0.85rem;color:var(--accent);font-weight:600;text-transform:uppercase;letter-spacing:1px}
+.signal-body{padding:2rem;display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+.signal-item{padding:1.5rem;background:var(--bg);border-radius:10px;border-left:3px solid var(--accent)}
+.signal-item h4{color:var(--white);font-size:0.95rem;margin-bottom:0.5rem}
+.signal-item p{color:var(--text-muted);font-size:0.85rem;line-height:1.6}
+.signal-item .impact{display:inline-block;margin-top:0.8rem;padding:0.3rem 0.8rem;background:var(--accent-glow);color:var(--accent);border-radius:4px;font-size:0.75rem;font-weight:600}
+
+/* How It Works */
+.how-section{background:var(--bg2)}
+.how-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;margin-top:3rem}
+.how-step{text-align:center;padding:2rem 1.5rem;position:relative}
+.how-step::after{content:'';position:absolute;top:2.5rem;right:-1rem;width:2rem;height:2px;background:linear-gradient(90deg,var(--accent),transparent)}
+.how-step:last-child::after{display:none}
+.step-num{width:48px;height:48px;border-radius:50%;background:var(--accent-glow);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;color:var(--accent);font-weight:700;font-size:1.1rem}
+.how-step h3{color:var(--white);font-size:1rem;margin-bottom:0.6rem}
+.how-step p{color:var(--text-muted);font-size:0.85rem;line-height:1.5}
+
+/* Ratio Visual */
+.ratio-section{background:var(--bg);text-align:center}
+.ratio-bar{max-width:800px;margin:3rem auto 0;height:60px;border-radius:8px;overflow:hidden;display:flex;position:relative}
+.ratio-noise{flex:99;background:linear-gradient(90deg,#1a2040,#2a3454);display:flex;align-items:center;justify-content:center;font-size:0.9rem;color:var(--text-muted);position:relative;overflow:hidden}
+.ratio-noise::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(90deg,transparent,transparent 8px,rgba(255,255,255,0.02) 8px,rgba(255,255,255,0.02) 9px)}
+.ratio-signal{flex:1;background:var(--accent);display:flex;align-items:center;justify-content:center;color:var(--bg);font-weight:800;font-size:0.7rem;min-width:40px;box-shadow:-4px 0 20px rgba(0,212,170,0.4)}
+.ratio-labels{max-width:800px;margin:1rem auto 0;display:flex;justify-content:space-between;font-size:0.8rem;color:var(--text-muted)}
+
+/* AI Coaching */
+.coaching-section{background:var(--bg2)}
+.coaching-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;margin-top:3rem;align-items:center}
+.coaching-chat{background:var(--bg);border-radius:12px;border:1px solid rgba(0,212,170,0.1);overflow:hidden}
+.chat-header{padding:1rem 1.5rem;border-bottom:1px solid rgba(42,52,84,0.3);display:flex;align-items:center;gap:0.8rem}
+.chat-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:var(--bg);font-weight:700}
+.chat-name{color:var(--white);font-size:0.9rem;font-weight:600}
+.chat-body{padding:1.5rem}
+.chat-msg{margin-bottom:1rem;padding:0.8rem 1rem;border-radius:8px;font-size:0.85rem;line-height:1.5;max-width:85%}
+.chat-msg.ai{background:var(--accent-glow);border:1px solid rgba(0,212,170,0.15);color:var(--text)}
+.chat-msg.user{background:var(--bg2);color:var(--text-muted);margin-left:auto}
+.coaching-features h3{color:var(--white);font-size:1.3rem;margin-bottom:1rem}
+.coaching-feature{display:flex;gap:1rem;margin-bottom:1.5rem;align-items:flex-start}
+.coaching-check{width:24px;height:24px;border-radius:50%;background:var(--accent-glow);border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent);font-size:0.7rem;margin-top:0.2rem}
+.coaching-feature p{color:var(--text-muted);font-size:0.9rem;line-height:1.5}
+.coaching-feature strong{color:var(--white)}
+
+/* Stats */
+.stats-section{background:var(--bg)}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;margin-top:3rem}
+.stat-card{text-align:center;padding:2.5rem 1.5rem;background:var(--bg2);border-radius:12px;border:1px solid rgba(0,212,170,0.08)}
+.stat-value{font-size:2.8rem;font-weight:800;color:var(--accent);font-family:'Courier New',monospace;margin-bottom:0.3rem}
+.stat-label{font-size:0.85rem;color:var(--text-muted)}
+
+/* Not Surveillance */
+.privacy-section{background:var(--bg2)}
+.privacy-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;margin-top:3rem}
+.privacy-col h3{color:var(--white);font-size:1.2rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:0.8rem}
+.privacy-list{list-style:none}
+.privacy-list li{padding:0.8rem 0;border-bottom:1px solid rgba(42,52,84,0.3);font-size:0.9rem;display:flex;align-items:center;gap:0.8rem}
+.privacy-list li:last-child{border:none}
+.x-mark{color:var(--red);font-weight:700;font-size:1.1rem}
+.check-mark{color:var(--accent);font-weight:700;font-size:1.1rem}
+
+/* Automation */
+.automation-section{background:var(--bg)}
+.automation-map{margin-top:3rem;background:var(--bg2);border-radius:12px;border:1px solid rgba(0,212,170,0.08);padding:2rem;display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+.auto-item{padding:1.5rem;border-radius:8px;border:1px solid rgba(42,52,84,0.3);position:relative}
+.auto-item.high{border-color:var(--accent);background:var(--accent-glow)}
+.auto-item.med{border-color:var(--orange);background:rgba(255,165,2,0.05)}
+.auto-item.low{border-color:var(--noise)}
+.auto-tag{font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:0.5rem}
+.auto-item.high .auto-tag{color:var(--accent)}
+.auto-item.med .auto-tag{color:var(--orange)}
+.auto-item.low .auto-tag{color:var(--text-muted)}
+.auto-item h4{color:var(--white);font-size:0.95rem;margin-bottom:0.4rem}
+.auto-item p{color:var(--text-muted);font-size:0.8rem}
+
+/* CTA Section */
+.final-cta{background:linear-gradient(180deg,var(--bg2),var(--bg));text-align:center;padding:8rem 2rem}
+.final-cta h2{font-size:2.8rem;color:var(--white);font-weight:800;margin-bottom:1rem;letter-spacing:-1px}
+.final-cta p{font-size:1.1rem;color:var(--text-muted);margin-bottom:2.5rem;max-width:500px;margin-left:auto;margin-right:auto}
+.final-cta .cta-primary{font-size:1.1rem;padding:1rem 2.5rem}
+
+/* Footer */
+footer{background:var(--bg);border-top:1px solid rgba(42,52,84,0.3);padding:3rem 2rem;text-align:center}
+footer p{color:var(--text-muted);font-size:0.8rem}
+
+/* Responsive */
+@media(max-width:900px){
+  .hero-inner{grid-template-columns:1fr}
+  .hero h1{font-size:2.4rem}
+  .radar-viz{max-width:300px;margin-top:2rem}
+  .noise-grid,.stats-grid{grid-template-columns:1fr 1fr}
+  .how-steps{grid-template-columns:1fr 1fr}
+  .how-step::after{display:none}
+  .signal-body,.coaching-grid,.privacy-grid{grid-template-columns:1fr}
+  .automation-map{grid-template-columns:1fr 1fr}
+  nav ul{display:none}
+}
+@media(max-width:600px){
+  .hero h1{font-size:1.8rem}
+  .noise-grid,.stats-grid,.how-steps,.automation-map{grid-template-columns:1fr}
+  .section-title{font-size:1.8rem}
+  .final-cta h2{font-size:2rem}
+}
+</style>
+</head>
+<body>
+
+<!-- Radar Background -->
+<canvas class="radar-bg" id="radarBg"></canvas>
+
+<!-- Navigation -->
+<nav>
+  <div class="logo">go<span>2</span></div>
+  <ul>
+    <li><a href="#problem">The Problem</a></li>
+    <li><a href="#signal">The Signal</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#coaching">AI Coaching</a></li>
+  </ul>
+  <a href="#demo" class="nav-cta">Get a Demo</a>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="hero-badge">Signal Intelligence for Business</div>
+      <h1>Your company generates <span class="noise">thousands of hours</span> of work data. Go2 finds the <span class="signal">1% that matters.</span></h1>
+      <p>Every week, your team creates a mountain of data — emails, meetings, app usage, task switches, context changes. 99% is noise. Go2's AI cuts through it all to surface the signals that actually move your business forward.</p>
+      <div class="cta-group">
+        <a href="#demo" class="cta-primary">Request Demo</a>
+        <a href="#signal" class="cta-secondary">See the Signal</a>
+      </div>
+    </div>
+    <div class="radar-viz">
+      <div class="radar-circle"></div>
+      <div class="radar-circle"></div>
+      <div class="radar-circle"></div>
+      <div class="radar-circle"></div>
+      <div class="radar-sweep"></div>
+      <!-- Signal dots -->
+      <div class="radar-dot signal-dot" style="top:30%;left:60%"></div>
+      <div class="radar-dot signal-dot" style="top:45%;left:35%"></div>
+      <div class="radar-dot signal-dot" style="top:65%;left:55%"></div>
+      <!-- Noise dots -->
+      <div class="radar-dot noise-dot" style="top:15%;left:25%"></div>
+      <div class="radar-dot noise-dot" style="top:20%;left:72%"></div>
+      <div class="radar-dot noise-dot" style="top:80%;left:20%"></div>
+      <div class="radar-dot noise-dot" style="top:75%;left:78%"></div>
+      <div class="radar-dot noise-dot" style="top:10%;left:48%"></div>
+      <div class="radar-dot noise-dot" style="top:88%;left:45%"></div>
+      <div class="radar-dot noise-dot" style="top:35%;left:85%"></div>
+      <div class="radar-dot noise-dot" style="top:55%;left:12%"></div>
+      <div class="radar-dot noise-dot" style="top:40%;left:90%"></div>
+      <div class="radar-dot noise-dot" style="top:92%;left:60%"></div>
+      <div class="radar-dot noise-dot" style="top:25%;left:15%"></div>
+      <div class="radar-dot noise-dot" style="top:70%;left:88%"></div>
+    </div>
+  </div>
+</section>
+
+<!-- Noise Problem -->
+<section class="noise-section" id="problem">
+  <div class="section-inner">
+    <div class="section-label">The Problem</div>
+    <div class="section-title">You're drowning in data but starving for insight</div>
+    <div class="section-subtitle">Every tool you use generates more data. But none of it tells you what's actually happening in your business.</div>
+    <div class="noise-grid">
+      <div class="noise-card">
+        <div class="noise-icon">&#128202;</div>
+        <h3>Dashboard Overload</h3>
+        <p>Your team uses 12+ SaaS tools. Each has its own dashboard. None talks to the others. You're left stitching together a picture from scattered puzzle pieces.</p>
+        <div class="noise-stat">12+</div>
+      </div>
+      <div class="noise-card">
+        <div class="noise-icon">&#128172;</div>
+        <h3>Meeting Fog</h3>
+        <p>Status meetings tell you what people say they did, not what actually happened. You get a curated version of reality — not reality itself.</p>
+        <div class="noise-stat">6.2hrs</div>
+      </div>
+      <div class="noise-card">
+        <div class="noise-icon">&#128200;</div>
+        <h3>Report Theater</h3>
+        <p>Monthly reports show trailing indicators. By the time you see a problem, it's already cost you weeks. The signal was there — buried in noise.</p>
+        <div class="noise-stat">23 days</div>
+      </div>
+      <div class="noise-card">
+        <div class="noise-icon">&#9888;&#65039;</div>
+        <h3>Alert Fatigue</h3>
+        <p>Notifications for everything means attention for nothing. Your team has learned to ignore alerts — including the ones that actually matter.</p>
+        <div class="noise-stat">147/day</div>
+      </div>
+      <div class="noise-card">
+        <div class="noise-icon">&#128269;</div>
+        <h3>Hidden Bottlenecks</h3>
+        <p>The real blockers in your workflow are invisible. They don't show up in Jira or Asana. They live in the spaces between tools.</p>
+        <div class="noise-stat">34%</div>
+      </div>
+      <div class="noise-card">
+        <div class="noise-icon">&#128176;</div>
+        <h3>Invisible Waste</h3>
+        <p>Your team spends hours on tasks that could be automated, processes that could be streamlined, and context switches that kill productivity.</p>
+        <div class="noise-stat">$800K</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Ratio Visual -->
+<section class="ratio-section">
+  <div class="section-inner">
+    <div class="section-label">The Ratio</div>
+    <div class="section-title">99% noise. 1% signal. Go2 finds it.</div>
+    <div class="section-subtitle" style="margin:0 auto">Out of thousands of data points generated every week, only a handful represent actionable, business-changing insights. Go2 identifies them automatically.</div>
+    <div class="ratio-bar">
+      <div class="ratio-noise">Emails &middot; Meetings &middot; App switches &middot; Idle time &middot; Reports &middot; Notifications &middot; Status updates &middot; Context shifts</div>
+      <div class="ratio-signal">1%</div>
+    </div>
+    <div class="ratio-labels">
+      <span>99% noise you can safely ignore</span>
+      <span style="color:var(--accent);font-weight:600">1% signal that changes everything</span>
+    </div>
+  </div>
+</section>
+
+<!-- Signal Section -->
+<section class="signal-section" id="signal">
+  <div class="section-inner">
+    <div class="section-label">The Signal</div>
+    <div class="section-title">What the 1% actually looks like</div>
+    <div class="section-subtitle">These are real signals Go2 surfaces — the kind of insights that would take weeks to discover manually, if you found them at all.</div>
+    <div class="signal-demo">
+      <div class="signal-header">
+        <div class="signal-indicator"></div>
+        <div class="signal-header-text">Live Signal Feed &mdash; This Week's Insights</div>
+      </div>
+      <div class="signal-body">
+        <div class="signal-item">
+          <h4>Process Bottleneck Detected</h4>
+          <p>Client onboarding takes 3.2x longer than necessary. Two team members repeat the same data entry across three systems. Consolidation could save 14 hours/week.</p>
+          <span class="impact">Save $38K/year</span>
+        </div>
+        <div class="signal-item">
+          <h4>Automation Candidate Found</h4>
+          <p>Invoice reconciliation follows an identical pattern 94% of the time. This workflow is ready for automation with minimal oversight.</p>
+          <span class="impact">12 hrs/week recoverable</span>
+        </div>
+        <div class="signal-item">
+          <h4>Team Energy Pattern</h4>
+          <p>Engineering team's deep work blocks are interrupted by meetings 73% of the time between 10-11am. Shifting standups to 9am could recover 6+ hours of flow state weekly.</p>
+          <span class="impact">+18% deep work time</span>
+        </div>
+        <div class="signal-item">
+          <h4>Risk Signal</h4>
+          <p>Two senior developers have shifted from building to predominantly reviewing. This pattern historically precedes disengagement. Coaching recommendation generated.</p>
+          <span class="impact">Retention risk flagged</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="how-section" id="how">
+  <div class="section-inner">
+    <div class="section-label">How It Works</div>
+    <div class="section-title">From noise to signal in four steps</div>
+    <div class="how-steps">
+      <div class="how-step">
+        <div class="step-num">1</div>
+        <h3>Capture</h3>
+        <p>A lightweight desktop agent passively captures work patterns — apps used, time in tools, workflow sequences. No keylogging, no screenshots.</p>
+      </div>
+      <div class="how-step">
+        <div class="step-num">2</div>
+        <h3>Process</h3>
+        <p>Frontier AI models (Claude, GPT, Gemini) analyze patterns across your entire team, drawing from data on nearly 1 million workers.</p>
+      </div>
+      <div class="how-step">
+        <div class="step-num">3</div>
+        <h3>Filter</h3>
+        <p>99% of the data is noise. Go2's AI separates signal from noise, surfacing only the insights that represent real opportunities or risks.</p>
+      </div>
+      <div class="how-step">
+        <div class="step-num">4</div>
+        <h3>Act</h3>
+        <p>Individual coaching for workers, aggregated insights for managers. Everyone gets what they need — and nothing they don't.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AI Coaching -->
+<section class="coaching-section" id="coaching">
+  <div class="section-inner">
+    <div class="section-label">AI Coaching</div>
+    <div class="section-title">Every worker gets a personal AI coach</div>
+    <div class="section-subtitle">No competitor offers this. Go2 uses frontier AI to give each team member personalized productivity coaching based on their actual work patterns.</div>
+    <div class="coaching-grid">
+      <div class="coaching-chat">
+        <div class="chat-header">
+          <div class="chat-avatar">G2</div>
+          <div class="chat-name">Go2 AI Coach</div>
+        </div>
+        <div class="chat-body">
+          <div class="chat-msg ai">Good morning! I noticed you spent 2.3 hours yesterday switching between Figma and Slack. Would you like me to suggest a focused design block with notifications paused?</div>
+          <div class="chat-msg user">Yeah, that would help. I keep getting pulled out of flow.</div>
+          <div class="chat-msg ai">Done. I've identified your peak creative hours (9-11am) based on the last 30 days. I'll suggest a 2-hour focus block each morning. Teams who do this report 34% more design output. Want to try it this week?</div>
+          <div class="chat-msg user">Let's do it.</div>
+          <div class="chat-msg ai">Great. I'll also flag any patterns that might help — like the fact that your best work sessions start right after your morning coffee break, not right when you log in.</div>
+        </div>
+      </div>
+      <div class="coaching-features">
+        <h3>What makes Go2 coaching different</h3>
+        <div class="coaching-feature">
+          <div class="coaching-check">&#10003;</div>
+          <p><strong>Based on real data, not self-reporting.</strong> Most productivity tools ask people to track their own time. Go2 sees what actually happens.</p>
+        </div>
+        <div class="coaching-feature">
+          <div class="coaching-check">&#10003;</div>
+          <p><strong>Frontier AI models.</strong> Claude, GPT, and Gemini analyze patterns — not simple rule-based alerts. This is real AI coaching.</p>
+        </div>
+        <div class="coaching-feature">
+          <div class="coaching-check">&#10003;</div>
+          <p><strong>Trained on ~1M workers.</strong> Recommendations come from patterns across nearly a million workers — not just your team.</p>
+        </div>
+        <div class="coaching-feature">
+          <div class="coaching-check">&#10003;</div>
+          <p><strong>Private to each worker.</strong> Individual coaching stays between the worker and their AI coach. Managers see only aggregated team-level insights.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats -->
+<section class="stats-section">
+  <div class="section-inner">
+    <div class="section-label">By the Numbers</div>
+    <div class="section-title">Signal intelligence at scale</div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">~1M</div>
+        <div class="stat-label">Workers analyzed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">3</div>
+        <div class="stat-label">Frontier AI models</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">99%</div>
+        <div class="stat-label">Noise filtered out</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">14d</div>
+        <div class="stat-label">Average time to first insight</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Not Surveillance -->
+<section class="privacy-section">
+  <div class="section-inner">
+    <div class="section-label">Trust</div>
+    <div class="section-title">Signal extraction, not surveillance</div>
+    <div class="section-subtitle">Go2 is designed to help people work better — not to watch them. Here's how we're different from monitoring tools.</div>
+    <div class="privacy-grid">
+      <div class="privacy-col">
+        <h3><span class="x-mark">&#10007;</span> What Go2 does NOT do</h3>
+        <ul class="privacy-list">
+          <li><span class="x-mark">&#10007;</span> No keystroke logging</li>
+          <li><span class="x-mark">&#10007;</span> No screenshot surveillance</li>
+          <li><span class="x-mark">&#10007;</span> No individual activity feeds for managers</li>
+          <li><span class="x-mark">&#10007;</span> No "productivity scores" or rankings</li>
+          <li><span class="x-mark">&#10007;</span> No punitive tracking or time police</li>
+        </ul>
+      </div>
+      <div class="privacy-col">
+        <h3><span class="check-mark">&#10003;</span> What Go2 DOES do</h3>
+        <ul class="privacy-list">
+          <li><span class="check-mark">&#10003;</span> Individual AI coaching (private to each worker)</li>
+          <li><span class="check-mark">&#10003;</span> Aggregated team insights for managers</li>
+          <li><span class="check-mark">&#10003;</span> Workflow bottleneck identification</li>
+          <li><span class="check-mark">&#10003;</span> Automation opportunity mapping</li>
+          <li><span class="check-mark">&#10003;</span> Pattern-based recommendations, not surveillance</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Automation Mapping -->
+<section class="automation-section">
+  <div class="section-inner">
+    <div class="section-label">Automation Intelligence</div>
+    <div class="section-title">Go2 finds what can be automated</div>
+    <div class="section-subtitle">Not everything should be automated. Go2 identifies the workflows with the highest ROI potential and ranks them by readiness.</div>
+    <div class="automation-map">
+      <div class="auto-item high">
+        <div class="auto-tag">High Readiness</div>
+        <h4>Invoice Processing</h4>
+        <p>94% pattern consistency. 12 hrs/week. Ready for immediate automation.</p>
+      </div>
+      <div class="auto-item high">
+        <div class="auto-tag">High Readiness</div>
+        <h4>Report Generation</h4>
+        <p>Weekly reports follow same template. 6 hrs/week currently manual.</p>
+      </div>
+      <div class="auto-item med">
+        <div class="auto-tag">Medium Readiness</div>
+        <h4>Client Onboarding</h4>
+        <p>78% repeatable steps. Some judgment calls need human review.</p>
+      </div>
+      <div class="auto-item med">
+        <div class="auto-tag">Medium Readiness</div>
+        <h4>Data Entry &amp; Migration</h4>
+        <p>Cross-system data transfer. Needs validation rules defined.</p>
+      </div>
+      <div class="auto-item low">
+        <div class="auto-tag">Low Readiness</div>
+        <h4>Creative Review</h4>
+        <p>High variability. AI can assist but not replace human judgment here.</p>
+      </div>
+      <div class="auto-item low">
+        <div class="auto-tag">Low Readiness</div>
+        <h4>Strategic Planning</h4>
+        <p>Complex, context-dependent. Go2 provides data inputs, not decisions.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Final CTA -->
+<section class="final-cta" id="demo">
+  <div class="section-inner">
+    <div class="section-label">Get Started</div>
+    <h2>Stop drowning in noise.<br>Start finding the signal.</h2>
+    <p>See how Go2 can surface the insights hiding in your team's daily work data. Book a 30-minute demo.</p>
+    <a href="#" class="cta-primary">Request a Demo</a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <p>&copy; 2026 Go2. All rights reserved. &nbsp;|&nbsp; go2.io</p>
+</footer>
+
+<script>
+// Radar background animation
+const canvas=document.getElementById('radarBg');
+const ctx=canvas.getContext('2d');
+let w,h;
+function resize(){w=canvas.width=window.innerWidth;h=canvas.height=window.innerHeight}
+resize();
+window.addEventListener('resize',resize);
+
+const dots=[];
+for(let i=0;i<80;i++){
+  dots.push({x:Math.random()*1.2-0.1,y:Math.random()*1.2-0.1,r:Math.random()*2+0.5,speed:Math.random()*0.0003+0.0001,angle:Math.random()*Math.PI*2});
+}
+
+function drawRadar(t){
+  ctx.clearRect(0,0,w,h);
+  const cx=w*0.7,cy=h*0.3,maxR=Math.min(w,h)*0.4;
+  // Concentric circles
+  for(let i=1;i<=4;i++){
+    ctx.beginPath();
+    ctx.arc(cx,cy,maxR*i/4,0,Math.PI*2);
+    ctx.strokeStyle='rgba(0,212,170,0.08)';
+    ctx.lineWidth=1;
+    ctx.stroke();
+  }
+  // Sweep line
+  const angle=(t*0.001)%(Math.PI*2);
+  ctx.beginPath();
+  ctx.moveTo(cx,cy);
+  ctx.lineTo(cx+Math.cos(angle)*maxR,cy+Math.sin(angle)*maxR);
+  ctx.strokeStyle='rgba(0,212,170,0.15)';
+  ctx.lineWidth=2;
+  ctx.stroke();
+  // Dots
+  dots.forEach(d=>{
+    d.angle+=d.speed;
+    const dx=cx+(d.x*w-cx)*0.8+Math.cos(d.angle)*20;
+    const dy=cy+(d.y*h-cy)*0.8+Math.sin(d.angle)*20;
+    ctx.beginPath();
+    ctx.arc(dx,dy,d.r,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,212,170,0.3)';
+    ctx.fill();
+  });
+  requestAnimationFrame(drawRadar);
+}
+requestAnimationFrame(drawRadar);
+
+// Scroll reveal
+const observer=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='translateY(0)'}
+  });
+},{threshold:0.1});
+document.querySelectorAll('section > div').forEach(el=>{
+  el.style.opacity='0';el.style.transform='translateY(30px)';el.style.transition='opacity 0.7s ease, transform 0.7s ease';
+  observer.observe(el);
+});
+</script>
+</body>
+</html>

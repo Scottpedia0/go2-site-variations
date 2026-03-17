@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 — AI Coached by a Million Workers</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--surface:#12121a;--card:#1a1a26;--border:#2a2a3a;--text:#e8e8f0;--muted:#8888aa;--accent:#4f6ef7;--accent2:#7c5cfc;--gold:#f0c040;--green:#34d399;--grad:linear-gradient(135deg,#4f6ef7,#7c5cfc)}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+a{color:var(--accent);text-decoration:none}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,10,15,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 2rem;height:64px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:1.5rem;font-weight:800;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-links{display:flex;gap:2rem;align-items:center}
+.nav-links a{color:var(--muted);font-size:.9rem;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{background:var(--grad);color:#fff!important;padding:.5rem 1.25rem;border-radius:8px;font-weight:600;font-size:.9rem}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6rem 2rem 4rem;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:800px;background:radial-gradient(circle,rgba(79,110,247,.12) 0%,transparent 70%);pointer-events:none}
+.hero-number{font-size:clamp(5rem,15vw,12rem);font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;margin-bottom:.5rem;opacity:0;animation:fadeUp .8s ease forwards}
+.hero-label{font-size:1.3rem;color:var(--muted);margin-bottom:2rem;opacity:0;animation:fadeUp .8s ease .2s forwards}
+.hero h1{font-size:clamp(1.5rem,4vw,3rem);max-width:800px;line-height:1.3;margin-bottom:1.5rem;opacity:0;animation:fadeUp .8s ease .4s forwards}
+.hero p{font-size:1.15rem;color:var(--muted);max-width:600px;margin-bottom:2.5rem;opacity:0;animation:fadeUp .8s ease .6s forwards}
+.cta-row{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;opacity:0;animation:fadeUp .8s ease .8s forwards}
+.btn-primary{background:var(--grad);color:#fff;padding:.85rem 2rem;border-radius:10px;font-weight:700;font-size:1rem;border:none;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(79,110,247,.3)}
+.btn-secondary{background:transparent;color:var(--text);padding:.85rem 2rem;border-radius:10px;font-weight:600;font-size:1rem;border:1px solid var(--border);cursor:pointer;transition:border-color .2s}
+.btn-secondary:hover{border-color:var(--accent)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+
+/* TICKER */
+.ticker-section{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:3rem 2rem;overflow:hidden}
+.ticker-track{display:flex;animation:scroll 30s linear infinite;width:max-content}
+.ticker-item{display:flex;align-items:center;gap:.75rem;padding:0 3rem;white-space:nowrap}
+.ticker-num{font-size:2rem;font-weight:800;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.ticker-label{font-size:.9rem;color:var(--muted)}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* DATA GRID */
+.data-section{padding:6rem 2rem;max-width:1200px;margin:0 auto}
+.section-badge{display:inline-block;padding:.35rem 1rem;background:rgba(79,110,247,.1);border:1px solid rgba(79,110,247,.2);border-radius:20px;font-size:.8rem;color:var(--accent);font-weight:600;margin-bottom:1rem;text-transform:uppercase;letter-spacing:.05em}
+.section-title{font-size:clamp(1.5rem,3.5vw,2.5rem);margin-bottom:1rem;line-height:1.2}
+.section-sub{color:var(--muted);font-size:1.1rem;max-width:600px;margin-bottom:3rem}
+.data-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem}
+.data-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;transition:border-color .3s,transform .3s}
+.data-card:hover{border-color:var(--accent);transform:translateY(-4px)}
+.data-card-num{font-size:2.5rem;font-weight:800;margin-bottom:.5rem}
+.data-card-num.blue{color:var(--accent)}
+.data-card-num.purple{color:var(--accent2)}
+.data-card-num.green{color:var(--green)}
+.data-card-num.gold{color:var(--gold)}
+.data-card h3{font-size:1.1rem;margin-bottom:.5rem}
+.data-card p{color:var(--muted);font-size:.9rem;line-height:1.5}
+
+/* HOW */
+.how-section{padding:6rem 2rem;background:var(--surface)}
+.how-inner{max-width:1200px;margin:0 auto}
+.how-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:2rem}
+.how-step{position:relative;padding:2rem;background:var(--bg);border:1px solid var(--border);border-radius:16px}
+.step-num{position:absolute;top:-14px;left:24px;background:var(--grad);color:#fff;font-weight:800;font-size:.85rem;padding:.25rem .75rem;border-radius:8px}
+.how-step h3{margin-top:1rem;font-size:1.15rem;margin-bottom:.5rem}
+.how-step p{color:var(--muted);font-size:.95rem}
+
+/* BENCHMARKS */
+.bench-section{padding:6rem 2rem;max-width:1000px;margin:0 auto}
+.bench-row{display:flex;align-items:center;gap:2rem;padding:1.5rem 0;border-bottom:1px solid var(--border)}
+.bench-row:last-child{border-bottom:none}
+.bench-label{flex:0 0 200px;font-weight:600}
+.bench-bar-wrap{flex:1;background:var(--card);border-radius:8px;height:32px;overflow:hidden;position:relative}
+.bench-bar{height:100%;border-radius:8px;background:var(--grad);display:flex;align-items:center;padding-left:12px;font-size:.8rem;font-weight:700;transition:width 1.5s ease}
+.bench-val{flex:0 0 80px;text-align:right;font-weight:700;color:var(--accent)}
+
+/* INDUSTRIES */
+.ind-section{padding:6rem 2rem;background:var(--surface)}
+.ind-inner{max-width:1200px;margin:0 auto}
+.ind-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem}
+.ind-card{padding:1.5rem;background:var(--bg);border:1px solid var(--border);border-radius:12px;text-align:center;transition:border-color .3s}
+.ind-card:hover{border-color:var(--accent)}
+.ind-icon{font-size:2rem;margin-bottom:.75rem}
+.ind-card h3{font-size:1rem;margin-bottom:.25rem}
+.ind-card p{color:var(--muted);font-size:.85rem}
+.ind-card .ind-num{color:var(--green);font-weight:700;font-size:1.1rem;margin-top:.5rem}
+
+/* PROOF */
+.proof-section{padding:6rem 2rem;max-width:1000px;margin:0 auto;text-align:center}
+.proof-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:2rem;margin-top:3rem}
+.proof-stat{padding:2rem}
+.proof-stat .big{font-size:3rem;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.proof-stat .label{color:var(--muted);font-size:.9rem;margin-top:.5rem}
+
+/* QUOTE */
+.quote-section{padding:5rem 2rem;background:var(--surface);text-align:center}
+.quote-inner{max-width:700px;margin:0 auto}
+.quote-text{font-size:1.4rem;font-style:italic;line-height:1.6;margin-bottom:1.5rem}
+.quote-attr{color:var(--muted);font-size:.95rem}
+
+/* FINAL CTA */
+.final-section{padding:6rem 2rem;text-align:center}
+.final-inner{max-width:700px;margin:0 auto}
+.final-inner h2{font-size:clamp(1.5rem,4vw,2.5rem);margin-bottom:1rem}
+.final-inner p{color:var(--muted);font-size:1.1rem;margin-bottom:2rem}
+
+/* FOOTER */
+footer{padding:3rem 2rem;border-top:1px solid var(--border);text-align:center;color:var(--muted);font-size:.85rem}
+footer a{color:var(--muted)}
+
+/* FAQ */
+.faq-section{padding:6rem 2rem;max-width:800px;margin:0 auto}
+.faq-item{border-bottom:1px solid var(--border);padding:1.5rem 0}
+.faq-q{font-weight:700;font-size:1.05rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.faq-q::after{content:'+';font-size:1.5rem;color:var(--muted);transition:transform .3s}
+.faq-item.open .faq-q::after{transform:rotate(45deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease,padding .3s ease;color:var(--muted);font-size:.95rem;line-height:1.6}
+.faq-item.open .faq-a{max-height:300px;padding-top:1rem}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .nav-links a:not(.nav-cta){display:none}
+  .bench-row{flex-direction:column;gap:.5rem;align-items:flex-start}
+  .bench-label{flex:none}
+  .bench-val{flex:none;text-align:left}
+  .ticker-item{padding:0 1.5rem}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Go2</div>
+  <div class="nav-links">
+    <a href="#data">The Data</a>
+    <a href="#how">How It Works</a>
+    <a href="#industries">Industries</a>
+    <a href="#faq">FAQ</a>
+    <a href="#cta" class="nav-cta">Get a Demo</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-number" id="heroNum">0</div>
+  <div class="hero-label">workers analyzed and counting</div>
+  <h1>Go2's AI has watched nearly a million people work. It knows what efficient looks like.</h1>
+  <p>Every role. Every industry. Every workflow. Your team gets coaching powered by the world's largest productivity dataset. No competitor comes close.</p>
+  <div class="cta-row">
+    <button class="btn-primary" onclick="document.getElementById('cta').scrollIntoView({behavior:'smooth'})">See What Your Team Is Missing</button>
+    <button class="btn-secondary" onclick="document.getElementById('data').scrollIntoView({behavior:'smooth'})">Explore the Data</button>
+  </div>
+</section>
+
+<section class="ticker-section">
+  <div class="ticker-track">
+    <div class="ticker-item"><span class="ticker-num">947K+</span><span class="ticker-label">Workers Analyzed</span></div>
+    <div class="ticker-item"><span class="ticker-num">2.1B</span><span class="ticker-label">Work Sessions</span></div>
+    <div class="ticker-item"><span class="ticker-num">142</span><span class="ticker-label">Industries Covered</span></div>
+    <div class="ticker-item"><span class="ticker-num">34%</span><span class="ticker-label">Avg. Efficiency Gain</span></div>
+    <div class="ticker-item"><span class="ticker-num">8,400+</span><span class="ticker-label">Workflow Patterns</span></div>
+    <div class="ticker-item"><span class="ticker-num">3</span><span class="ticker-label">Frontier AI Models</span></div>
+    <div class="ticker-item"><span class="ticker-num">947K+</span><span class="ticker-label">Workers Analyzed</span></div>
+    <div class="ticker-item"><span class="ticker-num">2.1B</span><span class="ticker-label">Work Sessions</span></div>
+    <div class="ticker-item"><span class="ticker-num">142</span><span class="ticker-label">Industries Covered</span></div>
+    <div class="ticker-item"><span class="ticker-num">34%</span><span class="ticker-label">Avg. Efficiency Gain</span></div>
+    <div class="ticker-item"><span class="ticker-num">8,400+</span><span class="ticker-label">Workflow Patterns</span></div>
+    <div class="ticker-item"><span class="ticker-num">3</span><span class="ticker-label">Frontier AI Models</span></div>
+  </div>
+</section>
+
+<section class="data-section" id="data">
+  <span class="section-badge">The Data Advantage</span>
+  <h2 class="section-title">Nobody else has this data. That's the whole point.</h2>
+  <p class="section-sub">Every competitor starts from zero with your team. Go2 starts with nearly a million data points of what "great" looks like.</p>
+  <div class="data-grid">
+    <div class="data-card">
+      <div class="data-card-num blue">947,000+</div>
+      <h3>Workers Analyzed</h3>
+      <p>Nearly a million workers across every role imaginable. From accountants to developers to customer support. Go2 has seen it all.</p>
+    </div>
+    <div class="data-card">
+      <div class="data-card-num purple">2.1 Billion</div>
+      <h3>Work Sessions Captured</h3>
+      <p>Every click, every workflow, every pattern. This isn't survey data. It's real work, captured at the desktop level.</p>
+    </div>
+    <div class="data-card">
+      <div class="data-card-num green">142</div>
+      <h3>Industries Mapped</h3>
+      <p>Legal. Healthcare. Finance. eCommerce. Real estate. Manufacturing. SaaS. Whatever your team does, Go2 has benchmarks for it.</p>
+    </div>
+    <div class="data-card">
+      <div class="data-card-num gold">8,400+</div>
+      <h3>Workflow Patterns</h3>
+      <p>Go2 has identified thousands of distinct workflow patterns. It knows which ones are efficient and which ones are burning time.</p>
+    </div>
+    <div class="data-card">
+      <div class="data-card-num blue">34%</div>
+      <h3>Average Efficiency Gain</h3>
+      <p>Teams using Go2 coaching see an average 34% improvement in productive output within the first 90 days.</p>
+    </div>
+    <div class="data-card">
+      <div class="data-card-num purple">3 AI Models</div>
+      <h3>Frontier AI Coaching</h3>
+      <p>Claude, GPT, and Gemini work together to analyze your team's patterns and deliver personalized, actionable coaching.</p>
+    </div>
+  </div>
+</section>
+
+<section class="how-section" id="how">
+  <div class="how-inner">
+    <span class="section-badge">How It Works</span>
+    <h2 class="section-title">From install to insights in under a day</h2>
+    <p class="section-sub">Go2 runs silently on your team's desktops. No behavior change required. The AI does the heavy lifting.</p>
+    <div class="how-grid">
+      <div class="how-step">
+        <span class="step-num">01</span>
+        <h3>Deploy the Desktop Agent</h3>
+        <p>A lightweight agent installs on each team member's machine. It captures work patterns without interrupting the flow. Takes about 5 minutes per machine.</p>
+      </div>
+      <div class="how-step">
+        <span class="step-num">02</span>
+        <h3>AI Benchmarks Your Team</h3>
+        <p>Go2 compares your team's workflows against its dataset of nearly a million workers. It identifies gaps, friction points, and automation opportunities unique to your business.</p>
+      </div>
+      <div class="how-step">
+        <span class="step-num">03</span>
+        <h3>Personalized Coaching Begins</h3>
+        <p>Each team member gets individualized nudges and coaching. "You spend 2.3 hours on email daily. Top performers in your role spend 1.1." Specific. Actionable. Private.</p>
+      </div>
+      <div class="how-step">
+        <span class="step-num">04</span>
+        <h3>Managers Get Aggregated Insights</h3>
+        <p>No individual surveillance. Managers see team-level trends, automation candidates, and workflow bottlenecks. The data helps you lead better, not micromanage.</p>
+      </div>
+      <div class="how-step">
+        <span class="step-num">05</span>
+        <h3>Automation Mapping</h3>
+        <p>Go2 identifies repetitive workflows that can be automated. It estimates time savings and prioritizes by impact. You get a roadmap, not just a report.</p>
+      </div>
+      <div class="how-step">
+        <span class="step-num">06</span>
+        <h3>Continuous Improvement</h3>
+        <p>As your team improves, Go2 adjusts. New benchmarks, new coaching, new automation targets. The AI gets smarter about YOUR team every day.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="bench-section" id="benchmarks">
+  <span class="section-badge">Benchmarks</span>
+  <h2 class="section-title">How your team stacks up</h2>
+  <p class="section-sub">Go2 knows the difference between "normal" and "great" for every role. Here's what our data shows.</p>
+  <div style="margin-top:2rem">
+    <div class="bench-row">
+      <div class="bench-label">Context Switching</div>
+      <div class="bench-bar-wrap"><div class="bench-bar" style="width:78%">Average team</div></div>
+      <div class="bench-val">78/day</div>
+    </div>
+    <div class="bench-row">
+      <div class="bench-label">After Go2 Coaching</div>
+      <div class="bench-bar-wrap"><div class="bench-bar" style="width:31%;background:var(--green)">Coached team</div></div>
+      <div class="bench-val" style="color:var(--green)">31/day</div>
+    </div>
+    <div class="bench-row">
+      <div class="bench-label">Email Time (daily)</div>
+      <div class="bench-bar-wrap"><div class="bench-bar" style="width:65%">2.3 hrs</div></div>
+      <div class="bench-val">2.3 hrs</div>
+    </div>
+    <div class="bench-row">
+      <div class="bench-label">After Go2 Coaching</div>
+      <div class="bench-bar-wrap"><div class="bench-bar" style="width:30%;background:var(--green)">1.1 hrs</div></div>
+      <div class="bench-val" style="color:var(--green)">1.1 hrs</div>
+    </div>
+    <div class="bench-row">
+      <div class="bench-label">Deep Work Blocks</div>
+      <div class="bench-bar-wrap"><div class="bench-bar" style="width:22%">Avg team</div></div>
+      <div class="bench-val">22 min</div>
+    </div>
+    <div class="bench-row">
+      <div class="bench-label">After Go2 Coaching</div>
+      <div class="bench-bar-wrap"><div class="bench-bar" style="width:65%;background:var(--green)">52 min</div></div>
+      <div class="bench-val" style="color:var(--green)">52 min</div>
+    </div>
+  </div>
+</section>
+
+<section class="ind-section" id="industries">
+  <div class="ind-inner">
+    <span class="section-badge">Industry Coverage</span>
+    <h2 class="section-title">Go2 has benchmarks for your industry</h2>
+    <p class="section-sub">142 industries and counting. Here are some of the most impactful results we've seen.</p>
+    <div class="ind-grid">
+      <div class="ind-card">
+        <div class="ind-icon">&#9878;</div>
+        <h3>Legal</h3>
+        <p>Paralegals, associates, case managers</p>
+        <div class="ind-num">+41% billable time</div>
+      </div>
+      <div class="ind-card">
+        <div class="ind-icon">&#9825;</div>
+        <h3>Healthcare Admin</h3>
+        <p>Billing, scheduling, patient coordination</p>
+        <div class="ind-num">+38% throughput</div>
+      </div>
+      <div class="ind-card">
+        <div class="ind-icon">&#9733;</div>
+        <h3>SaaS / Tech</h3>
+        <p>Engineering, support, product teams</p>
+        <div class="ind-num">+29% deep work</div>
+      </div>
+      <div class="ind-card">
+        <div class="ind-icon">&#9041;</div>
+        <h3>Financial Services</h3>
+        <p>Analysts, advisors, operations</p>
+        <div class="ind-num">+36% efficiency</div>
+      </div>
+      <div class="ind-card">
+        <div class="ind-icon">&#9992;</div>
+        <h3>eCommerce</h3>
+        <p>Customer service, fulfillment, marketing</p>
+        <div class="ind-num">+33% productivity</div>
+      </div>
+      <div class="ind-card">
+        <div class="ind-icon">&#9881;</div>
+        <h3>Manufacturing</h3>
+        <p>Admin, procurement, scheduling</p>
+        <div class="ind-num">+27% time savings</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="proof-section">
+  <span class="section-badge">By the Numbers</span>
+  <h2 class="section-title">Scale matters. Here's ours.</h2>
+  <div class="proof-grid">
+    <div class="proof-stat">
+      <div class="big">947K+</div>
+      <div class="label">Workers in dataset</div>
+    </div>
+    <div class="proof-stat">
+      <div class="big">0</div>
+      <div class="label">Competitors with AI coaching at this scale</div>
+    </div>
+    <div class="proof-stat">
+      <div class="big">90</div>
+      <div class="label">Days to measurable ROI</div>
+    </div>
+    <div class="proof-stat">
+      <div class="big">5 min</div>
+      <div class="label">Setup per machine</div>
+    </div>
+  </div>
+</section>
+
+<section class="quote-section">
+  <div class="quote-inner">
+    <div class="quote-text">"We thought we knew where the time was going. Go2 showed us we were wrong about almost everything. The AI coaching paid for itself in three weeks."</div>
+    <div class="quote-attr">-- Operations Director, 42-person logistics company</div>
+  </div>
+</section>
+
+<section class="faq-section" id="faq">
+  <span class="section-badge">FAQ</span>
+  <h2 class="section-title" style="margin-bottom:2rem">Common questions</h2>
+  <div class="faq-item">
+    <div class="faq-q">Is this employee surveillance?</div>
+    <div class="faq-a">No. Go2 is a coaching tool, not a surveillance tool. Employees get direct, personalized coaching. Managers only see aggregated team-level insights -- never individual screenshots, keystrokes, or browsing history. The goal is to help people work better, not watch them.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">What makes the ~1M worker dataset valuable?</div>
+    <div class="faq-a">Every other tool starts from scratch with your team. Go2 already knows what "great" looks like for virtually every knowledge work role. Day one, your team gets benchmarked against the best. No ramp-up period, no guessing.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Which AI models does Go2 use?</div>
+    <div class="faq-a">Go2 uses frontier AI from Claude (Anthropic), GPT (OpenAI), and Gemini (Google). These models analyze patterns across the dataset and deliver coaching that's specific to each person's role and workflow. No generic advice.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">How long until I see results?</div>
+    <div class="faq-a">Most teams see measurable improvements within 2-4 weeks. The AI starts delivering coaching within the first 48 hours of data collection. Full ROI typically materializes within 90 days.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">What size teams does Go2 work best for?</div>
+    <div class="faq-a">Go2 is designed for small and mid-size businesses, typically 15-50 remote employees. The aggregated insights become most valuable at around 15 people, and the coaching works for any team size.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Is employee data safe?</div>
+    <div class="faq-a">Absolutely. All data is encrypted in transit and at rest. Individual coaching data is only visible to the employee themselves. Managers never see individual-level data. Go2 is designed with privacy at its core.</div>
+  </div>
+</section>
+
+<section class="final-section" id="cta">
+  <div class="final-inner">
+    <h2>Your competitors don't have this data. You can.</h2>
+    <p>Nearly a million workers. 142 industries. Frontier AI coaching. See what Go2 finds in your team's first week.</p>
+    <button class="btn-primary" style="font-size:1.1rem;padding:1rem 2.5rem">Request Your Demo</button>
+  </div>
+</section>
+
+<footer>
+  <p>&copy; 2026 Go2. All rights reserved. &nbsp;|&nbsp; <a href="#">Privacy</a> &nbsp;|&nbsp; <a href="#">Terms</a> &nbsp;|&nbsp; <a href="#">Security</a></p>
+</footer>
+
+<script>
+// Animate hero number
+(function(){
+  const target=947000;
+  const el=document.getElementById('heroNum');
+  const duration=2000;
+  const start=performance.now();
+  function tick(now){
+    const elapsed=now-start;
+    const progress=Math.min(elapsed/duration,1);
+    const eased=1-Math.pow(1-progress,3);
+    const current=Math.floor(eased*target);
+    el.textContent=current.toLocaleString()+'+';
+    if(progress<1)requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+
+// FAQ toggles
+document.querySelectorAll('.faq-q').forEach(q=>{
+  q.addEventListener('click',()=>{
+    q.parentElement.classList.toggle('open');
+  });
+});
+
+// Intersection observer for bench bars
+const bars=document.querySelectorAll('.bench-bar');
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.style.width=e.target.style.width;
+    }
+  });
+},{threshold:.3});
+bars.forEach(b=>observer.observe(b));
+</script>
+</body>
+</html>
