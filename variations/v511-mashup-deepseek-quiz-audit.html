@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go2.io | AI Readiness Quiz & Free Operations Audit</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            color: #1e293b;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            padding: 40px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .logo {
+            font-weight: 800;
+            font-size: 2rem;
+            color: #3b82f6;
+            margin-bottom: 10px;
+        }
+        .tagline {
+            color: #64748b;
+            font-weight: 500;
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+        }
+        h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, #1e40af, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-subtitle {
+            font-size: 1.3rem;
+            color: #475569;
+            margin-bottom: 40px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .quiz-container {
+            display: none;
+        }
+        .results-container {
+            display: none;
+        }
+        .active {
+            display: block;
+        }
+        .progress-container {
+            margin-bottom: 40px;
+        }
+        .progress-bar {
+            height: 10px;
+            background-color: #e2e8f0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #3b82f6);
+            width: 0%;
+            border-radius: 5px;
+            transition: width 0.6s ease;
+        }
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            color: #475569;
+        }
+        .question-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 30px;
+            border: 1px solid #e2e8f0;
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .question-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            color: #1e293b;
+        }
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+        .option {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-weight: 500;
+        }
+        .option:hover {
+            border-color: #3b82f6;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.1);
+        }
+        .option.selected {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+            color: #1e40af;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        button {
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: linear-gradient(90deg, #3b82f6, #1e40af);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+        }
+        .btn-secondary {
+            background-color: #f1f5f9;
+            color: #475569;
+        }
+        .btn-secondary:hover {
+            background-color: #e2e8f0;
+        }
+        .start-btn {
+            font-size: 1.2rem;
+            padding: 20px 50px;
+            margin: 20px auto;
+            display: block;
+        }
+        .score-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .score-circle {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: conic-gradient(#10b981 0% 0%, #e2e8f0 0% 100%);
+            margin: 0 auto 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .score-inner {
+            width: 140px;
+            height: 140px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+        }
+        .score-number {
+            font-size: 3.5rem;
+            background: linear-gradient(90deg, #1e40af, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+        }
+        .score-grade {
+            font-size: 1.5rem;
+            color: #10b981;
+            font-weight: 800;
+        }
+        .score-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+        .score-subtitle {
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+        .radar-container {
+            max-width: 500px;
+            margin: 40px auto;
+        }
+        .dimensions-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin: 40px 0;
+        }
+        .dimension {
+            background: #f8fafc;
+            padding: 25px;
+            border-radius: 16px;
+            border-left: 5px solid #3b82f6;
+        }
+        .dimension h3 {
+            margin-bottom: 10px;
+            color: #1e293b;
+        }
+        .dimension-score {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #3b82f6;
+        }
+        .audit-section {
+            background: #f0f9ff;
+            border-radius: 20px;
+            padding: 40px;
+            margin: 40px 0;
+            border: 2px solid #bae6fd;
+        }
+        .audit-section h2 {
+            color: #0369a1;
+            margin-bottom: 25px;
+        }
+        .bottleneck {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border-left: 4px solid #f59e0b;
+        }
+        .bottleneck h4 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #92400e;
+        }
+        .comparison-box {
+            background: linear-gradient(90deg, #1e293b, #334155);
+            color: white;
+            padding: 30px;
+            border-radius: 16px;
+            text-align: center;
+            margin: 40px 0;
+        }
+        .comparison-box h3 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+        .cta-section {
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(90deg, #ecfdf5, #f0f9ff);
+            border-radius: 20px;
+            margin-top: 40px;
+        }
+        .cta-section h2 {
+            font-size: 2.2rem;
+            margin-bottom: 20px;
+            color: #1e293b;
+        }
+        .cta-section p {
+            font-size: 1.2rem;
+            color: #475569;
+            margin-bottom: 30px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .cta-button {
+            font-size: 1.3rem;
+            padding: 22px 50px;
+            background: linear-gradient(90deg, #10b981, #3b82f6);
+            color: white;
+            border-radius: 14px;
+            display: inline-block;
+            text-decoration: none;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(16, 185, 129, 0.3);
+        }
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            color: #64748b;
+            font-size: 0.9rem;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px;
+            }
+            h1 {
+                font-size: 2.2rem;
+            }
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+            .dimensions-grid {
+                grid-template-columns: 1fr;
+            }
+            .question-card {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">Go2.io</div>
+            <div class="tagline">AI Productivity Coaching • Not Surveillance</div>
+            <h1>Is Your Team AI-Ready?<br>Take the 2-Minute Assessment.</h1>
+            <p class="hero-subtitle">Discover your AI readiness score, uncover hidden bottlenecks, and receive a personalized operations audit—valued at $15,000—for free.</p>
+            <button id="startQuiz" class="btn-primary start-btn">Start Assessment →</button>
+        </header>
+
+        <div id="quizContainer" class="quiz-container">
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text">
+                    <span>AI Readiness Quiz</span>
+                    <span id="progressText">Question 1 of 10</span>
+                </div>
+            </div>
+
+            <div id="questionContainer">
+                <!-- Questions injected via JS -->
+            </div>
+
+            <div class="nav-buttons">
+                <button id="prevBtn" class="btn-secondary" style="visibility: hidden;">← Previous</button>
+                <button id="nextBtn" class="btn-primary">Next →</button>
+            </div>
+        </div>
+
+        <div id="resultsContainer" class="results-container">
+            <div class="score-header">
+                <div class="score-circle" id="scoreCircle">
+                    <div class="score-inner">
+                        <div class="score-number" id="finalScore">0</div>
+                        <div class="score-grade" id="scoreGrade">F</div>
+                    </div>
+                </div>
+                <h2 class="score-title" id="scoreTitle">Calculating Your Score...</h2>
+                <p class="score-subtitle">Your personalized operations audit is ready below.</p>
+            </div>
+
+            <div class="radar-container">
+                <svg id="radarChart" width="500" height="500" viewBox="0 0 500 500"></svg>
+            </div>
+
+            <div class="dimensions-grid">
+                <div class="dimension">
+                    <h3>Technology</h3>
+                    <div class="dimension-score" id="techScore">0</div>
+                    <p>Tool integration, AI adoption, data infrastructure.</p>
+                </div>
+                <div class="dimension">
+                    <h3>Culture</h3>
+                    <div class="dimension-score" id="cultureScore">0</div>
+                    <p>Openness to AI, manager visibility, employee satisfaction.</p>
+                </div>
+                <div class="dimension">
+                    <h3>Process</h3>
+                    <div class="dimension-score" id="processScore">0</div>
+                    <p>Meeting efficiency, documentation, workflow clarity.</p>
+                </div>
+                <div class="dimension">
+                    <h3>Data</h3>
+                    <div class="dimension-score" id="dataScore">0</div>
+                    <p>Data capture, quality, accessibility for AI insights.</p>
+                </div>
+            </div>
+
+            <div class="audit-section">
+                <h2>🔍 Your Free Operations Audit</h2>
+                <p><strong>Top 3 Bottlenecks Identified:</strong></p>
+                <div id="bottlenecksList">
+                    <!-- Bottlenecks injected via JS -->
+                </div>
+                <p style="margin-top: 25px;"><strong>Estimated Hours Wasted Per Week:</strong> <span id="hoursWasted" style="color: #dc2626; font-weight: 700;">0</span></p>
+                <p><strong>Projected Annual ROI with Go2.io:</strong> <span id="projectedROI" style="color: #10b981; font-weight: 700;">$0</span></p>
+                <p><strong>Recommended Go2 Features:</strong> <span id="recommendedFeatures">Go2Bot Coaching, Path Self‑Query, Manager Insights Dashboard</span></p>
+            </div>
+
+            <div class="comparison-box">
+                <h3>💰 You Just Saved $15,000</h3>
+                <p>A management consultant would charge $15,000 for an audit of this depth. You just received it free in 2 minutes.</p>
+                <p style="margin-top: 15px; font-size: 0.9rem;">(Based on average rates for operational efficiency audits)</p>
+            </div>
+
+            <div class="cta-section">
+                <h2>Fix These Bottlenecks</h2>
+                <p>Stop leaking productivity and revenue. Implement the insights from your audit with AI coaching designed for real work.</p>
+                <a href="https://go2.io" class="cta-button">Start Your 14‑Day Free Trial →</a>
+                <p style="margin-top: 20px; font-size: 0.9rem;">No credit card required • Cancel anytime • 65% avg. productivity gains</p>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Go2.io | AI Productivity Coaching Platform | © 2023 | Track $19/user/mo | Coach $49/user/mo</p>
+        <p style="margin-top: 5px;">Results: 65% productivity gains (PopMenu) | 45% redundancy eliminated (BroadVoice) | 300% ticket volume increase (Vigamore)</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const startBtn = document.getElementById('startQuiz');
+            const quizContainer = document.getElementById('quizContainer');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const questionContainer = document.getElementById('questionContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const finalScoreEl = document.getElementById('finalScore');
+            const scoreGradeEl = document.getElementById('scoreGrade');
+            const scoreTitleEl = document.getElementById('scoreTitle');
+            const techScoreEl = document.getElementById('techScore');
+            const cultureScoreEl = document.getElementById('cultureScore');
+            const processScoreEl = document.getElementById('processScore');
+            const dataScoreEl = document.getElementById('dataScore');
+            const bottlenecksList = document.getElementById('bottlenecksList');
+            const hoursWastedEl = document.getElementById('hoursWasted');
+            const projectedROIEl = document.getElementById('projectedROI');
+            const recommendedFeaturesEl = document.getElementById('recommendedFeatures');
+            const scoreCircle = document.getElementById('scoreCircle');
+
+            let currentQuestion = 0;
+            let answers = [];
+            let dimensionScores = { tech: 0, culture: 0, process: 0, data: 0 };
+
+            const questions = [
+                {
+                    q: "What is your approximate team size?",
+                    options: ["1-10", "11-50", "51-200", "200+"],
+                    dimensions: { tech: 0.1, culture: 0.1, process: 0.1, data: 0.1 }
+                },
+                {
+                    q: "Which best describes your current tech stack?",
+                    options: ["Basic (email, spreadsheets)", "Standard (Slack, Asana, CRM)", "Advanced (API integrations, custom tools)", "AI‑enhanced (AI tools in some workflows)"],
+                    dimensions: { tech: 0.3, culture: 0.1, process: 0.1, data: 0.2 }
+                },
+                {
+                    q: "What is your team's current AI adoption level?",
+                    options: ["Not using AI", "Experimenting with ChatGPT/Copilot", "Using AI for specific tasks", "AI is embedded in core workflows"],
+                    dimensions: { tech: 0.4, culture: 0.3, process: 0.2, data: 0.3 }
+                },
+                {
+                    q: "What is your biggest operational pain point?",
+                    options: ["Too many meetings", "Poor visibility into work", "Inefficient processes", "Employee burnout/turnover"],
+                    dimensions: { tech: 0.1, culture: 0.4, process: 0.4, data: 0.1 }
+                },
+                {
+                    q: "What is your work arrangement?",
+                    options: ["Fully in‑office", "Hybrid (mix of office/remote)", "Fully remote", "Flexible (choose when/where)"],
+                    dimensions: { tech: 0.2, culture: 0.3, process: 0.2, data: 0.2 }
+                },
+                {
+                    q: "How many hours per week are spent in meetings?",
+                    options: ["Less than 5", "5‑10", "10‑20", "More than 20"],
+                    dimensions: { tech: 0.1, culture: 0.2, process: 0.4, data: 0.1 }
+                },
+                {
+                    q: "How would you rate your documentation/knowledge sharing?",
+                    options: ["Ad‑hoc (in people's heads)", "Basic (shared drives, some docs)", "Organized (wiki, regular updates)", "Systematic (searchable, always current)"],
+                    dimensions: { tech: 0.2, culture: 0.2, process: 0.3, data: 0.4 }
+                },
+                {
+                    q: "How well do managers see team workflow?",
+                    options: ["Limited (ask for updates)", "Some (stand‑ups, reports)", "Good (dashboards, KPIs)", "Excellent (real‑time, granular insights)"],
+                    dimensions: { tech: 0.3, culture: 0.4, process: 0.2, data: 0.3 }
+                },
+                {
+                    q: "Estimated employee satisfaction/engagement?",
+                    options: ["Low (high turnover, burnout)", "Medium (some disengagement)", "High (generally motivated)", "Very high (thriving, proactive)"],
+                    dimensions: { tech: 0.1, culture: 0.5, process: 0.2, data: 0.1 }
+                },
+                {
+                    q: "Annual budget for productivity/ops tools per user?",
+                    options: ["<$100", "$100‑500", "$500‑2000", ">$2000"],
+                    dimensions: { tech: 0.4, culture: 0.1, process: 0.2, data: 0.3 }
+                }
+            ];
+
+            const optionScores = [0, 33, 66, 100];
+
+            startBtn.addEventListener('click', function() {
+                startBtn.style.display = 'none';
+                quizContainer.classList.add('active');
+                loadQuestion();
+            });
+
+            function loadQuestion() {
+                progressFill.style.width = `${((currentQuestion + 1) / questions.length) * 100}%`;
+                progressText.textContent = `Question ${currentQuestion + 1} of ${questions.length}`;
+                prevBtn.style.visibility = currentQuestion === 0 ? 'hidden' : 'visible';
+                nextBtn.textContent = currentQuestion === questions.length - 1 ? 'See Results →' : 'Next →';
+
+                const q = questions[currentQuestion];
+                questionContainer.innerHTML = `
+                    <div class="question-card">
+                        <h2 class="question-title">${q.q}</h2>
+                        <div class="options-grid">
+                            ${q.options.map((opt, idx) => `
+                                <div class="option ${answers[currentQuestion] === idx ? 'selected' : ''}" data-index="${idx}">
+                                    ${opt}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+
+                document.querySelectorAll('.option').forEach(opt => {
+                    opt.addEventListener('click', function() {
+                        document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+                        this.classList.add('selected');
+                        answers[currentQuestion] = parseInt(this.dataset.index);
+                    });
+                });
+            }
+
+            prevBtn.addEventListener('click', function() {
+                if (currentQuestion > 0) {
+                    currentQuestion--;
+                    loadQuestion();
+                }
+            });
+
+            nextBtn.addEventListener('click', function() {
+                if (answers[currentQuestion] === undefined) {
+                    alert('Please select an answer.');
+                    return;
+                }
+                if (currentQuestion < questions.length - 1) {
+                    currentQuestion++;
+                    loadQuestion();
+                } else {
+                    calculateResults();
+                    showResults();
+                }
+            });
+
+            function calculateResults() {
+                dimensionScores = { tech: 0, culture: 0, process: 0, data: 0 };
+                let totalWeight = { tech: 0, culture: 0, process: 0, data: 0 };
+
+                answers.forEach((ansIdx, qIdx) => {
+                    const q = questions[qIdx];
+                    const score = optionScores[ansIdx];
+                    Object.keys(dimensionScores).forEach(dim => {
+                        const weight = q.dimensions[dim] || 0;
+                        dimensionScores[dim] += score * weight;
+                        totalWeight[dim] += weight;
+                    });
+                });
+
+                Object.keys(dimensionScores).forEach(dim => {
+                    if (totalWeight[dim] > 0) {
+                        dimensionScores[dim] = Math.round(dimensionScores[dim] / totalWeight[dim]);
+                    }
+                });
+
+                const overallScore = Math.round((dimensionScores.tech + dimensionScores.culture + dimensionScores.process + dimensionScores.data) / 4);
+                return overallScore;
+            }
+
+            function showResults() {
+                const overallScore = calculateResults();
+                quizContainer.classList.remove('active');
+                resultsContainer.classList.add('active');
+
+                finalScoreEl.textContent = overallScore;
+                const grade = overallScore >= 90 ? 'A' : overallScore >= 75 ? 'B' : overallScore >= 60 ? 'C' : overallScore >= 40 ? 'D' : 'F';
+                scoreGradeEl.textContent = grade;
+                const titles = ['Needs Immediate Attention', 'Significant Gaps', 'Moderate Readiness', 'Strong Foundation', 'AI‑Ready Leader'];
+                const titleIdx = overallScore >= 90 ? 4 : overallScore >= 75 ? 3 : overallScore >= 60 ? 2 : overallScore >= 40 ? 1 : 0;
+                scoreTitleEl.textContent = titles[titleIdx];
+
+                techScoreEl.textContent = dimensionScores.tech;
+                cultureScoreEl.textContent = dimensionScores.culture;
+                processScoreEl.textContent = dimensionScores.process;
+                dataScoreEl.textContent = dimensionScores.data;
+
+                const bottlenecks = [];
+                if (dimensionScores.process < 50) bottlenecks.push('Inefficient meeting culture and unclear workflows');
+                if (dimensionScores.tech < 50) bottlenecks.push('Legacy tool stack limiting AI integration');
+                if (dimensionScores.culture < 50) bottlenecks.push('Low visibility leading to manager‑employee disconnect');
+                if (dimensionScores.data < 50) bottlenecks.push('Knowledge silos and poor documentation habits');
+                if (bottlenecks.length === 0) bottlenecks.push('Process inconsistency across teams', 'Underutilized data for decision‑making', 'Ad‑hoc communication causing delays');
+
+                bottlenecksList.innerHTML = '';
+                bottlenecks.slice(0,3).forEach(b => {
+                    bottlenecksList.innerHTML += `<div class="bottleneck"><h4>⛔ ${b}</h4><p>This is likely costing you productivity and increasing operational risk.</p></div>`;
+                });
+
+                const hoursWasted = Math.round((100 - overallScore) * 0.5 + 10);
+                hoursWastedEl.textContent = `${hoursWasted}+`;
+
+                const teamSize = answers[0] === 0 ? 5 : answers[0] === 1 ? 25 : answers[0] === 2 ? 100 : 250;
+                const roi = Math.round((hoursWasted * 50 * teamSize * 0.65) / 2);
+                projectedROIEl.textContent = `$${roi.toLocaleString()}`;
+
+                const features = [];
+                if (dimensionScores.process < 70) features.push('Go2Bot Coaching');
+                if (dimensionScores.culture < 70) features.push('Path Self‑Query');
+                if (dimensionScores.tech < 70) features.push('Manager Insights Dashboard');
+                if (features.length === 0) features.push('Go2Bot Coaching', 'Path Self‑Query', 'Manager Insights Dashboard');
+                recommendedFeaturesEl.textContent = features.join(', ');
+
+                drawRadarChart();
+                animateScoreCircle(overallScore);
+            }
+
+            function drawRadarChart() {
+                const svg = document.getElementById('radarChart');
+                svg.innerHTML = '';
+                const centerX = 250, centerY = 250, radius = 200;
+                const dimensions = ['Technology', 'Culture', 'Process', 'Data'];
+                const scores = [dimensionScores.tech, dimensionScores.culture, dimensionScores.process, dimensionScores.data];
+                const angleSlice = Math.PI * 2 / dimensions.length;
+
+                const polygonPoints = dimensions.map((dim, i) => {
+                    const angle = i * angleSlice - Math.PI / 2;
+                    const value = scores[i] / 100 * radius;
+                    const x = centerX + Math.cos(angle) * value;
+                    const y = centerY + Math.sin(angle) * value;
+                    return `${x},${y}`;
+                }).join(' ');
+
+                const gridColor = '#e2e8f0';
+                for (let level = 1; level <= 4; level++) {
+                    const points = dimensions.map((dim, i) => {
+                        const angle = i * angleSlice - Math.PI / 2;
+                        const x = centerX + Math.cos(angle) * (radius * level / 4);
+                        const y = centerY + Math.sin(angle) * (radius * level / 4);
+                        return `${x},${y}`;
+                    }).join(' ');
+                    const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                    polygon.setAttribute('points', points);
+                    polygon.setAttribute('fill', 'none');
+                    polygon.setAttribute('stroke', gridColor);
+                    polygon.setAttribute('stroke-width', '1');
+                    svg.appendChild(polygon);
+                }
+
+                dimensions.forEach((dim, i) => {
+                    const angle = i * angleSlice - Math.PI / 2;
+                    const x = centerX + Math.cos(angle) * (radius + 30);
+                    const y = centerY + Math.sin(angle) * (radius + 30);
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', x);
+                    text.setAttribute('y', y);
+                    text.setAttribute('text-anchor', 'middle');
+                    text.setAttribute('dominant-baseline', 'middle');
+                    text.setAttribute('font-weight', '600');
+                    text.setAttribute('fill', '#475569');
+                    text.textContent = dim;
+                    svg.appendChild(text);
+
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', centerX);
+                    line.setAttribute('y1', centerY);
+                    line.setAttribute('x2', centerX + Math.cos(angle) * radius);
+                    line.setAttribute('y2', centerY + Math.sin(angle) * radius);
+                    line.setAttribute('stroke', gridColor);
+                    line.setAttribute('stroke-width', '1');
+                    svg.appendChild(line);
+                });
+
+                const dataPolygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                dataPolygon.setAttribute('points', polygonPoints);
+                dataPolygon.setAttribute('fill', 'rgba(59, 130, 246, 0.3)');
+                dataPolygon.setAttribute('stroke', '#3b82f6');
+                dataPolygon.setAttribute('stroke-width', '3');
+                svg.appendChild(dataPolygon);
+
+                scores.forEach((score, i) => {
+                    const angle = i * angleSlice - Math.PI / 2;
+                    const value = score / 100 * radius;
+                    const x = centerX + Math.cos(angle) * value;
+                    const y = centerY + Math.sin(angle) * value;
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', x);
+                    circle.setAttribute('cy', y);
+                    circle.setAttribute('r', '6');
+                    circle.setAttribute('fill', '#1e40af');
+                    svg.appendChild(circle);
+                });
+            }
+
+            function animateScoreCircle(score) {
+                const circle = scoreCircle;
+                const degrees = (score / 100) * 360;
+                circle.style.background = `conic-gradient(#10b981 0% ${degrees}%, #e2e8f0 ${degrees}% 100%)`;
+                let current = 0;
+                const interval = setInterval(() => {
+                    if (current >= score) {
+                        clearInterval(interval);
+                    } else {
+                        current++;
+                        finalScoreEl.textContent = current;
+                    }
+                }, 20);
+            }
+        });
+    </script>
+</body>
+</html>
