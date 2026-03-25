@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operator Mode Audit - Proposal Ops Coordinator (Redacted)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f6f1e7;
+  --bg-soft: #fbf7f1;
+  --panel: rgba(255,255,255,0.84);
+  --panel-strong: #fffdf8;
+  --ink: #18242a;
+  --muted: #667478;
+  --muted-2: #7f8c90;
+  --line: rgba(24, 36, 42, 0.11);
+  --brand: #1f6b6a;
+  --brand-2: #e06437;
+  --brand-3: #f0c27a;
+  --brand-4: #275c9a;
+  --good: #1f8d58;
+  --warn: #a36417;
+  --shadow: 0 24px 60px rgba(24, 36, 42, 0.09);
+  --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: "Instrument Sans", system-ui, sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at top left, rgba(31, 107, 106, 0.12), transparent 28%),
+    radial-gradient(circle at top right, rgba(224, 100, 55, 0.16), transparent 32%),
+    linear-gradient(180deg, #f6f1e7 0%, #f3ede2 100%);
+}
+a {
+  color: var(--brand);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+.banner {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: linear-gradient(90deg, #16343c, #1f6b6a);
+  color: rgba(255,255,255,0.88);
+  padding: 12px 18px;
+  text-align: center;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  box-shadow: 0 6px 20px rgba(22, 52, 60, 0.24);
+}
+.banner strong { color: #fff; }
+.page {
+  max-width: 1500px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr);
+  gap: 28px;
+  padding: 26px 20px 90px;
+}
+.rail {
+  position: sticky;
+  top: 62px;
+  align-self: start;
+}
+.rail-card,
+.card,
+.hero,
+.finding,
+.code-card,
+.table-card,
+.tool-card {
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(14px);
+}
+.rail-card {
+  padding: 18px;
+  background:
+    linear-gradient(180deg, rgba(22, 52, 60, 0.96), rgba(31, 107, 106, 0.94));
+  color: white;
+}
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.brand-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--brand-2), var(--brand-3));
+  color: #1e1e1e;
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
+}
+.brand-copy strong {
+  display: block;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+}
+.brand-copy span {
+  display: block;
+  margin-top: 2px;
+  color: rgba(255,255,255,0.68);
+  font-size: 12px;
+}
+.rail-note {
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(255,255,255,0.78);
+  margin-bottom: 16px;
+}
+.rail-nav {
+  display: grid;
+  gap: 6px;
+}
+.rail-nav a {
+  padding: 10px 12px;
+  border-radius: 12px;
+  color: rgba(255,255,255,0.78);
+  font-size: 13px;
+  transition: background 0.16s ease, color 0.16s ease, transform 0.16s ease;
+}
+.rail-nav a:hover,
+.rail-nav a.active {
+  background: rgba(255,255,255,0.12);
+  color: white;
+  text-decoration: none;
+  transform: translateX(2px);
+}
+.main {
+  min-width: 0;
+}
+.hero {
+  padding: 30px;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,0.74), rgba(255,248,239,0.96));
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(31, 107, 106, 0.12);
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+h1 {
+  margin: 16px 0 10px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(40px, 4.8vw, 64px);
+  line-height: 0.94;
+  letter-spacing: -0.05em;
+}
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 22px;
+  align-items: start;
+}
+.hero-copy p {
+  margin: 0;
+  max-width: 52rem;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.72;
+}
+.hero-copy strong { color: var(--ink); }
+.hero-aside {
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(31, 107, 106, 0.08);
+  border: 1px solid rgba(31, 107, 106, 0.12);
+}
+.hero-aside h2,
+.section-head h2 {
+  margin: 0 0 8px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 19px;
+  letter-spacing: -0.03em;
+}
+.hero-aside p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+  font-size: 14px;
+}
+.chips,
+.quick-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.chip,
+.quick-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.8);
+  color: var(--ink);
+  font-size: 13px;
+}
+.quick-link {
+  color: var(--brand);
+  font-weight: 700;
+}
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 24px;
+}
+.stat-footnote {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(24, 36, 42, 0.05);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+.stat {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.74);
+  border: 1px solid rgba(24, 36, 42, 0.07);
+}
+.stat .value {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 29px;
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+}
+.stat .label {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.section {
+  margin-top: 24px;
+}
+.card {
+  padding: 24px;
+}
+.section-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+.section-head p {
+  margin: 0;
+  max-width: 50rem;
+  color: var(--muted);
+  line-height: 1.65;
+}
+.two-up,
+.three-up,
+.four-up {
+  display: grid;
+  gap: 16px;
+}
+.two-up { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.three-up { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.four-up { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.micro-card {
+  padding: 18px;
+  border-radius: 20px;
+  background: var(--panel-strong);
+  border: 1px solid var(--line);
+}
+.micro-card h3,
+.finding h3,
+.tool-card h3,
+.code-card h3,
+.table-card h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+.micro-card p,
+.finding p,
+.tool-card p,
+.code-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+.mini-badge {
+  display: inline-flex;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.mini-badge.orange {
+  color: #8f431a;
+  background: rgba(224, 100, 55, 0.14);
+}
+.mini-badge.green {
+  color: #176440;
+  background: rgba(31, 141, 88, 0.12);
+}
+.mini-badge.blue {
+  color: #1d4f84;
+  background: rgba(39, 92, 154, 0.12);
+}
+.metric-stack {
+  display: grid;
+  gap: 12px;
+}
+.metric-row {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr) 80px;
+  gap: 14px;
+  align-items: center;
+}
+.metric-row .label {
+  font-size: 13px;
+  font-weight: 700;
+}
+.bar {
+  position: relative;
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(24, 36, 42, 0.08);
+  overflow: hidden;
+}
+.bar span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--brand), #42a0a0);
+}
+.bar.orange span { background: linear-gradient(90deg, var(--brand-2), #f0a868); }
+.bar.gold span { background: linear-gradient(90deg, #b6822c, #efc077); }
+.bar.blue span { background: linear-gradient(90deg, var(--brand-4), #62a0ea); }
+.bar.dashed {
+  border: 1px dashed rgba(24, 36, 42, 0.18);
+  background: rgba(255,255,255,0.42);
+}
+.value-note {
+  text-align: right;
+  color: var(--muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.insight {
+  padding: 22px;
+  border-radius: 22px;
+  border: 1px solid rgba(224, 100, 55, 0.22);
+  background: linear-gradient(180deg, rgba(224, 100, 55, 0.12), rgba(255,255,255,0.92));
+}
+.insight strong {
+  display: block;
+  margin-bottom: 10px;
+  color: #8f431a;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.insight p {
+  margin: 0;
+  color: #6a4839;
+  line-height: 1.7;
+}
+.day-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+.day-row {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+.day-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.day-bars {
+  display: grid;
+  gap: 6px;
+}
+.mini-bar {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr) 60px;
+  gap: 10px;
+  align-items: center;
+}
+.mini-bar .kind {
+  font-size: 12px;
+  color: var(--muted);
+}
+.mini-bar .bar {
+  height: 10px;
+}
+.mini-bar .num {
+  text-align: right;
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.finding-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.finding {
+  padding: 22px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,248,239,0.78));
+}
+.finding-top {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.finding-impact {
+  text-align: right;
+}
+.finding-impact strong {
+  display: block;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 24px;
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+}
+.finding-impact span {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.evidence-list {
+  margin-top: 14px;
+  display: grid;
+  gap: 8px;
+}
+.evidence-item {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(24, 36, 42, 0.05);
+  font-size: 13px;
+  color: var(--ink);
+}
+.rank-grid {
+  display: grid;
+  gap: 16px;
+}
+.rank-card {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 16px;
+  padding: 20px;
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+}
+.rank-num {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(31, 107, 106, 0.14), rgba(240, 194, 122, 0.34));
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 26px;
+}
+.rank-card h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+.rank-card p {
+  margin: 0 0 12px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(31, 107, 106, 0.08);
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 700;
+}
+.doc-links {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.doc-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 999px;
+  background: rgba(39, 92, 154, 0.1);
+  color: var(--brand-4);
+  font-size: 12px;
+  font-weight: 700;
+}
+.code-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.code-card.wide {
+  grid-column: 1 / -1;
+}
+.code-card {
+  overflow: hidden;
+}
+.code-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(24, 36, 42, 0.03);
+}
+.code-title p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.copy-btn,
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+.copy-btn {
+  background: rgba(31, 107, 106, 0.12);
+  color: var(--brand);
+}
+.button {
+  background: var(--brand);
+  color: white;
+}
+.button.alt {
+  background: rgba(224, 100, 55, 0.12);
+  color: #8f431a;
+}
+pre {
+  margin: 0;
+  padding: 16px 18px 18px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.55;
+  background: rgba(255,255,255,0.86);
+}
+.tool-card {
+  padding: 24px;
+  background:
+    linear-gradient(135deg, rgba(31, 107, 106, 0.08), rgba(240, 194, 122, 0.14)),
+    var(--panel);
+}
+.tool-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 18px;
+  align-items: center;
+}
+.tool-grid ul {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.artifact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.artifact-card {
+  padding: 20px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.72);
+}
+.artifact-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+.artifact-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.artifact-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 999px;
+  background: rgba(31, 107, 106, 0.1);
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 700;
+}
+.install-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.install-card {
+  padding: 22px;
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,248,239,0.82));
+  box-shadow: var(--shadow);
+}
+.install-card h3 {
+  margin: 0 0 10px;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+.install-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.install-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.install-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  background: rgba(31, 107, 106, 0.1);
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 700;
+}
+.install-promise {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(224, 100, 55, 0.1);
+  border: 1px solid rgba(224, 100, 55, 0.14);
+  color: #7a4328;
+  font-size: 13px;
+  line-height: 1.65;
+}
+.path-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.path-card {
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.76);
+}
+.path-card h3 {
+  margin: 0 0 10px;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+}
+.path-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+.path-card ul {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.plain-note {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(31, 107, 106, 0.08);
+  color: #245b5b;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.action-list {
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+.action-item {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(24, 36, 42, 0.05);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.table-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 16px;
+}
+.table-card {
+  overflow: hidden;
+}
+.table-card h3 {
+  padding: 16px 18px 0;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th, td {
+  padding: 11px 18px;
+  text-align: left;
+  border-top: 1px solid rgba(24, 36, 42, 0.07);
+  vertical-align: top;
+}
+th {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.footnote {
+  margin-top: 18px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: rgba(39, 92, 154, 0.08);
+  color: #365475;
+  font-size: 13px;
+  line-height: 1.65;
+}
+@media (max-width: 1180px) {
+  .page {
+    grid-template-columns: 1fr;
+  }
+  .rail {
+    position: static;
+  }
+}
+@media (max-width: 920px) {
+  .hero-grid,
+  .two-up,
+  .three-up,
+  .four-up,
+  .path-grid,
+  .install-grid,
+  .finding-grid,
+  .code-grid,
+  .table-grid,
+  .tool-grid,
+  .artifact-grid,
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+  .section-head {
+    display: block;
+  }
+  .metric-row,
+  .day-row,
+  .mini-bar {
+    grid-template-columns: 1fr;
+  }
+  .value-note,
+  .mini-bar .num {
+    text-align: left;
+  }
+}
+</style>
+</head>
+<body>
+<div class="banner"><strong>Go2 x Cowork.ai</strong> <span> No password </span> <span> Anonymized role and company </span> <span> Powered by telemetry capture and workflow installs</span></div>
+
+<div class="page">
+  <aside class="rail">
+    <div class="rail-card">
+      <div class="brand-row">
+        <div class="brand-mark">GO2</div>
+        <div class="brand-copy">
+          <strong>Operator Mode Audit</strong>
+          <span>proposal ops install example</span>
+        </div>
+      </div>
+      <div class="rail-note">
+        Real telemetry, sanitized identity. This page keeps the timing and behavior patterns intact while changing names, company details, and document identifiers for public use.
+      </div>
+      <nav class="rail-nav">
+        <a href="#snapshot">Snapshot</a>
+        <a href="#pressure">Pressure Map</a>
+        <a href="#signal">Primary Bottleneck</a>
+        <a href="#findings">Key Findings</a>
+        <a href="#automation">Fix Order</a>
+        <a href="#fixes">Start Here</a>
+        <a href="#tool">Hooks</a>
+        <a href="#evidence">Evidence</a>
+        <a href="#notes">Notes</a>
+      </nav>
+    </div>
+  </aside>
+
+  <main class="main">
+    <section class="hero" id="snapshot">
+      <div class="eyebrow">Operator Mode Audit</div>
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <h1>Proposal Ops Coordinator</h1>
+          <p><strong>Maya Hart</strong> is an alias used for this public example. Underneath the sanitization, the telemetry is real: a 14-day pilot window showing a proposal-heavy role spending significant time turning loose inputs into customer-safe output across email, spreadsheets, product files, decks, PDFs, Slack, and outbound follow-up.</p>
+          <div class="chips">
+            <div class="chip">Window: 2026-03-12 to 2026-03-25</div>
+            <div class="chip">10 worked days / 12 sessions</div>
+            <div class="chip">2 late-window sync-gap days</div>
+            <div class="chip">Windows machine with keystroke capture</div>
+          </div>
+          <div class="quick-links">
+            <a class="quick-link" href="#findings">Jump to findings</a>
+            <a class="quick-link" href="#fixes">Jump to start here</a>
+            <a class="quick-link" href="#tool">Open the shipped hooks</a>
+          </div>
+        </div>
+        <div class="hero-aside">
+          <h2>What a similar operator should expect</h2>
+          <p>If your job looks like this one, the value is not the report by itself. The value is that you leave with one working tool, one real connector, and a plain-English install path you can paste into Codex or Claude Code without learning the plumbing first.</p>
+        </div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat">
+          <div class="value">80.40</div>
+          <div class="label">Session Hours</div>
+        </div>
+        <div class="stat">
+          <div class="value">66.33</div>
+          <div class="label">Active Hours Logged</div>
+        </div>
+        <div class="stat">
+          <div class="value">23,350</div>
+          <div class="label">App / Web Events</div>
+        </div>
+        <div class="stat">
+          <div class="value">17-24</div>
+          <div class="label">Recoverable Hrs / Week</div>
+        </div>
+        <div class="stat">
+          <div class="value">1,316</div>
+          <div class="label">Copy Events</div>
+        </div>
+        <div class="stat">
+          <div class="value">1,525</div>
+          <div class="label">Paste Events</div>
+        </div>
+        <div class="stat">
+          <div class="value">67.8%</div>
+          <div class="label">Micro Event Share</div>
+        </div>
+        <div class="stat">
+          <div class="value">3,787</div>
+          <div class="label">Keystroke Bins</div>
+        </div>
+      </div>
+      <div class="stat-footnote">
+        <strong>How the savings estimate was derived:</strong> the six findings sum to roughly <strong>19.5-27.5 hours</strong> of possible weekly relief if each workflow is solved in isolation. The headline <strong>17-24 hours</strong> applies an overlap discount because several findings share the same browser, email, and file-browsing surfaces. Low assumes first-pass drafting and lookup removal only. High assumes lookup, routing, and approval-queue support all land with human review still in place.
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="two-up">
+        <div class="card">
+          <div class="section-head">
+            <div>
+              <h2>Scope</h2>
+              <p>This example was built from Cowork.ai app and web telemetry, session data, keystrokes, and the actual surface titles visible during the window. Names, employer, and identifying document details were changed for public use, but the numbers and work shape were kept intact.</p>
+            </div>
+          </div>
+          <div class="three-up">
+            <div class="micro-card">
+              <span class="mini-badge green">Strength</span>
+              <h3>Customer-safe output</h3>
+              <p>Proposal, catalog, and rebuttal work stays polished even when the source material is fragmented.</p>
+            </div>
+            <div class="micro-card">
+              <span class="mini-badge blue">Pressure</span>
+              <h3>Revenue-adjacent role</h3>
+              <p>When a bid or response lags, the business feels it even if the work looks like admin on the surface.</p>
+            </div>
+            <div class="micro-card">
+              <span class="mini-badge orange">Best fit</span>
+              <h3>Messy-input operator</h3>
+              <p>This pattern shows up when one person keeps turning inbox noise, pricing questions, and scattered files into customer-safe packets.</p>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-head">
+            <div>
+              <h2>What You Keep After The Pilot</h2>
+              <p>A similar operator should be able to leave with one working relief valve, one real connector starter, and a Monday install order that makes the first useful result obvious.</p>
+            </div>
+          </div>
+          <div class="action-list">
+            <div class="action-item"><strong>What ships:</strong> one working browser tool plus one real connector starter that proves AI can write back into inbox and CRM workflows.</div>
+            <div class="action-item"><strong>If your job looks similar:</strong> paste the install prompt in <a href="#fixes">Start Here</a> into Codex or Claude Code and let it wire the starter pieces together around your inbox, CRM, and pricing source.</div>
+            <div class="action-item"><strong>What stays human:</strong> final pricing judgment, final send, and anything that deserves approval instead of blind automation.</div>
+            <div class="action-item"><strong>If the first writeback fails:</strong> reply in the thread with the error and we QA the install with you instead of leaving you alone with docs.</div>
+          </div>
+          <div class="artifact-links">
+            <a href="../../proposal-response-pack-builder.html">Open shipped tool</a>
+            <a href="../../outlook-pipedrive-mcp/INSTALL_WITH_CODEX.md">Open connector install prompt</a>
+            <a href="#fixes">Copy paste-in block</a>
+            <a href="../../outlook-pipedrive-mcp/sample-sync-output.json">See example result</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section card" id="pressure">
+      <div class="section-head">
+        <div>
+          <h2>Revenue Pressure Map</h2>
+          <p>The role is clearly revenue-adjacent, but most of the time is not spent in live selling. It is spent assembling the material that supports selling. That makes automation leverage unusually high because every hour removed from prep can either speed response or tighten quality control.</p>
+        </div>
+      </div>
+      <div class="metric-stack">
+        <div class="metric-row">
+          <div class="label">Email / calendar handling</div>
+          <div class="bar"><span style="width: 100%;"></span></div>
+          <div class="value-note">16.06h</div>
+        </div>
+        <div class="metric-row">
+          <div class="label">Proposal + deck surfaces</div>
+          <div class="bar orange"><span style="width: 67.3%;"></span></div>
+          <div class="value-note">10.81h</div>
+        </div>
+        <div class="metric-row">
+          <div class="label">Pricing sheets + calculator</div>
+          <div class="bar gold"><span style="width: 51.2%;"></span></div>
+          <div class="value-note">8.23h</div>
+        </div>
+        <div class="metric-row">
+          <div class="label">Slack coordination</div>
+          <div class="bar blue"><span style="width: 46.7%;"></span></div>
+          <div class="value-note">7.50h</div>
+        </div>
+        <div class="metric-row">
+          <div class="label">Live conversations</div>
+          <div class="bar orange"><span style="width: 16.6%;"></span></div>
+          <div class="value-note">2.66h</div>
+        </div>
+      </div>
+      <div class="footnote">Value-creation read: only <strong>2.66 hours</strong> of the window showed up as live conversations while <strong>16.06 hours</strong> were spent in email and calendar surfaces. In this role, speed-to-follow-up and speed-to-packet are likely the real revenue lever.</div>
+    </section>
+
+    <section class="section card" id="signal">
+      <div class="section-head">
+        <div>
+          <h2>Primary Workflow Bottleneck</h2>
+          <p>The sharpest read from this window is simple: the same proposal context is being re-entered across email, sheets, PDFs, decks, and Slack because there is no shared intake object or reusable response pack.</p>
+        </div>
+      </div>
+      <div class="insight">
+        <strong>Repeated failure pattern observed</strong>
+        <p>Pricing logic, asset retrieval, promise tracking, and customer-safe language all exist, but they live in scattered surfaces. The operator is spending focused time doing the right work in the wrong order: first rebuilding context, then producing output, then fixing the tracking layer afterward.</p>
+      </div>
+
+      <div class="section-head" style="margin-top: 22px;">
+        <div>
+          <h2>Day Pattern</h2>
+          <p>Sessions show a full 10-day work pattern. Granular event capture is complete on 8 of those days, then drops out late in the window. The missing app stream is treated as a confidence note, not airbrushed away.</p>
+        </div>
+      </div>
+      <div class="day-list">
+        <div class="day-row">
+          <div class="day-label">Mar 12</div>
+          <div class="day-bars">
+            <div class="mini-bar"><div class="kind">Session</div><div class="bar"><span style="width: 89%;"></span></div><div class="num">8.00h</div></div>
+            <div class="mini-bar"><div class="kind">Active</div><div class="bar orange"><span style="width: 89%;"></span></div><div class="num">8.01h</div></div>
+          </div>
+        </div>
+        <div class="day-row">
+          <div class="day-label">Mar 13</div>
+          <div class="day-bars">
+            <div class="mini-bar"><div class="kind">Session</div><div class="bar"><span style="width: 89.4%;"></span></div><div class="num">8.05h</div></div>
+            <div class="mini-bar"><div class="kind">Active</div><div class="bar orange"><span style="width: 87.7%;"></span></div><div class="num">7.89h</div></div>
+          </div>
+        </div>
+        <div class="day-row">
+          <div class="day-label">Mar 16</div>
+          <div class="day-bars">
+            <div class="mini-bar"><div class="kind">Session</div><div class="bar"><span style="width: 89.8%;"></span></div><div class="num">8.08h</div></div>
+            <div class="mini-bar"><div class="kind">Active</div><div class="bar orange"><span style="width: 89.2%;"></span></div><div class="num">8.03h</div></div>
+          </div>
+        </div>
+        <div class="day-row">
+          <div class="day-label">Mar 17</div>
+          <div class="day-bars">
+            <div class="mini-bar"><div class="kind">Session</div><div class="bar"><span style="width: 92%;"></span></div><div class="num">8.28h</div></div>
+            <div class="mini-bar"><div class="kind">Active</div><div class="bar orange"><span style="width: 90.1%;"></span></div><div class="num">8.11h</div></div>
+          </div>
+        </div>
+        <div class="day-row">
+          <div class="day-label">Mar 18</div>
+          <div class="day-bars">
+            <div class="mini-bar"><div class="kind">Session</div><div class="bar"><span style="width: 94.4%;"></span></div><div class="num">8.50h</div></div>
+            <div class="mini-bar"><div class="kind">Active</div><div class="bar orange"><span style="width: 94.8%;"></span></div><div class="num">8.53h</div></div>
+          </div>
+        </div>
+        <div class="day-row">
+          <div class="day-label">Mar 19</div>
+          <div class="day-bars">
+            <div class="mini-bar"><div class="kind">Session</div><div class="bar"><span style="width: 96.8%;"></span></div><div class="num">8.71h</div></div>
+            <div class="mini-bar"><div class="kind">Active</div><div class="bar orange"><span style="width: 97.2%;"></span></div><div class="num">8.75h</div></div>
+          </div>
+        </div>
+        <div class="day-row">
+          <div class="day-label">Mar 20</div>
+          <div class="day-bars">
+            <div class="mini-bar"><div class="kind">Session</div><div class="bar"><span style="width: 96.9%;"></span></div><div class="num">8.72h</div></div>
+            <div class="mini-bar"><div class="kind">Active</div><div class="bar orange"><span style="width: 97.4%;"></span></div><div class="num">8.77h</div></div>
+          </div>
+        </div>
+        <div class="day-row">
+          <div class="day-label">Mar 23</div>
+          <div class="day-bars">
+            <div class="mini-bar"><div class="kind">Session</div><div class="bar"><span style="width: 90.8%;"></span></div><div class="num">8.17h</div></div>
+            <div class="mini-bar"><div class="kind">Active</div><div class="bar orange"><span style="width: 91.4%;"></span></div><div class="num">8.23h</div></div>
+          </div>
+        </div>
+        <div class="day-row">
+          <div class="day-label">Mar 24</div>
+          <div class="day-bars">
+            <div class="mini-bar"><div class="kind">Session</div><div class="bar"><span style="width: 98.7%;"></span></div><div class="num">8.88h</div></div>
+            <div class="mini-bar"><div class="kind">Active</div><div class="bar dashed"></div><div class="num">sync gap</div></div>
+          </div>
+        </div>
+        <div class="day-row">
+          <div class="day-label">Mar 25</div>
+          <div class="day-bars">
+            <div class="mini-bar"><div class="kind">Session</div><div class="bar"><span style="width: 55.7%;"></span></div><div class="num">5.01h</div></div>
+            <div class="mini-bar"><div class="kind">Active</div><div class="bar dashed"></div><div class="num">sync gap</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="findings">
+      <div class="section-head">
+        <div>
+          <h2>Key Findings</h2>
+          <p>These findings are framed around configuration, workflow support, and missing operating layers. The operator is already carrying a lot of complexity well. The stack is making the job more manual than it needs to be.</p>
+        </div>
+      </div>
+      <div class="finding-grid">
+        <article class="finding">
+          <div class="finding-top">
+            <div>
+              <span class="mini-badge orange">Finding 01</span>
+              <h3>Bid packs are still assembled, not generated</h3>
+            </div>
+            <div class="finding-impact">
+              <strong>5.0-6.5h</strong>
+              <span>Recoverable / week</span>
+            </div>
+          </div>
+          <p>Proposal work shows up across PowerPoint, Word, Acrobat, Google Chrome, and Microsoft Edge instead of flowing from a single reusable brief. The role is doing real commercial synthesis, but starting too close to blank each time.</p>
+          <div class="evidence-list">
+            <div class="evidence-item">10.81 hours in proposal surfaces during the window</div>
+            <div class="evidence-item">RFP deck, rebuttals, product catalog PDF, and proposal titles all show up as separate work islands</div>
+            <div class="evidence-item">Deck and document surfaces are used on only part of the week, which suggests bursty deadline-driven prep</div>
+          </div>
+          <div class="action-list">
+            <div class="action-item"><strong>Install this:</strong> Proposal Intake Brief with Graph mail intake, pricing prefill, and a required-asset checklist.</div>
+            <div class="action-item"><strong>Do this Monday:</strong> pick one high-volume request type, define required fields, and stop accepting “just handle this” as the intake format.</div>
+            <div class="action-item"><strong>What breaks if you don’t:</strong> every new packet starts too close to blank, and senior operator time keeps getting burned on first-pass assembly work.</div>
+            <div class="action-item"><strong>Expected result in 7 days:</strong> time-to-first-internal-brief drops materially and packet drafts stop missing obvious fields.</div>
+          </div>
+        </article>
+
+        <article class="finding">
+          <div class="finding-top">
+            <div>
+              <span class="mini-badge orange">Finding 02</span>
+              <h3>Browser-to-browser copy movement is carrying the workflow</h3>
+            </div>
+            <div class="finding-impact">
+              <strong>4.0-5.5h</strong>
+              <span>Recoverable / week</span>
+            </div>
+          </div>
+          <p>The strongest automation signal here is not app time alone. It is the amount of context being pushed manually between surfaces. That is what happens when the operator knows what should happen next, but the system does not.</p>
+          <div class="evidence-list">
+            <div class="evidence-item">1,316 copies and 1,525 pastes across 3,787 keystroke bins</div>
+            <div class="evidence-item">965 Google Chrome -> Microsoft Edge transitions and 653 Edge -> Chrome transitions, excluding Explorer</div>
+            <div class="evidence-item">Chrome carried 990 copy events while Edge absorbed 730 paste events</div>
+          </div>
+          <div class="action-list">
+            <div class="action-item"><strong>Install this:</strong> a bridge that preloads account, pricing, and latest approved language into the destination surface before the operator starts copying.</div>
+            <div class="action-item"><strong>Do this Monday:</strong> identify the single most repeated Chrome -> Edge transfer and automate that one before touching anything else.</div>
+            <div class="action-item"><strong>What breaks if you don’t:</strong> the operator stays the human integration layer and every browser switch keeps multiplying friction.</div>
+            <div class="action-item"><strong>Expected result in 7 days:</strong> fewer cross-browser jumps and a visible drop in raw copy-paste pressure on heavy packet days.</div>
+          </div>
+        </article>
+
+        <article class="finding">
+          <div class="finding-top">
+            <div>
+              <span class="mini-badge orange">Finding 03</span>
+              <h3>Follow-up work is taking more room than live selling</h3>
+            </div>
+            <div class="finding-impact">
+              <strong>3.0-4.5h</strong>
+              <span>Recoverable / week</span>
+            </div>
+          </div>
+          <p>For a revenue-adjacent operator, that usually means the system is weak at promise tracking and next-step drafting. The work is happening. The closure layer is not.</p>
+          <div class="evidence-list">
+            <div class="evidence-item">16.06 hours in email / calendar surfaces versus 2.66 hours in live-conversation surfaces</div>
+            <div class="evidence-item">Mail, inbox, and calendar views dominate multiple days in the window</div>
+            <div class="evidence-item">The role clearly supports selling, but the time mix suggests a manual async handoff problem</div>
+          </div>
+          <div class="action-list">
+            <div class="action-item"><strong>Install this:</strong> the Outlook -> CRM bridge first, then a promise-lag sentry on top of it.</div>
+            <div class="action-item"><strong>Do this Monday:</strong> sync the last 10 sent follow-ups into the CRM and inspect where the relay is currently failing.</div>
+            <div class="action-item"><strong>What breaks if you don’t:</strong> good outbound work remains invisible to the pipeline, and follow-up discipline depends on human memory instead of system support.</div>
+            <div class="action-item"><strong>Expected result in 7 days:</strong> every outbound follow-up touching an active opportunity creates a note or activity unless explicitly skipped.</div>
+          </div>
+        </article>
+
+        <article class="finding">
+          <div class="finding-top">
+            <div>
+              <span class="mini-badge orange">Finding 04</span>
+              <h3>Slack is interrupting exactly where proposal work needs calm</h3>
+            </div>
+            <div class="finding-impact">
+              <strong>2.0-3.0h</strong>
+              <span>Recoverable / week</span>
+            </div>
+          </div>
+          <p>This is not a communication problem. It is a routing problem. Approvals, clarifications, and side-channel requests are landing in the same lane where proposal quality depends on uninterrupted concentration.</p>
+          <div class="evidence-list">
+            <div class="evidence-item">7.50 hours in Slack during the window</div>
+            <div class="evidence-item">March 17 showed 3.13 Slack hours on a day that also carried 2.37 proposal hours</div>
+            <div class="evidence-item">504 Slack -> Edge transitions and 372 Edge -> Slack transitions, excluding Explorer</div>
+          </div>
+          <div class="action-list">
+            <div class="action-item"><strong>Install this:</strong> Slack approval digest with timed review windows and escalation only for true blockers.</div>
+            <div class="action-item"><strong>Do this Monday:</strong> define which requests are true blockers and which ones can wait for the next digest window.</div>
+            <div class="action-item"><strong>What breaks if you don’t:</strong> proposal mode keeps getting shattered by side-channel asks that feel urgent but do not deserve real-time interruption.</div>
+            <div class="action-item"><strong>Expected result in 7 days:</strong> fewer mid-packet interruptions without a measurable drop in response quality or turnaround.</div>
+          </div>
+        </article>
+
+        <article class="finding">
+          <div class="finding-top">
+            <div>
+              <span class="mini-badge orange">Finding 05</span>
+              <h3>Pricing logic still lives in sheets and calculator muscle memory</h3>
+            </div>
+            <div class="finding-impact">
+              <strong>3.0-4.0h</strong>
+              <span>Recoverable / week</span>
+            </div>
+          </div>
+          <p>The operator is clearly trusted to translate pricing into customer-safe output, but the current setup still leans on sheet time, point lookups, and lightweight math instead of a guarded quote layer.</p>
+          <div class="evidence-list">
+            <div class="evidence-item">8.23 hours tied to Google Sheets titles and calculator usage</div>
+            <div class="evidence-item">The primary pricing sheet alone accounted for 6.20 hours</div>
+            <div class="evidence-item">Calculator showed activity on 7 instrumented days and 40 Enter events in keystroke capture</div>
+          </div>
+          <div class="action-list">
+            <div class="action-item"><strong>Install this:</strong> pricing-sheet guardrail that validates rows, flags low-confidence outputs, and drafts quote-safe copy.</div>
+            <div class="action-item"><strong>Do this Monday:</strong> choose one pricing sheet and one quote pattern, then lock the validation rules for that path before expanding.</div>
+            <div class="action-item"><strong>What breaks if you don’t:</strong> pricing trust stays buried in operator muscle memory and every quote still requires point-by-point verification.</div>
+            <div class="action-item"><strong>Expected result in 7 days:</strong> calculator use drops and pricing review starts happening inside one guarded path instead of across scattered surfaces.</div>
+          </div>
+        </article>
+
+        <article class="finding">
+          <div class="finding-top">
+            <div>
+              <span class="mini-badge orange">Finding 06</span>
+              <h3>Asset retrieval is still file-system work instead of intent-driven retrieval</h3>
+            </div>
+            <div class="finding-impact">
+              <strong>2.5-4.0h</strong>
+              <span>Recoverable / week</span>
+            </div>
+          </div>
+          <p>Proposal quality depends on version trust. Right now the operator spends visible time getting to the right file before doing the real judgment work. That is exactly where a small memory / resolver layer earns its keep.</p>
+          <div class="evidence-list">
+            <div class="evidence-item">4,469 Windows Explorer -> Chrome transitions and 4,121 Chrome -> Explorer transitions</div>
+            <div class="evidence-item">Acrobat, PowerPoint, Word, and Chrome repeatedly touch the same proposal lane</div>
+            <div class="evidence-item">Catalog PDFs and rebuttal files are active evidence surfaces, not just archival files</div>
+          </div>
+          <div class="action-list">
+            <div class="action-item"><strong>Install this:</strong> quote asset resolver keyed on account, product family, and bid id.</div>
+            <div class="action-item"><strong>Do this Monday:</strong> define the canonical folder or source for deck shell, catalog slice, and rebuttal pack, then make retrieval queryable.</div>
+            <div class="action-item"><strong>What breaks if you don’t:</strong> version trust remains a scavenger hunt and operators keep wasting time proving they have the right file before they can do judgment work.</div>
+            <div class="action-item"><strong>Expected result in 7 days:</strong> operators can fetch the current deck shell, catalog slice, and rebuttal pack without Explorer browsing.</div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section card" id="automation">
+      <div class="section-head">
+        <div>
+          <h2>Fix Order</h2>
+          <p>Do not automate everything at once. Install in this order so each layer removes visible pain before the next one lands. The goal is to stop spending skilled time on context transfer, asset hunting, and promise cleanup.</p>
+        </div>
+      </div>
+
+      <div class="rank-grid">
+        <div class="rank-card">
+          <div class="rank-num">1</div>
+          <div>
+            <h3>Proposal Intake Brief</h3>
+            <p>Trigger on a forwarded RFP, customer request, or new pricing ask. Normalize the request, pull the right sheet rows and catalog references, and open one internal brief with the missing-data checklist already attached.</p>
+            <div class="tag-row">
+              <div class="tag">Reads: inbox</div>
+              <div class="tag">Pulls: Sheets + Drive</div>
+              <div class="tag">Queues: Slack approval</div>
+              <div class="tag">5.0-7.0h / week</div>
+            </div>
+            <div class="doc-links">
+              <a href="https://learn.microsoft.com/graph/overview" target="_blank" rel="noreferrer">Microsoft Graph docs</a>
+              <a href="https://developers.google.com/workspace/sheets/api/guides/concepts" target="_blank" rel="noreferrer">Google Sheets API docs</a>
+              <a href="https://docs.slack.dev/apis/" target="_blank" rel="noreferrer">Slack API docs</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="rank-card">
+          <div class="rank-num">2</div>
+          <div>
+            <h3>Quote Asset Resolver</h3>
+            <p>Use the customer name, product family, or bid ID as the lookup key and fetch the right catalog excerpt, latest pricing logic, last approved rebuttals, and current deck shell without relying on file browsing or browser tab archaeology.</p>
+            <div class="tag-row">
+              <div class="tag">Searches: Drive / SharePoint</div>
+              <div class="tag">Checks: Sheets</div>
+              <div class="tag">Links: CRM records</div>
+              <div class="tag">4.0-5.0h / week</div>
+            </div>
+            <div class="doc-links">
+              <a href="https://developers.pipedrive.com/docs/api/v1" target="_blank" rel="noreferrer">Pipedrive API docs</a>
+              <a href="https://developers.google.com/workspace/sheets/api/guides/concepts" target="_blank" rel="noreferrer">Sheets API docs</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="rank-card">
+          <div class="rank-num">3</div>
+          <div>
+            <h3>Promise Lag Sentry</h3>
+            <p>Watch sent mail, calendar, and call surfaces for live promises. If a reply deadline is getting old or an intro call happened without a logged next step, generate the follow-up and queue the operator for approval instead of hoping memory holds it.</p>
+            <div class="tag-row">
+              <div class="tag">Watches: sent mail + calendar</div>
+              <div class="tag">Reads: call logs</div>
+              <div class="tag">Queues: Slack alerts</div>
+              <div class="tag">3.0-4.5h / week</div>
+            </div>
+            <div class="doc-links">
+              <a href="https://learn.microsoft.com/graph/overview" target="_blank" rel="noreferrer">Graph docs</a>
+              <a href="https://developers.dialpad.com/" target="_blank" rel="noreferrer">Dialpad developer docs</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="rank-card">
+          <div class="rank-num">4</div>
+          <div>
+            <h3>Outlook -> CRM Bridge</h3>
+            <p>This one is already shipped in the example folder. It reads recent Outlook follow-ups, matches recipients to CRM people, and writes the email context back into the pipeline so the operator is no longer the relay layer.</p>
+            <div class="tag-row">
+              <div class="tag">Reads: Outlook sent mail</div>
+              <div class="tag">Writes: CRM notes + tasks</div>
+              <div class="tag">Runs: same day</div>
+              <div class="tag">2.5-4.0h / week</div>
+            </div>
+            <div class="doc-links">
+              <a href="../../outlook-pipedrive-mcp/INSTALL_WITH_CODEX.md">Open connector install prompt</a>
+              <a href="#fixes">Copy paste-in block</a>
+              <a href="../../outlook-pipedrive-mcp/sample-sync-output.json">See example result</a>
+              <a href="https://learn.microsoft.com/graph/overview" target="_blank" rel="noreferrer">Graph docs</a>
+              <a href="https://developers.pipedrive.com/docs/api/v1" target="_blank" rel="noreferrer">Pipedrive docs</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="rank-card">
+          <div class="rank-num">5</div>
+          <div>
+            <h3>Slack Approval Digest</h3>
+            <p>Bundle interruptions into timed review windows. The operator still gets the answers and approvals they need, but the request stream stops breaking proposal-building mode every few minutes.</p>
+            <div class="tag-row">
+              <div class="tag">Batches: Slack approvals</div>
+              <div class="tag">Checks: calendar windows</div>
+              <div class="tag">Routes: task board</div>
+              <div class="tag">2.0-3.0h / week</div>
+            </div>
+            <div class="doc-links">
+              <a href="https://docs.slack.dev/apis/" target="_blank" rel="noreferrer">Slack docs</a>
+              <a href="https://developer.atlassian.com/cloud/trello/rest/" target="_blank" rel="noreferrer">Trello REST docs</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="fixes">
+      <div class="section-head">
+        <div>
+          <h2>Start Here</h2>
+          <p>This needs to work for a non-technical operator and still show the power path. So there are three ways in: use the tool yourself right now, hand the setup note to an admin, or go full power and wire the live systems together.</p>
+        </div>
+      </div>
+      <div class="path-grid">
+        <div class="path-card">
+          <h3>Use it yourself in 5 minutes</h3>
+          <p>If you can copy and paste, you can use the browser tool today without touching setup.</p>
+          <ul>
+            <li>Open the tool</li>
+            <li>Paste one messy request email</li>
+            <li>Generate the internal brief, customer reply, and team handoff</li>
+          </ul>
+          <div class="plain-note">This is the zero-technical path. It gives the operator relief before any live systems are connected.</div>
+        </div>
+        <div class="path-card">
+          <h3>Send this to your admin</h3>
+          <p>If someone else handles setup, hand them one short note instead of making the operator learn the tooling.</p>
+          <ul>
+            <li>Open the admin handoff note</li>
+            <li>They connect Outlook and the CRM once</li>
+            <li>You test one real follow-up writeback</li>
+          </ul>
+          <div class="plain-note">This is the easiest realistic install path for a non-technical team.</div>
+        </div>
+        <div class="path-card">
+          <h3>Go full power</h3>
+          <p>Once the live connectors are in, the system stops being a drafting aid and starts behaving like an operating layer.</p>
+          <ul>
+            <li>Inbox requests become structured intake</li>
+            <li>Follow-ups write back into the CRM automatically</li>
+            <li>Pricing, approvals, and missing assets get queued instead of lost</li>
+          </ul>
+          <div class="plain-note">This is the strongest version of the offer: not just better output, but a better operating system for the role.</div>
+        </div>
+      </div>
+      <div class="install-grid">
+        <div class="install-card">
+          <h3>If your job looks like this</h3>
+          <p>You gather messy requests from email, pricing sheets, product files, and Slack, then turn them into a clean packet, a customer-safe follow-up, and a tracked next step.</p>
+          <div class="action-list">
+            <div class="action-item"><strong>Best fit:</strong> proposal ops, sales ops, recruiting ops, marketplace ops, and founder follow-up roles with heavy inbox-to-pipeline work.</div>
+            <div class="action-item"><strong>Game-changer test:</strong> if one clean intake object and automatic writeback would remove visible copy-paste and follow-up debt from your week, this should land fast.</div>
+            <div class="action-item"><strong>Originally built for:</strong> a real operator in a similar role shape, then stripped of names, company details, and customer identifiers for public use.</div>
+          </div>
+          <div class="install-promise"><strong>One working tool before you decide anything.</strong> If the connector does not write back cleanly on the first run, the install failed, not you.</div>
+        </div>
+        <div class="install-card">
+          <h3>Do this Monday</h3>
+          <p>Keep it simple. The point is to remove one live leak, not to build the whole future state on day one.</p>
+          <div class="action-list">
+            <div class="action-item"><strong>Your admin does once:</strong> add the Outlook and CRM credentials to the connector starter.</div>
+            <div class="action-item"><strong>The operator types next:</strong> paste the install prompt into Codex or Claude Code and let it handle the wiring.</div>
+            <div class="action-item"><strong>What success looks like:</strong> one synced CRM note, one follow-up task, and one unmatched-email review list from a real test run.</div>
+            <div class="action-item"><strong>If it breaks:</strong> reply in the thread with the exact error and we QA the install with you.</div>
+          </div>
+          <div class="install-links">
+            <a href="../../proposal-response-pack-builder.html">Open the tool</a>
+            <a href="../../proposal-ops-install-prompt.md">Open install prompt</a>
+            <a href="../../proposal-ops-send-to-admin.md">Send to admin</a>
+            <a href="../../proposal-ops-example-handoff-prompt.md">Open handoff prompt</a>
+            <a href="https://github.com/Scottpedia0/outlook-pipedrive-mcp" target="_blank" rel="noreferrer">Open connector on GitHub</a>
+          </div>
+        </div>
+      </div>
+      <div class="code-grid">
+        <article class="code-card wide">
+          <div class="code-head">
+            <div class="code-title">
+              <h3>Paste This Into Codex Or Claude Code</h3>
+              <p>Operator-facing install move. Use this when the person doing the work wants the assistant to wire the starter pieces together without learning setup vocabulary first.</p>
+            </div>
+            <button class="copy-btn" data-copy-target="code-install">Copy Prompt</button>
+          </div>
+          <pre id="code-install">Install the starter stack from this proposal-ops audit example.
+
+Use these assets:
+- Browser tool: ./proposal-response-pack-builder.html
+- Connector starter: https://github.com/Scottpedia0/outlook-pipedrive-mcp
+- Connector sample output: ./outlook-pipedrive-mcp/sample-sync-output.json
+
+What to do:
+1. Install the Outlook -> CRM connector starter and generate the right local paste-in setup block for this machine.
+2. Ask only for the credentials or field mappings you truly need.
+3. Create these three starter workflows around the operator's real tools:
+   - proposal_intake_brief
+   - promise_lag_sentry
+   - pricing_sheet_guardrail
+4. Make one raw inbound request produce:
+   - an internal brief
+   - a customer-safe reply draft
+   - a Slack or CRM handoff
+5. Keep human approval on pricing, scope, and send.
+6. Run one real inbox -> CRM writeback test.
+7. If writeback fails, show the exact failing step, the exact error, and the smallest next fix.
+
+Output:
+- installed paste-in setup block
+- env var checklist
+- missing field mappings, if any
+- first successful test run or exact blocker
+- the next Monday test the operator should run
+
+Do not explain the plumbing unless asked. Prefer a working install over a long explanation.</pre>
+        </article>
+
+        <article class="code-card wide">
+          <div class="code-head">
+            <div class="code-title">
+              <h3>Send This To Your Admin Or IT</h3>
+              <p>Non-technical handoff. If the operator should not touch setup, copy this note and send it to the person who handles systems.</p>
+            </div>
+            <button class="copy-btn" data-copy-target="code-admin">Copy Admin Note</button>
+          </div>
+          <pre id="code-admin">Please set up the starter stack from this Go2 x Cowork.ai proposal-ops audit example for the operator on this machine.
+
+Use these assets:
+- Browser tool: ./proposal-response-pack-builder.html
+- Connector starter: https://github.com/Scottpedia0/outlook-pipedrive-mcp
+- Admin install note: ./proposal-ops-send-to-admin.md
+
+What I need from you:
+1. Connect Outlook and the CRM to the connector starter.
+2. Generate the local setup block for Codex or Claude Code.
+3. Ask me only for the credentials or field mappings you actually need.
+4. Run one real test that logs a sent follow-up into the CRM.
+5. Leave me with:
+   - one working setup block
+   - one successful test result or exact blocker
+   - the one next thing I should test on Monday
+
+Goal:
+The operator should not have to learn the tooling. They should be able to copy a messy request into the tool, get a clean output, and have follow-ups start writing back into the CRM.</pre>
+        </article>
+
+        <article class="code-card">
+          <div class="code-head">
+            <div class="code-title">
+              <h3>Proposal Intake Brief</h3>
+              <p>Use this when the role keeps getting “just handle this” requests with missing scope, assets, or due dates.</p>
+            </div>
+            <button class="copy-btn" data-copy-target="code-intake">Copy</button>
+          </div>
+          <pre id="code-intake">{
+  "name": "proposal_intake_brief",
+  "trigger": "new bid request or forwarded RFP email",
+  "skills": [
+    "request_normalizer",
+    "quote_pack_drafter",
+    "followup_composer"
+  ],
+  "mcps": [
+    "microsoft_graph",
+    "google_drive",
+    "google_sheets",
+    "slack"
+  ],
+  "steps": [
+    "extract account, bid id, due date, scope, and missing inputs",
+    "pull the current pricing rows and latest approved catalog assets",
+    "draft one internal brief with a missing-data checklist",
+    "draft the external acknowledgement email",
+    "post the approval card to Slack"
+  ]
+}</pre>
+        </article>
+
+        <article class="code-card">
+          <div class="code-head">
+            <div class="code-title">
+              <h3>Promise Lag Sentry</h3>
+              <p>Use this when follow-up quality depends too much on human memory after the meeting or sent email already happened.</p>
+            </div>
+            <button class="copy-btn" data-copy-target="code-promise">Copy</button>
+          </div>
+          <pre id="code-promise">{
+  "name": "promise_lag_sentry",
+  "trigger": "every 30 minutes during local working hours",
+  "inputs": [
+    "outlook_sent_items",
+    "calendar_events",
+    "dialpad_calls",
+    "proposal_tracker_sheet"
+  ],
+  "rules": [
+    "if a customer promise is older than 4 business hours and no reply exists, draft the follow-up",
+    "if a bid due date is within 24 hours and a deck or catalog asset is still missing, escalate to Slack",
+    "if an intro call happened and no summary exists, generate one and queue it for approval"
+  ],
+  "outputs": [
+    "customer-safe email draft",
+    "internal next-step card",
+    "risk escalation note"
+  ]
+}</pre>
+        </article>
+
+        <article class="code-card">
+          <div class="code-head">
+            <div class="code-title">
+              <h3>Pricing Guardrail</h3>
+              <p>Use this when sheet logic, lightweight calculator work, and quote-safe language still live in operator muscle memory.</p>
+            </div>
+            <button class="copy-btn" data-copy-target="code-pricing">Copy</button>
+          </div>
+          <pre id="code-pricing">{
+  "name": "pricing_sheet_guardrail",
+  "trigger": "sheet row update or new product bundle request",
+  "skills": [
+    "sku_resolver",
+    "margin_checker",
+    "quote_writer"
+  ],
+  "mcps": [
+    "google_sheets",
+    "catalog_source",
+    "slack"
+  ],
+  "outputs": [
+    "validated price block",
+    "margin warning if thresholds are crossed",
+    "customer-safe quote text",
+    "approval card when confidence is low"
+  ]
+}</pre>
+        </article>
+
+        <article class="code-card">
+          <div class="code-head">
+            <div class="code-title">
+              <h3>Paste This Setup Block</h3>
+              <p>Paste this into Codex or Claude Code after you have credentials. It tells the agent how to connect Outlook and the CRM.</p>
+            </div>
+            <button class="copy-btn" data-copy-target="code-mcp">Copy</button>
+          </div>
+          <pre id="code-mcp">{
+  "mcpServers": {
+    "outlook-pipedrive": {
+      "command": "node",
+      "args": [
+        "/absolute/path/to/outlook-pipedrive-mcp/server.mjs"
+      ],
+      "env": {
+        "GRAPH_TENANT_ID": "your-tenant-id",
+        "GRAPH_CLIENT_ID": "your-client-id",
+        "GRAPH_CLIENT_SECRET": "your-client-secret",
+        "GRAPH_USER_ID": "operator@company.com",
+        "PIPEDRIVE_API_TOKEN": "your-pipedrive-api-token",
+        "PIPEDRIVE_BASE_URL": "https://api.pipedrive.com"
+      }
+    }
+  }
+}</pre>
+        </article>
+      </div>
+    </section>
+
+    <section class="section tool-card" id="tool">
+      <div class="section-head">
+        <div>
+          <h2>Hooks</h2>
+          <p>These are the first working hooks a similar operator could use right away. In starter mode they remove blank-page work. In full-power mode they become a role-specific operating layer across inbox, CRM, pricing, and approvals.</p>
+        </div>
+      </div>
+      <div class="artifact-grid">
+        <div class="artifact-card">
+          <span class="mini-badge green">Included tool</span>
+          <h3>Proposal Response Pack Builder</h3>
+          <p>A browser-based first-pass drafting tool that converts raw request text or manual context into three reusable outputs. If a similar operator opened this today, they could stop starting proposals from a blank page before the live connectors are even wired.</p>
+          <ul>
+            <li>Generates an internal brief from rough notes, assets, and risks</li>
+            <li>Drafts the customer-safe follow-up automatically</li>
+            <li>Creates a Slack-ready handoff so work does not die in personal memory</li>
+          </ul>
+          <div class="artifact-links">
+            <a href="../../proposal-response-pack-builder.html">Open tool</a>
+            <a href="#fixes">Copy install prompt</a>
+          </div>
+        </div>
+        <div class="artifact-card">
+          <span class="mini-badge blue">Included connector</span>
+          <h3>Outlook -> CRM Bridge</h3>
+          <p>A real starter connector that reads sent Outlook follow-up context and writes it back into the CRM as notes and next-step activities. It is intentionally narrow so a buyer can feel real writeback value without handing over the dangerous parts first.</p>
+          <ul>
+            <li>Lists recent sent Outlook messages through Microsoft Graph</li>
+            <li>Matches people in Pipedrive by recipient email</li>
+            <li>Writes synced notes and follow-up activities back into the CRM</li>
+          </ul>
+          <div class="plain-note"><strong>Full-power unlock:</strong> once this is live, follow-up logging stops depending on memory and starts happening as part of the workflow itself.</div>
+          <div class="artifact-links">
+            <a href="../../outlook-pipedrive-mcp/INSTALL_WITH_CODEX.md">Open connector install prompt</a>
+            <a href="https://github.com/Scottpedia0/outlook-pipedrive-mcp" target="_blank" rel="noreferrer">Open GitHub</a>
+            <a href="../../outlook-pipedrive-mcp/sample-sync-output.json">See example result</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="evidence">
+      <div class="section-head">
+        <div>
+          <h2>Evidence</h2>
+          <p>The findings above are backed by counted surfaces, visible document titles, and observed handoff patterns from the actual two-week window.</p>
+        </div>
+      </div>
+      <div class="table-grid">
+        <article class="table-card">
+          <h3>Top Surfaces</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Surface</th>
+                <th>Hours</th>
+                <th>Events</th>
+                <th>Active Days</th>
+                <th>Supports</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Google Chrome</td><td>26.47</td><td>6,481</td><td>8</td><td>1, 2, 3, 6</td></tr>
+              <tr><td>Microsoft Edge</td><td>17.36</td><td>4,003</td><td>8</td><td>2, 3, 4</td></tr>
+              <tr><td>Slack</td><td>7.50</td><td>1,415</td><td>8</td><td>4</td></tr>
+              <tr><td>Microsoft PowerPoint</td><td>3.24</td><td>226</td><td>3</td><td>1, 6</td></tr>
+              <tr><td>Adobe Acrobat</td><td>2.88</td><td>283</td><td>8</td><td>1, 6</td></tr>
+              <tr><td>Windows Explorer</td><td>2.69</td><td>9,698</td><td>8</td><td>6</td></tr>
+              <tr><td>Microsoft Word</td><td>1.67</td><td>130</td><td>3</td><td>1, 6</td></tr>
+              <tr><td>Calculator</td><td>1.16</td><td>48</td><td>7</td><td>5</td></tr>
+            </tbody>
+          </table>
+        </article>
+
+        <article class="table-card">
+          <h3>Document / Title Receipts</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Hours</th>
+                <th>Supports</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Primary pricing sheet - Google Sheets</td><td>6.20</td><td>5</td></tr>
+              <tr><td>Mail - Outlook surfaces</td><td>3.98+</td><td>3</td></tr>
+              <tr><td>Enterprise RFP deck - PowerPoint</td><td>2.83</td><td>1</td></tr>
+              <tr><td>Current product catalog PDF</td><td>1.10</td><td>1, 6</td></tr>
+              <tr><td>Rebuttals - Word</td><td>0.96</td><td>1, 6</td></tr>
+              <tr><td>Industrial project bid draft</td><td>0.86</td><td>1</td></tr>
+              <tr><td>Meet - intro call</td><td>0.45</td><td>3</td></tr>
+              <tr><td>Dialpad</td><td>0.42</td><td>3</td></tr>
+            </tbody>
+          </table>
+        </article>
+      </div>
+
+      <div class="table-grid" style="margin-top: 16px;">
+        <article class="table-card">
+          <h3>Clipboard Pressure By Day</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Day</th>
+                <th>Bins</th>
+                <th>Copies</th>
+                <th>Pastes</th>
+                <th>Corrections</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Mar 12</td><td>244</td><td>29</td><td>37</td><td>73</td></tr>
+              <tr><td>Mar 13</td><td>76</td><td>1</td><td>1</td><td>11</td></tr>
+              <tr><td>Mar 16</td><td>200</td><td>20</td><td>22</td><td>70</td></tr>
+              <tr><td>Mar 17</td><td>189</td><td>21</td><td>38</td><td>57</td></tr>
+              <tr><td>Mar 18</td><td>508</td><td>228</td><td>262</td><td>177</td></tr>
+              <tr><td>Mar 19</td><td>992</td><td>359</td><td>515</td><td>251</td></tr>
+              <tr><td>Mar 20</td><td>921</td><td>373</td><td>374</td><td>232</td></tr>
+              <tr><td>Mar 23</td><td>657</td><td>285</td><td>276</td><td>116</td></tr>
+            </tbody>
+          </table>
+        </article>
+
+        <article class="table-card">
+          <h3>Non-Explorer Transition Hotspots</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>From</th>
+                <th>To</th>
+                <th>Count</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Google Chrome</td><td>Microsoft Edge</td><td>965</td></tr>
+              <tr><td>Microsoft Edge</td><td>Google Chrome</td><td>653</td></tr>
+              <tr><td>Slack</td><td>Microsoft Edge</td><td>504</td></tr>
+              <tr><td>Microsoft Edge</td><td>Slack</td><td>372</td></tr>
+              <tr><td>Google Chrome</td><td>Slack</td><td>153</td></tr>
+              <tr><td>Slack</td><td>Google Chrome</td><td>131</td></tr>
+              <tr><td>Google Chrome</td><td>Microsoft PowerPoint</td><td>57</td></tr>
+              <tr><td>Microsoft PowerPoint</td><td>Google Chrome</td><td>38</td></tr>
+            </tbody>
+          </table>
+        </article>
+      </div>
+    </section>
+
+    <section class="section card" id="notes">
+      <div class="section-head">
+        <div>
+          <h2>Notes</h2>
+          <p>This report is role-shaped on purpose. A customer support worker, bookkeeper, or founder would get a very different read because the pressure surfaces and the missing automations would be different.</p>
+        </div>
+      </div>
+      <div class="two-up">
+        <div class="micro-card">
+          <h3>Anonymization</h3>
+          <p>Alias, company identity, and identifying document details were changed. The timing, counts, and behavioral structure were preserved for a public-safe example.</p>
+        </div>
+        <div class="micro-card">
+          <h3>Confidence note</h3>
+          <p>Session data captured 10 worked days and 12 sessions. Granular app/web capture populated fully for 8 days in the window. That is why session hours and active hours do not line up one-to-one.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+const sections = document.querySelectorAll('main section[id]');
+const navLinks = document.querySelectorAll('.rail-nav a');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry) => {
+    if (!entry.isIntersecting) return;
+    navLinks.forEach((link) => {
+      link.classList.toggle('active', link.getAttribute('href') === `#${entry.target.id}`);
+    });
+  });
+}, { rootMargin: '-20% 0px -60% 0px', threshold: 0.1 });
+
+sections.forEach((section) => observer.observe(section));
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const target = document.getElementById(button.dataset.copyTarget);
+    await navigator.clipboard.writeText(target.textContent);
+    const original = button.textContent;
+    button.textContent = 'Copied';
+    setTimeout(() => { button.textContent = original; }, 1200);
+  });
+});
+</script>
+</body>
+</html>
