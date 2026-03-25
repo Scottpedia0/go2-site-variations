@@ -1,0 +1,2879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 Founder (Redacted) - Operator Mode Audit</title>
+<style>
+  * { box-sizing: border-box; }
+
+  :root {
+    --bg: #0b0f14;
+    --bg-elev: #121820;
+    --bg-card: rgba(17, 24, 34, 0.9);
+    --bg-card-2: rgba(20, 28, 39, 0.92);
+    --border: rgba(148, 163, 184, 0.16);
+    --border-strong: rgba(148, 163, 184, 0.28);
+    --text: #e6edf5;
+    --muted: #9ba9ba;
+    --dim: #6f7d90;
+    --accent: #ff8a3d;
+    --accent-2: #67d1ff;
+    --green: #43d17f;
+    --yellow: #f4c95d;
+    --red: #ff6f61;
+    --purple: #a786ff;
+    --shadow: 0 22px 60px rgba(0, 0, 0, 0.28);
+    --radius: 18px;
+    --radius-sm: 12px;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    font-family: "Avenir Next", "SF Pro Display", "Helvetica Neue", sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(103, 209, 255, 0.09), transparent 26%),
+      radial-gradient(circle at top right, rgba(255, 138, 61, 0.11), transparent 24%),
+      linear-gradient(180deg, #091018 0%, #0b0f14 100%);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  a {
+    color: var(--accent-2);
+    text-decoration: none;
+  }
+
+  .wrap {
+    max-width: 1380px;
+    margin: 0 auto;
+    padding: 32px 20px 88px;
+  }
+
+  .hero {
+    position: relative;
+    overflow: hidden;
+    padding: 34px;
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    background:
+      linear-gradient(135deg, rgba(255, 138, 61, 0.12), rgba(103, 209, 255, 0.1)),
+      var(--bg-card);
+    box-shadow: var(--shadow);
+    margin-bottom: 18px;
+  }
+
+  .hero::after {
+    content: "";
+    position: absolute;
+    inset: auto -80px -80px auto;
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 138, 61, 0.16), transparent 68%);
+    pointer-events: none;
+  }
+
+  .eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    margin: 0 0 12px;
+    font-size: clamp(34px, 5vw, 54px);
+    line-height: 1.03;
+    letter-spacing: -0.03em;
+  }
+
+  .subtitle {
+    max-width: 900px;
+    font-size: 17px;
+    color: #d4dceb;
+    margin-bottom: 18px;
+  }
+
+  .hero-badges,
+  .nav,
+  .badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .badge,
+  .nav a,
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.04);
+    font-size: 13px;
+  }
+
+  .nav {
+    margin: 20px 0 26px;
+  }
+
+  .nav a {
+    color: var(--text);
+  }
+
+  .page-grid {
+    display: block;
+  }
+
+  .main-col {
+    min-width: 0;
+  }
+
+  .side-menu {
+    display: none;
+  }
+
+  .side-shell {
+    position: sticky;
+    top: 24px;
+    padding: 18px;
+    border-radius: 22px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    box-shadow: var(--shadow);
+  }
+
+  .side-title {
+    margin: 0 0 12px;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+  }
+
+  .side-group + .side-group {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+  }
+
+  .side-links {
+    display: grid;
+    gap: 8px;
+  }
+
+  .side-links a {
+    display: block;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--muted);
+    font-size: 13px;
+    transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+  }
+
+  .side-links a:hover,
+  .side-links a.active,
+  .nav a.active {
+    color: var(--text);
+    border-color: var(--border);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .side-links.small a {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .hero-grid,
+  .stats,
+  .artifact-grid,
+  .two-col,
+  .skill-grid,
+  .finding-grid {
+    display: grid;
+    gap: 16px;
+  }
+
+  .hero-grid {
+    grid-template-columns: 1.25fr 0.95fr;
+    margin-top: 22px;
+  }
+
+  .stats {
+    grid-template-columns: repeat(5, 1fr);
+    margin-bottom: 26px;
+  }
+
+  .artifact-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .two-col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .skill-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .finding-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .proof-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .proof-card {
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    border-radius: 22px;
+    box-shadow: var(--shadow);
+    padding: 20px;
+  }
+
+  .proof-card.wide {
+    grid-column: 1 / -1;
+  }
+
+  .flow-track {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 16px;
+  }
+
+  .flow-node {
+    position: relative;
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+    min-height: 126px;
+  }
+
+  .flow-node:not(:last-child)::after {
+    content: "→";
+    position: absolute;
+    top: 50%;
+    right: -22px;
+    transform: translateY(-50%);
+    color: var(--accent-2);
+    font-size: 28px;
+    font-weight: 800;
+  }
+
+  .flow-step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    border: 1px solid rgba(103, 209, 255, 0.35);
+    color: var(--accent-2);
+    font-size: 12px;
+    font-weight: 800;
+    margin-bottom: 10px;
+  }
+
+  .flow-node h3 {
+    margin: 0 0 6px;
+    font-size: 17px;
+  }
+
+  .flow-node p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .proof-shot {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr 0.8fr;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .proof-pane {
+    padding: 14px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .proof-pane h4 {
+    margin: 0 0 10px;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+  }
+
+  .proof-lines {
+    display: grid;
+    gap: 8px;
+  }
+
+  .proof-lines span,
+  .proof-chip {
+    display: block;
+    height: 10px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.16), rgba(255,255,255,0.05));
+  }
+
+  .proof-chip {
+    height: auto;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    background: rgba(103, 209, 255, 0.08);
+    color: var(--text);
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+
+  .arch-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+    gap: 12px;
+    align-items: center;
+    margin-top: 16px;
+  }
+
+  .arch-stack {
+    display: grid;
+    gap: 10px;
+  }
+
+  .arch-node {
+    padding: 14px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .arch-node strong {
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .arch-node span {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .arch-node.core {
+    border-color: rgba(255, 138, 61, 0.28);
+    background: rgba(255, 138, 61, 0.08);
+  }
+
+  .arch-arrow {
+    color: var(--accent-2);
+    font-size: 30px;
+    font-weight: 800;
+    text-align: center;
+  }
+
+  .bar-list,
+  .stack-list,
+  .legend,
+  .trigger-grid {
+    display: grid;
+    gap: 12px;
+  }
+
+  .trigger-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .trigger-card {
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 18px;
+  }
+
+  .trigger-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .trigger-top h3 {
+    margin: 0;
+    font-size: 17px;
+  }
+
+  .role-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.04);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    white-space: nowrap;
+  }
+
+  .copy-box {
+    margin: 12px 0;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(0, 0, 0, 0.2);
+    color: #d9e3ef;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+
+  .copy-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(103, 209, 255, 0.3);
+    background: rgba(103, 209, 255, 0.08);
+    color: var(--text);
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .copy-btn.done {
+    border-color: rgba(67, 209, 127, 0.3);
+    background: rgba(67, 209, 127, 0.12);
+    color: var(--green);
+  }
+
+  .bar-row {
+    display: grid;
+    grid-template-columns: 160px 1fr 72px;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .bar-label,
+  .stack-label,
+  .legend span {
+    font-size: 14px;
+    color: #fff;
+  }
+
+  .bar-label,
+  .stack-label {
+    font-weight: 700;
+  }
+
+  .bar-track,
+  .stack-track {
+    position: relative;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .bar-track {
+    height: 12px;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent-2), rgba(103, 209, 255, 0.55));
+  }
+
+  .bar-fill.chrome {
+    background: linear-gradient(90deg, var(--accent), rgba(255, 138, 61, 0.55));
+  }
+
+  .bar-fill.codex {
+    background: linear-gradient(90deg, var(--green), rgba(67, 209, 127, 0.55));
+  }
+
+  .bar-fill.dim {
+    background: linear-gradient(90deg, rgba(167, 134, 255, 0.95), rgba(167, 134, 255, 0.45));
+  }
+
+  .bar-value,
+  .stack-meta {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  .stack-list {
+    margin-top: 16px;
+  }
+
+  .stack-row {
+    display: grid;
+    grid-template-columns: 88px 1fr 190px;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .stack-track {
+    display: flex;
+    height: 14px;
+  }
+
+  .seg {
+    height: 100%;
+  }
+
+  .seg.build { background: var(--accent-2); }
+  .seg.meeting { background: var(--yellow); }
+  .seg.admin { background: var(--accent); }
+  .seg.other { background: rgba(148, 163, 184, 0.35); }
+
+  .legend {
+    grid-template-columns: repeat(4, max-content);
+    gap: 14px;
+    margin-top: 14px;
+  }
+
+  .legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+  }
+
+  .legend span::before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .legend .build::before { background: var(--accent-2); }
+  .legend .meeting::before { background: var(--yellow); }
+  .legend .admin::before { background: var(--accent); }
+  .legend .other::before { background: rgba(148, 163, 184, 0.55); }
+
+  .panel,
+  .stat,
+  .artifact,
+  .skill,
+  .section,
+  details.finding {
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+
+  .panel,
+  .section {
+    padding: 24px;
+    margin-bottom: 18px;
+  }
+
+  .panel h2,
+  .section h2 {
+    margin: 0 0 8px;
+    font-size: 28px;
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+  }
+
+  .section p:last-child,
+  .panel p:last-child {
+    margin-bottom: 0;
+  }
+
+  .stat {
+    padding: 18px 16px;
+  }
+
+  .stat .num {
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1.05;
+    margin-bottom: 6px;
+    color: #fff;
+  }
+
+  .stat .lbl {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .stat .meta {
+    font-size: 14px;
+    color: var(--dim);
+  }
+
+  .callout {
+    padding: 16px 18px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--bg-card-2);
+  }
+
+  .callout strong {
+    color: #fff;
+  }
+
+  .callout.warn {
+    border-color: rgba(244, 201, 93, 0.35);
+    background: rgba(244, 201, 93, 0.08);
+  }
+
+  .callout.good {
+    border-color: rgba(67, 209, 127, 0.35);
+    background: rgba(67, 209, 127, 0.09);
+  }
+
+  .callout.hot {
+    border-color: rgba(255, 111, 97, 0.38);
+    background: rgba(255, 111, 97, 0.08);
+  }
+
+  .callout.insight {
+    border-color: rgba(255, 138, 61, 0.38);
+    background: rgba(255, 138, 61, 0.1);
+  }
+
+  .redaction-grid,
+  .prescription-grid {
+    display: grid;
+    gap: 16px;
+  }
+
+  .redaction-grid {
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: 18px;
+  }
+
+  .redaction-block {
+    min-height: 210px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 18px;
+    padding: 20px;
+    border-radius: var(--radius);
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 138, 61, 0.06)),
+      rgba(6, 10, 15, 0.65);
+    text-align: center;
+  }
+
+  .redaction-block p {
+    margin: 0;
+    color: var(--muted);
+    max-width: 260px;
+  }
+
+  .redaction-stamp {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: 0.24em;
+    color: rgba(255, 255, 255, 0.82);
+    text-transform: uppercase;
+  }
+
+  .prescription-grid {
+    grid-template-columns: repeat(2, 1fr);
+    margin-top: 18px;
+  }
+
+  .prescription-card {
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 22px;
+  }
+
+  .prescription-card h3 {
+    margin: 0 0 10px;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+  }
+
+  .prescription-card ol {
+    margin-top: 14px;
+  }
+
+  .redacted-banner {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 111, 97, 0.3);
+    background: rgba(255, 111, 97, 0.09);
+    color: #ffd8d2;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .memo-grid,
+  .packet-grid,
+  .appendix-grid {
+    display: grid;
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  .memo-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .packet-grid,
+  .appendix-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .memo-item {
+    padding: 14px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .memo-key,
+  .packet-no,
+  .appendix-type {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .memo-value {
+    margin-top: 6px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.45;
+  }
+
+  .pressure-grid,
+  .recipe-grid,
+  .gate-grid,
+  .auto-grid {
+    display: grid;
+    gap: 16px;
+    margin-top: 18px;
+  }
+
+  .pressure-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .recipe-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .gate-grid,
+  .auto-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .pressure-card,
+  .recipe-card,
+  .gate-card,
+  .auto-card,
+  .packet-card,
+  .appendix-card {
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+  }
+
+  .pressure-card h3,
+  .recipe-card h3,
+  .gate-card h3,
+  .auto-card h3,
+  .packet-card h3,
+  .appendix-card h3 {
+    margin: 0 0 8px;
+    font-size: 20px;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  .gate-kicker,
+  .recipe-kicker,
+  .auto-kicker {
+    margin-top: 12px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    font-weight: 700;
+  }
+
+  .packet-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .packet-tag {
+    white-space: nowrap;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 111, 97, 0.24);
+    background: rgba(255, 111, 97, 0.08);
+    color: #ffd8d2;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+
+  .blackout-box {
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px dashed rgba(255, 255, 255, 0.16);
+    background: rgba(0, 0, 0, 0.24);
+  }
+
+  .blackout-label {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #ffd8d2;
+    font-weight: 700;
+  }
+
+  .blackout-lines {
+    margin-top: 12px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .blackout-lines span {
+    display: block;
+    height: 10px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.26), rgba(255,255,255,0.09));
+  }
+
+  .artifact,
+  .skill {
+    padding: 18px;
+  }
+
+  .artifact .name,
+  .skill .name {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .artifact .date {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+
+  .artifact p,
+  .skill p,
+  .muted {
+    color: var(--muted);
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    margin-top: 16px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 980px;
+    font-size: 14px;
+  }
+
+  th,
+  td {
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  th {
+    text-align: left;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  tbody tr:hover {
+    background: rgba(255, 255, 255, 0.025);
+  }
+
+  .confidence {
+    white-space: nowrap;
+    font-weight: 700;
+  }
+
+  .confidence.high { color: var(--green); }
+  .confidence.med { color: var(--yellow); }
+
+  details.finding {
+    overflow: hidden;
+  }
+
+  details.finding summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    font-weight: 700;
+    font-size: 17px;
+  }
+
+  details.finding summary::-webkit-details-marker {
+    display: none;
+  }
+
+  details.finding[open] summary {
+    border-bottom: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .finding-body {
+    padding: 18px 20px 20px;
+  }
+
+  .finding-body p {
+    margin-top: 0;
+  }
+
+  .finding-body p:last-child {
+    margin-bottom: 0;
+  }
+
+  .pill {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+
+  .pill.high {
+    color: var(--green);
+    border-color: rgba(67, 209, 127, 0.32);
+    background: rgba(67, 209, 127, 0.08);
+  }
+
+  .pill.med {
+    color: var(--yellow);
+    border-color: rgba(244, 201, 93, 0.35);
+    background: rgba(244, 201, 93, 0.08);
+  }
+
+  .pill.hot {
+    color: var(--red);
+    border-color: rgba(255, 111, 97, 0.35);
+    background: rgba(255, 111, 97, 0.08);
+  }
+
+  ul,
+  ol {
+    margin: 10px 0 0;
+    padding-left: 22px;
+  }
+
+  li + li {
+    margin-top: 8px;
+  }
+
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.92em;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 2px 6px;
+    border-radius: 6px;
+  }
+
+  .foot {
+    padding: 18px 4px 0;
+    color: var(--dim);
+    font-size: 13px;
+    text-align: center;
+  }
+
+  @media (min-width: 1121px) {
+    .page-grid {
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .side-menu {
+      display: block;
+    }
+  }
+
+  @media (max-width: 1120px) {
+    .stats { grid-template-columns: repeat(3, 1fr); }
+    .artifact-grid { grid-template-columns: repeat(2, 1fr); }
+    .skill-grid { grid-template-columns: repeat(2, 1fr); }
+    .redaction-grid { grid-template-columns: 1fr; }
+    .memo-grid,
+    .packet-grid,
+    .appendix-grid { grid-template-columns: repeat(2, 1fr); }
+    .pressure-grid,
+    .gate-grid,
+    .auto-grid,
+    .proof-grid { grid-template-columns: repeat(2, 1fr); }
+    .flow-track { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .flow-node::after { display: none; }
+    .arch-grid { grid-template-columns: 1fr; }
+    .arch-arrow { display: none; }
+  }
+
+  @media (max-width: 860px) {
+    .memo-grid,
+    .hero-grid,
+    .two-col,
+    .finding-grid,
+    .trigger-grid,
+    .prescription-grid,
+    .pressure-grid,
+    .recipe-grid,
+    .gate-grid,
+    .auto-grid,
+    .proof-grid,
+    .packet-grid,
+    .appendix-grid { grid-template-columns: 1fr; }
+    .flow-track,
+    .proof-shot { grid-template-columns: 1fr; }
+    .flow-node::after { display: none; }
+  }
+
+  @media (max-width: 720px) {
+    .wrap { padding: 18px 14px 60px; }
+    .hero { padding: 24px; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .artifact-grid,
+    .skill-grid { grid-template-columns: 1fr; }
+    .bar-row,
+    .stack-row { grid-template-columns: 1fr; }
+    .bar-value,
+    .stack-meta { text-align: left; }
+    h1 { font-size: 34px; }
+    .panel h2,
+    .section h2 { font-size: 24px; }
+  }
+
+  @media (max-width: 480px) {
+    .stats { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <div class="eyebrow">Go2 Founder (Redacted) · Prepared by Moe [AI] · Public copy from a real internal audit</div>
+      <h1>Operator Mode Audit</h1>
+      <p class="subtitle">
+        March 13-25, 2026. This is your report, built from your actual local telemetry,
+        cohort telemetry context, the daily reports from the window, your audit and psychology reports,
+        and custom source material you provided to sharpen the read. The synthesis for this presentation copy ran locally on the founder's own machine.
+        A fuller internal version exists. This presentation copy keeps the real observations, but blanks client names,
+        transcript excerpts, exact implementation details, and sensitive commercial context where needed.
+      </p>
+
+      <div class="memo-grid">
+        <div class="memo-item">
+          <div class="memo-key">Audit Window</div>
+          <div class="memo-value">14 calendar days</div>
+        </div>
+        <div class="memo-item">
+          <div class="memo-key">Observed Days</div>
+          <div class="memo-value">13 instrumented days inside the window</div>
+        </div>
+        <div class="memo-item">
+          <div class="memo-key">Subject</div>
+          <div class="memo-value">Go2 Founder (Redacted) · CEO / operator / AI team manager</div>
+        </div>
+        <div class="memo-item">
+          <div class="memo-key">Built From</div>
+          <div class="memo-value">Local telemetry, cohort telemetry context, daily reports, Oura/body-state data, transcripts, git and architecture artifacts, and redacted internal work</div>
+        </div>
+      </div>
+
+      <div class="hero-badges">
+        <span class="badge">Actual local telemetry</span>
+        <span class="badge">Cohort context + daily reports</span>
+        <span class="badge">On-device synthesis</span>
+        <span class="badge">Selective redaction only</span>
+        <span class="badge">Architecture receipts linked</span>
+        <span class="badge">Recommendations + installs</span>
+      </div>
+
+      <div class="badge-row" style="margin-top:12px;">
+        <a class="pill" href="#summary">Jump: Summary</a>
+        <a class="pill" href="#proof">Visual Proof</a>
+        <a class="pill" href="#automation">Automations</a>
+        <a class="pill" href="#receipts">Receipts</a>
+        <a class="pill" href="#next-14">Next 14 Days</a>
+      </div>
+
+      <div class="redacted-banner">Public Copy · Internal Excerpts Redacted · Client + Product Detail Removed</div>
+
+      <div class="callout" style="margin-top:16px;">
+        <strong>Privacy + presentation note.</strong> This audit was synthesized fully on the founder's computer with enough local RAM to keep raw telemetry,
+        transcripts, and report artifacts on-device. Some top-line counts in this presentation copy are intentionally modeled composites so the operating shape stays visible after redaction
+        without exposing the exact underlying outreach, meeting, or customer trail.
+      </div>
+
+      <div class="callout warn" style="margin-top:16px;">
+        <strong>Sanitization note.</strong> A real internal version of the founder's report exists. This copy was cleaned for presentation use,
+        so places that would expose client detail, internal GTM mechanics, or product/IP specifics are intentionally shown as <strong>REDACTED</strong>.
+      </div>
+
+      <div class="callout warn" style="margin-top:16px;">
+        <strong>Scope note.</strong> This public example is founder/operator-shaped because that was the role and feedback lane under review in the window.
+        A customer support, sales, or ops report would use different pressure points, different automations, and different redactions.
+      </div>
+
+      <div class="hero-grid">
+        <div class="callout good">
+          <strong>Core read.</strong> You work like an AI team manager, not a single-threaded maker.
+          The machine is basically Claude, Chrome, and Codex, with judgment moving across them all day.
+          That is a real strength. It is also why generic “focus harder” advice misses the point.
+        </div>
+        <div class="callout hot">
+          <strong>Blunt read.</strong> The bottleneck is not horsepower and it is not effort.
+          It is rubric drift, mode collision, and closure debt. When the standard is clear, you move very fast.
+          When it is fuzzy, you fan out, compare, and burn time narrowing.
+        </div>
+      </div>
+    </header>
+
+    <div class="page-grid">
+      <aside class="side-menu">
+        <div class="side-shell">
+          <div class="side-group">
+            <div class="side-title">Navigate</div>
+            <div class="side-links">
+              <a href="#summary">Summary</a>
+              <a href="#machine">Machine</a>
+              <a href="#context-layer">Context Layer</a>
+              <a href="#proof">Visual Proof</a>
+              <a href="#pressure-map">Pressure Map</a>
+              <a href="#artifacts">What Shipped</a>
+              <a href="#receipts">Receipts</a>
+              <a href="#automation">Automations</a>
+              <a href="#install-stack">Install Stack</a>
+              <a href="#findings">Findings</a>
+              <a href="#next-14">Next 14 Days</a>
+            </div>
+          </div>
+
+          <div class="side-group">
+            <div class="side-title">Receipt Links</div>
+            <div class="side-links small">
+              <a href="eod-2026-03-18-19.html">Voice + Telemetry Day</a>
+              <a href="eod-2026-03-22.html">Doctrine Day</a>
+              <a href="system-diagram-moe.md">System Diagram (Moe)</a>
+              <a href="system-diagram-larry.md">System Diagram (Larry)</a>
+              <a href="../docs/current-state-architecture.md">Current-State Architecture</a>
+              <a href="cowork-diagnostic-edition-2026-03-24.html">Operator Diagnostic</a>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <div class="main-col">
+    <nav class="nav">
+      <a href="#summary">Summary</a>
+      <a href="#machine">Machine</a>
+      <a href="#context-layer">Context Layer</a>
+      <a href="#proof">Visual Proof</a>
+      <a href="#pressure-map">Pressure Map</a>
+      <a href="#artifacts">What Shipped</a>
+      <a href="#receipts">Receipts</a>
+      <a href="#redactions">Redactions</a>
+      <a href="#recipes">Recipes</a>
+      <a href="#gates">Gates</a>
+      <a href="#automation">Automations</a>
+      <a href="#install-stack">Install Stack</a>
+      <a href="#packets">Packets</a>
+      <a href="#findings">Findings</a>
+      <a href="#prescriptions">Prescriptions</a>
+      <a href="#triggers">Playbooks</a>
+      <a href="#signature">Signature</a>
+      <a href="#next-14">Next 14 Days</a>
+      <a href="#appendix">Appendix</a>
+      <a href="#sources">Sources</a>
+    </nav>
+
+    <section class="stats">
+      <div class="stat">
+        <div class="num">14</div>
+        <div class="lbl">Audit Days</div>
+        <div class="meta">Calendar span covered by the audit period.</div>
+      </div>
+      <div class="stat">
+        <div class="num">17-26</div>
+        <div class="lbl">Recoverable Hrs / Week</div>
+        <div class="meta">Modeled hours likely recoverable if meeting prep, promise routing, and same-day follow-up stop living in memory.</div>
+      </div>
+      <div class="stat">
+        <div class="num">2,805</div>
+        <div class="lbl">AI Handoff Events</div>
+        <div class="meta">Context moved into Claude, Codex, OpenWork, and ChatGPT 2,805 times.</div>
+      </div>
+      <div class="stat">
+        <div class="num">336</div>
+        <div class="lbl">Repo / Doc Moves</div>
+        <div class="meta">Commits and documentation movement recorded across the shared brain during the audit window.</div>
+      </div>
+      <div class="stat">
+        <div class="num">45</div>
+        <div class="lbl">Architecture Touches</div>
+        <div class="meta">Diagram, current-state, and decision-log updates captured in their own documentation stream during the same window.</div>
+      </div>
+      <div class="stat">
+        <div class="num">61</div>
+        <div class="lbl">Outside People</div>
+        <div class="meta">Modeled distinct external humans touched across sales, recruiting, partnerships, operators, and active follow-up lanes.</div>
+      </div>
+      <div class="stat">
+        <div class="num">214</div>
+        <div class="lbl">External Touches</div>
+        <div class="meta">Modeled across email replies, follow-up drafts, Loom sends, demos, intros, and live outside conversations.</div>
+      </div>
+      <div class="stat">
+        <div class="num">29</div>
+        <div class="lbl">Live Promises</div>
+        <div class="meta">Modeled same-window stack of follow-ups, sends, edits, and next-step obligations competing for closure.</div>
+      </div>
+      <div class="stat">
+        <div class="num">988</div>
+        <div class="lbl">Outreach-Ready Contacts</div>
+        <div class="meta">Outreach-ready contacts staged by the remote lead-gen pipeline.</div>
+      </div>
+      <div class="stat">
+        <div class="num">3</div>
+        <div class="lbl">Compute Pools</div>
+        <div class="meta">MacBook Pro, Mac Mini, and AWS offload working as one system.</div>
+      </div>
+    </section>
+
+    <div class="badge-row" style="margin:0 0 26px;">
+      <span class="pill">1,764 Superwhisper recordings in 144h</span>
+      <span class="pill">144,441 transcript words analyzed</span>
+      <span class="pill">47 transcripts shipped to brain</span>
+      <span class="pill">25 more transcripts auto-ingested</span>
+      <span class="pill">Voice is the intent layer</span>
+    </div>
+
+    <section class="section" id="summary">
+      <div class="eyebrow">Executive Summary</div>
+      <h2>The highest upside is not more effort. It is making judgment reusable and closure cheaper.</h2>
+      <p>
+        Three quarters of your typed output in the window landed inside Claude and Codex.
+        That is not someone casually “using AI.” That is someone thinking, delegating, grading,
+        and converging in public across multiple model surfaces. The personal operating system is already visible.
+      </p>
+      <p>
+        The drag is not idea generation. The drag is preserving evaluation criteria, protecting build mode,
+        and converting decisions into durable artifacts without reopening the same loop in a different shell.
+        When the standard is explicit, you move fast. When it is fuzzy, you burn time across models, tabs, and lanes.
+      </p>
+      <div class="callout">
+        <strong>Bottom line.</strong> This is not a report about whether you worked hard enough.
+        It is a report about how your machine actually works: where it compounds, where it leaks, and what would make you materially faster without flattening how you think.
+      </div>
+      <div class="callout insight" style="margin-top:16px;">
+        <strong>GPT-5.4 Insight: Biggest problem.</strong> The bottleneck is no longer doing. It is instruction quality, context transfer, and decision routing.
+        The founder can already delegate, build, and synthesize at high speed. What breaks is preserving the rubric, handing off the right context, and closing the loop without reopening it in another tool or lane.
+      </div>
+      <div class="callout good" style="margin-top:16px;">
+        <strong>Revenue read.</strong> The least instrumented lane in the window was not cold demand. It was warm follow-up after demos, transcripts,
+        and human context-rich conversations. That is exactly where good pipeline can decay without looking like a traditional sales problem.
+      </div>
+    </section>
+
+    <section class="section" id="pressure-map">
+      <div class="eyebrow">CEO Pressure Map</div>
+      <h2>The public-safe version can still show where the real drag sits</h2>
+      <p>
+        The point here is not to flatten your work into generic productivity advice. It is to show the specific places a CEO-operator machine leaks:
+        meetings that should create leverage but create residue, follow-ups that get delayed while the scalable version gets prettier, strategy loops that stay wider than they should, and compute that is only partly disciplined.
+      </p>
+
+      <div class="pressure-grid">
+        <article class="pressure-card">
+          <div class="eyebrow">Meeting Blindness</div>
+          <h3>You were often showing up as the agenda, the memory, and the synthesis layer.</h3>
+          <p class="muted">High-cost conversations were still too non-instrumented. When other people arrived underprepared, the CEO became the prep layer, the note-taker, and the post-call routing system by default.</p>
+        </article>
+
+        <article class="pressure-card">
+          <div class="eyebrow">Follow-Up Drag</div>
+          <h3>The demos were not the bottleneck. The scale instinct fired before the thin bridge existed.</h3>
+          <p class="muted">When a repeated manual gap appears, the founder tends to go build the missing function immediately. That instinct is product gold at scale, but in a crowded week it can outrun the thinner bridge that would have closed the live loop first.</p>
+        </article>
+
+        <article class="pressure-card">
+          <div class="eyebrow">Strategy Width</div>
+          <h3>The stall is not thinking. It is leaving too many GTM doors emotionally open.</h3>
+          <p class="muted">A bigger contract, a narrower pilot, a cleaner SMB story, a more bespoke enterprise story. The drag is not insight. The drag is narrowing when multiple stories still feel viable.</p>
+        </article>
+
+        <article class="pressure-card">
+          <div class="eyebrow">Promise Compression</div>
+          <h3>The drag is not making promises. It is compressing too many of them into one mental queue.</h3>
+          <p class="muted">Demos, recruiting, partner motion, investor follow-ups, and operator commitments were competing inside the same memory slot. Intent stayed high. Same-day retrieval and closure got more fragile than they should.</p>
+        </article>
+
+        <article class="pressure-card">
+          <div class="eyebrow">Machine Discipline</div>
+          <h3>The three-machine setup is real leverage when routing stays honest</h3>
+          <p class="muted">You already have a real control plane plus worker plane. The remaining leak is asking the local machine to hold heavy worker jobs, context, and CEO judgment at the same time.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="machine">
+      <div class="eyebrow">How The Machine Actually Works</div>
+      <h2>This laptop runs like an AI control room, with Chrome as the leak point.</h2>
+      <div class="two-col">
+        <div class="panel">
+          <div class="eyebrow">App Stack</div>
+          <h2>Most of the machine is three surfaces</h2>
+          <p class="muted">
+            By observed app time, the system is basically Claude, Chrome, and Codex.
+            Chrome matters because it hosts both leverage and drag: Slack, Meet, Google surfaces, GitHub, websites, and random admin gravity.
+          </p>
+          <div class="bar-list">
+            <div class="bar-row">
+              <div class="bar-label">Claude</div>
+              <div class="bar-track"><div class="bar-fill" style="width:100%"></div></div>
+              <div class="bar-value">56.6h</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">Chrome</div>
+              <div class="bar-track"><div class="bar-fill chrome" style="width:87.9%"></div></div>
+              <div class="bar-value">49.8h</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">Codex</div>
+              <div class="bar-track"><div class="bar-fill codex" style="width:49.4%"></div></div>
+              <div class="bar-value">28.0h</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">OpenWork</div>
+              <div class="bar-track"><div class="bar-fill dim" style="width:4.4%"></div></div>
+              <div class="bar-value">2.5h</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">ChatGPT</div>
+              <div class="bar-track"><div class="bar-fill dim" style="width:3.8%"></div></div>
+              <div class="bar-value">2.1h</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">Terminal</div>
+              <div class="bar-track"><div class="bar-fill dim" style="width:3.4%"></div></div>
+              <div class="bar-value">1.9h</div>
+            </div>
+          </div>
+          <p class="muted" style="margin-top:16px;">
+            Inside Chrome: 10.3h Slack, 10.2h Google Meet, 6.7h Google surfaces, 1.8h GitHub, 1.55h <code>larry.moran.bot</code>.
+            Chrome is not “wasted time.” It is where too many different jobs are sharing the same window.
+          </p>
+        </div>
+
+        <div class="panel">
+          <div class="eyebrow">Clock Signature</div>
+          <h2>This is operator-time, not office-time</h2>
+          <p class="muted">
+            Your keyboard pattern backs the older read almost perfectly: morning is not the main event.
+            Evening and late night carried about 76% of all typed output in the window.
+          </p>
+          <div class="bar-list">
+            <div class="bar-row">
+              <div class="bar-label">Morning</div>
+              <div class="bar-track"><div class="bar-fill dim" style="width:31.7%"></div></div>
+              <div class="bar-value">28,928</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">Afternoon</div>
+              <div class="bar-track"><div class="bar-fill dim" style="width:27.5%"></div></div>
+              <div class="bar-value">25,063</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">Evening</div>
+              <div class="bar-track"><div class="bar-fill codex" style="width:100%"></div></div>
+              <div class="bar-value">91,120</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">Late Night</div>
+              <div class="bar-track"><div class="bar-fill chrome" style="width:85.4%"></div></div>
+              <div class="bar-value">77,789</div>
+            </div>
+          </div>
+          <div class="callout warn" style="margin-top:16px;">
+            <strong>Meaning.</strong> If you judge yourself by a fake morning-maker standard,
+            you will misread your actual machine and create shame that the data does not support.
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:18px;">
+        <div class="eyebrow">Day-By-Day</div>
+        <h2>Mode mix across the instrumented days</h2>
+        <p class="muted">
+          The pattern is obvious. March 19, 21, 22, and 23 were build-heavy runs.
+          March 18 got swallowed by meetings. March 24 and 25 show the admin leak vividly.
+        </p>
+        <div class="legend">
+          <span class="build">Build</span>
+          <span class="meeting">Meetings</span>
+          <span class="admin">Admin / comms</span>
+          <span class="other">Other</span>
+        </div>
+        <div class="stack-list">
+          <div class="stack-row">
+            <div class="stack-label">Mar 13</div>
+            <div class="stack-track">
+              <span class="seg build" style="width:23.1%"></span>
+              <span class="seg meeting" style="width:3%"></span>
+              <span class="seg admin" style="width:6.2%"></span>
+              <span class="seg other" style="width:67.8%"></span>
+            </div>
+            <div class="stack-meta">1.0h · 1,115 chars · 1 handoff</div>
+          </div>
+          <div class="stack-row">
+            <div class="stack-label">Mar 17</div>
+            <div class="stack-track">
+              <span class="seg build" style="width:40.1%"></span>
+              <span class="seg meeting" style="width:1.5%"></span>
+              <span class="seg admin" style="width:12.2%"></span>
+              <span class="seg other" style="width:46.2%"></span>
+            </div>
+            <div class="stack-meta">14.3h · 20,587 chars · 210 handoffs</div>
+          </div>
+          <div class="stack-row">
+            <div class="stack-label">Mar 18</div>
+            <div class="stack-track">
+              <span class="seg build" style="width:21.8%"></span>
+              <span class="seg meeting" style="width:39.7%"></span>
+              <span class="seg admin" style="width:2.3%"></span>
+              <span class="seg other" style="width:36.2%"></span>
+            </div>
+            <div class="stack-meta">22.6h · 26,766 chars · 210 handoffs</div>
+          </div>
+          <div class="stack-row">
+            <div class="stack-label">Mar 19</div>
+            <div class="stack-track">
+              <span class="seg build" style="width:75.4%"></span>
+              <span class="seg meeting" style="width:1.5%"></span>
+              <span class="seg admin" style="width:1.8%"></span>
+              <span class="seg other" style="width:21.3%"></span>
+            </div>
+            <div class="stack-meta">24.0h · 43,166 chars · 428 handoffs</div>
+          </div>
+          <div class="stack-row">
+            <div class="stack-label">Mar 20</div>
+            <div class="stack-track">
+              <span class="seg build" style="width:56.8%"></span>
+              <span class="seg meeting" style="width:2.5%"></span>
+              <span class="seg admin" style="width:1.5%"></span>
+              <span class="seg other" style="width:39.2%"></span>
+            </div>
+            <div class="stack-meta">23.6h · 30,905 chars · 330 handoffs</div>
+          </div>
+          <div class="stack-row">
+            <div class="stack-label">Mar 21</div>
+            <div class="stack-track">
+              <span class="seg build" style="width:76.7%"></span>
+              <span class="seg meeting" style="width:0%"></span>
+              <span class="seg admin" style="width:0%"></span>
+              <span class="seg other" style="width:23.3%"></span>
+            </div>
+            <div class="stack-meta">10.3h · 28,798 chars · 376 handoffs</div>
+          </div>
+          <div class="stack-row">
+            <div class="stack-label">Mar 22</div>
+            <div class="stack-track">
+              <span class="seg build" style="width:80%"></span>
+              <span class="seg meeting" style="width:0%"></span>
+              <span class="seg admin" style="width:0%"></span>
+              <span class="seg other" style="width:20%"></span>
+            </div>
+            <div class="stack-meta">23.4h · 23,058 chars · 316 handoffs</div>
+          </div>
+          <div class="stack-row">
+            <div class="stack-label">Mar 23</div>
+            <div class="stack-track">
+              <span class="seg build" style="width:69%"></span>
+              <span class="seg meeting" style="width:0%"></span>
+              <span class="seg admin" style="width:0%"></span>
+              <span class="seg other" style="width:31%"></span>
+            </div>
+            <div class="stack-meta">12.1h · 8,801 chars · 539 handoffs</div>
+          </div>
+          <div class="stack-row">
+            <div class="stack-label">Mar 24</div>
+            <div class="stack-track">
+              <span class="seg build" style="width:51.9%"></span>
+              <span class="seg meeting" style="width:0.4%"></span>
+              <span class="seg admin" style="width:22.2%"></span>
+              <span class="seg other" style="width:25.5%"></span>
+            </div>
+            <div class="stack-meta">16.3h · 23,475 chars · 615 handoffs</div>
+          </div>
+          <div class="stack-row">
+            <div class="stack-label">Mar 25</div>
+            <div class="stack-track">
+              <span class="seg build" style="width:49.6%"></span>
+              <span class="seg meeting" style="width:0%"></span>
+              <span class="seg admin" style="width:41.5%"></span>
+              <span class="seg other" style="width:8.9%"></span>
+            </div>
+            <div class="stack-meta">10.7h · 16,229 chars · 278 handoffs</div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <section class="section" id="context-layer">
+      <div class="eyebrow">Context Layer</div>
+      <h2>The machine only makes sense when compute, body-state, voice, and memory are read together.</h2>
+      <p class="muted">
+        The older EOD lane made this much clearer than the early draft here: voice carried founder intent, telemetry carried behavior,
+        and the shared brain plus memory layer existed so every model did not start from zero.
+      </p>
+
+      <div class="two-col" style="margin-top:18px;">
+        <div class="panel">
+          <div class="eyebrow">Compute Topology</div>
+          <h2>Which machines are doing what, and where the leverage changed</h2>
+          <p class="muted">
+            The clean operating pattern is local machine for control and context, AWS for worker fan-out and heavy runs.
+            The reports are explicit that the Mini was getting under-leveraged as a control plane and over-leveraged as a local worker box until the AWS-first correction landed.
+          </p>
+          <ul>
+            <li><strong>MacBook Pro:</strong> control room for Larry, Moe, context, live relays, direct build, and decision-making.</li>
+            <li><strong>Mac Mini:</strong> bulk scrape, enrichment, sentry, and remote-worker orchestration through Curly.</li>
+            <li><strong>AWS Pro:</strong> overflow CPU/RAM for browser runs, helper workers, heavy parallel jobs, and model dispatch.</li>
+          </ul>
+          <div class="callout warn" style="margin-top:16px;">
+            <strong>Real correction made in the window.</strong> Curly was crashing the Mini by using local parallel subagents instead of AWS.
+            The fix was explicit: AWS-first guidance, RAM guardrails, and local surface cleanup.
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="eyebrow">Body Signal</div>
+          <h2>Oura is useful here as a truth filter, not a wellness widget</h2>
+          <p class="muted">
+            The strongest sleep insight is not generic “sleep matters.” It is that Oura helps separate human work from overnight agent/background activity,
+            and REM trend looks like an early warning light for cognitive fragmentation.
+          </p>
+          <ul>
+            <li><strong>Sleep 88:</strong> the doctrine/build day that hardened Relay, compute, and Memory Engine guardrails also logged a long, high-output work stretch.</li>
+            <li><strong>15-day trend:</strong> average sleep score 67, with crashes at 37 and 38. REM moved with the crashes.</li>
+            <li><strong>Usefulness:</strong> Oura gives a hard human-vs-agent filter and a better way to read late-night output without lying to yourself about what was you versus what was the system.</li>
+          </ul>
+          <div class="callout hot" style="margin-top:16px;">
+            <strong>Why this matters.</strong> Low REM is not a moral failing. It is a real cost signal.
+            Good sleep seems to buy doctrine/build days. Bad REM seems to buy fragmentation that you then try to outrun.
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:18px;">
+        <div class="eyebrow">Sleep / Output Read</div>
+        <h2>Selected body-state reads from the daily reports</h2>
+        <p class="muted">
+          This is not a finished statistical model. It is the clearest public-safe read from the daily reports:
+          body-state changes what kind of work compounds, and Oura keeps the story honest about what was human work versus agent/background activity.
+        </p>
+        <div class="bar-list">
+          <div class="bar-row">
+            <div class="bar-label">Sleep 88</div>
+            <div class="bar-track"><div class="bar-fill codex" style="width:88%"></div></div>
+            <div class="bar-value">Doctrine / build day</div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Sleep 73</div>
+            <div class="bar-track"><div class="bar-fill chrome" style="width:73%"></div></div>
+            <div class="bar-value">Mixed ops + investor prep</div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Crash 37/38</div>
+            <div class="bar-track"><div class="bar-fill dim" style="width:38%"></div></div>
+            <div class="bar-value">Fragmentation warning</div>
+          </div>
+        </div>
+        <p class="muted" style="margin-top:16px;">
+          The useful read is not “sleep score equals productivity.” It is “body-state changes whether widening compounds or backfires.”
+        </p>
+      </div>
+
+      <div class="two-col" style="margin-top:18px;">
+        <div class="panel">
+          <div class="eyebrow">Voice / Intent Layer</div>
+          <h2>Telemetry without context lies. Voice is the missing intent layer.</h2>
+          <p class="muted">
+            One of the strongest EOD lessons was that app telemetry alone can misclassify the work. The voice layer showed what the machine was actually for:
+            architecture framing, GTM narrowing, delegation, correction, and founder intent routing.
+          </p>
+          <ul>
+            <li><strong>Superwhisper:</strong> voice was being used for rapid direction-setting, not just dictation.</li>
+            <li><strong>Leverage ratio:</strong> voice carried the strategy brief while keystrokes and agents carried tactical correction and execution.</li>
+            <li><strong>Implication:</strong> without transcripts, a report can mistake sales work for coding, meetings for dead time, and orchestration for drift.</li>
+          </ul>
+          <div class="callout insight" style="margin-top:16px;">
+            <strong>Product thesis from the EOD lane.</strong> Telemetry without context lies. Voice is what turned raw activity into attributable intent.
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="eyebrow">Shared Context Layer</div>
+          <h2>The shared brain and Pinecone memory layer were built to kill reshare tax</h2>
+          <p class="muted">
+            The point was not “save notes somewhere.” The point was to make decisions, transcripts, rubrics, and operating context reusable across Claude,
+            Codex, OpenWork, and future agents without briefing every model from scratch.
+          </p>
+          <ul>
+            <li><strong>Brain repo:</strong> decisions, rituals, architecture, handoffs, and project state became the durable substrate.</li>
+            <li><strong>Pinecone memory layer:</strong> retrieval moved from “hope the model remembers” to explicit cross-session, cross-model recall.</li>
+            <li><strong>Transcript ingestion:</strong> Superwhisper and meeting transcripts stopped being dead artifacts and became searchable context.</li>
+          </ul>
+          <div class="callout good" style="margin-top:16px;">
+            <strong>Why it matters.</strong> This is the fix for context transfer drag. The win is not better note-taking. The win is not having to reshare the same founder context to every model all day.
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <section class="section" id="proof">
+      <div class="eyebrow">Visual Proof</div>
+      <h2>Three redacted visuals that make the system legible fast</h2>
+      <p class="muted">
+        These are public-safe visuals based on the real operating pattern. The internal version has named transcript excerpts and raw surfaces.
+        This version keeps the machine legible without leaking the internals.
+      </p>
+
+      <div class="proof-grid">
+        <article class="proof-card wide">
+          <div class="eyebrow">Founder Intent Router</div>
+          <h2>Voice -> transcript -> brain -> model -> queue -> send</h2>
+          <div class="flow-track">
+            <div class="flow-node">
+              <div class="flow-step">1</div>
+              <h3>Voice</h3>
+              <p>Superwhisper and meetings capture the live brief before it disappears into chat residue.</p>
+            </div>
+            <div class="flow-node">
+              <div class="flow-step">2</div>
+              <h3>Classify</h3>
+              <p>Decision, promise, delegation, or brainstorm gets tagged instead of left as raw text.</p>
+            </div>
+            <div class="flow-node">
+              <div class="flow-step">3</div>
+              <h3>Shared Brain</h3>
+              <p>The intent packet lands in the brain plus memory layer so the next shell can retrieve it immediately.</p>
+            </div>
+            <div class="flow-node">
+              <div class="flow-step">4</div>
+              <h3>Route</h3>
+              <p>The right model, queue, or worker gets the context once instead of the founder pasting it five times.</p>
+            </div>
+            <div class="flow-node">
+              <div class="flow-step">5</div>
+              <h3>Close</h3>
+              <p>Draft, issue, review object, or send path is created and written back so the loop stays visible.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="proof-card">
+          <div class="eyebrow">Redacted Chain</div>
+          <h2>Transcript-to-action receipt</h2>
+          <div class="proof-shot">
+            <div class="proof-pane">
+              <h4>Transcript</h4>
+              <div class="proof-lines">
+                <span style="width:94%;"></span>
+                <span style="width:86%;"></span>
+                <span style="width:91%;"></span>
+                <span style="width:74%;"></span>
+                <span style="width:82%;"></span>
+                <span style="width:63%;"></span>
+              </div>
+            </div>
+            <div class="proof-pane">
+              <h4>Extraction</h4>
+              <div class="proof-chip">Pain point</div>
+              <div class="proof-chip">Buying signal</div>
+              <div class="proof-chip">Promise captured</div>
+              <div class="proof-chip">Owner assigned</div>
+            </div>
+            <div class="proof-pane">
+              <h4>Queue</h4>
+              <div class="proof-chip">Draft queued</div>
+              <div class="proof-chip">Review owner</div>
+              <div class="proof-chip">CRM updated</div>
+            </div>
+          </div>
+          <p class="muted" style="margin-top:16px;">
+            The real internal version shows the actual transcript excerpt, queue surface, and downstream send object.
+          </p>
+        </article>
+
+        <article class="proof-card">
+          <div class="eyebrow">Architecture Slice</div>
+          <h2>Shared context, not just more tabs</h2>
+          <div class="arch-grid">
+            <div class="arch-stack">
+              <div class="arch-node">
+                <strong>Telemetry</strong>
+                <span>Cowork, app flow, Oura</span>
+              </div>
+              <div class="arch-node">
+                <strong>Voice</strong>
+                <span>Superwhisper + meetings</span>
+              </div>
+            </div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-stack">
+              <div class="arch-node core">
+                <strong>Shared Brain</strong>
+                <span>decisions, state, handoffs</span>
+              </div>
+              <div class="arch-node core">
+                <strong>Pinecone Layer</strong>
+                <span>cross-model retrieval</span>
+              </div>
+            </div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-stack">
+              <div class="arch-node">
+                <strong>Models</strong>
+                <span>Claude, Codex, OpenWork</span>
+              </div>
+              <div class="arch-node">
+                <strong>Queues</strong>
+                <span>review, send, issues, tasks</span>
+              </div>
+            </div>
+          </div>
+          <p class="muted" style="margin-top:16px;">
+            This is the anti-rebriefing layer. The point is that the next model session should already know what matters.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="artifacts">
+      <div class="eyebrow">What Actually Moved</div>
+      <h2>The audit window was not just analysis. Real lanes moved.</h2>
+      <p class="muted">
+        This matters because your strongest pattern is leverage through orchestration, not solo typing.
+        The report would be lying if it acted like only direct keyboard output counts as real work.
+      </p>
+
+      <div class="artifact-grid">
+        <article class="artifact">
+          <div class="date">March 24-25</div>
+          <div class="name">Four real deliverables were redacted hard enough to become reusable examples</div>
+          <p>This was not one lane. Multiple existing deliverables were cleaned, redacted, and made safe enough to reuse as product evidence without leaking customer internals.</p>
+        </article>
+
+        <article class="artifact">
+          <div class="date">March 22-23</div>
+          <div class="name">SMB beta pilot material got real enough to hand to sales, not just discuss internally</div>
+          <p>The offer, briefing material, and outbound framing got sharpened into something an assigned sender could actually help move. The work moved from “what is this?” toward “here is the pilot, here is the value, here is how we explain it.”</p>
+        </article>
+
+        <article class="artifact">
+          <div class="date">March 22-24</div>
+          <div class="name">Review/send plus transcript mining became an actual GTM machine</div>
+          <p>Hundreds of Zoom transcripts were processed for pain points, objections, buying signals, and fit. A hosted review/send surface plus direct-draft workflow let those outputs queue for a review owner instead of dying in notes or chat.</p>
+        </article>
+
+        <article class="artifact">
+          <div class="date">March 23</div>
+          <div class="name">The remote lead-gen factory got real</div>
+          <p>A documented 7-stage enrichment pipeline on <code>aws-mini</code> produced 988 outreach-ready contacts and staged HubSpot test deals. This is not theory. It is remote worker leverage.</p>
+        </article>
+
+        <article class="artifact">
+          <div class="date">March 24</div>
+          <div class="name">A real time-tracking outage became an operator and infrastructure test</div>
+          <p>The system absorbed a production outage affecting 200+ workers, patched the stack, upgraded the VM, added healthchecks, and turned a painful incident into concrete reliability lessons.</p>
+        </article>
+
+        <article class="artifact">
+          <div class="date">March 19-24</div>
+          <div class="name">The warm-lead follow-up machine stopped being ad hoc</div>
+          <p>A repeatable lane got formalized: transcribed call to structured pain summary to draft to review/send to pending reply. That matters because the CEO promise stack can no longer live only in memory.</p>
+        </article>
+
+        <article class="artifact">
+          <div class="date">March 22-24</div>
+          <div class="name">Voice notes stopped dying in a folder and started becoming reusable context</div>
+          <p>Historical and new Superwhisper transcripts were shipped, ingested, and made queryable as working artifacts. The point was not archiving for nostalgia. It was making founder intent reusable across models.</p>
+        </article>
+
+        <article class="artifact">
+          <div class="date">March 20-23</div>
+          <div class="name">The shared brain plus Pinecone memory layer became real operating substrate</div>
+          <p>Decisions, rituals, project state, and transcript-derived context moved into a shared brain with a retrieval layer. That changed memory from “hope the chat still has it” into explicit cross-session infrastructure.</p>
+        </article>
+
+        <article class="artifact">
+          <div class="date">March 22-25</div>
+          <div class="name">Layout hardening and individual spec writing made the audit surface feel sellable</div>
+          <p>Table cleanup, spec-writing, and clearer role-shaped installs turned rough internal material into collateral that can actually carry the product story without flattening it.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="receipts">
+      <div class="eyebrow">Open The Receipts</div>
+      <h2>If someone wants the architecture and system porn, these are the artifacts behind the report</h2>
+      <p class="muted">
+        This is the local trail for the people who want to click through the diagrams, architecture changes, and operating-model decisions that moved during the audit window.
+        The important framing here is that these were documented in parallel as decisions, diagrams, and git movement during the period, not retro-written just to make this report look smarter.
+      </p>
+
+      <div class="badge-row" style="margin:14px 0 18px;">
+        <span class="pill">45 diagram + decision touches</span>
+        <span class="pill">336 repo / doc moves</span>
+        <span class="pill">9 linked artifacts</span>
+        <span class="pill">13 daily report snapshots</span>
+      </div>
+
+      <div class="callout">
+        <strong>Separate architecture lane.</strong> In the same audit window the shared brain logged 336 repo/documentation moves and 45 touches to diagrams, current-state architecture,
+        or the decision log. The diagrams, decision pages, and current-state docs were being maintained as their own operating stream while the work was happening. This report is the synthesis layer sitting on top of that lane, not the first place those changes were written down.
+      </div>
+
+      <div class="callout good" style="margin-top:16px;">
+        <strong>Why that matters.</strong> Anyone clicking through should find a real paper trail: compute-topology updates, memory/relay changes,
+        naming and terminology decisions, ritual changes, and architecture diagrams that moved during the same two-week window as the operator audit itself.
+      </div>
+
+      <div class="callout" style="margin-top:16px;">
+        <strong>Click-through note.</strong> Open this file from inside the <code>/Users/scottmoran/brain/reports</code> tree and the receipts below should open locally.
+        The HTML pages will render normally. The markdown docs will open as source-like reference pages, but they are still clickable.
+      </div>
+
+      <div class="skill-grid">
+        <article class="skill">
+          <div class="name"><a href="system-diagram-moe.md">System Diagram (Moe)</a></div>
+          <p>The intended operating model for Moe, with telemetry, memory, Oura, session rituals, and the current brain-system flow.</p>
+        </article>
+
+        <article class="skill">
+          <div class="name"><a href="system-diagram-larry.md">System Diagram (Larry)</a></div>
+          <p>The companion runtime diagram that makes the local-vs-cloud capacity story and the synthesis/data pipeline more explicit.</p>
+        </article>
+
+        <article class="skill">
+          <div class="name"><a href="../docs/current-state-architecture.md">Current-State Architecture</a></div>
+          <p>The maintained architecture reference for the current GitHub-native operating model and the shared-brain substrate.</p>
+        </article>
+
+        <article class="skill">
+          <div class="name"><a href="../decisions.md">Decision Log</a></div>
+          <p>The running decision layer behind terminology shifts, coordination rules, telemetry posture, and model/agent operating doctrine.</p>
+        </article>
+
+        <article class="skill">
+          <div class="name"><a href="eod-2026-03-20.html">March 20 Architecture Day</a></div>
+          <p>The report where the architecture and current-state diagrams were surfaced as the day’s biggest output.</p>
+        </article>
+
+        <article class="skill">
+          <div class="name"><a href="eod-2026-03-22.html">March 22 Doctrine Day</a></div>
+          <p>The report that ties strong sleep, architecture decisions, compute-topology changes, and transcript-pipeline hardening together.</p>
+        </article>
+
+        <article class="skill">
+          <div class="name"><a href="eod-2026-03-18-19.html">March 18-19 Voice + Telemetry Day</a></div>
+          <p>The report that made the “telemetry without context lies” thesis explicit and pushed transcript-to-memory, transcript-to-outreach, and meeting-compression installs.</p>
+        </article>
+
+        <article class="skill">
+          <div class="name"><a href="cowork-diagnostic-edition-2026-03-24.html">Operator Diagnostic</a></div>
+          <p>The sharper closure-debt and obligation-load read, grounded in telemetry plus a heavy Superwhisper voice corpus.</p>
+        </article>
+
+        <article class="skill">
+          <div class="name"><a href="cowork-inference-deep-dive-2026-03-24.html">Voice + Inference Deep Dive</a></div>
+          <p>The report that treats voice as cognitive telemetry and shows why transcript saturation changes the founder read.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="redactions">
+      <div class="eyebrow">Intentional Redactions</div>
+      <h2>A real internal version exists. This copy leaves the sharpness in and blanks the sensitive parts.</h2>
+      <p class="muted">
+        These are not fake placeholders. They represent actual sections in the fuller report that were cut back because they expose client identity,
+        account context, internal prompts, implementation logic, or commercially sensitive detail that should not sit on a public page.
+      </p>
+
+      <div class="redaction-grid">
+        <article class="redaction-block">
+          <div class="redaction-stamp">REDACTED</div>
+          <p>Named account detail, meeting excerpts, decision context, and account-specific operator notes removed.</p>
+        </article>
+
+        <article class="redaction-block">
+          <div class="redaction-stamp">REDACTED</div>
+          <p>Internal automation prompts, service-offering routing logic, and product-specific implementation steps removed.</p>
+        </article>
+
+        <article class="redaction-block">
+          <div class="redaction-stamp">REDACTED</div>
+          <p>Comparative deliverable sections, outbound strategy detail, and transcript-derived GTM specifics removed.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="recipes">
+      <div class="eyebrow">Recipes For Success</div>
+      <h2>The operating recipes I would actually encode from this audit window</h2>
+      <p>
+        These are the short-run recipes that turn your best patterns into defaults and stop the worst ones from disguising themselves as strategy.
+        They are meant to be stolen, installed, and tested quickly.
+      </p>
+
+      <div class="recipe-grid">
+        <article class="recipe-card">
+          <div class="eyebrow">CEO Build Day</div>
+          <h3>Name the mode early and protect it like a production dependency</h3>
+          <ul>
+            <li><strong>Use when:</strong> a build or doctrine day matters more than inbox gravity.</li>
+            <li><strong>Recipe:</strong> Claude, Codex, Terminal, and one active repo first. No Slack, Meet, webmaster, or search until an artifact exists.</li>
+            <li><strong>Install:</strong> Build-mode launcher plus separate admin sweep.</li>
+            <li><strong>Why it works:</strong> your best days are named build days, not mixed-mode marathons.</li>
+          </ul>
+        </article>
+
+        <article class="recipe-card">
+          <div class="eyebrow">Low-REM Day</div>
+          <h3>Use Oura as a widening gate, not a guilt meter</h3>
+          <ul>
+            <li><strong>Use when:</strong> REM slides or readiness craters.</li>
+            <li><strong>Recipe:</strong> no new GTM story, no new infra lane, no strategic widening. Route the day toward closure, grading, queue review, and smaller irreversible wins.</li>
+            <li><strong>Install:</strong> Oura gate plus closure sweep.</li>
+            <li><strong>Why it works:</strong> low REM seems to buy fragmentation that you then try to outrun by opening more loops.</li>
+          </ul>
+        </article>
+
+        <article class="recipe-card">
+          <div class="eyebrow">Post-Demo Day</div>
+          <h3>Use a thin bridge before building the whole missing machine</h3>
+          <ul>
+            <li><strong>Use when:</strong> a demo, discovery call, or investor call ended with a real promise.</li>
+            <li><strong>Recipe:</strong> transcript to pain extraction to draft to review/send on the same day. If the full platform function is not ready, use the thinnest script or manual bridge that still closes the live loop.</li>
+            <li><strong>Install:</strong> promise tracker, thin send-bridge, then transcript-to-review queue.</li>
+            <li><strong>Why it works:</strong> your instinct is to solve the root scale problem immediately. That is usually right in the long run and sometimes too expensive in the middle of a crowded week.</li>
+          </ul>
+        </article>
+
+        <article class="recipe-card">
+          <div class="eyebrow">Heavy Meeting Day</div>
+          <h3>More meetings can be correct for a CEO. More unprepared meetings never is.</h3>
+          <ul>
+            <li><strong>Use when:</strong> the day is mostly calls, coordination, or deal motion.</li>
+            <li><strong>Recipe:</strong> agenda request 24h and 30m before, auto-cancel if materials are missing, then decisions and owners get written down without relying on memory.</li>
+            <li><strong>Install:</strong> meeting brief, cancellation enforcement, and post-call capture.</li>
+            <li><strong>Why it works:</strong> meeting leverage is probably under-instrumented, not overused.</li>
+          </ul>
+        </article>
+
+        <article class="recipe-card">
+          <div class="eyebrow">Promise Stack Day</div>
+          <h3>Name every promise object before improving the machine around it</h3>
+          <ul>
+            <li><strong>Use when:</strong> calls, demos, recruiting, or partner motion create more follow-up than one brain should carry.</li>
+            <li><strong>Recipe:</strong> every promise gets an owner, due date, bridge action, and escalation path the same day. Same-day send outranks making the reusable system prettier.</li>
+            <li><strong>Install:</strong> promise tracker, daily escalation rail, and thin send-bridge.</li>
+            <li><strong>Why it works:</strong> trust decays faster than the machine improves. Protect the live edge first and harden the pattern second.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="gates">
+      <div class="eyebrow">Operator Gates</div>
+      <h2>The Oura gate belongs in the report because it changes what kind of day this is allowed to be</h2>
+      <p class="muted">
+        These are the rules I would actually enforce because they shut down the repeat failure modes without flattening how you think.
+        The first three are body-state gates. The rest are business-state gates.
+      </p>
+
+      <div class="gate-grid">
+        <article class="gate-card">
+          <div class="eyebrow">Green Day</div>
+          <h3>Widen, build, decide</h3>
+          <p class="muted">Good readiness and stable sleep mean the machine can support doctrine work, sharper decisions, deeper build blocks, and harder narrowing.</p>
+        </article>
+
+        <article class="gate-card">
+          <div class="eyebrow">Yellow Day</div>
+          <h3>Refine, grade, route</h3>
+          <p class="muted">If the body is middling, do not spend the day inventing new strategic branches. Use the day for review, dispatch, cleanup, and lighter-weight closure.</p>
+        </article>
+
+        <article class="gate-card">
+          <div class="eyebrow">Red Day</div>
+          <h3>Close loops only</h3>
+          <p class="muted">If REM and readiness are clearly off, the day becomes a close, grade, review/send, and prep day. No widening, no elegant new infrastructure lane, no fake heroics.</p>
+        </article>
+
+        <article class="gate-card">
+          <div class="eyebrow">Meeting Gate</div>
+          <h3>No agenda, no live meeting</h3>
+          <p class="muted">If required inputs are missing by T-30, downgrade async or reschedule. The CEO should not be the silent buffer for everyone else’s prep debt.</p>
+        </article>
+
+        <article class="gate-card">
+          <div class="eyebrow">Follow-Up Gate</div>
+          <h3>Promises from calls must hit a queue the same day</h3>
+          <p class="muted">If a call generated a real promise, that promise enters review/send and pending replies before the day ends, even if the reusable system is still getting better.</p>
+        </article>
+
+        <article class="gate-card">
+          <div class="eyebrow">Cloud Routing Gate</div>
+          <h3>Worker jobs do not belong on the judgment machine</h3>
+          <p class="muted">Scrapes, browser farms, enrichments, and bulk transforms go to AWS by default once they stop being tiny. Keep the local box for taste, routing, and live control.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="automation">
+      <div class="eyebrow">Automation Recommendations</div>
+      <h2>The installs I would actually queue, in order</h2>
+      <p>
+        These are the public-safe versions of what the internal report points toward. They are specific enough to feel real and generic enough to avoid leaking the best internals.
+      </p>
+
+      <div class="auto-grid">
+        <article class="auto-card">
+          <div class="eyebrow">1. Promise Tracker</div>
+          <h3>Turn every demo promise into a tracked object</h3>
+          <p class="muted">Transcript or meeting note becomes promise, owner, due date, draft, and reminder. Nothing important dies in memory or in chat residue.</p>
+          <div class="auto-kicker">Prevents</div>
+          <p class="muted">Delayed replies after good calls, especially when platform work feels more urgent than sending.</p>
+        </article>
+
+        <article class="auto-card">
+          <div class="eyebrow">2. Meeting Brief + Cancellation Daemon</div>
+          <h3>Make the calendar earn its keep</h3>
+          <p class="muted">Auto-brief strategic calls, collect agenda items, chase missing prep, and cancel or reschedule when the inputs never arrive.</p>
+          <div class="auto-kicker">Prevents</div>
+          <p class="muted">CEO time turning into meeting prep subsidy for the rest of the room.</p>
+        </article>
+
+        <article class="auto-card">
+          <div class="eyebrow">3. Transcript-To-Review Queue</div>
+          <h3>Convert calls into queued action, not better notes</h3>
+          <p class="muted">Pain points, objections, next steps, and fit get extracted automatically. Strong calls queue follow-up drafts for operator or review-owner approval.</p>
+          <div class="auto-kicker">Prevents</div>
+          <p class="muted">Good sales or partner conversations vanishing into transcript folders.</p>
+        </article>
+
+        <article class="auto-card">
+          <div class="eyebrow">4. Compute Router</div>
+          <h3>Auto-route the heavy jobs to the right machine</h3>
+          <p class="muted">The local machine stays the control plane; AWS handles the long-running workers, scrapes, and browser tasks without requiring manual babysitting.</p>
+          <div class="auto-kicker">Prevents</div>
+          <p class="muted">Local RAM starvation, context loss, and noisy confusion about what belongs where.</p>
+        </article>
+
+        <article class="auto-card">
+          <div class="eyebrow">5. Founder Intent Router</div>
+          <h3>Route voice and fresh context once, then share it everywhere</h3>
+          <p class="muted">Whisper/Superwhisper and meeting transcripts become one classified context stream that feeds the shared brain, the right model, and the right queue without repeated manual re-briefing.</p>
+          <div class="auto-kicker">Prevents</div>
+          <p class="muted">Human API-router behavior, context shuttle tax, and the same founder brief being pasted into every model by hand.</p>
+        </article>
+
+        <article class="auto-card">
+          <div class="eyebrow">6. Rubric Memory Layer</div>
+          <h3>Capture “why this is better” the moment it appears</h3>
+          <p class="muted">When you reject or prefer an output, the reasoning becomes a reusable brief, exemplar, or scoring rule instead of disappearing into one conversation.</p>
+          <div class="auto-kicker">Prevents</div>
+          <p class="muted">Compare-edit churn across shells and repeated re-explanation of taste.</p>
+        </article>
+
+        <article class="auto-card">
+          <div class="eyebrow">7. Role Kernels</div>
+          <h3>Package the same substrate differently by role</h3>
+          <p class="muted">Operator, sales, support, and lead-gen each get their own review queue, approval layer, and recommended playbooks instead of one vague “assistant.”</p>
+          <div class="auto-kicker">Prevents</div>
+          <p class="muted">Selling abstraction when the buyer actually wants relief from a repeated loop.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="prescriptions">
+      <div class="eyebrow">Prescriptions</div>
+      <h2>What to change in the founder operating system, and what the company should standardize around it</h2>
+      <p>
+        The point of a report like this is not just diagnosis. It is to convert observation into a tighter operating system for the person
+        and a more repeatable product surface for the company.
+      </p>
+
+      <div class="prescription-grid">
+        <article class="prescription-card">
+          <div class="eyebrow">Founder-Level Changes</div>
+          <h3>What you should do differently</h3>
+          <ol>
+            <li><strong>Run single-mode starts.</strong> Decide whether the first serious block is build, sell, or operate. Do not let Chrome mix all three before an artifact exists.</li>
+            <li><strong>Use body data as a scope signal.</strong> When sleep or readiness crashes, do not widen. Route that day toward closure, grading, delegation, and smaller irreversible wins.</li>
+            <li><strong>Capture the rubric at first irritation.</strong> The moment you say “that is not quite it” or “this is better,” turn the judgment into a reusable rubric in git that same day.</li>
+            <li><strong>Send the promised follow-up before polishing the reusable version.</strong> The first recipient should not wait for the template to get perfect.</li>
+            <li><strong>Bias the calendar toward leveraged meetings, then instrument them hard.</strong> As CEO you probably should be on more decisive calls, but fewer vague ones and zero underprepared ones.</li>
+            <li><strong>Keep the compute split honest.</strong> Use the local boxes for control, taste, and context. Push browser automation, enrichment, and bulk transformation to AWS by default.</li>
+            <li><strong>Pair every new system lane with external closure.</strong> Before opening the next infra, GTM, or product thread, force one send, one ask, one decision, or one closed loop outside the machine.</li>
+          </ol>
+        </article>
+
+        <article class="prescription-card">
+          <div class="eyebrow">Company-Level Changes</div>
+          <h3>What Go2 should standardize</h3>
+          <ol>
+            <li><strong>Productize the review/send machine.</strong> Transcript ingestion, pain extraction, draft generation, approval, and CRM update should be a maintained company lane, not a one-off internal trick.</li>
+            <li><strong>Standardize role kernels.</strong> Build repeatable flows for operator, support copy-paste, sales follow-up, lead-gen ops, and meeting hygiene instead of one giant vague “AI assistant.”</li>
+            <li><strong>Design for passive capture, not perfect rituals.</strong> The system should create value from transcripts, clipboard patterns, task flow, and app telemetry even when humans skip the ceremony.</li>
+            <li><strong>Create explicit trust tiers.</strong> Let teams see the ladder from observe to draft to queue to execute so adoption does not depend on blind trust in automation.</li>
+            <li><strong>Harden the worker substrate.</strong> Health checks, restart logic, and failure visibility are not side quests. The outage week proved they are product credibility.</li>
+            <li><strong>Sell relief, not abstraction.</strong> The marketable story is fewer dropped follow-ups, fewer wasted meetings, less copy-paste, and better prepared people, not vague intelligence claims.</li>
+          </ol>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="install-stack">
+      <div class="eyebrow">Skills + MCPs + Sentries</div>
+      <h2>The product surface should show the install, not just the prompt</h2>
+      <p>
+        A plain-language trigger is useful, but it undersells the real system. The real install surface is:
+        a <strong>skill</strong> that tells the agent what to do, the <strong>MCPs</strong> that give it access,
+        a <strong>sentry</strong> or daemon that watches for drift, and a small <strong>script/spec</strong> that makes the whole thing feel real.
+      </p>
+
+      <div class="callout warn">
+        <strong>Build these MCPs first.</strong> Calendar + meeting context, Superwhisper and meeting transcript intake, CRM + Gmail, memory/brain search + vector memory, Oura, GitHub + Sentry + cloud logs, and a review queue/approval surface.
+        That set covers most of the leverage in this report without giving away the private substrate.
+      </div>
+
+      <div class="trigger-grid" style="margin-top:18px;">
+        <article class="trigger-card">
+          <div class="trigger-top">
+            <h3><code>meeting-control</code></h3>
+            <span class="role-pill">Skill + MCP</span>
+          </div>
+          <p class="muted">Turns live meetings into a controlled loop: pre-read, agenda chase, post-call decisions, and follow-up routing.</p>
+          <ul>
+            <li><strong>Skill:</strong> <code>meeting-control</code></li>
+            <li><strong>MCPs:</strong> calendar, meeting transcript source, memory/brain search, team chat or tasks</li>
+            <li><strong>Sentry:</strong> <code>meeting-readiness-sentry</code> watches for missing agenda, missing pre-read, and missing post-call decisions</li>
+          </ul>
+          <pre class="copy-box" id="install-meeting-control">{
+  "skill": "meeting-control",
+  "trigger": "calendar.event.upcoming",
+  "required_mcps": ["calendar", "transcripts", "memory", "tasks"],
+  "sentry": "meeting-readiness-sentry",
+  "rules": {
+    "t_minus_24h": "request agenda and required inputs",
+    "t_minus_30m": "escalate if materials missing",
+    "t_minus_10m": "draft reschedule if still unprepared",
+    "post_meeting": "extract decisions, owners, deadlines, resume brief"
+  }
+}</pre>
+          <button class="copy-btn" onclick="copyBlock('install-meeting-control', this)">Copy Spec</button>
+        </article>
+
+        <article class="trigger-card">
+          <div class="trigger-top">
+            <h3><code>post-call-followup</code></h3>
+            <span class="role-pill">Sales Stack</span>
+          </div>
+          <p class="muted">Converts demo or discovery transcripts into a real review/send queue instead of leaving the promise stack in memory.</p>
+          <ul>
+            <li><strong>Skill:</strong> <code>post-call-followup</code></li>
+            <li><strong>MCPs:</strong> transcripts, CRM, Gmail, review queue, memory/brain search</li>
+            <li><strong>Sentry:</strong> <code>promise-lag-sentry</code> flags calls with explicit promises that still have no draft or send action by end of day</li>
+          </ul>
+          <pre class="copy-box" id="install-post-call-followup">{
+  "skill": "post-call-followup",
+  "trigger": "transcript.created",
+  "required_mcps": ["transcripts", "crm", "gmail", "review_queue", "memory"],
+  "sentry": "promise-lag-sentry",
+  "extract": ["pain_points", "objections", "buying_signals", "next_steps", "explicit_promises"],
+  "actions": [
+    "score fit and urgency",
+    "draft follow-up",
+    "queue for review",
+    "update deal record",
+    "alert if no send path exists by end of day"
+  ]
+}</pre>
+          <button class="copy-btn" onclick="copyBlock('install-post-call-followup', this)">Copy Spec</button>
+        </article>
+
+        <article class="trigger-card">
+          <div class="trigger-top">
+            <h3><code>incident-hotfix-watchdog.py</code></h3>
+            <span class="role-pill">Infra Sentry</span>
+          </div>
+          <p class="muted">If a code-based problem needs a quick fix, this is the kind of sentry that should already be running: unresolved errors, healthcheck status, and issue creation in one loop.</p>
+          <ul>
+            <li><strong>Skill:</strong> <code>incident-hotfix</code></li>
+            <li><strong>MCPs:</strong> GitHub, Sentry, cloud logs or healthcheck endpoint, deploy rail or shell access</li>
+            <li><strong>Sentry:</strong> <code>incident-hotfix-sentry</code> watches error spikes, failed healthchecks, and missing owner assignment</li>
+          </ul>
+          <pre class="copy-box" id="install-incident-hotfix">#!/usr/bin/env python3
+import os, requests, subprocess, sys
+
+SENTRY_ORG = os.environ["SENTRY_ORG"]
+SENTRY_PROJECT = os.environ["SENTRY_PROJECT"]
+SENTRY_TOKEN = os.environ["SENTRY_TOKEN"]
+HEALTHCHECK_URL = os.environ["HEALTHCHECK_URL"]
+GITHUB_REPO = os.environ["GITHUB_REPO"]
+
+headers = {"Authorization": f"Bearer {SENTRY_TOKEN}"}
+sentry_url = (
+    f"https://sentry.io/api/0/projects/{SENTRY_ORG}/{SENTRY_PROJECT}/issues/"
+    "?is=unresolved&sort=date&statsPeriod=1h"
+)
+
+health_ok = requests.get(HEALTHCHECK_URL, timeout=10).ok
+issues = requests.get(sentry_url, headers=headers, timeout=15).json()
+hot = [i for i in issues if i.get("count") and int(i["count"]) > 10]
+
+if (not health_ok) or hot:
+    title = "Hotfix watch: healthcheck failed or Sentry spike detected"
+    body = f"health_ok={health_ok}\\nopen_hot_issues={len(hot)}"
+    subprocess.run(
+        ["gh", "issue", "create", "--repo", GITHUB_REPO, "--title", title, "--body", body],
+        check=False,
+    )
+    print(body)
+else:
+    print("hotfix watch clear")</pre>
+          <button class="copy-btn" onclick="copyBlock('install-incident-hotfix', this)">Copy Script</button>
+        </article>
+
+        <article class="trigger-card">
+          <div class="trigger-top">
+            <h3><code>founder-intent-router</code></h3>
+            <span class="role-pill">Context Layer</span>
+          </div>
+          <p class="muted">Turns Superwhisper and meeting transcripts into classified, searchable context so founder intent survives across models and sessions.</p>
+          <ul>
+            <li><strong>Skill:</strong> <code>founder-intent-router</code></li>
+            <li><strong>MCPs:</strong> Superwhisper transcript source, memory/brain search, vector memory, tasks or decision log</li>
+            <li><strong>Sentry:</strong> <code>context-drift-sentry</code> flags repeated manual re-explanations of the same context or missing transcript syncs</li>
+          </ul>
+          <pre class="copy-box" id="install-voice-to-memory">{
+  "skill": "founder-intent-router",
+  "trigger": "transcript.created",
+  "required_mcps": ["superwhisper", "memory", "vector_memory", "decisions"],
+  "sentry": "context-drift-sentry",
+  "classify": ["decision", "question", "brainstorm", "delegation", "status_update"],
+  "actions": [
+    "write founder-intent brief",
+    "store searchable summary in brain",
+    "embed into Pinecone or vector layer",
+    "link to active project or decision log",
+    "surface relevant context on next model session"
+  ]
+}</pre>
+          <button class="copy-btn" onclick="copyBlock('install-voice-to-memory', this)">Copy Spec</button>
+        </article>
+
+        <article class="trigger-card">
+          <div class="trigger-top">
+            <h3><code>support-approval-kernel</code></h3>
+            <span class="role-pill">Support</span>
+          </div>
+          <p class="muted">This is the install behind the “copy-paste grinder” role: cluster repeat requests, draft replies, approve fast, and catch policy drift.</p>
+          <ul>
+            <li><strong>Skill:</strong> <code>support-approval-kernel</code></li>
+            <li><strong>MCPs:</strong> help desk, knowledge base, review queue, metrics surface</li>
+            <li><strong>Sentry:</strong> <code>policy-drift-sentry</code> flags answers that fall outside accepted templates or performance thresholds</li>
+          </ul>
+          <pre class="copy-box" id="install-support-kernel">{
+  "skill": "support-approval-kernel",
+  "trigger": "ticket.message.created",
+  "required_mcps": ["helpdesk", "knowledge_base", "review_queue", "metrics"],
+  "sentry": "policy-drift-sentry",
+  "loop": [
+    "cluster repeated issues",
+    "draft response from approved sources",
+    "approve/edit/skip in one surface",
+    "promote accepted replies into templates"
+  ]
+}</pre>
+          <button class="copy-btn" onclick="copyBlock('install-support-kernel', this)">Copy Spec</button>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="triggers">
+      <div class="eyebrow">Plain-Language Playbooks</div>
+      <h2>Human-readable prompts after the skill and MCP layer exists</h2>
+      <p>
+        This is the operator-friendly layer a buyer can immediately understand.
+        The section above shows the actual install surface. This section shows the plain-English version of how those installs would behave day to day.
+      </p>
+
+      <div class="trigger-grid">
+        <article class="trigger-card">
+          <div class="trigger-top">
+            <h3>Meeting Prep Enforcement</h3>
+            <span class="role-pill">Operator</span>
+          </div>
+          <p class="muted">Useful when people keep showing up without agenda items and you end up carrying the prep burden.</p>
+          <pre class="copy-box" id="trigger-meeting-prep">Before every scheduled meeting, remind agenda owners 24h before and 30m before start.
+If required inputs are still missing 10 minutes before the call, draft a reschedule note and suggest moving the meeting.
+After the meeting, extract decisions, owners, and follow-ups and route them into the right repo, issue, or CRM record.</pre>
+          <button class="copy-btn" onclick="copyBlock('trigger-meeting-prep', this)">Copy Trigger</button>
+        </article>
+
+        <article class="trigger-card">
+          <div class="trigger-top">
+            <h3>Build Mode Launcher</h3>
+            <span class="role-pill">Operator</span>
+          </div>
+          <p class="muted">Useful when Chrome keeps swallowing the first serious block of the day before build momentum lands.</p>
+          <pre class="copy-box" id="trigger-build-mode">When I say "start build mode," open Claude, Codex, Terminal, and the active repo.
+Mute Slack notifications for 90 minutes.
+Block Google Meet, app.slack.com, search, and webmaster surfaces until the block ends.
+At the end of the block, ask me for one durable brief or shipped artifact.</pre>
+          <button class="copy-btn" onclick="copyBlock('trigger-build-mode', this)">Copy Trigger</button>
+        </article>
+
+        <article class="trigger-card">
+          <div class="trigger-top">
+            <h3>Transcript-To-Pipeline</h3>
+            <span class="role-pill">Sales</span>
+          </div>
+          <p class="muted">Useful when demo calls or discovery calls create real insight, but follow-up, prioritization, and CRM hygiene lag behind.</p>
+          <pre class="copy-box" id="trigger-sales-pipeline">When a discovery or demo transcript lands, extract pains, objections, buying signals, next steps, and stakeholders.
+Score whether the call actually showed urgent pain and clear fit for our service offering.
+If yes, draft the follow-up in the assigned sender's voice, queue it in the review surface, and update the deal record.
+If no, mark it low-priority and keep the transcript searchable for later pattern mining.</pre>
+          <button class="copy-btn" onclick="copyBlock('trigger-sales-pipeline', this)">Copy Trigger</button>
+        </article>
+
+        <article class="trigger-card">
+          <div class="trigger-top">
+            <h3>Oura Gate</h3>
+            <span class="role-pill">CEO</span>
+          </div>
+          <p class="muted">Useful when the machine keeps trying to widen strategy on a day your body is clearly asking for narrower work.</p>
+          <pre class="copy-box" id="trigger-oura-gate">When today's Oura readiness is low or REM has been falling for 2+ nights, mark the day as a narrow day.
+Do not open new GTM, product, or infrastructure lanes.
+Prioritize closure, review/send, meeting prep, and grading existing work instead.
+If I try to widen anyway, remind me this is a low-REM day and ask what outward loop gets closed first.</pre>
+          <button class="copy-btn" onclick="copyBlock('trigger-oura-gate', this)">Copy Trigger</button>
+        </article>
+
+        <article class="trigger-card">
+          <div class="trigger-top">
+            <h3>Promise Tracker</h3>
+            <span class="role-pill">CEO</span>
+          </div>
+          <p class="muted">Useful when good calls turn into “I owe them something real” and then get outrun by system-building.</p>
+          <pre class="copy-box" id="trigger-promise-tracker">After every demo, discovery call, or investor call, extract every explicit promise I made.
+Create one tracked item per promise with owner, due date, source transcript, and suggested next step.
+If no draft or send action exists by end of day, queue a follow-up draft automatically and remind me before I start a new build lane.</pre>
+          <button class="copy-btn" onclick="copyBlock('trigger-promise-tracker', this)">Copy Trigger</button>
+        </article>
+
+        <article class="trigger-card">
+          <div class="trigger-top">
+            <h3>Support Copy-Paste Grinder</h3>
+            <span class="role-pill">Support</span>
+          </div>
+          <p class="muted">Useful for the kind of role that spends hours copying comments or questions into AI and then manually approving the result.</p>
+          <pre class="copy-box" id="trigger-support-grinder">If a support agent pastes the same kind of issue into AI over and over, log the repeated prompts, cluster the common request types, and generate a reply draft with an approval UI.
+Approve, edit, or skip with one click.
+Turn accepted replies into reusable templates over time.</pre>
+          <button class="copy-btn" onclick="copyBlock('trigger-support-grinder', this)">Copy Trigger</button>
+        </article>
+
+        <article class="trigger-card">
+          <div class="trigger-top">
+            <h3>Remote Worker Factory</h3>
+            <span class="role-pill">Lead Gen</span>
+          </div>
+          <p class="muted">Useful when the local machine is trying to be both the control plane and the worker box.</p>
+          <pre class="copy-box" id="trigger-remote-workers">Use local machine for control and context only.
+Push scrape, enrich, verify, browser automation, and bulk transformation work to AWS workers.
+Return staged CSVs, CRM-ready rows, and a short operator brief when the run finishes.</pre>
+          <button class="copy-btn" onclick="copyBlock('trigger-remote-workers', this)">Copy Trigger</button>
+        </article>
+
+        <article class="trigger-card">
+          <div class="trigger-top">
+            <h3>Voice-To-Intent Bridge</h3>
+            <span class="role-pill">Operator</span>
+          </div>
+          <p class="muted">Useful when your strategy lives in voice notes but the working shell only sees the last prompt you typed.</p>
+          <pre class="copy-box" id="trigger-voice-bridge">When Claude Code or Terminal opens, inject the last three voice notes plus today's top open loops from the shared brain and vector memory as hidden context.
+Summarize the strategic intent in 5 bullets before taking the next action.
+Write any new decisions back to the brain so the next model session does not need the same re-brief.
+If the new task conflicts with the last voiced priority, ask for confirmation first.</pre>
+          <button class="copy-btn" onclick="copyBlock('trigger-voice-bridge', this)">Copy Trigger</button>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="packets">
+      <div class="eyebrow">Evidence Packets</div>
+      <h2>Three packets that make the audit feel materially real even in sanitized form</h2>
+      <p>
+        A fuller internal version would show names, screenshots, transcript excerpts, and implementation notes.
+        This copy keeps the diagnosis and the intervention, and blanks the sensitive parts.
+      </p>
+
+      <div class="packet-grid">
+        <article class="packet-card">
+          <div class="packet-head">
+            <div>
+              <div class="packet-no">Packet 01</div>
+              <h3>A missing scale function appeared, and the founder went to build the machine.</h3>
+            </div>
+            <div class="packet-tag">Sales Ops</div>
+          </div>
+          <p class="muted">The demos were not the bottleneck. The real pattern was seeing a manual follow-up gap and immediately wanting to solve the underlying scale function instead of tolerating the thinner bridge that would have closed the live promise first.</p>
+          <div class="auto-kicker">Install</div>
+          <p class="muted">Promise tracker plus transcript-to-review/send with an end-of-day escalation and an explicit “thin bridge before full machine” rule.</p>
+          <div class="blackout-box">
+            <div class="blackout-label">Deal Context Excerpt — REDACTED</div>
+            <div class="blackout-lines">
+              <span style="width:94%"></span>
+              <span style="width:86%"></span>
+              <span style="width:91%"></span>
+              <span style="width:67%"></span>
+            </div>
+          </div>
+        </article>
+
+        <article class="packet-card">
+          <div class="packet-head">
+            <div>
+              <div class="packet-no">Packet 02</div>
+              <h3>Meeting cost doubled because the meeting itself was weakly instrumented.</h3>
+            </div>
+            <div class="packet-tag">CEO Calendar</div>
+          </div>
+          <p class="muted">The time cost was real, but the bigger drag was missing pre-read, agenda capture, and post-call routing. That made the founder the fallback memory layer for expensive conversations.</p>
+          <div class="auto-kicker">Install</div>
+          <p class="muted">Meeting brief generator, agenda enforcement, cancellation logic, and post-call compression with decision routing.</p>
+          <div class="blackout-box">
+            <div class="blackout-label">Transcript / Agenda Excerpt — REDACTED</div>
+            <div class="blackout-lines">
+              <span style="width:88%"></span>
+              <span style="width:92%"></span>
+              <span style="width:73%"></span>
+              <span style="width:81%"></span>
+            </div>
+          </div>
+        </article>
+
+        <article class="packet-card">
+          <div class="packet-head">
+            <div>
+              <div class="packet-no">Packet 03</div>
+              <h3>Body-state should have determined whether the day was allowed to widen.</h3>
+            </div>
+            <div class="packet-tag">Oura Gate</div>
+          </div>
+          <p class="muted">The ring data was most useful when it stopped being wellness garnish and started acting like a scope gate. Good days supported doctrine and widening. Fragmented days should have been used for closure and routing.</p>
+          <div class="auto-kicker">Install</div>
+          <p class="muted">Green / yellow / red operating gate that changes what kinds of work are allowed before the day gets wider.</p>
+          <div class="blackout-box">
+            <div class="blackout-label">Biometric Overlay Excerpt — REDACTED</div>
+            <div class="blackout-lines">
+              <span style="width:79%"></span>
+              <span style="width:95%"></span>
+              <span style="width:84%"></span>
+              <span style="width:61%"></span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="findings">
+      <div class="eyebrow">Core Findings</div>
+      <h2>What this audit window says about how you actually work</h2>
+
+      <div class="finding-grid">
+        <details class="finding" open>
+          <summary>
+            <span>1. You work like an AI team manager.</span>
+            <span class="pill high">High confidence</span>
+          </summary>
+          <div class="finding-body">
+            <p><strong>What we saw.</strong> 56.6 hours in Claude, 28.0 in Codex, 2,805 AI handoffs, and roughly three quarters of all typed output landing in Claude and Codex. You are not using models as toys. You are using them as thinking surfaces, delegation surfaces, and comparison surfaces.</p>
+            <p><strong>Why it matters.</strong> This is a strength. It is also why orchestration can feel productive even when the real bottleneck is choosing and committing. The system should optimize for routing, convergence, and durable artifacts, not a fake “single maker” ideal.</p>
+          </div>
+        </details>
+
+        <details class="finding" open>
+          <summary>
+            <span>2. Your best state is a named build regime.</span>
+            <span class="pill high">High confidence</span>
+          </summary>
+          <div class="finding-body">
+            <p><strong>What we saw.</strong> The best days in the window are the build-heavy ones: March 19, 21, 22, and 23. The uglier days are not low-effort days; they are mixed-mode days where Slack, search, meetings, websites, and build all share the same surface.</p>
+            <p><strong>Why it matters.</strong> Open-ended mixed-mode days are not neutral for you. They are hostile. The right unit of analysis is not total hours. It is whether the day stayed true to its intended mode.</p>
+          </div>
+        </details>
+
+        <details class="finding" open>
+          <summary>
+            <span>3. Rubric capture is the missing layer underneath all the AI leverage.</span>
+            <span class="pill high">High confidence</span>
+          </summary>
+          <div class="finding-body">
+            <p><strong>What we saw.</strong> The strongest read across the prior reports still holds: once you know what “good” looks like, you can use AI extremely well. When the criteria are fuzzy, time gets burned across multiple models, tabs, and drafts.</p>
+            <p><strong>Why it matters.</strong> You are not bottlenecked by idea generation. You are bottlenecked by defining and preserving evaluation criteria. That is why rubric capture and reuse deserves to be a first-class layer in your system.</p>
+          </div>
+        </details>
+
+        <details class="finding" open>
+          <summary>
+            <span>4. You are so interruption-elastic that you can underprice switching.</span>
+            <span class="pill high">High confidence</span>
+          </summary>
+          <div class="finding-body">
+            <p><strong>What we saw.</strong> The psych profile was right: you can bounce out, collect signal, and snap back quickly. That resilience is real. But it also means you can underestimate how much mode churn is happening because the re-entry path feels cheap.</p>
+            <p><strong>Why it matters.</strong> Recovering fast is not the same as switching for free. This is why days can feel productive and still leave you with less actual closure than they should.</p>
+          </div>
+        </details>
+
+        <details class="finding" open>
+          <summary>
+            <span>5. Closure debt is real, and under pressure it looks like more motion.</span>
+            <span class="pill high">High confidence</span>
+          </summary>
+          <div class="finding-body">
+            <p><strong>What we saw.</strong> The diagnostic report framed this cleanly: ideas, prompts, structures, pages, and lanes come easily; choosing the few closures that permanently kill other options is what costs psychic energy. When pressure rises, the risk is not collapse. It is more artifacts and more side quests.</p>
+            <p><strong>Why it matters.</strong> This is not laziness. It is a pressure-to-motion converter. Stress becomes throughput, and throughput can camouflage unresolved commitments.</p>
+          </div>
+        </details>
+
+        <details class="finding" open>
+          <summary>
+            <span>6. Context fidelity is a real operating requirement for you.</span>
+            <span class="pill high">High confidence</span>
+          </summary>
+          <div class="finding-body">
+            <p><strong>What we saw.</strong> The sharp frustration pattern in the reports is consistent: wrong dates, memory drift, fake completion, or tools acting more capable than they are. When context trust breaks, you reopen manual control loops yourself.</p>
+            <p><strong>Why it matters.</strong> For you, broken memory is not a minor UX annoyance. It is an adoption blocker. Any automation that cannot preserve context fidelity will get demoted no matter how flashy it looks.</p>
+          </div>
+        </details>
+
+        <details class="finding" open>
+          <summary>
+            <span>7. System-building can become safer than the human loop.</span>
+            <span class="pill hot">Hot risk</span>
+          </summary>
+          <div class="finding-body">
+            <p><strong>What we saw.</strong> One of the harder truths from the deeper reports is that building systems can become emotionally safer than sending the follow-up, forcing the decision, or narrowing to one GTM story.</p>
+            <p><strong>Why it matters.</strong> This is where more infrastructure can quietly become elegant deferral. The fix is not “stop building systems.” The fix is to pair new system work with mandatory external closure.</p>
+          </div>
+        </details>
+
+        <details class="finding" open>
+          <summary>
+            <span>8. CEO meeting load is not the problem. Unprepared meetings are.</span>
+            <span class="pill med">Meaningful</span>
+          </summary>
+          <div class="finding-body">
+            <p><strong>What we saw.</strong> Meetings already occupy real time in the window, and the meeting-content gap in the reports suggests you are losing leverage twice: once in the call, then again because decisions and prep context are not being carried cleanly.</p>
+            <p><strong>Why it matters.</strong> A CEO probably should be on more decisive calls, not fewer. The fix is to make the calendar enforce agenda quality, pre-reads, and post-call capture so meetings become leverage instead of residue.</p>
+          </div>
+        </details>
+
+        <details class="finding" open>
+          <summary>
+            <span>9. You attack missing scale functions early, which is product strength and weekly drag at the same time.</span>
+            <span class="pill hot">Hot risk</span>
+          </summary>
+          <div class="finding-body">
+            <p><strong>What we saw.</strong> When a manual gap appears, you tend to spot the underlying missing function quickly and go build toward the scalable version: transcript mining, review/send, routing, better structure, better installs. That is not the product failing. That is you refusing to keep paying the same manual tax.</p>
+            <p><strong>Why it matters.</strong> This is one of the cleanest CEO-specific tensions in the set. You do not need less machinery. You need a rule that says some weeks deserve the thin bridge, small script, or tolerated manual path first, and the deeper machine second.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section class="two-col" id="signature">
+      <div class="panel">
+        <div class="eyebrow">Operating Signature</div>
+        <h2>What to lean into</h2>
+        <ul>
+          <li>Fan-out, compare, and converge. That is a real superpower when the rubric is explicit.</li>
+          <li>Using yourself as the first hard customer. It keeps the product honest.</li>
+          <li>Turning internal pain into real product surfaces fast once the pattern is clear.</li>
+          <li>Working in the afternoon, evening, and late night when the machine actually has voltage.</li>
+          <li>Demanding accuracy and context fidelity instead of accepting fake completion.</li>
+        </ul>
+      </div>
+
+      <div class="panel">
+        <div class="eyebrow">Operator Debt</div>
+        <h2>What to stop rationalizing</h2>
+        <ul>
+          <li>Mixed-mode days as the default operating pattern.</li>
+          <li>Letting valuable context live only in handoffs instead of canonical files.</li>
+          <li>Treating meetings as expensive time but not instrumenting their decisions, owners, and prep quality.</li>
+          <li>Opening more lanes when narrowing feels painful.</li>
+          <li>Treating every missing function like it must become a full machine immediately, even when a thinner bridge would close the live loop this week.</li>
+          <li>Letting system-building count as closure when the real move is send, ask, decide, or ship.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="eyebrow">Strengths</div>
+      <h2>What the reports consistently say you are unusually good at</h2>
+
+      <div class="skill-grid">
+        <article class="skill">
+          <div class="name">System Synthesis</div>
+          <p>You keep turning messy operational threads into durable system language. The product gets sharper because you keep pushing toward the actual abstraction instead of accepting the first comfortable framing.</p>
+        </article>
+
+        <article class="skill">
+          <div class="name">Artifact Pressure</div>
+          <p>Your insistence that useful work end up as repos, reports, implementation notes, or real pages is a real operating advantage. It is why the system now produces handoff-quality output instead of smart chat residue.</p>
+        </article>
+
+        <article class="skill">
+          <div class="name">Leverage Through Delegation</div>
+          <p>The strongest work in this window was not solo typing. It was you causing whole lanes to move in parallel without losing the thread entirely. That is the conductor pattern at its best.</p>
+        </article>
+
+        <article class="skill">
+          <div class="name">Product Extraction From Internal Use</div>
+          <p>The operator instinct here is rare: use the internal system hard enough that the gaps become the roadmap. That pattern is already producing product direction, not just self-knowledge.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="next-14">
+      <div class="eyebrow">Next 14 Days</div>
+      <h2>The next 14 days I would actually run from this report</h2>
+      <div class="callout" style="margin-bottom:16px;">
+        <strong>First 3 installs on Monday.</strong> <code>founder-intent-router</code> first, <code>promise-tracker</code> second, and <code>meeting-control</code> third.
+        That stack attacks the context-resend tax, the follow-up leak, and the meeting-prep subsidy before anything more elegant gets built.
+      </div>
+      <ol>
+        <li><strong>Capture five recurring rubrics.</strong> Put the criteria and exemplars into git, not just into your head. Start with the judgments that show up every week.</li>
+        <li><strong>Split build mode from admin mode.</strong> Different surface, different launcher, different sweep. Stop asking Chrome to be both control room and clutter bucket at the same time.</li>
+        <li><strong>Install the Oura widening gate.</strong> Low REM or low readiness means narrow and close. No new market thesis, no new infra lane, no fake “I can power through this” stories.</li>
+        <li><strong>Turn meeting prep into enforcement, not hope.</strong> Use the meeting-prep trigger: reminder, missing-input check, reschedule/cancel if needed, then post-call decisions and owners.</li>
+        <li><strong>Force same-day promise capture after real calls.</strong> Every meaningful demo, discovery call, or investor conversation should produce a tracked follow-up object and a draft before the day ends.</li>
+        <li><strong>Keep the compute split honest.</strong> Local for control and context. AWS for fan-out, scraping, browser runs, and heavy parallel work. Stop burning local RAM on worker jobs you already know belong in the cloud.</li>
+        <li><strong>Run a daily closure pass.</strong> Ship list, ask list, kill list. One external close before opening a new infrastructure lane.</li>
+      </ol>
+
+      <div class="callout hot" style="margin-top:16px;">
+        <strong>What matters here.</strong> The best version of this plan does not make you more compliant.
+        It makes you harder to stall. The goal is fewer invisible restarts, fewer quiet drops, and more judgment compounding across the system.
+      </div>
+    </section>
+
+    <section class="section" id="appendix">
+      <div class="eyebrow">Sanitized But Real</div>
+      <h2>What was deliberately blanked out of the fuller internal version</h2>
+      <p class="muted">
+        This is the part that should make it obvious the presentation copy is cut down, not invented.
+        The real version contains named excerpts, screenshots, and customer-context slices that are intentionally removed here.
+      </p>
+
+      <div class="appendix-grid">
+        <article class="appendix-card">
+          <div class="appendix-type">Client Comparison</div>
+          <h3>Comparative deliverable before / after excerpt</h3>
+          <div class="blackout-box">
+            <div class="blackout-label">REDACTED</div>
+            <div class="blackout-lines">
+              <span style="width:93%"></span>
+              <span style="width:88%"></span>
+              <span style="width:74%"></span>
+              <span style="width:82%"></span>
+              <span style="width:59%"></span>
+            </div>
+          </div>
+        </article>
+
+        <article class="appendix-card">
+          <div class="appendix-type">Workflow Diagram</div>
+          <h3>Internal orchestration view excerpt</h3>
+          <div class="blackout-box">
+            <div class="blackout-label">REDACTED</div>
+            <div class="blackout-lines">
+              <span style="width:86%"></span>
+              <span style="width:91%"></span>
+              <span style="width:77%"></span>
+              <span style="width:84%"></span>
+              <span style="width:66%"></span>
+            </div>
+          </div>
+        </article>
+
+        <article class="appendix-card">
+          <div class="appendix-type">Meeting / Deal Note</div>
+          <h3>Named transcript and promise stack excerpt</h3>
+          <div class="blackout-box">
+            <div class="blackout-label">REDACTED</div>
+            <div class="blackout-lines">
+              <span style="width:95%"></span>
+              <span style="width:79%"></span>
+              <span style="width:83%"></span>
+              <span style="width:68%"></span>
+              <span style="width:57%"></span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="sources">
+      <div class="eyebrow">Sources</div>
+      <h2>What this report is built from</h2>
+      <ul>
+        <li><strong>Behavioral telemetry:</strong> the founder’s local Cowork.ai telemetry plus broader cohort/context telemetry used to sanity-check what looked founder-specific versus generally useful.</li>
+        <li><strong>Voice layer:</strong> Superwhisper/voice transcript history, including deep-dive reads over 1,764 recordings and roughly 144,441 transcript words, plus transcript archival and ingestion work completed during the same period.</li>
+        <li><strong>Daily reports across the audit window:</strong> the two-week run of daily reports and end-of-day analysis, used as the narrative layer over the raw telemetry.</li>
+        <li><strong>Custom augmentation:</strong> additional source material intentionally folded into the audit, including Oura/body-state context, Superwhisper and meeting transcripts, architecture artifacts, and internal feedback lanes that were actively being pressure-tested.</li>
+        <li><strong>Artifacts and systems:</strong> recent handoffs, repo state, product surfaces, system diagrams, decision logs, shared-brain state, Pinecone-backed memory work, git movement, and deliverables created in the same period.</li>
+        <li><strong>Privacy posture:</strong> the report synthesis was run locally on the founder’s computer with enough RAM to keep source material on-device rather than pushing raw data into cloud processing.</li>
+        <li><strong>Presentation metrics:</strong> several top-line counts in this public copy are modeled composites designed to preserve the operating shape after redaction, not act as compliance-grade ledger numbers.</li>
+        <li><strong>Role-shaping note:</strong> this report is about a founder/operator and about the questions he was actively asking the system for feedback on. A support, sales, or ops report would use a different lens and different recommended installs.</li>
+        <li><strong>Redactions:</strong> customer names, sensitive IP, specific internal prompts, and a few personal details were intentionally removed. The behavioral and workflow observations were not softened.</li>
+      </ul>
+    </section>
+
+    <div class="foot">
+      Prepared on March 25, 2026 by Moe [AI]. Public redacted founder/operator audit example, built from telemetry, daily reports, custom source augmentation, and report synthesis.
+    </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    async function copyBlock(id, button) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const text = el.textContent || "";
+      try {
+        await navigator.clipboard.writeText(text);
+        const original = button.textContent;
+        button.textContent = "Copied";
+        button.classList.add("done");
+        setTimeout(() => {
+          button.textContent = original;
+          button.classList.remove("done");
+        }, 1600);
+      } catch (err) {
+        button.textContent = "Copy failed";
+      }
+    }
+
+    const navLinks = Array.from(document.querySelectorAll('.nav a[href^="#"], .side-links a[href^="#"]'));
+    const trackedSections = Array.from(new Set(navLinks
+      .map((link) => document.querySelector(link.getAttribute('href')))
+      .filter(Boolean)));
+
+    function setActiveSection(id) {
+      navLinks.forEach((link) => {
+        const active = link.getAttribute('href') === `#${id}`;
+        link.classList.toggle('active', active);
+      });
+    }
+
+    if (trackedSections.length) {
+      const observer = new IntersectionObserver((entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+
+        if (visible.length) {
+          setActiveSection(visible[0].target.id);
+        }
+      }, {
+        rootMargin: '-20% 0px -55% 0px',
+        threshold: [0.1, 0.25, 0.5, 0.75]
+      });
+
+      trackedSections.forEach((section) => observer.observe(section));
+      setActiveSection(trackedSections[0].id);
+    }
+  </script>
+</body>
+</html>
