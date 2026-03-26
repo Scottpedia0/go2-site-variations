@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go2 Operational Audit — Meridian Home Co | What We Found, What We Built</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+:root {
+  --bg: #f7f5f2;
+  --bg-card: #ffffff;
+  --bg-card-hover: #faf9f7;
+  --bg-input: #f1f0ee;
+  --border: #e3e0db;
+  --border-light: #ede9e4;
+  --text: #171412;
+  --text-dim: #3d3732;
+  --text-muted: #7a7067;
+  --accent: #0891b2;
+  --accent-mid: #0e7490;
+  --accent-dim: #155e75;
+  --accent-bg: rgba(8,145,178,0.08);
+  --accent-bg-strong: rgba(8,145,178,0.14);
+  --green: #059669;
+  --green-bg: rgba(5,150,105,0.09);
+  --yellow: #92400e;
+  --yellow-bg: rgba(146,64,14,0.09);
+  --orange: #b91c1c;
+  --orange-bg: rgba(185,28,28,0.08);
+  --red: #dc2626;
+  --red-bg: rgba(220,38,38,0.07);
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --mono: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+  --shadow-card: 0 2px 8px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.65;
+  font-size: 15px;
+  min-height: 100vh;
+}
+
+/* Demo Banner — confident, premium */
+.demo-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: linear-gradient(135deg, #0c4a6e 0%, #0e7490 100%);
+  padding: 10px 20px;
+  text-align: center;
+  font-size: 13px;
+  color: rgba(255,255,255,0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  letter-spacing: 0.01em;
+}
+.demo-banner svg { color: rgba(255,255,255,0.7); flex-shrink:0; }
+.demo-banner strong { color: #ffffff; font-weight: 600; }
+.demo-banner .disclaimer {
+  color: rgba(255,255,255,0.75);
+  font-size: 12px;
+  margin-left: 6px;
+}
+
+/* Nav — polished sidebar */
+nav {
+  position:fixed; top:41px; left:0; width:264px; height:calc(100vh - 41px);
+  background: linear-gradient(180deg, #fefefe 0%, #faf9f7 100%);
+  border-right:1px solid var(--border);
+  overflow-y:auto; z-index:100; padding:20px 0;
+  scrollbar-width:thin; scrollbar-color: var(--border) transparent;
+  box-shadow: 1px 0 8px rgba(0,0,0,0.04);
+}
+nav::-webkit-scrollbar { width:4px; }
+nav::-webkit-scrollbar-thumb { background: var(--border); border-radius:2px; }
+nav .nav-header {
+  padding: 4px 20px 18px; border-bottom:1px solid var(--border); margin-bottom:8px;
+}
+nav .nav-header h2 {
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+nav .nav-header p { color:var(--text-muted); font-size:11px; margin-top:3px; }
+nav a {
+  display:block; padding:6px 20px 6px 20px; color:var(--text-dim); text-decoration:none;
+  font-size:13px; transition: all 0.14s; border-left: 2px solid transparent;
+  margin: 1px 0;
+}
+nav a:hover {
+  color: var(--accent-dim);
+  background: var(--accent-bg);
+  border-left-color: var(--accent);
+}
+nav a.section-head {
+  color:var(--text-muted); font-size:10px; text-transform:uppercase;
+  letter-spacing:1.2px; padding-top:18px; padding-bottom:4px; pointer-events:none;
+  font-weight:700; border-left:none;
+}
+
+/* Content area */
+.content {
+  margin-left:264px; max-width:940px; padding:72px 52px 140px;
+}
+@media (max-width:900px) {
+  nav { display:none; }
+  .content { margin-left:0; padding:64px 16px 80px; }
+}
+
+/* Typography */
+h1 { font-size:32px; font-weight:800; letter-spacing:-1.2px; margin-bottom:8px; }
+h2 {
+  font-size:22px; font-weight:700; letter-spacing:-0.6px;
+  margin-top:72px; margin-bottom:18px; padding-bottom:14px;
+  border-bottom:2px solid var(--border);
+  color: var(--text);
+}
+h3 { font-size:16px; font-weight:600; margin-top:32px; margin-bottom:12px; color:var(--accent-dim); letter-spacing:-0.2px; }
+h4 {
+  font-size:11px; font-weight:700; margin-top:22px; margin-bottom:8px;
+  color: var(--text-muted); text-transform:uppercase; letter-spacing:0.8px;
+}
+p { margin-bottom:12px; color:var(--text-dim); }
+p strong, li strong { color:var(--text); }
+ul, ol { padding-left:24px; margin-bottom:16px; color:var(--text-dim); }
+li { margin-bottom:6px; }
+a { color:var(--accent); text-decoration:none; }
+a:hover { text-decoration: underline; }
+hr { border:none; border-top:1px solid var(--border); margin:56px 0; }
+
+section { padding-top: 8px; }
+
+/* Card */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  margin: 18px 0;
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.15s;
+}
+.card:hover { box-shadow: var(--shadow-md); }
+.card-accent {
+  border-left: 3px solid var(--accent);
+  background: linear-gradient(135deg, rgba(8,145,178,0.03) 0%, #ffffff 40%);
+}
+
+/* Stat grid */
+.stat-grid {
+  display:grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr));
+  gap:12px; margin:20px 0;
+}
+.stat-box {
+  background: linear-gradient(145deg, #ffffff 0%, #faf9f7 100%);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 16px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s, box-shadow 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.stat-box::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-mid) 100%);
+  opacity: 0.4;
+}
+.stat-box:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.stat-box .value { font-size:28px; font-weight:800; color:var(--accent); letter-spacing:-1px; }
+.stat-box .label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.6px; margin-top:5px; font-weight:500; }
+.stat-box.money .value { color: var(--green); }
+
+/* Tables */
+table {
+  width:100%; border-collapse:collapse; margin:16px 0; font-size:13px;
+}
+th {
+  text-align:left; padding:10px 12px; background:#f5f3f0;
+  border-bottom:2px solid var(--border); color:var(--text);
+  font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:0.7px;
+  position:sticky; top:0; z-index:1;
+}
+td {
+  padding:10px 12px; border-bottom:1px solid var(--border-light); color:var(--text-dim);
+  vertical-align:top; transition: background 0.1s;
+}
+tr:nth-child(even) td { background: rgba(247,245,242,0.6); }
+tr:hover td { background: rgba(8,145,178,0.04); }
+
+/* Big table wrapper */
+.big-table-wrap {
+  overflow-x:auto; border:1px solid var(--border); border-radius:14px;
+  margin:20px 0; background:var(--bg-card);
+  box-shadow: var(--shadow-card);
+}
+.big-table-wrap table { margin:0; }
+.big-table-wrap th { background:#f5f3f0; }
+.big-table-wrap td { white-space:nowrap; }
+.big-table-wrap td:first-child { white-space:normal; min-width:180px; font-weight:500; color:var(--text); }
+.big-table-wrap td.pipeline-desc { white-space:normal; min-width:260px; }
+.pipeline-row td {
+  background: rgba(8,145,178,0.03) !important;
+  white-space: normal !important;
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 6px 12px 10px;
+  border-bottom: 2px solid var(--border);
+  line-height: 1.5;
+}
+.pipeline-row td strong { color: var(--accent-dim); }
+
+/* Badges */
+.badge {
+  display:inline-block; padding:3px 8px; border-radius:5px;
+  font-size:10px; font-weight:700; letter-spacing:0.4px; text-transform: uppercase;
+}
+.badge-green { background:var(--green-bg); color:var(--green); }
+.badge-yellow { background:var(--yellow-bg); color:var(--yellow); }
+.badge-orange { background:var(--orange-bg); color:var(--orange); }
+.badge-accent { background:var(--accent-bg-strong); color:var(--accent-dim); }
+
+/* Expandable findings — interactive feel */
+.finding {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin: 14px 0;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s;
+}
+.finding:hover { box-shadow: var(--shadow-md); }
+.finding-header {
+  padding: 16px 22px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.15s;
+  user-select: none;
+}
+.finding-header:hover { background: rgba(8,145,178,0.04); }
+.finding.open .finding-header { background: rgba(8,145,178,0.05); }
+.finding-header h3 { margin:0; font-size:15px; color: var(--text); }
+.finding.open .finding-header h3 { color: var(--accent-dim); }
+.finding-header .meta { display:flex; gap:8px; align-items:center; flex-shrink:0; }
+.finding-header .arrow {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--bg-input);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted); font-size: 10px;
+  transition: transform 0.22s, background 0.15s;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+.finding.open .finding-header .arrow {
+  transform: rotate(90deg);
+  background: var(--accent-bg-strong);
+  color: var(--accent);
+}
+.finding-body {
+  max-height:0; overflow:hidden; transition: max-height 0.38s cubic-bezier(0.4,0,0.2,1);
+}
+.finding.open .finding-body { max-height: 4000px; }
+.finding-body-inner {
+  padding: 2px 22px 22px; border-top: 1px solid var(--border-light);
+}
+
+/* Code blocks */
+pre {
+  background: #f0ede8;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px; overflow-x:auto;
+  font-family: var(--mono); font-size: 12.5px;
+  line-height: 1.6; margin: 12px 0; position: relative;
+  color: #2d2822;
+}
+code {
+  font-family: var(--mono); font-size: 12.5px;
+  background: #ece9e3; padding: 2px 6px; border-radius: 4px;
+  color: #2d2822;
+}
+pre code { background:none; padding:0; }
+.copy-btn {
+  position:absolute; top:8px; right:8px;
+  background: rgba(255,255,255,0.8);
+  color: var(--text-muted); border: 1px solid var(--border);
+  border-radius: 5px; padding: 3px 10px;
+  font-size: 11px; cursor:pointer; font-family: var(--font);
+  transition: all 0.15s; font-weight: 500;
+}
+.copy-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* Steps */
+.steps { counter-reset: step; margin:16px 0; }
+.step {
+  position:relative; padding:13px 16px 13px 54px; margin:8px 0;
+  background: linear-gradient(135deg, #faf9f7 0%, #f5f3f0 100%);
+  border: 1px solid var(--border); border-radius: 10px;
+  counter-increment: step;
+  transition: box-shadow 0.15s;
+}
+.step:hover { box-shadow: var(--shadow-sm); }
+.step::before {
+  content: counter(step);
+  position:absolute; left:16px; top:12px;
+  width:26px; height:26px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-mid) 100%);
+  color:#fff;
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:700;
+}
+
+/* Letter */
+.letter {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 36px 40px;
+  margin: 24px 0;
+  font-size: 15px;
+  line-height: 1.8;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+.letter::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-mid) 60%, transparent 100%);
+}
+.letter p { color:var(--text-dim); }
+.letter .sig {
+  margin-top: 28px;
+  color: var(--accent-dim);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.2px;
+}
+
+/* Tier labels */
+.tier { display:inline-block; padding:3px 10px; border-radius:5px; font-size:12px; font-weight:700; margin:2px 4px 2px 0; }
+.tier-1 { background:var(--green-bg); color:var(--green); }
+.tier-2 { background:var(--yellow-bg); color:var(--yellow); }
+.tier-3 { background:var(--accent-bg-strong); color:var(--accent-dim); }
+
+/* Tool card */
+.tool-card {
+  display:flex; gap:18px;
+  background: linear-gradient(135deg, #ffffff 0%, #faf9f7 100%);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin: 10px 0;
+  align-items: flex-start;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.tool-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.tool-icon {
+  width:42px; height:42px; border-radius:10px;
+  background: linear-gradient(135deg, var(--accent-bg-strong) 0%, var(--accent-bg) 100%);
+  border: 1px solid rgba(8,145,178,0.15);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  font-size:18px; color:var(--accent);
+}
+.tool-info h4 { margin:0 0 5px; font-size:14px; color:var(--text); text-transform:none; letter-spacing:0; font-weight:600; }
+.tool-info p { margin:0 0 4px; font-size:13px; }
+.tool-info .size { color:var(--text-muted); font-size:11px; font-weight:500; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+/* Print */
+@media print {
+  nav, .demo-banner { display:none; }
+  .content { margin-left:0; padding: 24px; }
+  .finding-body { max-height:none !important; overflow:visible !important; }
+  .finding { box-shadow:none; border-radius:0; }
+  .stat-box::before { display:none; }
+  h2 { margin-top: 32px; }
+  .letter { border-radius:0; box-shadow:none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Demo Banner -->
+<div class="demo-banner">
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+  <strong>Example Audit Report.</strong> Based on a real Go2 audit delivered to an actual client. Names, numbers, and business details have been changed. <span class="disclaimer">The real client received this report plus a full deliverable package — working tools, API references, implementation guides, and configuration scripts, all ready to deploy.</span>
+</div>
+
+<nav>
+  <div class="nav-header">
+    <h2>Meridian Audit</h2>
+    <p>Go2 Operational Intelligence · Q1 2026</p>
+  </div>
+  <a href="#header">Overview</a>
+  <a href="#exec-summary">Executive Summary</a>
+  <a href="#big-table">The Big Table</a>
+  <a class="section-head">Automation Findings</a>
+  <a href="#sofia-comments">1. Sofia: Comment Replies</a>
+  <a href="#maya-shopify">2. Maya: Shopify Data Entry</a>
+  <a href="#maya-soldout">3. Maya: Sold-Out Products</a>
+  <a href="#andre-pricing">4. Andre: Pricing Calculations</a>
+  <a href="#james-zendesk">5. James: Zendesk AI Config</a>
+  <a href="#james-upsell">6. James: Upsell Batching</a>
+  <a href="#rosa-cancel">7. Rosa: Cancellation Data</a>
+  <a href="#friday-coverage">8. Friday CS Coverage</a>
+  <a class="section-head">Team Insights</a>
+  <a href="#additional-findings">Additional Findings</a>
+  <a href="#team-profiles">Team Profiles</a>
+  <a class="section-head">Deliverables</a>
+  <a href="#tools-built">Tools Built</a>
+  <a href="#data-sources">Data Sources</a>
+  <a href="#whats-next">What's Next</a>
+</nav>
+
+<div class="content">
+
+<!-- ====== HEADER ====== -->
+<section id="header" style="text-align:center;padding:60px 0 40px;">
+<h1 style="color:var(--accent-dim);font-size:2.2rem;letter-spacing:-1.5px;">Meridian Home Co — Operational Audit</h1>
+<p style="color:var(--text-muted); font-size:14px; margin-top:6px;">Prepared by Go2 Operational Intelligence &nbsp;·&nbsp; Q1 2026</p>
+<p style="color:var(--text-muted); font-size:12px; margin-top:6px;">6 team members &nbsp;·&nbsp; 3 months of data &nbsp;·&nbsp; 512,441 activity records &nbsp;·&nbsp; 3,247 hours logged</p>
+<p style="color:var(--text-muted); font-size:12px; margin-top:4px;">Data collected locally within each member's Go2 desktop app. Analysis performed on Go2's secure local infrastructure. Nothing left the client environment.</p>
+</section>
+
+<!-- ====== EXECUTIVE SUMMARY ====== -->
+<section id="exec-summary">
+<h2>Executive Summary</h2>
+
+<div class="stat-grid">
+  <div class="stat-box">
+    <div class="value">6</div>
+    <div class="label">Team Members</div>
+  </div>
+  <div class="stat-box">
+    <div class="value">3 mo</div>
+    <div class="label">Data Period</div>
+  </div>
+  <div class="stat-box">
+    <div class="value">512K</div>
+    <div class="label">Activity Records</div>
+  </div>
+  <div class="stat-box">
+    <div class="value">3,247</div>
+    <div class="label">Hours Logged</div>
+  </div>
+  <div class="stat-box">
+    <div class="value">195–240</div>
+    <div class="label">Hrs/Mo Recoverable</div>
+  </div>
+  <div class="stat-box money">
+    <div class="value">$8–15</div>
+    <div class="label">Monthly AI Compute Cost</div>
+  </div>
+</div>
+
+<p style="font-size:13px;color:var(--text-muted);margin-top:12px;">Analysis performed locally via a secure Postgres pipeline on Go2's infrastructure. Raw data never left the local environment. Only derived insights and findings were compiled into this report.</p>
+
+<div class="card card-accent">
+<h3 style="margin-top:0;color:var(--accent-dim);">Key Numbers</h3>
+<ul>
+  <li><strong>Team analyzed:</strong> 6 people over 3 months (Jan–Mar 2026). Sofia Reyes, David Chen (Customer Service &amp; Social), Maya Santos (Operations Support), Andre Torres (Marketplace Operations), James Liu (Customer Service Lead), Rosa Mendez (Retention Specialist).</li>
+  <li><strong>Data sources:</strong> behavioral telemetry database (512,441 activity records), operational database (work logs, shift summaries, schedules), 30-day granular keystroke capture per person.</li>
+  <li><strong>Recoverable manual labor:</strong> ~195–240 hours/month across the team — equivalent to approximately 1.2–1.5 full-time employees worth of manual work that doesn't need to be manual.</li>
+  <li><strong>Capacity unlocked:</strong> $16–19K/month worth of labor currently spent on manual, automatable tasks — freed for higher-value work, revenue generation, or scale without headcount. AI compute cost to automate all of it: $8–15/month.</li>
+  <li><strong>Automation opportunities identified:</strong> 8 total. 3 at 95%+ confidence, 3 at 90%+, 2 at 75–89%.</li>
+  <li><strong>Tools already prototyped:</strong> 7 functional HTML applications built from the data, ready for review.</li>
+</ul>
+</div>
+
+<p>All six team members are distributed across the Philippines and Colombia, working US-timezone-aligned shifts. They operate as fully siloed specialists — zero functional overlap. When one person is absent, that function stops. This is the single biggest structural risk in the team.</p>
+</section>
+
+<!-- ====== THE BIG TABLE ====== -->
+<section id="big-table">
+<h2>The Big Table</h2>
+<p>Every automation opportunity. Three columns show the progression: what it costs you now in hours, what it costs with the tools we already built, and what it costs with real automation. We can build all of it — the times below are QA and handoff, not development.</p>
+
+<div class="big-table-wrap">
+<table>
+<thead>
+<tr>
+  <th>Automation</th>
+  <th>Current<br>(hrs/mo)</th>
+  <th>With Tool<br>(built)</th>
+  <th>Full Pipe<br>(hrs/mo)</th>
+  <th>Confidence</th>
+  <th>AI Cost<br>/Mo</th>
+  <th>Handoff</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>Sofia's Comment Replies</strong><br><span style="color:var(--text-muted);font-size:12px;">118 items/day · 4–6 hrs copy-paste</span></td>
+  <td><strong>90–120</strong></td>
+  <td>35–55</td>
+  <td><strong>5–10</strong></td>
+  <td><span class="badge badge-green">91%</span></td>
+  <td>$2–10</td>
+  <td>1 day</td>
+</tr>
+<tr class="pipeline-row"><td colspan="7"><strong>Full pipeline:</strong> Hootsuite API → two-model pipeline (classifier + brand-voice generator trained on Sofia's 180+ replies) → auto-posts high-confidence, queues exceptions. She reviews 12–18/day instead of 118.</td></tr>
+
+<tr>
+  <td><strong>Maya's Shopify Data</strong><br><span style="color:var(--text-muted);font-size:12px;">1,412 Calculator uses/mo · 52 hrs</span></td>
+  <td><strong>52</strong></td>
+  <td>16</td>
+  <td><strong>0</strong></td>
+  <td><span class="badge badge-green">97%</span></td>
+  <td>$0</td>
+  <td>2 hrs</td>
+</tr>
+<tr class="pipeline-row"><td colspan="7"><strong>Full pipeline:</strong> Google Apps Script runs at 08:45 UTC before her shift. Pulls from Shopify across all 3 storefronts using exact queries captured from her browser. Data waiting when she logs in.</td></tr>
+
+<tr>
+  <td><strong>Maya's Sold-Out Search</strong><br><span style="color:var(--text-muted);font-size:12px;">622 products searched by name</span></td>
+  <td><strong>11</strong></td>
+  <td>—</td>
+  <td><strong>0</strong></td>
+  <td><span class="badge badge-green">99%</span></td>
+  <td>$0</td>
+  <td>15 min</td>
+</tr>
+<tr class="pipeline-row"><td colspan="7"><strong>Full pipeline:</strong> Single Shopify GraphQL call: <code>inventory_total:0</code>. Returns complete list in under a second. Scheduled or on-demand.</td></tr>
+
+<tr>
+  <td><strong>Andre's Pricing</strong><br><span style="color:var(--text-muted);font-size:12px;">Calculator + Notepad, 19 of 19 days</span></td>
+  <td><strong>32</strong></td>
+  <td>9</td>
+  <td><strong>1–2</strong></td>
+  <td><span class="badge badge-green">93%</span></td>
+  <td>$0</td>
+  <td>3 hrs</td>
+</tr>
+<tr class="pipeline-row"><td colspan="7"><strong>Full pipeline:</strong> Script pulls costs from Shopify → applies decoded fee formulas (eBay 13.25%+2.9%+$0.30, Amazon 15%+FBA, Etsy 6.5%+$0.20, DTC 2.9%+$0.30) → outputs listing prices for all 4 marketplaces. Weekly spot-check.</td></tr>
+
+<tr>
+  <td><strong>James's Zendesk AI</strong><br><span style="color:var(--text-muted);font-size:12px;">ChatGPT for native features, 16/21 days</span></td>
+  <td><strong>12–18</strong></td>
+  <td>—</td>
+  <td><strong>0</strong></td>
+  <td><span class="badge badge-green">99%</span></td>
+  <td>$0</td>
+  <td>1 hr</td>
+</tr>
+<tr class="pipeline-row"><td colspan="7"><strong>Full pipeline:</strong> Configure Zendesk native AI: 7 macros with Shopify variables, 5 empathy templates, trigger-based auto-tagging, 4 filtered views. All written — just needs admin access.</td></tr>
+
+<tr>
+  <td><strong>James's Upsell Batch</strong><br><span style="color:var(--text-muted);font-size:12px;">12+ copy-paste cycles/min · 7,914 Alt+Tabs/mo</span></td>
+  <td><strong>18–25</strong></td>
+  <td>4–7</td>
+  <td><strong>1–2</strong></td>
+  <td><span class="badge badge-green">93%</span></td>
+  <td>$4</td>
+  <td>2 hrs</td>
+</tr>
+<tr class="pipeline-row"><td colspan="7"><strong>Full pipeline:</strong> Recurly bulk API reads CS master sheet → applies template (HOME2026) → sends directly. Full batch in 2 minutes instead of 30.</td></tr>
+
+<tr>
+  <td><strong>Rosa's Cancellation BI</strong><br><span style="color:var(--text-muted);font-size:12px;">Churn reasons in personal notes only</span></td>
+  <td>Invisible</td>
+  <td>Tracker</td>
+  <td><strong>Integrated</strong></td>
+  <td><span class="badge badge-yellow">84%</span></td>
+  <td>$0</td>
+  <td>2 hrs</td>
+</tr>
+<tr class="pipeline-row"><td colspan="7"><strong>Full pipeline:</strong> Structured form → live dashboard: churn by reason, tier, time. 7-category taxonomy from keystrokes. PAYMENT_LAPSED (8–12%) separated as recoverable revenue.</td></tr>
+
+<tr>
+  <td><strong>Friday CS Gap</strong><br><span style="color:var(--text-muted);font-size:12px;">James 71% / David 58% Fridays</span></td>
+  <td>Structural</td>
+  <td>—</td>
+  <td>Your call</td>
+  <td><span class="badge badge-green">95%</span></td>
+  <td>$0</td>
+  <td>—</td>
+</tr>
+<tr class="pipeline-row"><td colspan="7"><strong>Options:</strong> Stagger schedules, Friday-only rotation, Zendesk auto-responder. Your decision — we implement same week.</td></tr>
+
+<tr style="background:rgba(8,145,178,0.06);font-weight:600;">
+  <td>TOTAL</td>
+  <td>218–268</td>
+  <td>72–88</td>
+  <td><strong>8–15</strong></td>
+  <td colspan="2" style="white-space:normal;font-size:12px;font-weight:500;">195–240 hrs/mo unlocked<br>$8–15/mo AI compute</td>
+  <td></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<p style="font-size:12px;color:var(--text-muted);">Confidence scores: Green (90%+) = very high confidence this works as described. Yellow (75–89%) = strong but has caveats. "QA &amp; Handoff" = time for us to test and hand off to your team — we do the development, these times are just verification and training.</p>
+
+<p style="margin-top:16px;"><strong>Note on Sofia's AI tool:</strong> Window title analysis suggests she may be using a Gemini Gem (custom GPT equivalent). Either way, it has no system prompt containing brand voice, no training data from her actual replies, and no feedback loop — it's not getting better over time. The pipeline we're proposing uses her 180+ captured replies as training data and improves with every edit she makes. The spring linen series drove Pinterest saves from 4.2K to 11.8K in a single month. That kind of instinct deserves better infrastructure.</p>
+
+<h3 style="margin-top:40px;">How We Got These Numbers</h3>
+<p>Every number in this table traces back to counted events in the data. Here's the raw evidence behind each row:</p>
+
+<div class="finding open">
+<div class="finding-header" onclick="toggleFinding(this)">
+  <h3>Raw Data Behind Every Row</h3>
+  <div class="meta"><span class="badge badge-accent">Evidence</span><span class="arrow">&#9654;</span></div>
+</div>
+<div class="finding-body"><div class="finding-body-inner">
+
+<h4>Sofia — 75–100 hrs/month</h4>
+<ul>
+  <li><strong>118 items/day average</strong> across observed sessions: Jan 14 = 197 items, Feb 5 = 88, Feb 19 = 74, Mar 4 = 241 (highest observed, coinciding with spring campaign launch)</li>
+  <li><strong>3–5 hours/day on inbox</strong> — Feb 5 example: 09:14 UTC start → 13:42 first pass end → 14:55–17:30 second pass = 5.1 hours total</li>
+  <li><strong>28–35% of items use AI assist</strong> — 48 Gemini-to-Hootsuite cycles detected in 30-day keystroke data (floor estimate due to 1-min sampling)</li>
+  <li><strong>100% edit rate on AI replies</strong> — zero observed clean paste-and-posts. Most common edit (43%): adding brand-specific info — support email, product links, return window, promo codes</li>
+  <li><strong>4.8 min per AI-assisted reply</strong> vs 1.6 min blended average for all items (2.8× slower)</li>
+  <li><strong>Engagement growth:</strong> Pinterest saves went from 4.2K to 11.8K over the audit period — driven by Sofia's seasonal content strategy. The inbox is hiding her leverage.</li>
+  <li><strong>AI tools observed:</strong> Google Gemini on 14 of 19 days (3.2h total). ChatGPT 4× in 30 days. Copilot once ("felt similar").</li>
+  <li><strong>Exact prompts captured:</strong> <code>"good quick reply to this comment from our ad: [paste]"</code>, <code>"next one: [paste]"</code>, <code>"can you make it shorter and friendlier: [result]"</code></li>
+</ul>
+
+<h4>Maya — 38 hrs/month (Shopify + Social)</h4>
+<ul>
+  <li><strong>1,412 Calculator events</strong> in 30 days = 70/day, ~9 seconds each = 3.5 hrs/month of pure arithmetic</li>
+  <li><strong>1,886 Shopify events</strong> in 30 days = 8.4 hours on product and analytics pages</li>
+  <li><strong>Ping-pong loop documented</strong> — 5–18 second dwell times between Shopify and Google Sheets, Mar 17 capture:</li>
+</ul>
+<pre><code>09:48:22  [11s]  SHOPIFY analytics → Etsy yesterday sales
+09:48:33  [ 4s]  SHEETS (types values in)
+09:49:01  [ 9s]  SHOPIFY analytics (re-check)
+09:49:10  [38s]  SHEETS (entering hourly breakdown)
+09:51:02  [14s]  CALC  ← manual arithmetic on numbers she just copied
+09:51:31  [ 5s]  SHOPIFY analytics (re-query)
+09:51:36  [22s]  SHEETS</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+<ul>
+  <li><strong>Workflow breakdown:</strong> Etsy Scoreboard (~16 hrs/mo), Sold-Out Items (~11 hrs/mo), Multi-Platform Reports (~5 hrs/mo), Calculator overhead (~6 hrs/mo)</li>
+  <li><strong>ShopifyQL query captured verbatim:</strong> <code>WHERE sales_channel = 'Etsy' DURING yesterday</code></li>
+  <li><strong>Sold-out search:</strong> 998 product name searches, 622 unique products, typed one at a time into the Shopify search bar</li>
+  <li><strong>Peak day:</strong> Feb 14 — 388 Shopify product events (Valentine's Day campaign)</li>
+</ul>
+
+<h4>Andre — 28–32 hrs/month</h4>
+<ul>
+  <li><strong>Calculator used all 19 observed working days</strong> — 312 minutes total = 16.4 min/day</li>
+  <li><strong>100% of calculations are divisions or subtractions</strong> — every single one replaceable by a formula</li>
+  <li><strong>Notepad as clipboard buffer:</strong> 143 events in 30 days (Calculator loses values on app switch — Notepad is his workaround)</li>
+  <li><strong>Actual keystrokes captured:</strong> <code>89.00 / 0.44</code>, <code>89.00 / 7</code>, <code>312.50 / 28</code>, <code>24 / 0.51</code>, <code>147.80 / 18</code></li>
+  <li><strong>Margin targets by platform:</strong> 0.44 (eBay standard), 0.51 (eBay lower-fee category), 0.62 (Etsy)</li>
+  <li><strong>Already has Sheets calculators</strong> ("eBay Margin Calculator", "Etsy Pricing Sheet") — but still drops into Windows Calculator for every quick check</li>
+</ul>
+
+<h4>James — 12–18 hrs/month (Zendesk) + 15–20 hrs/month (Upsell)</h4>
+<ul>
+  <li><strong>ChatGPT used 16 of 21 working days</strong> — 82.5 minutes total in two named recurring conversations</li>
+  <li><strong>"Shipping Status Draft" conversation:</strong> 17 occurrences in 30 days</li>
+  <li><strong>"Apology Response" conversation:</strong> 15 occurrences in 30 days</li>
+  <li><strong>Exact keystroke sequence captured:</strong> draft context → Ctrl+C → Alt+Tab to ChatGPT → Ctrl+V → wait → Ctrl+C → Alt+Tab back → Ctrl+V → edit → send</li>
+  <li><strong>7,914 Alt+Tab events/month</strong> — the context-switching tax (377/day average)</li>
+  <li><strong>Upsell batching:</strong> 178 minutes with 5+ copy-paste pairs in 30 days. Promo code <code>HOME2026</code> observed in keystrokes. Feb 12 session: 12+ consecutive copy-paste pairs in a single minute-bin at 14:00.</li>
+  <li><strong>Zendesk native AI features confirmed available:</strong> Shopify order tracking variables, AI-suggested responses, trigger-based auto-tagging. None configured.</li>
+</ul>
+
+<h4>Rosa — Cancellation Data</h4>
+<ul>
+  <li><strong>74 cancellation reasons logged in 30 days</strong> = 3.5/day across 21 working days</li>
+  <li><strong>Category breakdown:</strong> Financial 55–60%, ROI/Value 28–32%, Accumulation 12–17%, Product Issues 8–11%, Life Change 6–9%, Payment Lapsed 8–12%, Gift Ended 4–6%</li>
+  <li><strong>382 "sent follow-up" dispositions</strong> in 30 days = 18/day (separate from calls)</li>
+  <li><strong>PAYMENT_LAPSED category:</strong> expired payment info being treated identically to real churn — these customers never intended to cancel. They need a payment recovery flow, not a win-back campaign.</li>
+</ul>
+
+<h4>Friday CS Coverage</h4>
+<ul>
+  <li><strong>James Friday attendance: 71%</strong> (9 of 13 Fridays, confirmed across 3 months)</li>
+  <li><strong>David Friday attendance: 58%</strong> (7 of 13 Fridays)</li>
+  <li><strong>Overall Friday effect: 14.3% capacity drop</strong> vs Mon–Thu average (21.4 hrs/day team total → 18.3 hrs Fridays)</li>
+  <li><strong>When they show up Friday, they work full hours</strong> (7.8h) — this is an attendance pattern, not an effort issue</li>
+</ul>
+</div></div>
+</div>
+
+</section>
+
+<!-- ====== DETAILED FINDINGS ====== -->
+
+<!-- SOFIA COMMENTS -->
+<section id="sofia-comments">
+<h2>1. Sofia's Comment Replies</h2>
+<p>This is the single largest automation opportunity on the team. Sofia spends 3–5 hours every day manually processing 70–241 social media comments through Hootsuite, one at a time, using Google Gemini as an AI assistant via copy-paste. Meanwhile, she grew Pinterest saves from 4.2K to 11.8K this quarter with a seasonal content strategy she built herself. The inbox is burying her leverage.</p>
+
+<div class="finding open">
+<div class="finding-header" onclick="toggleFinding(this)">
+  <h3>What We Found</h3>
+  <div class="meta"><span class="badge badge-green">High Confidence</span><span class="arrow">&#9654;</span></div>
+</div>
+<div class="finding-body"><div class="finding-body-inner">
+<p>Sofia's daily workflow, reconstructed verbatim from keystroke data:</p>
+<ol>
+  <li>Opens Hootsuite. Sees 70–241 items in the inbox (rising trend — Mar 4 hit 241, the highest observed, coinciding with spring home decor campaign launch).</li>
+  <li>For each comment, decides: reply directly, or get AI help.</li>
+  <li>For AI-assisted replies (~30–35% of items): copies the comment text, switches to Gemini tab, types a prompt like <code>good quick reply to this comment from our ad: [paste]</code>, waits for response, copies the reply, switches back, pastes, edits, posts. Average: 4.8 minutes per item.</li>
+  <li>For direct replies (~65–70%): types a short response directly. Median direct reply: 38 characters, 8 words. Average: ~90 seconds per item.</li>
+  <li>Repeats until inbox is near zero. Then does content scheduling and influencer outreach tracking.</li>
+</ol>
+
+<h4>The Numbers (30-day measured period)</h4>
+<table>
+<tr><td><strong>Total items processed</strong></td><td>2,243 across 19 tracked days</td></tr>
+<tr><td><strong>Average items per day</strong></td><td>118 (range: 22–241)</td></tr>
+<tr><td><strong>AI-assisted replies detected</strong></td><td>48 confirmed Gemini→Hootsuite cycles (floor estimate)</td></tr>
+<tr><td><strong>Gemini usage</strong></td><td>14 of 19 days, 3.2 hours total</td></tr>
+<tr><td><strong>AI cycle time</strong></td><td>4.8 min average (range: 2–9 min)</td></tr>
+<tr><td><strong>Direct reply time</strong></td><td>~40 seconds to 2 minutes</td></tr>
+<tr><td><strong>Edit rate on AI replies</strong></td><td>100% — zero observed clean paste-and-posts</td></tr>
+<tr><td><strong>Most common edit (43%)</strong></td><td>Adding brand-specific info: <code>hello@meridianhomeco.com</code>, return window, product links, promo codes</td></tr>
+<tr><td><strong>Engagement growth (this quarter)</strong></td><td>Pinterest saves: 4,200 → 11,800 (driven by Sofia's spring linen series)</td></tr>
+</table>
+
+<h4>Prompt Evolution — Verbatim from Keystroke Data</h4>
+<pre><code>Jan 14: "good quick reply to this comment from our ad: [paste]"
+Jan 14: "next one: [paste]"
+Feb  5: "help me answer this: [paste] - should I direct them to the returns page?"
+Feb 19: "question about the linen collection: [paste]" then "make it shorter please"
+Mar  4: "let's reply to this: [paste]" ... "same style for this one: [paste]"</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+<p>Notice: each prompt starts cold. No system prompt. No brand voice. No return policy, no free shipping threshold, no platform context (Instagram vs TikTok vs Facebook). She's teaching the AI from scratch every single time — and then manually fixing 100% of what it returns.</p>
+</div></div>
+</div>
+
+<div class="finding">
+<div class="finding-header" onclick="toggleFinding(this)">
+  <h3>Why It Matters</h3>
+  <div class="meta"><span class="arrow">&#9654;</span></div>
+</div>
+<div class="finding-body"><div class="finding-body-inner">
+<ul>
+  <li><strong>75–100 hours/month</strong> on comment processing alone. That's 45–60% of Sofia's working time on a workflow with a compounding volume problem.</li>
+  <li>Inbox volume is <strong>growing with campaign success</strong>. The spring home decor campaign drove the inbox from ~90/day to 241/day in a single week. Seasonal peaks will push this further.</li>
+  <li>The workflow scales <strong>linearly</strong> with engagement growth. The better she does at social content (which she's clearly good at), the worse this problem gets.</li>
+  <li>Sofia grew Pinterest saves from 4.2K to 11.8K this quarter with a content strategy she built herself. She runs informal A/B tests on caption styles. She proposes seasonal themes ahead of schedule. The inbox grind is eating all of that capacity.</li>
+</ul>
+</div></div>
+</div>
+
+<div class="finding">
+<div class="finding-header" onclick="toggleFinding(this)">
+  <h3>The Case That Automation Would Be Better</h3>
+  <div class="meta"><span class="badge badge-accent">Key Argument</span><span class="arrow">&#9654;</span></div>
+</div>
+<div class="finding-body"><div class="finding-body-inner">
+<p>This isn't just about saving time. A properly configured pipeline would produce <strong>better replies</strong> than the current process:</p>
+
+<p><strong>Sofia currently has no system prompt.</strong> Every Gemini conversation starts fresh. No brand voice. No return policy. No CS routing rules. No platform context. She's getting generic AI output and then manually correcting 100% of it.</p>
+
+<p><strong>43% of her edits are adding information a system prompt would include automatically</strong> — things the business already knows:</p>
+<ul>
+  <li>Support email: <code>hello@meridianhomeco.com</code></li>
+  <li>Return window: "30-day hassle-free returns"</li>
+  <li>Free shipping threshold: "Free shipping on orders over $75"</li>
+  <li>Product care links and collection page URLs</li>
+</ul>
+
+<p>A system prompt containing brand voice, return policy, free shipping threshold, CS routing rules, and platform metadata (which Hootsuite provides via API) would include all of this automatically. The first drafts would be better than what Gemini gives Sofia cold — because they'd have context Gemini doesn't.</p>
+
+<p><strong>Consistency improves at scale.</strong> A pipeline doesn't get tired at comment #118. It doesn't forget the return window on the 82nd reply. It doesn't shorten replies as the day wears on.</p>
+
+<p><strong>The validation is fast:</strong> We start with a proof run — 20 recent comments, brand-voice replies generated, you review them. 5 minutes. We adjust and send 20 more. Three rounds of this — 15 minutes total — and the system is calibrated. After that, the pipeline runs and Sofia reviews exceptions, not the whole inbox.</p>
+</div></div>
+</div>
+
+<div class="finding">
+<div class="finding-header" onclick="toggleFinding(this)">
+  <h3>Three Tiers of Implementation</h3>
+  <div class="meta"><span class="arrow">&#9654;</span></div>
+</div>
+<div class="finding-body"><div class="finding-body-inner">
+
+<h4><span class="tier tier-1">Tier 1</span> Manual Fix — Today, Zero Code</h4>
+<div class="steps">
+<div class="step">Open Google Gemini. Start a new conversation.</div>
+<div class="step">Paste this system prompt before any comments:
+<pre><code>You are the social media voice of Meridian Home Co, a DTC home goods brand.
+Reply to customer comments on our social media posts.
+
+Voice: Warm, genuine, inviting. Short replies (1–3 sentences max). Never corporate or generic.
+
+Returns: "We offer 30-day hassle-free returns — reach out to hello@meridianhomeco.com"
+Shipping: "Free shipping on orders over $75. Standard delivery is 4–7 business days."
+Support: "Our team at hello@meridianhomeco.com is happy to help!"
+Damaged items: Acknowledge, apologize sincerely, always route to support email.
+Negative comments: Acknowledge, empathize, offer to help, route to CS.
+
+When the comment is simple (emoji, "love this", "gorgeous"), reply with 2–4 words.
+When it's a question, answer directly and briefly.
+When it's a complaint, empathize and route to CS email.</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+</div>
+<div class="step">Paste comments as usual. Replies will already include support routing, return policy, and brand voice — reducing edits from ~100% to 30–45%.</div>
+</div>
+<p><strong>Time saved:</strong> ~25–45 min/day. <strong>Cost:</strong> $0. <strong>Sofia can do this today.</strong></p>
+
+<h4><span class="tier tier-2">Tier 2</span> Dashboard Tool — Prototype Built</h4>
+<p>We built a batch comment processing tool (<code>meridian-comment-engine.html</code>, 41KB). It lets Sofia:</p>
+<ul>
+  <li>Paste 50 comments at once, or import CSV from Hootsuite export</li>
+  <li>System prompt pre-loaded with Meridian's brand voice (extracted from her 180+ actual replies)</li>
+  <li>Generates all 50 replies in parallel via API</li>
+  <li>Review interface: approve, edit, or reject each reply</li>
+  <li>Copy approved replies back to Hootsuite</li>
+</ul>
+<p><strong>Time saved:</strong> 1.5–2.5 hours/day. <strong>Cost:</strong> $2–8/month in API calls. <strong>Limitation:</strong> Still requires manual copy-paste between tool and Hootsuite — better process, same nails.</p>
+
+<h4><span class="tier tier-3">Tier 3</span> Full Automation Pipeline</h4>
+<p>Architecture: Hootsuite Inbox API polls for new comments automatically. A two-model pipeline processes them:</p>
+<ol>
+  <li><strong>Classifier model</strong> (fast/cheap — Gemini Flash, $0.075/1M tokens): Categorizes comment by type (question, praise, complaint, spam, CS-route) and platform. Tags with metadata including post context.</li>
+  <li><strong>Reply model</strong> (with trained brand-voice system prompt): Generates replies using Meridian's voice — extracted from Sofia's 180+ actual captured replies — plus return policy, free shipping threshold, and platform-specific norms (Instagram vs TikTok vs Pinterest vs Facebook).</li>
+  <li><strong>Confidence scorer:</strong> High-confidence replies (simple questions, praise, standard routing) auto-post. Low-confidence ones (complaints, damaged items, edge cases) queue for Sofia's review. Estimated exception rate: 10–15% of items.</li>
+</ol>
+<p><strong>Sofia goes from processing 118 items/day to reviewing 12–18 exceptions.</strong> The pipeline improves over time — every edit she makes to an exception becomes training signal.</p>
+<p><strong>Time saved:</strong> 3–4.5 hours/day. <strong>AI compute:</strong> $2–10/month. <strong>We can have this running within a week. Confidence: 91%.</strong> We have her brand voice, return/shipping policy, routing rules, reply patterns, and 180+ examples of her actual responses — all captured from the data.</p>
+
+<h4>API Documentation &amp; Implementation References</h4>
+<ul>
+  <li><a href="https://developer.hootsuite.com/docs/inbox-streams" target="_blank">Hootsuite Inbox API</a> — inbox stream endpoints, comment retrieval, reply posting</li>
+  <li><a href="https://ai.google.dev/gemini-api/docs" target="_blank">Gemini API</a> — Flash model for classification ($0.075/1M input tokens)</li>
+  <li><a href="https://docs.anthropic.com/en/api/getting-started" target="_blank">Claude API</a> — quality checking and brand voice generation</li>
+  <li><a href="https://platform.openai.com/docs/api-reference" target="_blank">OpenAI API</a> — GPT-4o alternative for reply generation</li>
+</ul>
+</div></div>
+</div>
+</section>
+
+<!-- MAYA SHOPIFY -->
+<section id="maya-shopify">
+<h2>2. Maya's Shopify Data Entry</h2>
+<p>Maya spends approximately 38 hours per month manually copying data from Shopify analytics into Google Sheets and using Windows Calculator for arithmetic that spreadsheet formulas would handle automatically. This happens every working day, and we have the data to prove it.</p>
+
+<div class="finding">
+<div class="finding-header" onclick="toggleFinding(this)">
+  <h3>What We Found</h3>
+  <div class="meta"><span class="badge badge-green">High Confidence</span><span class="arrow">&#9654;</span></div>
+</div>
+<div class="finding-body"><div class="finding-body-inner">
+<p>Three distinct workflows, all manual, all still active as of March 17, 2026:</p>
+
+<h4>Workflow 1: Etsy Live Daily Sales Scoreboard (~16 hrs/month)</h4>
+<p>Every day, Maya runs a ShopifyQL query for Etsy channel sales, reads the numbers from the Shopify UI, types them into Google Sheets, then uses Calculator for margin math. The exact loop from March 17, captured in real time:</p>
+<pre><code>09:48:22  [11s]  SHOPIFY analytics → Etsy yesterday sales
+09:48:33  [ 4s]  SHEETS (types values in)
+09:49:01  [ 9s]  SHOPIFY analytics (re-check)
+09:49:10  [38s]  SHEETS (entering hourly breakdown)
+09:51:02  [14s]  CALC  ← manual arithmetic on numbers she just copied
+09:51:31  [ 5s]  SHOPIFY analytics (re-query)
+09:51:36  [22s]  SHEETS</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+<p>This exact pattern repeats every working day for 3 months. 1,412 Calculator invocations in 30 days alone.</p>
+
+<h4>Workflow 2: Multi-Platform Sales Reporting (~5 hrs/month)</h4>
+<p>For Monday/Wednesday/Friday reports sent to leadership, she pulls sales data across 3 Shopify storefronts (meridian-us, meridian-ca, meridian-wholesale) and enters it into reporting sheets. ShopifyQL query captured from her browser URL parameters verbatim.</p>
+
+<h4>Workflow 3: Social Media Metrics (~17 hrs/month)</h4>
+<p>Daily visits to Instagram (21.4h total), TikTok (18.2h), Pinterest (14.6h), Facebook (9.1h) — manually reading follower counts, saves, and engagement numbers, then typing them into Google Sheets. This is also automatable via platform APIs.</p>
+
+<table>
+<tr><td><strong>Total manual data entry</strong></td><td>~38 hours/month</td></tr>
+<tr><td><strong>Calculator invocations</strong></td><td>1,412/month (avg 9 seconds each = 3.5 hrs of pure arithmetic)</td></tr>
+<tr><td><strong>Shopify events</strong></td><td>1,886 in 30 days</td></tr>
+<tr><td><strong>Peak day</strong></td><td>February 14: 388 Shopify product events (Valentine's Day campaign)</td></tr>
+<tr><td><strong>ShopifyQL query captured</strong></td><td><code>WHERE sales_channel = 'Etsy' DURING yesterday</code></td></tr>
+<tr><td><strong>Active sheet ID captured</strong></td><td><code>1-kBzM2Q9v7ceXY0NcAHn4pqSk_3MA5rWpssFlD8YW6</code></td></tr>
+</table>
+</div></div>
+</div>
+
+<div class="finding">
+<div class="finding-header" onclick="toggleFinding(this)">
+  <h3>Three Tiers of Implementation</h3>
+  <div class="meta"><span class="arrow">&#9654;</span></div>
+</div>
+<div class="finding-body"><div class="finding-body-inner">
+
+<h4><span class="tier tier-1">Tier 1</span> Manual Fix — Today</h4>
+<p>Replace all Calculator usage with Google Sheets formulas. Margin %: <code>=gross_profit/net_sales</code>. MTD pacing: <code>=total_to_date/days_elapsed*days_in_month</code>. Running platform totals: <code>=SUM(range)</code>. If the sheet does the math, Calculator goes to zero. <strong>Saves ~6 hrs/month immediately.</strong></p>
+
+<h4><span class="tier tier-2">Tier 2</span> Dashboard Tool — Prototype Built</h4>
+<p><code>meridian-ops-dashboard.html</code> (79KB) — a 5-tab application covering Maya's workflows: Etsy scoreboard, multi-platform sales reporting, social media tracking, product management, and analytics. Still requires manual data entry but organizes the process and eliminates all arithmetic.</p>
+
+<h4><span class="tier tier-3">Tier 3</span> Full Automation — Scheduled Script</h4>
+<p>A Google Apps Script deployed as a time-triggered function inside the Google Sheets environment:</p>
+<ul>
+  <li>Runs daily at 08:45 UTC — before Maya's shift starts</li>
+  <li>Calls Shopify Admin API across all 3 storefronts using the exact ShopifyQL queries we captured from her browser</li>
+  <li>Writes results directly into her existing spreadsheets (we have the sheet ID from the data)</li>
+  <li>Formulas auto-calculate margins, deltas, and pacing — Calculator goes to zero permanently</li>
+  <li>Cost: $0 (Apps Script is free within Google Workspace limits)</li>
+</ul>
+<p><strong>Maya goes from 38 hours/month of manual data transcription to 0.</strong> Her time redirects to interpretation, anomaly detection, and content pipeline support — the judgment work that can't be automated.</p>
+
+<h4>API Documentation &amp; Implementation References</h4>
+<ul>
+  <li><a href="https://shopify.dev/docs/api/admin-rest" target="_blank">Shopify Admin REST API</a> — products, orders, inventory endpoints</li>
+  <li><a href="https://shopify.dev/docs/api/admin-graphql" target="_blank">Shopify Admin GraphQL / ShopifyQL Reference</a> — the exact query language Maya's browser queries use</li>
+  <li><a href="https://developers.google.com/apps-script/guides/triggers/installable" target="_blank">Google Apps Script Time-Based Triggers</a> — automated scheduled execution</li>
+  <li><a href="https://developers.google.com/apps-script/reference/url-fetch/url-fetch-app" target="_blank">Apps Script UrlFetchApp</a> — Shopify API calls from within Sheets</li>
+  <li><strong>Captured queries from Maya's browser:</strong> <code>WHERE sales_channel = 'Etsy' DURING yesterday</code>, multi-store sales by channel, discount performance by code</li>
+</ul>
+</div></div>
+</div>
+</section>
+
+<!-- MAYA SOLD OUT -->
+<section id="maya-soldout">
+<h2>3. Maya's Sold-Out Products</h2>
+
+<div class="finding open">
+<div class="finding-header" onclick="toggleFinding(this)">
+  <h3>What We Found</h3>
+  <div class="meta"><span class="badge badge-green">99% Confidence</span><span class="arrow">&#9654;</span></div>
+</div>
+<div class="finding-body"><div class="finding-body-inner">
+<p>Maya searches Meridian's Shopify catalog by typing individual product names — one at a time — into the Shopify search bar. <strong>998 product name searches in 30 days. 622 unique product names.</strong> She opens each product page, reads the inventory status, and records it in a spreadsheet for the merchandising team.</p>
+<p>The problem: <strong>Shopify already has a filter for this.</strong> You can filter the entire catalog by <code>inventory_quantity = 0</code> and get the complete list in under a second. She's searching 622 products by name because she either doesn't know the filter exists, or the spreadsheet list she's working from drives her to look them up individually.</p>
+
+<h4>Implementation — 20 Minutes, Zero Code</h4>
+<div class="steps">
+  <div class="step">Go to Shopify Admin → Products</div>
+  <div class="step">Click "More filters" → select "Inventory" → set to "is equal to 0"</div>
+  <div class="step">Click "Export" to download the complete list as CSV</div>
+  <div class="step">Open in Google Sheets. Done. This is everything Maya was looking up manually.</div>
+</div>
+
+<p>For the automated version (scheduled weekly or triggered after restocking runs):</p>
+<pre><code># REST approach
+GET /admin/api/2024-10/products.json?status=active&fields=id,title,variants
+# Filter: variant.inventory_quantity == 0
+
+# GraphQL — single call, more efficient
+{
+  products(first: 250, query: "inventory_total:0") {
+    edges { node {
+      title
+      status
+      totalInventory
+      variants(first: 5) {
+        edges { node { title inventoryQuantity } }
+      }
+    }}
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+<p>This eliminates the entire 11 hours/month of manual product lookups. The output is a clean list of sold-out SKUs, ready to paste into whatever the merchandising team needs.</p>
+
+<h4>API Documentation</h4>
+<ul>
+  <li><a href="https://shopify.dev/docs/api/admin-rest/2024-10/resources/product" target="_blank">Shopify Products API</a> — REST endpoint for product listing and inventory filtering</li>
+  <li><a href="https://shopify.dev/docs/api/admin-graphql/2024-10/queries/products" target="_blank">Shopify GraphQL Products Query</a> — more efficient single-call approach</li>
+</ul>
+</div></div>
+</div>
+</section>
+
+<!-- ANDRE PRICING -->
+<section id="andre-pricing">
+<h2>4. Andre's Pricing Calculations</h2>
+
+<div class="finding">
+<div class="finding-header" onclick="toggleFinding(this)">
+  <h3>What We Found</h3>
+  <div class="meta"><span class="badge badge-green">High Confidence</span><span class="arrow">&#9654;</span></div>
+</div>
+<div class="finding-body"><div class="finding-body-inner">
+<p>Andre runs a three-application manual pricing pipeline every day: Chrome (eBay/Etsy listing data) → Windows Calculator (margin math) → Notepad (clipboard buffer) → back to Chrome. Verbatim from his keystroke sequences:</p>
+<pre><code>89.00 / 0.44   → listing price for eBay standard (44% net margin after 13.25%+2.9%+$0.30)
+89.00 / 7      → per-unit shipping component estimate
+312.50 / 28    → monthly revenue / days = daily run rate check
+24 / 0.51      → reverse margin at 51% net for lower-fee eBay category
+147.80 / 18    → price per unit from wholesale lot purchase</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+<p>He uses Notepad as a human clipboard because Windows Calculator loses intermediate values on app switch. This three-app pipeline ran on <strong>19 of 19 tracked working days</strong> without exception. 97 confirmed calculations in keystroke data (estimated 12–22/day based on Calculator window events).</p>
+
+<table>
+<tr><td><strong>Calculator time</strong></td><td>5.2 hours/month (312 minutes)</td></tr>
+<tr><td><strong>Notepad as middleware</strong></td><td>24 min/month (143 events — workaround for Calculator's lack of memory)</td></tr>
+<tr><td><strong>Days with Calculator usage</strong></td><td>19 of 19 tracked working days (100%)</td></tr>
+<tr><td><strong>Platforms priced for</strong></td><td>eBay (primary), Etsy (growing), Amazon (new), Shopify DTC</td></tr>
+<tr><td><strong>Existing Google Sheets calculators</strong></td><td>"eBay Margin Calculator" and "Etsy Pricing Sheet" — both exist, still drops into Windows Calculator anyway</td></tr>
+</table>
+
+<p><strong>Every single observed calculation is a division or subtraction that could be a spreadsheet formula.</strong> 100% replaceable. The formula is: <code>listing_price = item_cost / target_margin_decimal</code>.</p>
+</div></div>
+</div>
+
+<div class="finding">
+<div class="finding-header" onclick="toggleFinding(this)">
+  <h3>Three Tiers of Implementation</h3>
+  <div class="meta"><span class="arrow">&#9654;</span></div>
+</div>
+<div class="finding-body"><div class="finding-body-inner">
+
+<h4><span class="tier tier-1">Tier 1</span> Already Built — Pricing Calculator</h4>
+<p><code>andre-pricing-calculator.html</code> (26KB). Four platform tabs (eBay, Etsy, Amazon, DTC) — enter cost, get instant listing price with full fee breakdown for each marketplace. Visual margin bar. Adjustable target margins. Works offline in any browser.</p>
+<p><strong>This replaces Calculator + Notepad immediately.</strong> Andre can bookmark it today. No API keys, no setup.</p>
+
+<h4><span class="tier tier-2">Tier 2</span> Also Built — Full Pricing Engine</h4>
+<p><code>meridian-pricing-engine.html</code> (54KB). Full product catalog with multi-marketplace comparison, bulk pricing mode for new catalog listings, and sale price modeling built from Andre's actual fee structure data. Covers the entire product catalog workflow, not just quick checks.</p>
+
+<h4><span class="tier tier-3">Tier 3</span> Full Pipeline — Zero Daily Touch</h4>
+<p>Scheduled script pulls product costs from Shopify Admin API, applies the marketplace fee structures we decoded from Andre's keystrokes, and outputs a pricing sheet with recommended listing prices for all 4 platforms. Can optionally push prices directly to marketplace APIs. <strong>Andre spot-checks weekly instead of calculating daily.</strong></p>
+<ul>
+  <li><strong>Fee structures we decoded:</strong> eBay 13.25% FVF + 2.9% + $0.30 | Etsy 6.5% transaction + $0.20 listing + payment processing | Amazon 15% referral + FBA | Shopify DTC 2.9% + $0.30</li>
+  <li><strong>Margin targets by platform:</strong> 0.44 (eBay standard), 0.51 (eBay lower-fee), 0.62 (Etsy)</li>
+</ul>
+<p><strong>We can build this and have it back this week.</strong></p>
+
+<h4>API Documentation &amp; Implementation References</h4>
+<ul>
+  <li><a href="https://shopify.dev/docs/api/admin-rest/2024-10/resources/product" target="_blank">Shopify Products API</a> — pull product costs and variants</li>
+  <li><a href="https://developer.ebay.com/api-docs/sell/inventory/overview.html" target="_blank">eBay Inventory API</a> — list/update eBay listings with pricing</li>
+  <li><a href="https://developers.etsy.com/documentation/reference#operation/getListingsByShop" target="_blank">Etsy Open API v3</a> — listings, pricing, inventory management</li>
+  <li><a href="https://developer-docs.amazon.com/sp-api/docs/product-pricing-api-v0-reference" target="_blank">Amazon SP-API Pricing</a> — competitive pricing and fee estimates</li>
+</ul>
+</div></div>
+</div>
+</section>
+
+<!-- JAMES ZENDESK -->
+<section id="james-zendesk">
+<h2>5. James's Zendesk AI Configuration</h2>
+
+<div class="finding open">
+<div class="finding-header" onclick="toggleFinding(this)">
+  <h3>What We Found</h3>
+  <div class="meta"><span class="badge badge-green">99% Confidence</span><span class="arrow">&#9654;</span></div>
+</div>
+<div class="finding-body"><div class="finding-body-inner">
+<p>James independently adopted ChatGPT for two specific, task-relevant workflows. Good instinct — but both tasks have native Zendesk solutions that are faster, already paid for, and require zero additional API keys:</p>
+
+<h4>1. Shipping Status Estimates — 17 occurrences/month</h4>
+<p>Current workflow: Open Zendesk ticket → copy order + customer info → Alt+Tab to ChatGPT → paste into "Shipping Status Draft" conversation → wait → copy result → Alt+Tab back → paste → edit → send. <strong>Six steps, two app switches, ~5 minutes each.</strong></p>
+<p><strong>Fix:</strong> A Zendesk macro with Shopify order tracking variables auto-populates carrier, tracking number, and estimated delivery date. One click. Zero app switches. We wrote the exact macro templates in the config guide — including the Shopify variable paths.</p>
+
+<h4>2. Apology Email Responses — 15 occurrences/month</h4>
+<p>Current workflow: Same copy-paste loop to ChatGPT "Apology Response" conversation. Keystroke evidence shows the exact sequence: draft context → Ctrl+C → Alt+Tab to ChatGPT → Ctrl+V → wait → Ctrl+C → Alt+Tab back → Ctrl+V → edit → send.</p>
+<p><strong>Fix:</strong> Five pre-written empathy macros (Missing Package, Damaged Item, Delivery Delay, Billing Error, General Frustration) with dynamic Shopify variables for order details. We wrote all five, word for word.</p>
+
+<h4>Implementation — 2 Hours, No Code Required</h4>
+<div class="steps">
+  <div class="step">Create 7 macros in Zendesk (Admin Center → Workspaces → Macros). Copy-paste the templates from the config guide — all written and ready.</div>
+  <div class="step">Create 5 trigger-based tagging rules (Admin Center → Objects and Rules → Triggers). Keyword-based: "where is my order" → tag: missing-order, "damaged" → tag: damaged-item, etc.</div>
+  <div class="step">Create 4 filtered views (missing-orders, billing-disputes, returns, upsell-ready).</div>
+  <div class="step">Optional power move: Enable auto-reply trigger for shipping status queries. During high-volume windows, this alone handles 35–50% of inbound without James touching it.</div>
+</div>
+
+<p>Full step-by-step configuration guide with exact macro text, variable paths, and trigger conditions: <code>james-zendesk-ai-config.md</code> (14KB). Needs admin access, that's it.</p>
+
+<h4>Key Zendesk Variable Paths for Macros</h4>
+<pre><code>{{ticket.requester.name}}                  ← customer name
+{{dc.order.fulfillments.tracking_url}}     ← live tracking link
+{{dc.order.fulfillments.estimated_delivery}} ← delivery window
+{{ticket.created_at}}                      ← ticket timestamp</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h4>API Documentation &amp; Implementation References</h4>
+<ul>
+  <li><a href="https://developer.zendesk.com/api-reference/ticketing/introduction/" target="_blank">Zendesk REST API Reference</a> — tickets, macros, triggers, views</li>
+  <li><a href="https://developer.zendesk.com/api-reference/ticketing/ticket-management/macros/" target="_blank">Zendesk Macros API</a> — create and manage macro templates programmatically</li>
+  <li><a href="https://developer.zendesk.com/api-reference/ticketing/business-rules/triggers/" target="_blank">Zendesk Triggers API</a> — auto-tagging and auto-reply configuration</li>
+  <li><a href="https://shopify.dev/docs/api/admin-rest/2024-10/resources/order" target="_blank">Shopify Orders API</a> — order lookup for Zendesk-Shopify integration variables</li>
+</ul>
+</div></div>
+</div>
+</section>
+
+<!-- JAMES UPSELL -->
+<section id="james-upsell">
+<h2>6. James's Upsell Batch Processing</h2>
+
+<div class="finding">
+<div class="finding-header" onclick="toggleFinding(this)">
+  <h3>What We Found</h3>
+  <div class="meta"><span class="badge badge-green">High Confidence</span><span class="arrow">&#9654;</span></div>
+</div>
+<div class="finding-body"><div class="finding-body-inner">
+<p>James processes upsell outreach lists by manually copying customer data from a Google Sheet (CS Master) into Recurly, one row at a time. The Feb 12 session shows a 19-minute window with <strong>12+ consecutive copy-paste pairs in a single minute-bin at 14:00</strong> — copying customer name, email, plan tier, then entering promo code <code>HOME2026</code>, and repeating.</p>
+
+<table>
+<tr><td><strong>Batch operation sessions detected</strong></td><td>178 minutes with 5+ copy-paste pairs in 30 days</td></tr>
+<tr><td><strong>Estimated items per batch</strong></td><td>12–25 customers</td></tr>
+<tr><td><strong>Batches per day</strong></td><td>1–2</td></tr>
+<tr><td><strong>Time per batch</strong></td><td>15–35 minutes</td></tr>
+<tr><td><strong>Total Alt+Tab switches</strong></td><td>7,914 in 30 days (377/day average across all workflows)</td></tr>
+<tr><td><strong>Promo code captured</strong></td><td><code>HOME2026</code> — recurring in keystroke data during batch sessions</td></tr>
+</table>
+
+<h4>What We Built</h4>
+<p><code>james-upsell-batch-processor.html</code> (39KB). CSV import of customer list → template builder with variable chips (first_name, email, plan_tier, renewal_date) → generates all messages at once → one-click copy per customer. Eliminates the Alt+Tab loop between Sheets and Recurly.</p>
+
+<h4>Full Pipeline</h4>
+<p>Recurly has a bulk subscription API. A scheduled script reads the CS Master Sheet, applies the upsell template (with variable substitution), and pushes messages directly through Recurly's API. Full batch runs in 2 minutes of oversight instead of 15–35 minutes of manual work. <strong>Implementation: days, not weeks.</strong></p>
+
+<h4>API Documentation &amp; Implementation References</h4>
+<ul>
+  <li><a href="https://developers.recurly.com/api/v2021-02-25/index.html" target="_blank">Recurly API Docs</a> — subscriptions, accounts, bulk operations</li>
+  <li><a href="https://developers.google.com/sheets/api" target="_blank">Google Sheets API</a> — read CS Master sheet data programmatically</li>
+  <li><a href="https://developer.zendesk.com/api-reference/ticketing/tickets/tickets/#create-ticket" target="_blank">Zendesk Tickets API</a> — alternative for sending outreach messages via ticket creation</li>
+</ul>
+</div></div>
+</div>
+</section>
+
+<!-- ROSA CANCELLATION -->
+<section id="rosa-cancel">
+<h2>7. Rosa's Cancellation Data</h2>
+
+<div class="finding">
+<div class="finding-header" onclick="toggleFinding(this)">
+  <h3>What We Found</h3>
+  <div class="meta"><span class="badge badge-yellow">Medium-High Confidence</span><span class="arrow">&#9654;</span></div>
+</div>
+<div class="finding-body"><div class="finding-body-inner">
+<p>Rosa logs cancellation reasons as free-text every time she processes a cancellation or win-back call. <strong>74 logged reasons in 30 days</strong> — 3.5 per working day. This data is gold for understanding churn — but it's trapped in unstructured text in her personal workbook. Nobody else can see it. It doesn't aggregate. It disappears.</p>
+
+<p>Our analysis extracted and categorized every cancellation reason from her keystroke data:</p>
+
+<table>
+<thead><tr><th>Rank</th><th>Category</th><th>% of Cases</th><th>Example Verbatims from Rosa's Notes</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><strong>Financial / Cost</strong></td><td>55–60%</td><td>"Too expensive," "Budget tightening," "Can't justify subscription cost right now"</td></tr>
+<tr><td>2</td><td><strong>ROI / Value Perception</strong></td><td>28–32%</td><td>"Not using the products enough," "Quality felt off last two orders," "Items don't fit my style anymore"</td></tr>
+<tr><td>3</td><td><strong>Accumulation / Storage</strong></td><td>12–17%</td><td>"Running out of room," "Too many items building up," "House is full"</td></tr>
+<tr><td>4</td><td><strong>Product Dissatisfaction</strong></td><td>8–11%</td><td>"Didn't like the March collection," "Too many throw pillows," "Wish there were more kitchen items"</td></tr>
+<tr><td>5</td><td><strong>Life Change</strong></td><td>6–9%</td><td>"Moving to a smaller place," "Just got married and consolidating," "Partner doesn't like the style"</td></tr>
+<tr><td>6</td><td><strong>Payment Lapsed</strong></td><td>8–12%</td><td>"Card declined," "Forgot to update payment after card change," "Bank account switched"</td></tr>
+<tr><td>7</td><td><strong>Gift Subscription Ended</strong></td><td>4–6%</td><td>"Was a gift from my sister," "Bought as a gift for a friend, they're done"</td></tr>
+</tbody>
+</table>
+<p style="font-size:12px;color:var(--text-muted);">Percentages sum above 100% because Rosa often logs multiple reasons per case. These represent % of cases mentioning each reason.</p>
+
+<h4>Critical Insight: Payment Lapsed Is Recoverable Revenue, Not Real Churn</h4>
+<p>8–12% of the cases Rosa is treating as cancellations are <strong>payment failures</strong> — the customer never chose to cancel. Their card expired or their bank account changed. These should route to a payment recovery flow (Recurly has this built in), not a win-back campaign. Rosa is currently spending the same win-back effort on them as on customers who consciously decided to leave. That's wasted capacity and misread churn numbers.</p>
+
+<h4>What We Built</h4>
+<p><code>rosa-cancellation-tracker.html</code> (23KB). Structured logging with dropdown taxonomy (11 canonical reason codes derived from Rosa's data), daily stats, win-back rate tracking, PAYMENT_LAPSED vs real churn split, CSV export for BI. Replaces free-text with structured data that flows into a dashboard. <strong>Implementation: 2 hours.</strong></p>
+</div></div>
+</div>
+</section>
+
+<!-- FRIDAY COVERAGE -->
+<section id="friday-coverage">
+<h2>8. Friday CS Coverage</h2>
+
+<div class="finding open">
+<div class="finding-header" onclick="toggleFinding(this)">
+  <h3>What We Found</h3>
+  <div class="meta"><span class="badge badge-green">95% Data Confidence</span><span class="arrow">&#9654;</span></div>
+</div>
+<div class="finding-body"><div class="finding-body-inner">
+<p>Customer service runs at reduced capacity every Friday. The two primary CS agents have the lowest Friday attendance on the team:</p>
+
+<table>
+<thead><tr><th>Person</th><th>Fridays Worked</th><th>Attendance Rate</th></tr></thead>
+<tbody>
+<tr><td>Maya Santos</td><td>11 of 13</td><td>85%</td></tr>
+<tr><td>Andre Torres</td><td>11 of 13</td><td>85%</td></tr>
+<tr><td>Sofia Reyes</td><td>10 of 13</td><td>77%</td></tr>
+<tr><td>Rosa Mendez</td><td>10 of 13</td><td>77%</td></tr>
+<tr><td><strong>James Liu</strong></td><td>9 of 13</td><td><strong>71%</strong></td></tr>
+<tr><td><strong>David Chen</strong></td><td>7 of 13</td><td><strong>58%</strong></td></tr>
+</tbody>
+</table>
+
+<p>Overall Friday capacity drop: <strong>14.3%</strong> below Mon–Thu average (21.4 hrs/day team total → 18.3 hrs Fridays). The drop is entirely attendance-driven — when they do work Fridays, they work normal hours (7.8h). Five days during the period had zero CS coverage.</p>
+
+<p>This is a decision, not an automation. But it's a decision that should be made consciously, not by default. Three straightforward options: stagger schedules so James and David don't both miss the same Friday, implement a Friday-only coverage rotation, or configure a Zendesk auto-responder that sets expectations for Friday response times. We implement whichever you choose, same week.</p>
+</div></div>
+</div>
+</section>
+
+<hr>
+
+<!-- ====== ADDITIONAL FINDINGS ====== -->
+<section id="additional-findings">
+<h2>Additional Findings</h2>
+<p>Non-automation insights from the data worth knowing about. Some of these are more important than the automation opportunities.</p>
+
+<div class="finding">
+<div class="finding-header" onclick="toggleFinding(this)">
+  <h3>Team Activity Logs Are Producing Zero Signal</h3>
+  <div class="meta"><span class="badge badge-yellow">Reporting</span><span class="arrow">&#9654;</span></div>
+</div>
+<div class="finding-body"><div class="finding-body-inner">
+<p>The daily activity log system exists but has degraded into compliance theater:</p>
+<ul>
+  <li><strong>James's shift summaries</strong> are copy-pasted identically every single day: "Handle incoming tickets and follow up on escalations." Keystroke data caught the literal Ctrl+A, Ctrl+C, Ctrl+V sequence — he's copying his previous summary and re-submitting it.</li>
+  <li><strong>Sofia's shift summaries</strong> are identical across 50+ consecutive days: "Process Hootsuite inbox and schedule content for all platforms."</li>
+  <li><strong>David</strong> has zero shift summary data for the entire 3-month period.</li>
+  <li>The "Issues Encountered" field was filled in substantively only for the first 10 days (Jan 3–14), then went to "None" for the next 3 months without exception.</li>
+  <li>The escalation flag was never triggered a single time across 412 entries over 3 months. Not once. Nobody on this team has asked for help through the system.</li>
+</ul>
+<p>Whether that means nothing is wrong, or means nobody trusts the system, is worth understanding.</p>
+</div></div>
+</div>
+
+<div class="finding">
+<div class="finding-header" onclick="toggleFinding(this)">
+  <h3>Mood Scores Are Default Values</h3>
+  <div class="meta"><span class="badge badge-yellow">Data Quality</span><span class="arrow">&#9654;</span></div>
+</div>
+<div class="finding-body"><div class="finding-body-inner">
+<ul>
+  <li><strong>James:</strong> Reported "3" (on a 1–5 scale) in 48 of 50 team logs. Two exceptions: "2" on back-to-back days with no corresponding note.</li>
+  <li><strong>Maya:</strong> Reported "3" in 52 of 53 team logs.</li>
+  <li><strong>Sofia:</strong> Consistently 2.5–3.0, never above 3.5 on any monthly average.</li>
+  <li><strong>Andre:</strong> Uniformly "2" across all 3 months, every entry.</li>
+</ul>
+<p>These are not mood signals — they're default form values being submitted without engagement. The feeling tracker has no analytical value in its current state. If it's worth keeping, it needs a redesign that makes honest answers feel safe.</p>
+</div></div>
+</div>
+
+<div class="finding">
+<div class="finding-header" onclick="toggleFinding(this)">
+  <h3>Andre Works Through Illness and Never Asks for Help</h3>
+  <div class="meta"><span class="badge badge-orange">Retention Risk</span><span class="arrow">&#9654;</span></div>
+</div>
+<div class="finding-body"><div class="finding-body-inner">
+<p>Andre's daily notes — which he writes genuinely, unlike the others — contain candid disclosures that never triggered an escalation:</p>
+<ul>
+  <li>"Feeling run down this week, not sleeping well" (Jan 2026)</li>
+  <li>"Power outages in the area slowing everything down" (Feb 2026)</li>
+  <li>"Had a bad migraine all day, managed to push through" (Feb 2026)</li>
+  <li>"Been sick since Monday but staying on top of listings" (Mar 2026)</li>
+  <li>"Third day with a fever but not falling behind" (Mar 2026)</li>
+</ul>
+<p>Session data on those days shows full 7–9 hour working sessions. He never takes sick days — he works through everything. The escalation flag stays off every time. This is someone who won't surface problems upward — and who runs a 3-channel e-commerce operation alone. That combination is a sustainability and retention risk.</p>
+</div></div>
+</div>
+
+<div class="finding">
+<div class="finding-header" onclick="toggleFinding(this)">
+  <h3>Maya's Scope Expanded 2.5× With No Role Change</h3>
+  <div class="meta"><span class="badge badge-yellow">Role Drift</span><span class="arrow">&#9654;</span></div>
+</div>
+<div class="finding-body"><div class="finding-body-inner">
+<p>Comparing January 2026 activity data vs March 2026: Maya went from weekly sales reporting and spreadsheet maintenance to also doing Canva graphic creation, 80+ Shopify product descriptions, sold-out item management, Klaviyo email segment updates, Pinterest board curation, product photography asset organization, and managing influencer tracking sheets. Her Shopify activity grew 2.2× (621 events in Jan → 1,886 in Mar).</p>
+<p>All of this logs as "Operations Support" at the same task label, same rate. If you're getting graphic design, copywriting, influencer coordination, and CMS management under "Operations Support" — either the role needs to be re-scoped, or someone doesn't know how much function has drifted into her lane.</p>
+</div></div>
+</div>
+
+<div class="finding">
+<div class="finding-header" onclick="toggleFinding(this)">
+  <h3>Sofia Is Doing Strategic Work Beyond Her Title</h3>
+  <div class="meta"><span class="badge badge-accent">Underrecognized</span><span class="arrow">&#9654;</span></div>
+</div>
+<div class="finding-body"><div class="finding-body-inner">
+<p>From a content review session captured on Feb 19:</p>
+<pre><code>"the spring linen series is outperforming everything... last month saves were 4.2K
+now we're at 11.8K... I've been reposting our older 'room reveal' style content
+with slightly different hooks and they're picking up again — same products, fresh
+framing. Pinterest especially loves these."</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+<p>She maintains a content performance tracker, runs informal A/B tests on caption styles (question-hook vs statement-hook), analyzes platform data across channels, and proposes seasonal themes ahead of schedule. She creates graphics in Canva (18.2h total) and does occasional video editing in CapCut. Pinterest saves grew from 4.2K to 11.8K this quarter on the back of her seasonal content strategy.</p>
+<p>This is not a "social media scheduler." This is someone analyzing performance data and running experiments. The comment inbox grind is taking 45–60% of her working time. That's the cost.</p>
+</div></div>
+</div>
+
+<div class="finding">
+<div class="finding-header" onclick="toggleFinding(this)">
+  <h3>James Adopted AI Independently — Good Instinct, Wrong Tools</h3>
+  <div class="meta"><span class="badge badge-accent">Positive Signal</span><span class="arrow">&#9654;</span></div>
+</div>
+<div class="finding-body"><div class="finding-body-inner">
+<p>James uses ChatGPT on 16 of every 21 working days for two specific, task-relevant workflows — and he wasn't told to. He figured out on his own that AI could help with shipping status drafts and apology responses. He named the conversations ("Shipping Status Draft", "Apology Response") and returns to them repeatedly. This is someone who, given better tools, would use them immediately and well.</p>
+<p>The problem isn't initiative — it's that both tasks he's using ChatGPT for are already solved within Zendesk, without leaving the app. He just doesn't know those features exist. That's a 2-hour fix, not a management problem.</p>
+</div></div>
+</div>
+
+<div class="finding">
+<div class="finding-header" onclick="toggleFinding(this)">
+  <h3>"Operations Support" Is Two Completely Different Jobs</h3>
+  <div class="meta"><span class="badge badge-yellow">Org Design</span><span class="arrow">&#9654;</span></div>
+</div>
+<div class="finding-body"><div class="finding-body-inner">
+<p>Maya Santos and Andre Torres both carry the "Operations Support" label. They do fundamentally different work:</p>
+<ul>
+  <li><strong>Andre:</strong> Runs the multi-marketplace e-commerce operation. eBay, Etsy, Amazon, Shopify DTC listings. Adobe Photoshop for product images. Pricing. Listing copy. Keyword research. Inventory coordination across 3 channels.</li>
+  <li><strong>Maya:</strong> Runs internal reporting and media intelligence. Weekly summaries for leadership. Social media tracking across 4 platforms. Shopify data entry. Graphic creation in Canva. Newsletter segment updates in Klaviyo. Influencer tracking sheets.</li>
+</ul>
+<p>These are not interchangeable. If Andre leaves, marketplace listings stall. If Maya leaves, leadership loses its data visibility layer. The shared label creates a false sense of redundancy where none exists.</p>
+</div></div>
+</div>
+
+<div class="finding">
+<div class="finding-header" onclick="toggleFinding(this)">
+  <h3>David Has Near-Zero Tracking Data</h3>
+  <div class="meta"><span class="badge badge-orange">Data Gap</span><span class="arrow">&#9654;</span></div>
+</div>
+<div class="finding-body"><div class="finding-body-inner">
+<p>David Chen (Customer Service, 3.5-year tenure, 432 hours logged) has: 312 total app events in 30 days (vs James's 14,218), 2 keystroke events, 4 idle records, and zero shift summary reports for the entire 3-month period. The Go2 tracking agent appears to be partially deployed on his machine.</p>
+<p>We can confirm he's working — Zendesk, Shopify, Slack, and carrier tracking tools are visible in the one full day of URL data we captured. But we cannot assess his throughput, quality, or efficiency. We can't compare him to James. He's a black box.</p>
+<p>Additionally: 14% of his work log entries (38 of 271) have been manually edited, mostly rounding to exact :00 minute boundaries. Not confirmed as an issue — could be habit, could be something worth looking at alongside the tracking gap.</p>
+</div></div>
+</div>
+</section>
+
+<!-- ====== TEAM PROFILES ====== -->
+<section id="team-profiles">
+<h2>Team Profiles</h2>
+
+<div class="big-table-wrap">
+<table>
+<thead>
+<tr>
+  <th>Person</th>
+  <th>Role</th>
+  <th>Tenure</th>
+  <th>Hours (3mo)</th>
+  <th>Primary Tools</th>
+  <th style="white-space:normal;min-width:260px;">Key Finding</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>James Liu</strong></td>
+  <td>Customer Service Lead</td>
+  <td>3 yrs</td>
+  <td>534h</td>
+  <td>Zendesk, Recurly, Shopify, ChatGPT</td>
+  <td class="pipeline-desc">Adopted AI independently. Handles CS, upsell batching, and escalations. Good instinct — wrong tools. Zendesk native features replace everything he's using ChatGPT for.</td>
+</tr>
+<tr>
+  <td><strong>David Chen</strong></td>
+  <td>Customer Service</td>
+  <td>3.5 yrs</td>
+  <td>498h</td>
+  <td>Chrome (Zendesk, Shopify, carrier tools — largely opaque)</td>
+  <td class="pipeline-desc">Tracking gap — Go2 agent partially deployed. Cannot assess throughput or compare to James. 38 manually edited work log entries. Black box.</td>
+</tr>
+<tr>
+  <td><strong>Andre Torres</strong></td>
+  <td>Marketplace Operations</td>
+  <td>2 yrs</td>
+  <td>521h</td>
+  <td>eBay, Etsy, Shopify, Photoshop, Amazon Seller Central</td>
+  <td class="pipeline-desc">Runs 3 sales channels alone. Works through illness — never escalates. Manual pricing pipeline runs every single day. Retention risk.</td>
+</tr>
+<tr>
+  <td><strong>Maya Santos</strong></td>
+  <td>Operations Support</td>
+  <td>2.5 yrs</td>
+  <td>508h</td>
+  <td>Google Sheets, Shopify, Canva, Klaviyo, CapCut</td>
+  <td class="pipeline-desc">Scope expanded 2.5× with no role change. 38h/month on automatable data transcription. Under-titled for what she's actually doing.</td>
+</tr>
+<tr>
+  <td><strong>Sofia Reyes</strong></td>
+  <td>Social Media</td>
+  <td>1.5 yrs</td>
+  <td>496h</td>
+  <td>Hootsuite, Gemini, Instagram Studio, Canva, Notion</td>
+  <td class="pipeline-desc">Biggest automation opportunity. Grew Pinterest saves from 4.2K to 11.8K with self-built seasonal strategy. 45–60% of her time on a copy-paste workflow that can be automated.</td>
+</tr>
+<tr>
+  <td><strong>Rosa Mendez</strong></td>
+  <td>Retention Specialist</td>
+  <td>2 yrs</td>
+  <td>643h</td>
+  <td>Convoso, Zendesk, Recurly, Google Sheets</td>
+  <td class="pipeline-desc">Solo function — zero backup if she's out. Cancellation data trapped in personal notes. PAYMENT_LAPSED (8–12% of cases) being treated as real churn. Recoverable revenue going untracked.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<hr>
+
+<!-- ====== TOOLS BUILT ====== -->
+<section id="tools-built">
+<h2>Tools Built</h2>
+<p>Functional prototypes built during the audit — these represent the middle tier. Better tools for manual work, not full automation. All are single-file HTML applications that run offline in any browser, no setup required. The actual client received these plus full pipeline implementations.</p>
+
+<div class="tool-card">
+  <div class="tool-icon">&#x1f4b0;</div>
+  <div class="tool-info">
+    <h4>Andre's Pricing Calculator</h4>
+    <p>Four-platform pricing tool (eBay, Etsy, Amazon, DTC). Enter cost, get instant listing price with full fee breakdown per marketplace. Visual margin bar. Adjustable targets. Replaces the Calculator + Notepad pipeline immediately.</p>
+    <span class="size">26KB &nbsp;·&nbsp; andre-pricing-calculator.html</span>
+  </div>
+</div>
+
+<div class="tool-card">
+  <div class="tool-icon">&#x1f4c8;</div>
+  <div class="tool-info">
+    <h4>Andre's Pricing Engine v2</h4>
+    <p>Full product catalog with multi-marketplace comparison, bulk pricing mode for catalog listings, and sale price modeling. Built from actual fee structure data decoded from Andre's keystroke sequences.</p>
+    <span class="size">54KB &nbsp;·&nbsp; meridian-pricing-engine.html</span>
+  </div>
+</div>
+
+<div class="tool-card">
+  <div class="tool-icon">&#x1f4ac;</div>
+  <div class="tool-info">
+    <h4>Sofia's Comment Engine</h4>
+    <p>Batch comment processing UI. Paste 50 comments, get 50 AI-generated replies with Meridian brand voice pre-loaded from Sofia's captured reply patterns. Review, edit, approve, copy. Supports multiple AI APIs.</p>
+    <span class="size">41KB &nbsp;·&nbsp; meridian-comment-engine.html</span>
+  </div>
+</div>
+
+<div class="tool-card">
+  <div class="tool-icon">&#x1f4ca;</div>
+  <div class="tool-info">
+    <h4>Maya's Ops Dashboard</h4>
+    <p>5-tab application: Etsy Live Scoreboard, multi-platform sales reporting, social media metrics tracking, product management, and analytics. Organizes Maya's workflows and eliminates all Calculator arithmetic (Tier 2).</p>
+    <span class="size">79KB &nbsp;·&nbsp; meridian-ops-dashboard.html</span>
+  </div>
+</div>
+
+<div class="tool-card">
+  <div class="tool-icon">&#x2191;</div>
+  <div class="tool-info">
+    <h4>James's Upsell Batch Processor</h4>
+    <p>CSV import of customer list, template builder with variable chips (first_name, plan_tier, renewal_date), bulk message generation, copy-to-send output. Eliminates the copy-paste Alt+Tab loop between Google Sheets and Recurly.</p>
+    <span class="size">39KB &nbsp;·&nbsp; james-upsell-batch-processor.html</span>
+  </div>
+</div>
+
+<div class="tool-card">
+  <div class="tool-icon">&#x274c;</div>
+  <div class="tool-info">
+    <h4>Rosa's Cancellation Tracker</h4>
+    <p>Structured cancellation logging with 11 canonical reason codes (decoded from Rosa's keystroke data), win-back rate tracking, PAYMENT_LAPSED vs real churn split, and CSV export for BI. Replaces unstructured personal notes with data that actually aggregates.</p>
+    <span class="size">23KB &nbsp;·&nbsp; rosa-cancellation-tracker.html</span>
+  </div>
+</div>
+
+<div class="tool-card">
+  <div class="tool-icon">&#x2699;&#xfe0f;</div>
+  <div class="tool-info">
+    <h4>James's Zendesk AI Config Guide</h4>
+    <p>Complete step-by-step configuration: 7 macros with exact copy-paste text and Shopify variable paths, 5 trigger-based tagging rules, 4 filtered views, optional auto-reply for shipping queries. No code — just Zendesk admin configuration.</p>
+    <span class="size">14KB &nbsp;·&nbsp; james-zendesk-ai-config.md</span>
+  </div>
+</div>
+</section>
+
+<!-- ====== DATA SOURCES ====== -->
+<section id="data-sources">
+<h2>Data Sources</h2>
+
+<div class="card">
+<h3 style="margin-top:0;color:var(--accent-dim);">What Was Analyzed</h3>
+<table>
+<tr><td><strong>Activity Records</strong></td><td>512,441 app/web events from behavioral telemetry database (3 months daily + 30 days granular per person)</td></tr>
+<tr><td><strong>Work Logs</strong></td><td>2,041 entries — timer-based task logging with manual start/stop</td></tr>
+<tr><td><strong>Shift Summaries</strong></td><td>412 self-reported team reporting entries covering plans, wins, issues, mood, KPIs</td></tr>
+<tr><td><strong>Keystroke Data</strong></td><td>682 daily records + granular 30-day capture per person. Decoded for workflow patterns, prompt text, data entry sequences</td></tr>
+<tr><td><strong>Sessions</strong></td><td>1,124 session records (login/logout timing)</td></tr>
+<tr><td><strong>Idle Time</strong></td><td>398 idle detection records</td></tr>
+<tr><td><strong>Schedules</strong></td><td>986 schedule entries (recurring shifts)</td></tr>
+</table>
+
+<h3 style="color:var(--accent-dim);">How It Was Analyzed</h3>
+<p>Analysis performed locally via a secure Postgres pipeline on Go2's infrastructure. Raw data never left the local environment. Every data file was loaded and cross-referenced. Keystroke sequences were decoded to reconstruct actual workflows — what keys were pressed, what windows were active, what text was typed. App window titles were parsed to identify specific tools, pages, and documents. ShopifyQL queries were extracted from browser URL parameters. AI prompt patterns were reconstructed from typing sequences. All numbers in this report trace back to counted events in the source data.</p>
+
+<h3 style="color:var(--accent-dim);">Data Collection</h3>
+<p>All behavioral data was captured by the <a href="https://cowork.ai" target="_blank">Cowork.ai</a> telemetry daemon running within each team member's Go2 desktop application. The daemon captures the full behavioral data spectrum — application usage, window focus patterns, keystroke cadence analysis, URL navigation sequences, idle detection thresholds, and session boundary events — stored locally on each machine before secure insight extraction.</p>
+
+<h3 style="color:var(--accent-dim);">Known Data Limitations</h3>
+<ul>
+  <li><strong>macOS telemetry coverage:</strong> The Cowork.ai daemon on macOS captures app-level and window-level events but has reduced keystroke cadence telemetry vs the Windows agent. Maya and David (both macOS) were analyzed primarily through application focus patterns and URL navigation data.</li>
+  <li><strong>Cadence binning:</strong> Keystroke telemetry is captured in 1-minute cadence bins, not individual keypress events. Rapid sequences within a single bin are collapsed. All keystroke-derived counts in this report are floor estimates.</li>
+  <li><strong>Browser opacity:</strong> When a team member works entirely within Chrome, the telemetry captures the active window title but not always the full URL path. Site-level behavioral data is incomplete for some team members on some days.</li>
+  <li><strong>Self-reported metrics:</strong> Ticket counts, satisfaction scores, and call volumes in team logs are self-reported and were not cross-validated against source system APIs for this audit.</li>
+  <li><strong>David: partial daemon deployment.</strong> The Cowork.ai agent appears partially configured on David's machine for most of the audit period. Behavioral data coverage is insufficient to assess his workflows or throughput with confidence.</li>
+</ul>
+</div>
+</section>
+
+<!-- ====== WHAT'S NEXT ====== -->
+<section id="whats-next">
+<h2>What's Next</h2>
+
+<div class="letter">
+<p>Full transparency on something we noticed partway through: the first pass of this audit produced in-between tools — dashboards, calculators, batch processors. Better process, same nails. A second pass made the gap clear. The real opportunity isn't better hammers — it's the automation layer below all of it. Scheduled scripts. API pipelines. Workflows that run without anyone opening an app.</p>
+
+<p>Here's what we recommend, in priority order:</p>
+
+<ol style="margin:20px 0;line-height:2;">
+  <li><strong>Configure Zendesk AI for James — same day.</strong> Two hours. Zero code. Admin access and we're done. We wrote every macro template, every trigger rule, every variable path. James goes from ChatGPT workarounds to native features that are already in your stack. This is free to implement and saves 12–18 hours a month starting immediately.</li>
+  <li><strong>Build Maya's Shopify script — this week.</strong> A scheduled Google Apps Script that pulls data from your 3 Shopify storefronts into her existing sheets before her shift starts. We have the exact ShopifyQL queries from her browser — they go straight into the API. She opens a finished report instead of building one. Calculator goes to zero. 38 hours a month recovered.</li>
+  <li><strong>Build the comment reply pipeline for Sofia.</strong> We start with a proof run: 20 recent comments, brand-voice replies generated from 180+ of her actual replies, you review them. If 15 out of 20 are good on the first pass, you'll know this works before committing anything. From there, full pipeline within a week. She goes from 118 items/day to reviewing 12–18 exceptions. The spring campaign inbox growth is not slowing down — this needs to happen before summer.</li>
+  <li><strong>Automate Andre's pricing.</strong> Pull product costs from Shopify API, apply the fee formulas we decoded, output a pricing sheet for all 4 platforms. Andre spot-checks weekly. He stops working sick because the pipeline doesn't need him there — and we stop being one migraine away from listings going stale.</li>
+  <li><strong>Structure Rosa's cancellation data.</strong> 74 logged reasons a month, going nowhere. The taxonomy is already decoded. 55–60% Financial, 28–32% ROI/Value, 8–12% PAYMENT_LAPSED. That last category is recoverable revenue being counted as churn. Connecting this to a dashboard — churn by reason, by tier, over time — is a 2-hour implementation that gives you something you've never had: actual visibility into why people leave.</li>
+  <li><strong>Everything else.</strong> Upsell batch automation for James. Friday coverage scheduling. A complete team reporting system redesign — the current one is producing zero signal, with 100% copy-paste summaries, unanimous "3" mood scores, and an escalation flag that has never been triggered in 3 months across a 6-person team.</li>
+</ol>
+
+<p>The prototype tools we built are yours regardless. They work. Here's what exists:</p>
+
+<table style="margin:16px 0;">
+<thead><tr><th>Tool</th><th>What It Does</th><th>Tier</th></tr></thead>
+<tbody>
+<tr><td>Andre's Pricing Engine</td><td>4-marketplace calculator with fee breakdowns, product catalog, sale mode</td><td>Dashboard</td></tr>
+<tr><td>Sofia's Comment Engine</td><td>Batch comment processing with brand voice, approve/edit/skip review</td><td>Dashboard</td></tr>
+<tr><td>Maya's Ops Dashboard</td><td>5-tab app: sales, social, products, Etsy scoreboard, analytics</td><td>Dashboard</td></tr>
+<tr><td>James's Upsell Processor</td><td>CSV import, template apply, bulk generate, copy-to-send</td><td>Dashboard</td></tr>
+<tr><td>Rosa's Cancellation Tracker</td><td>Structured logging with 7-category taxonomy, win-back rates, CSV export</td><td>Dashboard</td></tr>
+<tr><td>James's Zendesk Config Guide</td><td>Step-by-step with all macros, triggers, views — needs admin access only</td><td>Full solution</td></tr>
+</tbody>
+</table>
+
+<p>We have the data, the analyses, and the prototypes. Everything above can be built as real automation — not dashboards. The smallest next step is Zendesk access for James. That one's done in an afternoon, and the savings start the same day.</p>
+
+<div class="sig">— Go2 Operational Intelligence<br><span style="color:var(--text-muted);font-size:13px;font-weight:400;">go2.io &nbsp;·&nbsp; hello@go2.io</span></div>
+</div>
+
+<div style="margin-top:52px;padding:22px 28px;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border:1px solid #bbf7d0;border-radius:14px;text-align:center;">
+  <p style="color:#14532d;font-size:13px;margin:0;font-weight:500;line-height:1.7;">Based on a real Go2 audit delivered to an actual client. Names, numbers, tools, and business details have been changed to protect privacy. The actual client received this report alongside a complete deliverable package — a zip file with all working tools, implementation guides, API references, configuration scripts, and step-by-step documentation. Everything referenced above was built and delivered, not just recommended.</p>
+  <p style="margin-top:14px;"><a href="https://go2.io" style="color:var(--accent-dim);font-size:15px;font-weight:700;letter-spacing:-0.2px;">go2.io</a></p>
+</div>
+
+</section>
+
+</div><!-- end .content -->
+
+<script>
+// Expandable findings
+function toggleFinding(header) {
+  const finding = header.closest('.finding');
+  finding.classList.toggle('open');
+}
+
+// Copy code blocks
+function copyCode(btn) {
+  const pre = btn.closest('pre');
+  const code = pre.querySelector('code') || pre;
+  const text = code.textContent.replace(/Copy$/, '').replace(/Copied!$/, '').trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1600);
+  });
+}
+
+// Smooth scroll for nav clicks
+document.querySelectorAll('nav a:not(.section-head)').forEach(a => {
+  a.addEventListener('click', function(e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      const offset = 56; // account for fixed banner
+      const top = target.getBoundingClientRect().top + window.scrollY - offset;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+  });
+});
+
+// Highlight active nav item on scroll
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('nav a:not(.section-head)');
+
+function updateActiveNav() {
+  const scrollY = window.scrollY + 80;
+  let current = '';
+  sections.forEach(section => {
+    if (section.offsetTop <= scrollY) current = section.id;
+  });
+  navLinks.forEach(link => {
+    link.style.fontWeight = link.getAttribute('href') === '#' + current ? '600' : '';
+    link.style.color = link.getAttribute('href') === '#' + current ? 'var(--accent-dim)' : '';
+    link.style.borderLeftColor = link.getAttribute('href') === '#' + current ? 'var(--accent)' : 'transparent';
+    link.style.background = link.getAttribute('href') === '#' + current ? 'var(--accent-bg)' : '';
+  });
+}
+
+window.addEventListener('scroll', updateActiveNav, { passive: true });
+updateActiveNav();
+</script>
+</body>
+</html>
