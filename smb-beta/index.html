@@ -692,6 +692,12 @@
       font-size:15px;
       color:var(--ink);
     }
+    .success-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      margin-top:4px;
+    }
     .success-panel a{
       color:var(--accent);
       text-decoration:none;
@@ -1081,7 +1087,11 @@
 
         <div id="apply-success" class="success-panel" aria-live="polite">
           <p><strong>Thanks.</strong> We’ve got your intake.</p>
-          <p>If you already booked the Workflow + AI Readiness Call, you’re set. If not, <a href="https://calendar.app.google/fYuPjz31pVTjZ55VA" target="_blank" rel="noreferrer">schedule it here</a>.</p>
+          <p>If you already booked the Workflow + AI Readiness Call, you’re set. If not, schedule it now while the workflow is fresh.</p>
+          <div class="success-actions">
+            <a class="btn primary" href="https://calendar.app.google/fYuPjz31pVTjZ55VA" target="_blank" rel="noreferrer" data-track="book_call_after_intake">Schedule the Workflow + AI Readiness Call</a>
+            <a class="btn" href="#what-you-get" data-track="view_what_you_get_after_intake">Review what you get back</a>
+          </div>
         </div>
 
         <noscript>
@@ -1189,9 +1199,19 @@
         }, params || {}));
       };
 
+      const fireSectionLanding = (hash) => {
+        if (hash === '#what-you-get') {
+          fire('what_you_get_view', {});
+        }
+        if (hash === '#how-it-works') {
+          fire('how_it_works_view', {});
+        }
+      };
+
       fire('smb_pilot_page_view', {
         hostname: window.location.hostname
       });
+      fireSectionLanding(window.location.hash);
 
       document.querySelectorAll('[data-track]').forEach((el) => {
         el.addEventListener('click', () => {
@@ -1200,7 +1220,27 @@
             link_url: el.getAttribute('href') || '',
             link_text: (el.textContent || '').trim()
           });
+
+          if (['book_call_top', 'book_call_intake', 'book_call_after_intake'].includes(el.dataset.track)) {
+            fire('booked_call_click', {
+              entry_point: el.dataset.track
+            });
+          }
+
+          if (el.dataset.track === 'jump_to_intake_top') {
+            fire('jump_to_intake', {});
+          }
+
+          if (el.dataset.track === 'view_what_you_get_after_intake') {
+            fire('what_you_get_click', {
+              entry_point: el.dataset.track
+            });
+          }
         });
+      });
+
+      window.addEventListener('hashchange', () => {
+        fireSectionLanding(window.location.hash);
       });
 
       const applySection = document.getElementById('apply');
@@ -1212,6 +1252,7 @@
           if (entry && entry.isIntersecting) {
             seen = true;
             fire('smb_pilot_intake_view', {});
+            fire('intake_view', {});
             observer.disconnect();
           }
         }, { threshold: 0.35 });
@@ -1275,8 +1316,12 @@
             applySuccess.classList.add('is-visible');
             applyStatus.textContent = 'Thanks. Your intake was submitted successfully.';
             applyStatus.className = 'submit-status is-visible is-success';
+            applySuccess.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
             fire('smb_pilot_form_submit_success', {
+              form_name: 'smb_pilot_apply'
+            });
+            fire('intake_submitted', {
               form_name: 'smb_pilot_apply'
             });
             fire('generate_lead', {
