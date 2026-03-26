@@ -15,6 +15,25 @@ function normalizeValue(value, max = 4000) {
   return String(value || '').trim().replace(/\s+/g, ' ').slice(0, max);
 }
 
+function deriveNameFromEmail(email) {
+  const local = String(email || '').split('@')[0] || '';
+  const parts = local
+    .replace(/[^a-zA-Z0-9]+/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (!parts.length) {
+    return { firstName: 'Website', lastName: 'Lead' };
+  }
+
+  const normalized = parts.map((part) => part.charAt(0).toUpperCase() + part.slice(1));
+  return {
+    firstName: normalized[0] || 'Website',
+    lastName: normalized.slice(1).join(' ') || 'Lead'
+  };
+}
+
 function parseBody(body) {
   if (!body) return {};
   if (typeof body === 'string') {
@@ -36,31 +55,26 @@ module.exports = async (req, res) => {
   }
 
   const body = parseBody(req.body);
+  const derivedName = deriveNameFromEmail(body.email);
   const payload = {
-    firstName: normalizeValue(body.firstName, 120),
-    lastName: normalizeValue(body.lastName, 120),
+    firstName: normalizeValue(body.firstName, 120) || derivedName.firstName,
+    lastName: normalizeValue(body.lastName, 120) || derivedName.lastName,
     email: normalizeValue(body.email, 254).toLowerCase(),
     company: normalizeValue(body.company, 180),
-    role: normalizeValue(body.role, 180),
+    role: normalizeValue(body.role, 180) || 'Not provided',
     teamSize: normalizeValue(body.teamSize, 20),
-    teamFocus: normalizeValue(body.teamFocus, 80),
-    coreTools: normalizeValue(body.coreTools, 500),
+    teamFocus: normalizeValue(body.teamFocus, 80) || 'Mixed / cross-functional',
+    coreTools: normalizeValue(body.coreTools, 500) || 'Discuss on call',
     messyWorkflow: normalizeValue(body.messyWorkflow, 4000),
-    betterState: normalizeValue(body.betterState, 4000),
+    betterState: normalizeValue(body.betterState, 4000) || 'Discuss on Workflow Discovery Call',
     sensitiveNotes: normalizeValue(body.sensitiveNotes, 4000)
   };
 
   const missing = [
-    ['firstName', payload.firstName],
-    ['lastName', payload.lastName],
     ['email', payload.email],
     ['company', payload.company],
-    ['role', payload.role],
     ['teamSize', payload.teamSize],
-    ['teamFocus', payload.teamFocus],
-    ['coreTools', payload.coreTools],
-    ['messyWorkflow', payload.messyWorkflow],
-    ['betterState', payload.betterState]
+    ['messyWorkflow', payload.messyWorkflow]
   ]
     .filter(([, value]) => !value)
     .map(([field]) => field);
@@ -81,8 +95,7 @@ module.exports = async (req, res) => {
   }
 
   if (!TEAM_FOCUS_OPTIONS.has(payload.teamFocus)) {
-    res.status(400).json({ ok: false, error: 'invalid_team_focus' });
-    return;
+    payload.teamFocus = 'Mixed / cross-functional';
   }
 
   try {
